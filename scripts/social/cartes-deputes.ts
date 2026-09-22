@@ -10,25 +10,22 @@
 //
 // TROIS DÉCISIONS QUI FONT QUE ÇA NE SENT PAS LE GABARIT :
 //
-// 1. LE PORTRAIT EST LE TIRAGE IMPRESSION, PAS CELUI D'ÉCRAN. `cartes/*.png`
-//    est une similigravure calculée à 750 × 1000 par build_deputy_cards.py ;
-//    son canal alpha est BINAIRE (0 ou 255, vérifié) et porte la trame de
-//    points, l'encre étant un aplat de cordovan. C'est donc un masque parfait,
-//    qu'on remplit à la couleur voulue. Agrandi à 988 px (1,3×), le point
-//    grandit proprement — c'est précisément ce pour quoi il a été calculé — et
-//    la trame donne la texture d'un objet imprimé. Le duotone d'écran, lisse,
-//    donnait l'image plate et sans grain qui trahit une composition faite à la
-//    machine.
-// 2. LA POLARITÉ NE S'INVERSE JAMAIS. Le diamètre du point code l'obscurité :
-//    des points clairs sur fond de couleur rendraient le négatif du visage.
-//    Le champ reste donc clair et les points prennent la couleur du parti.
+// 1. LE PORTRAIT REPREND LA PHOTO COULEUR OFFICIELLE, agrandie au Lanczos et
+//    doucement accentuée. Ses encres sont désaturées comme sur une Bowman des
+//    années 1950, mais aucune grosse trame ne recouvre le visage : à partir
+//    d'une source de 150 × 200 px, elle rendait les points plus présents que
+//    la personne.
+// 2. LE FILTRE RESTE REPRODUCTIBLE. Il ne recrée ni les traits ni le décor :
+//    chaque visage demeure celui du fichier de l'Assemblée nationale, avec le
+//    même cadrage. Le vieillissement passe par la couleur et le carton.
 // 3. LE GRAIN. Un bruit très faible passe sur toute la carte. Une surface
 //    parfaitement unie est la signature d'un rendu synthétique ; un carton
 //    imprimé n'en a jamais.
 //
-// Format 1080 × 1350 (4:5). ⚠️ La grille du profil Instagram recadre au CARRÉ
-// CENTRÉ (y 135 → 1215) : le visage, l'écusson et le bandeau du nom tiennent
-// dans cette fenêtre ; seuls le pied de carton et le crédit en sortent.
+// Format 1071 × 1496, soit EXACTEMENT 63:88 (17 × chaque terme). Employer
+// 1080 px de large imposerait une hauteur fractionnaire de 1508,57 px : le
+// ratio ne pourrait donc pas être exact dans un PNG. 1071 est le multiple de
+// 63 le plus proche de 1080.
 //
 // Les données viennent de `loadAssemblee()`, le loader de la page. Aucune
 // donnée n'est recalculée ici (GABARIT.md, « Aucune donnée ni phrase
@@ -38,7 +35,7 @@
 //   npm run carte:deputes -- --echantillon   → 5 cartes, une par parti
 //   npm run carte:deputes -- --limite 10     → les 10 premières de la série
 //   npm run carte:deputes -- --only tanguay  → une carte, par nom ou circo
-//   npm run carte:deputes                    → la planche des 129
+//   npm run carte:deputes                    → la planche des 128
 //   npm run carte:deputes -- --png           → les PNG, la planche une fois vue
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -86,8 +83,8 @@ function toneWording(score: number, maxAbs: number): string {
   return `ton ${degre} ${sens} par rapport aux autres de la période`;
 }
 
-const W = 1080;
-const H = 1350;
+const W = 1071;
+const H = 1496;
 
 /** Fenêtre conservée par la grille du profil Instagram (carré centré). */
 const COEUR = { top: Math.round((H - W) / 2), bottom: Math.round((H + W) / 2) };
@@ -96,7 +93,7 @@ const COEUR = { top: Math.round((H - W) / 2), bottom: Math.round((H + W) / 2) };
  *  GABARIT.md proscrit ; une vraie bordure de carte, elle, se lit comme le
  *  carton qu'elle imite. */
 const MARGE = 46;
-const PANNEAU = { x: MARGE, y: MARGE, w: W - MARGE * 2, bas: 1230 };
+const PANNEAU = { x: MARGE, y: MARGE, w: W - MARGE * 2, bas: H - 120 };
 const BANDE = 196;
 const PHOTO_H = PANNEAU.bas - BANDE - PANNEAU.y;
 
@@ -107,7 +104,7 @@ type Carte = {
   cle: PartyKey;
   couleur: string;
   /** Rang dans le jeu COMPLET, calculé avant tout filtre : une carte garde son
-   *  numéro qu'on tire les 129 ou un seul élu. */
+   *  numéro qu'on tire les 128 ou un seul élu. */
   numero: number;
   total: number;
   /** « Législature 2026 · Salon bleu » — le sous-titre de la période, que le
@@ -182,6 +179,13 @@ const CHEFS: Record<string, Titre> = {
   // une carte ordinaire ; à confirmer s'il doit porter une mention d'ancien
   // premier ministre.
   "sanguinet": { titre: "Première ministre du Québec", eclat: true },
+};
+
+/** Allégeance actuelle à privilégier lorsqu'une même personne occupe plusieurs
+ * lignes de la vue « législature ». La carte représente l'élu.e aujourd'hui,
+ * tandis que son parcours antérieur demeure expliqué au verso. */
+const PARTI_ACTUEL_PAR_SIEGE: Partial<Record<string, PartyKey>> = {
+  "rimouski": "pcq", // Maïté Blanchette Vézina, désormais au PCQ.
 };
 
 /** Clé d'appariement entre le slug d'une circonscription (« jeanne-mance-viger »)
@@ -272,40 +276,63 @@ function ligneMandat(m: Mandat | undefined): string {
   return `${comment} ${quand}`;
 }
 
-const cacheURI = new Map<string, string | null>();
-async function pngURI(rel: string): Promise<string | null> {
-  if (cacheURI.has(rel)) return cacheURI.get(rel) ?? null;
-  const buf = await fs.readFile(path.resolve(process.cwd(), "public", rel)).catch(() => null);
-  const uri = buf ? `data:image/png;base64,${buf.toString("base64")}` : null;
-  cacheURI.set(rel, uri);
-  return uri;
-}
-
-/** Le TIRAGE IMPRESSION du portrait (similigravure), pas celui d'écran :
- *  `cartes/web/x.jpg` → `cartes/x.png`. */
-function cheminImpression(deputy: DeputyRow): string | null {
-  const slug = deputy.portrait?.match(/\/([^/]+)\.jpg$/)?.[1];
-  return slug ? `images/deputes/cartes/${slug}.png` : null;
-}
-
-/** Trame PRÉ-RÉDUITE pour la vignette du verso.
- *
- *  La similigravure est calculée pour être vue grande : ses points font 7 px à
- *  750 de large. Laissée au navigateur qui la ramène à 232 px, elle produit un
- *  moiré en damier — le pas de la trame et celui de la grille de pixels entrent
- *  en battement, et le visage disparaît sous les interférences. Réduite en
- *  amont par un filtre de qualité, les points se fondent en tons continus et
- *  l'alpha, jusque-là binaire, devient un dégradé : le masque redevient un
- *  portrait. */
-const cacheVignette = new Map<string, string | null>();
-async function vignetteURI(rel: string): Promise<string | null> {
-  if (cacheVignette.has(rel)) return cacheVignette.get(rel) ?? null;
+/** Séparation quadrichromique d'époque. Les quatre encres sont tramées à des
+ * angles distincts et se multiplient sur le papier pour former la rosette
+ * visible sur la référence Bowman agrandie. */
+const cacheBaseball = new Map<string, string | null>();
+async function baseballURI(deputy: DeputyRow): Promise<string | null> {
+  const asset = deputy.portrait?.match(/\/images\/deputes\/cartes\/web\/(.+)\.jpg$/)?.[1];
+  if (!asset) return null;
+  if (cacheBaseball.has(asset)) return cacheBaseball.get(asset) ?? null;
   const sharp = (await import("sharp")).default;
-  const buf = await sharp(path.resolve(process.cwd(), "public", rel))
-    .resize({ width: 480, kernel: "lanczos3" })
-    .png().toBuffer().catch(() => null);
+  const prepared = await sharp(path.resolve(process.cwd(), "public/images/deputes", `${asset}.jpg`))
+    .resize(1500, 2000, { fit: "cover", position: "centre", kernel: "lanczos3" })
+    .modulate({ brightness: 1.03, saturation: 1.7 })
+    .linear(1.24, -30)
+    .sharpen({ sigma: 0.8, m1: 0.65, m2: 0.35 })
+    .removeAlpha().raw().toBuffer({ resolveWithObject: true }).catch(() => null);
+  if (!prepared) {
+    cacheBaseball.set(asset, null);
+    return null;
+  }
+  const { data, info } = prepared;
+  const cell = 4;
+  const cx = info.width / 2; const cy = info.height / 2;
+  const channels = [
+    { angle: 15, fill: "#00CBE6", gain: 1.04, protectHighlights: true, value: (r: number) => 1 - r / 255 },
+    { angle: 75, fill: "#FF2F75", gain: 1.04, protectHighlights: true, value: (_r: number, g: number) => 1 - g / 255 },
+    { angle: 0,  fill: "#FFD900", gain: 1.04, protectHighlights: true, value: (_r: number, _g: number, b: number) => 1 - b / 255 },
+    { angle: 45, fill: "#171412", gain: 0.7, protectHighlights: true, value: (r: number, g: number, b: number) => 1 - Math.max(r, g, b) / 255 },
+  ];
+  const groups: string[] = [];
+  const margin = 480;
+  for (const ch of channels) {
+    const rad = ch.angle * Math.PI / 180;
+    const cos = Math.cos(rad); const sin = Math.sin(rad);
+    const dots: string[] = [];
+    for (let v = -margin; v < info.height + margin; v += cell) {
+      for (let u = -margin; u < info.width + margin; u += cell) {
+        const x = Math.round(cx + (u - cx) * cos - (v - cy) * sin);
+        const y = Math.round(cy + (u - cx) * sin + (v - cy) * cos);
+        if (x < 0 || x >= info.width || y < 0 || y >= info.height) continue;
+        const i = (y * info.width + x) * 3;
+        const r = data[i]; const g = data[i + 1]; const b = data[i + 2];
+        let coverage = Math.max(0, Math.min(1, ch.value(r, g, b)));
+        if (ch.protectHighlights) {
+          const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+          const protection = luminance > 0.55 ? ((luminance - 0.55) / 0.45) * 0.7 : 0;
+          coverage *= 1 - Math.min(0.7, protection);
+        }
+        const radius = (cell / 2) * Math.sqrt(coverage) * ch.gain;
+        if (radius > 0.18) dots.push(`<circle cx="${u}" cy="${v}" r="${radius.toFixed(2)}"/>`);
+      }
+    }
+    groups.push(`<g fill="${ch.fill}" style="mix-blend-mode:multiply" transform="rotate(${ch.angle} ${cx} ${cy})">${dots.join("")}</g>`);
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${info.width}" height="${info.height}"><rect width="100%" height="100%" fill="#FAF7EF"/>${groups.join("")}</svg>`;
+  const buf = await sharp(Buffer.from(svg)).png({ compressionLevel: 8 }).toBuffer().catch(() => null);
   const uri = buf ? `data:image/png;base64,${buf.toString("base64")}` : null;
-  cacheVignette.set(rel, uri);
+  cacheBaseball.set(asset, uri);
   return uri;
 }
 
@@ -388,7 +415,7 @@ function mesurerDebordement(): number {
  *  La hauteur du dos varie avec des textes qu'on ne choisit pas : un nom sur
  *  deux lignes, une citation plus longue, un libellé de période qui se casse.
  *  Resserrer la maquette au jugé pour le cas du jour ne fait que déplacer le
- *  problème au suivant — sur 129 cartes il y aura toujours un suivant.
+ *  problème au suivant — sur 128 cartes il y aura toujours un suivant.
  *
  *  ⚠️ AUCUNE FONCTION IMBRIQUÉE ici. Le code est sérialisé puis évalué dans le
  *  navigateur, et esbuild enveloppe toute fonction interne dans son helper
@@ -437,7 +464,7 @@ function carteHTML(
   c: Carte,
   portrait: string | null,
   ecusson: string | null,
-  logoVitrine: string | null,
+  logoCapp: string | null,
 ): string {
   const d = c.deputy;
   const parti = c.couleur;
@@ -456,52 +483,19 @@ function carteHTML(
            width:${PANNEAU.w}px;height:${PANNEAU.bas - PANNEAU.y}px;
            border:3px solid ${COLORS.ink};overflow:hidden;background:${COLORS.paper}}
 
-  /* LA PHOTO — champ clair, points à la couleur du parti. La polarité ne
-     s'inverse pas : le diamètre du point code l'obscurité. */
+  /* LA PHOTO — rosette quadrichromique : cyan 15°, magenta 75°, jaune 0° et
+     noir 45°. Les points varient avec la charge de chaque encre et leurs
+     superpositions reconstruisent la couleur, exactement comme sur le détail
+     de la carte Bowman fourni en référence. */
   .photo{position:relative;height:${PHOTO_H}px;background:${COLORS.paper};overflow:hidden}
-  .photo .encre{position:absolute;inset:0;background:${parti};
-                -webkit-mask-image:url("${portrait ?? ""}");mask-image:url("${portrait ?? ""}");
-                -webkit-mask-size:cover;mask-size:cover;
-                -webkit-mask-position:center 16%;mask-position:center 16%;
-                -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-  .photo .fondu{position:absolute;left:0;right:0;bottom:0;height:190px;
-                background:linear-gradient(to bottom,rgba(243,236,221,0),${COLORS.paper})}
+  .photo .image{position:absolute;inset:0;background-image:url("${portrait ?? ""}");
+                background-size:cover;background-position:center 16%}
   .photo .vide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.18}
 
-  /* PERMUTATION DES MARQUES (demande de Jules, 22-09) : le logo de la VITRINE
-     flotte sur la photo, à la place qu'occupait l'écusson du parti ; l'écusson,
-     lui, descend dans le bandeau, à la place qu'occupait la pastille de
-     l'enjeu. L'émetteur prend le haut, l'appartenance prend le bas. */
-  /* LES MARQUES DÉBORDENT DU CADRE, et de biais.
-     Elles ne sont PLUS dans .photo mais à la racine : le panneau écrête
-     (overflow:hidden), donc tout ce qui doit chevaucher son bord doit vivre
-     au-dessus de lui, pas dedans. Chacune tient son coin, pour qu'aucune n'en
-     dispute un autre — médaillon en haut à gauche, pastille en haut à droite,
-     ruban en bas à gauche.
-     Formes d'époque plutôt que rectangles cernés : un rectangle posé sur une
-     similigravure se lit comme un autocollant collé après coup, là où le
-     médaillon et la queue d'aronde sont des dispositifs du carton lui-même —
-     l'ovale du numéro chez Glenn Hall, le cercle chez Delvecchio, le patin
-     dessiné chez Federko. */
-
-  /* L'ÉTOILE DE L'ENJEU — couleur de l'enjeu dominant, pictogramme du CAPP en
-     son centre. Elle rend au recto la LÉGENDE que GABARIT.md réclame (« couleur
-     ET pictogramme, jamais une couleur seule ») : la bande colorée sous la
-     photo ne disait la couleur qu'à ceux qui connaissent déjà le code.
-     Le liseré vient d'une seconde découpe, légèrement plus grande, posée
-     dessous — clip-path rogne les bordures. */
-  .etoile-enjeu{position:absolute;right:34px;bottom:328px;width:182px;height:182px;
-                transform:rotate(-8deg)}
-  .etoile-enjeu span{position:absolute;
-    clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
-  .etoile-enjeu .bord{inset:-10px;background:${COLORS.ink}}
-  .etoile-enjeu .fond{inset:0;background:${enjeu}}
-  /* Le centroïde de ce polygone est à 50,4 % de la hauteur — soit le centre de
-     la boîte, à un pixel près sur 182. Un premier jet le croyait bien plus bas
-     et poussait le pictogramme de 13 px vers le sol ; le calcul dit le
-     contraire, donc aucun décalage. */
-  .etoile-enjeu .glyphe{position:absolute;inset:0;display:flex;align-items:center;
-                        justify-content:center;clip-path:none}
+  /* L'enjeu prend maintenant la place de l'ancien écusson, à côté du nom.
+     Le carré net reprend les petites cases de position des cartes sportives. */
+  .enjeu-carre{flex:0 0 auto;width:118px;height:118px;background:${enjeu};
+               display:flex;align-items:center;justify-content:center}
 
   /* LE MÉDAILLON — à cheval sur le coin, moitié carton moitié panneau. Double
      anneau : le liseré clair détache le disque de la trame, le filet d'encre
@@ -521,15 +515,24 @@ function carteHTML(
      Deux pixels sous le centre géométrique rétablissent l'équilibre perçu. */
   .medaillon i{display:block;font-style:normal;transform:translateY(-8px)}
 
-  .marque{position:absolute;right:20px;top:26px;transform:rotate(2.5deg);background:${COLORS.paper};
-          border:3px solid ${COLORS.ink};border-radius:999px;padding:16px 34px;display:block}
-  /* La boîte suit le RAPPORT du logotype rogné — 1770 × 574, soit 3,08 pour 1.
-     Réglée à 238 × 42, « contain » l'ajustait par la hauteur et ne lui donnait
-     que 129 px de large : le dessin flottait au milieu d'une pastille vide. */
-  .marque i{display:block;width:216px;height:70px;background:${parti};
-            -webkit-mask-size:contain;mask-size:contain;
-            -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-            -webkit-mask-position:center;mask-position:center}
+  /* Comme le logo d'équipe sur la carte Tim Kerr : l'écusson du parti occupe
+     une réserve de carton dans le coin supérieur droit, découpée en courbe. */
+  /* La réserve claire recouvre aussi le filet supérieur et droit du panneau :
+     comme sur la carte Tim Kerr, le cadre de la photo s'arrête à la vague et
+     ne dessine aucun coin autour du logo. */
+  .ecusson-haut{position:absolute;right:42px;top:42px;width:314px;height:239px}
+  .ecusson-haut svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .ecusson-haut i{position:absolute;left:124px;top:27px;display:block;
+                  width:142px;height:108px;background:${parti};
+                  -webkit-mask-size:contain;mask-size:contain;
+                  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+                  -webkit-mask-position:center;mask-position:center}
+  /* Signature discrète, tout au bas du carton. */
+  .marque-capp{position:absolute;right:56px;bottom:2px;display:block}
+  .marque-capp i{display:block;width:112px;height:35px;background:${COLORS.softer};
+                 -webkit-mask-size:contain;mask-size:contain;
+                 -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+                 -webkit-mask-position:center;mask-position:center}
 
   /* LE RUBAN — queue d'aronde aux deux bouts, découpée au clip-path. Le liseré
      est obtenu par SUPERPOSITION : clip-path rogne les bordures et les ombres,
@@ -550,11 +553,6 @@ function carteHTML(
   .ruban.eclat i{background:${COLORS.paper}}
   .ruban.eclat .etoile{color:${enjeu}}
   .ruban .etoile{margin-right:9px}
-  .ecusson{flex:0 0 auto;width:118px;height:118px;background:${COLORS.paper};
-           -webkit-mask-size:contain;mask-size:contain;
-           -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-           -webkit-mask-position:center;mask-position:center}
-
   /* LE RUBAN DE CHEF — la seule distinction de la série. À gauche, en vis-à-vis
      de la plaque de marque, pour que le haut de la photo reste équilibré. */
   /* LE BANDEAU — aplat à la couleur du parti, le nom dessus. Le filet du haut
@@ -582,9 +580,6 @@ function carteHTML(
         display:flex;align-items:baseline;justify-content:space-between;gap:24px;
         font-family:"IBM Plex Mono",monospace;font-size:23px;letter-spacing:.08em;
         text-transform:uppercase;color:${COLORS.softer}}
-  .credit{position:absolute;left:${MARGE + 4}px;right:${MARGE + 4}px;top:${PANNEAU.bas + 68}px;
-          font-size:20px;font-style:italic;color:${COLORS.softer};opacity:.85}
-
   /* LE GRAIN — un carton imprimé n'a pas de surface parfaitement unie, et
      c'est cette uniformité qui trahit une image de synthèse. */
   /* Voir le verso : dimensions EXPLICITES (un <svg> sans width/height garde sa
@@ -597,38 +592,36 @@ function carteHTML(
   <div class="panneau">
     <div class="photo">
       ${portrait
-        ? `<div class="encre"></div>`
+        ? `<div class="image"></div>`
         : `<div class="vide">${fleur(parti, 300)}</div>`}
-      <div class="fondu"></div>
     </div>
     <div class="bande">
       <div class="qui">
         <p class="nom">${txt(d.name)}</p>
         ${d.circonscription ? `<p class="sous">${txt(d.circonscription)}</p>` : ""}
       </div>
-      ${ecusson ? `<span class="ecusson" style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></span>` : ""}
+      ${d.topIssueKey ? `<span class="enjeu-carre">${enjeuGlyph(d.topIssueKey, COLORS.paper, 58)}</span>` : ""}
     </div>
   </div>
 
   ${/* Plus de fleur de lys ici (Jules, 22-09) : accolée au nom de l'Assemblée,
         elle se lisait comme un emblème officiel et laissait croire que la
         carte émane de l'institution. */ ""}
-  ${d.topIssueKey ? `<span class="etoile-enjeu">
-    <span class="bord"></span><span class="fond"></span>
-    <span class="glyphe">${enjeuGlyph(d.topIssueKey, COLORS.paper, 58)}</span>
-  </span>` : ""}
   <span class="medaillon"><i>${c.numero}</i></span>
-  ${logoVitrine ? `<span class="marque"><i style="-webkit-mask-image:url('${logoVitrine}');mask-image:url('${logoVitrine}')"></i></span>` : ""}
+  ${ecusson ? `<span class="ecusson-haut">
+    <svg viewBox="0 0 307 232" aria-hidden="true">
+      <path d="M0 0H307V190C250 179 202 211 139 176C61 133 70 22 0 0Z" fill="${COLORS.paper}"/>
+      <path d="M0 0C70 22 61 133 139 176C202 211 250 179 303 190" fill="none" stroke="${COLORS.ink}" stroke-width="3" stroke-linecap="butt" stroke-linejoin="round"/>
+    </svg>
+    <i style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></i>
+  </span>` : ""}
+  ${logoCapp ? `<span class="marque-capp"><i style="-webkit-mask-image:url('${logoCapp}');mask-image:url('${logoCapp}')"></i></span>` : ""}
   ${c.chef ? `<span class="ruban${c.chef.eclat ? " eclat" : ""}"><i>${c.chef.eclat ? '<span class="etoile">&#9733;</span>' : ""}${txt(c.chef.titre)}</i></span>` : ""}
 
   <p class="pied">
-    ${/* L'Assemblée nationale est déjà nommée dans le crédit juste en dessous :
-          la répéter ici faisait passer le pied sur deux lignes, lesquelles
-          chevauchaient ce crédit. */ ""}
     <span>Édition ${c.annee} &middot; série de ${c.total}</span>
     <span>vitrinedemocratique.com</span>
   </p>
-  <p class="credit">Portrait&nbsp;: Assemblée nationale du Québec &middot; usage non commercial autorisé</p>
 
   <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
   <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>
@@ -667,7 +660,7 @@ function versoHTML(
   fiche: Partial<Record<PeriodKey, DeputyRow>>,
   maxAbs: Record<PeriodKey, number>,
   libelles: Record<PeriodKey, string>,
-  vignette: string | null,
+  portrait: string | null,
   ecusson: string | null,
   logoVitrine: string | null,
   /** Date de la dernière SÉANCE couverte, pas du dernier fetch : la publication
@@ -773,8 +766,9 @@ function versoHTML(
            width:${PANNEAU.w}px;height:${PANNEAU.bas - PANNEAU.y}px;
            overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
 
-  /* EN-TÊTE sur le carton : numéro dans un cercle, nom centré, photo cerclée. */
-  .haut{display:flex;align-items:center;gap:24px;padding:2px 0 16px}
+  /* EN-TÊTE sur le carton : le grand portrait part du coin supérieur droit et
+     le remplit. Le nom lui réserve sa largeur au lieu de passer dessous. */
+  .haut{display:flex;align-items:center;gap:24px;padding:2px 190px 16px 0;min-height:166px}
   .numero{flex:0 0 auto;width:96px;height:96px;border-radius:50%;
           background:${COLORS.paper};color:${parti};
           display:flex;align-items:center;justify-content:center;
@@ -797,14 +791,10 @@ function versoHTML(
   .chef{display:inline-block;margin-top:9px;background:${COLORS.paper};color:${parti};
         font-family:"Oswald",sans-serif;font-weight:600;font-size:21px;letter-spacing:.16em;
         text-transform:uppercase;padding:5px 14px}
-  .rond{flex:0 0 auto;width:150px;height:150px;border-radius:50%;
-        border:7px solid ${COLORS.paper};background:${COLORS.paper};
-        position:relative;overflow:hidden}
-  .rond .encre{position:absolute;inset:0;background:${parti};
-               -webkit-mask-image:url("${vignette ?? ""}");mask-image:url("${vignette ?? ""}");
-               -webkit-mask-size:cover;mask-size:cover;
-               -webkit-mask-position:center 12%;mask-position:center 12%;
-               -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+  .rond{position:absolute;right:-42px;top:-42px;width:232px;height:232px;border-radius:50%;
+        border:8px solid ${COLORS.paper};background:${COLORS.paper};overflow:hidden}
+  .rond .image{position:absolute;inset:0;background-image:url("${portrait ?? ""}");
+               background-size:cover;background-position:center 12%}
 
   /* DEUX PANNEAUX, comme au dos du Federko 1978 : la fiche, puis la signature,
      séparés par le carton nu. Un panneau unique laissait un grand vide au
@@ -930,7 +920,6 @@ function versoHTML(
         ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${txt(c.chef.titre)}</span>` : ""}
         ${vitaux ? `<span class="vitaux">${txt(vitaux)}</span>` : ""}
       </span>
-      <span class="rond">${vignette ? `<span class="encre"></span>` : fleur(parti, 100)}</span>
     </div>
 
     <div class="bloc fiche">
@@ -939,7 +928,7 @@ function versoHTML(
       <table>
         <colgroup><col style="width:30%"><col style="width:16%"><col style="width:19%"><col style="width:16%"><col style="width:19%"></colgroup>
         <thead><tr>
-          <th>Période</th><th>Inter-<br>ventions</th><th>Mots<br>prononcés</th><th>Richesse<br>du vocabulaire</th><th>Ton des<br>interventions</th>
+          <th>Période</th><th>Inter-<br>ventions</th><th>Mots<br>prononcés</th><th>Richesse<br>lexicale</th><th>Ton des<br>interventions</th>
         </tr></thead>
         <tbody>${lignes}</tbody>
       </table>
@@ -975,7 +964,7 @@ function versoHTML(
     <p class="pied">
       ${/* Une fleur de lys ici doublonnait avec l'écusson du parti : le logo
             NOIR de la CAQ est une fleur de lys, celui du PCQ en porte une —
-            plus de la moitié des 129 cartes affichaient donc deux fois le même
+            plus de la moitié des 128 cartes affichaient donc deux fois le même
             dessin, ce qui se lit comme une erreur de montage. */ ""}
       ${logoVitrine
         ? `<span class="marque" style="-webkit-mask-image:url('${logoVitrine}');mask-image:url('${logoVitrine}')"></span>`
@@ -984,6 +973,8 @@ function versoHTML(
       ${ecusson ? `<span class="ecusson" style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></span>` : `<span></span>`}
     </p>
   </div>
+
+  <span class="rond">${portrait ? `<span class="image"></span>` : fleur(parti, 100)}</span>
 
   <p class="credit">
     <span>Portrait&nbsp;: Assemblée nationale du Québec &middot; usage non commercial autorisé</span>
@@ -1041,13 +1032,17 @@ async function main() {
   // LE JEU COMPLET D'ABORD, la sélection ensuite. Le numéro de carte doit être
   // celui de la série entière : tiré après un filtre, « --only tanguay »
   // donnerait la carte n° 1 sur 1, ce qui ne veut rien dire sur un carton de
-  // collection. On numérote donc les 129 dans l'ordre alphabétique des
+  // collection. On numérote donc les 128 dans l'ordre alphabétique des
   // circonscriptions, puis on filtre.
-  const jeu = vue.rows.flatMap((row) =>
+  const jeuBrut = vue.rows.flatMap((row) =>
     (row.deputies ?? []).map((deputy) => ({
       slug: slugCirco(deputy), deputy, parti: row.label, cle: row.key,
       couleur: PARTY_COLORS[row.key] ?? row.color,
     })));
+  const jeu = jeuBrut.filter((c) => {
+    const partiActuel = PARTI_ACTUEL_PAR_SIEGE[c.slug];
+    return !partiActuel || c.cle === partiActuel;
+  });
   jeu.sort((a, b) => a.slug.localeCompare(b.slug, "fr"));
 
   // ANNÉE DE L'ÉDITION — heure de MONTRÉAL, comme tout ce qui porte une date
@@ -1089,7 +1084,7 @@ async function main() {
 
   // ÉCHANTILLON — le député le plus actif de chaque parti. Cinq cartes
   // suffisent à juger un parti pris visuel, et elles couvrent les cinq
-  // couleurs ; relancer les 129 à chaque retouche coûte dix minutes pour rien.
+  // couleurs ; relancer les 128 à chaque retouche coûte dix minutes pour rien.
   if (args.echantillon) {
     const parParti = new Map<PartyKey, Carte>();
     for (const c of cartes) {
@@ -1103,17 +1098,13 @@ async function main() {
 
   // --limite N : les N premières cartes de la série. Les numéros ayant été
   // attribués sur le jeu COMPLET, un tirage partiel garde les siens — la carte
-  // 7 reste la 7 sur 129, pas la 7 sur 10.
+  // 7 reste la 7 sur 128, pas la 7 sur 10.
   const limite = Number(typeof args.limite === "string" ? args.limite : 0);
   if (limite > 0) cartes = cartes.slice(0, limite);
 
-  // CHANGEMENT D'ALLÉGEANCE — un même élu peut occuper DEUX lignes sur la
-  // législature, une par affiliation (Maïté Blanchette Vézina, Rimouski : CAQ
-  // puis PCQ). Les deux cartes tombaient sur le même nom de fichier et la
-  // seconde écrasait la première sans rien dire : 129 cartes annoncées, 128
-  // fichiers écrits. On suffixe par le parti, et on NOMME le cas — il demande
-  // un arbitrage qu'un script ne peut pas rendre : on n'envoie pas deux cartes
-  // à la même personne.
+  // GARDE-FOU CONTRE LES DOUBLONS — l'allégeance actuelle est normalement
+  // résolue plus haut. Si une autre circonscription apparaît encore deux fois,
+  // on suffixe néanmoins le fichier par parti afin de ne rien écraser.
   const vus = new Map<string, number>();
   for (const c of cartes) vus.set(c.slug, (vus.get(c.slug) ?? 0) + 1);
   const doubles = cartes.filter((c) => (vus.get(c.slug) ?? 0) > 1);
@@ -1155,13 +1146,11 @@ async function main() {
   // Deux pages par élu : le recto qu'on voit dans le fil, le verso qu'on ouvre.
   const pages: { slug: string; html: string }[] = [];
   for (const c of cartes) {
-    const chemin = cheminImpression(c.deputy);
-    const portrait = chemin ? await pngURI(chemin) : null;
-    const vignette = chemin ? await vignetteURI(chemin) : null;
+    const portrait = await baseballURI(c.deputy);
     const ecusson = await ecussonURI(c.cle);
     const fiche = fiches.get(slugCirco(c.deputy)) ?? { [periode]: c.deputy };
-    pages.push({ slug: c.slug, html: carteHTML(c, portrait, ecusson, logos.vitrine) });
-    pages.push({ slug: `${c.slug}-verso`, html: versoHTML(c, fiche, maxAbs, libelles, vignette, ecusson, logos.vitrine, seance) });
+    pages.push({ slug: c.slug, html: carteHTML(c, portrait, ecusson, logos.capp) });
+    pages.push({ slug: `${c.slug}-verso`, html: versoHTML(c, fiche, maxAbs, libelles, portrait, ecusson, logos.vitrine, seance) });
   }
 
   await fs.mkdir(outDir, { recursive: true });
