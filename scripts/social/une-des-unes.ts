@@ -122,7 +122,7 @@ const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
 /* 1. Accroche — le reste est dans INTRO_CSS (lib/reel.ts) */
-#intro .ghost{position:absolute;left:46px;right:46px;bottom:0;height:520px;display:flex;align-items:flex-end;gap:18px}
+#intro .ghost{position:absolute;left:46px;right:46px;bottom:0;height:min(520px,var(--vis-h,520px));display:flex;align-items:flex-end;gap:18px}
 #intro .ghost div{flex:1;transform-origin:bottom}
 
 /* 2. Une n°1 */
@@ -331,9 +331,21 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
     const h = (p.cumul / max) * H;
     const inside = h > 120;
     const valColor = inside && !p.isAbsent ? bandOf(p.rank).fg : p.isNow ? COLORS.red : COLORS.ink;
+    // L'étiquette s'écarte du passage de la ligne (vu le 2026-09-22 : « 0,0 »
+    // barré par la montée vers 16h, « 16,7 » par la flèche qui y arrive).
+    // Au-dessus d'une barre basse : de côté, loin du segment raide. Dans une
+    // barre haute : assez bas pour que la ligne en soit déjà sortie.
+    const pas = bw + gap;
+    const monte = i > 0 ? y(pts[i - 1].cumul) - y(p.cumul) : 0;        // > 0 : la ligne arrive d'en bas
+    const repart = i < n - 1 ? y(p.cumul) - y(pts[i + 1].cumul) : 0;  // > 0 : la ligne repart vers le haut
+    let valPos = `left:${left(i)}px`;
+    let valTop = y(p.cumul) + (inside ? 46 : -62);
+    if (inside) valTop = y(p.cumul) + Math.min(h - 56, Math.max(46, (52 * Math.max(monte, -repart, 0)) / pas));
+    else if (repart > 40 && monte > -40 && i > 0) valPos = `left:${left(i) - bw / 2 - 8}px;text-align:right`;
+    else if (monte < -40 && repart < 40 && i < n - 1) valPos = `left:${left(i) + bw / 2 + 8}px;text-align:left`;
     return `
       <div class="bar${p.isAbsent ? " absent" : ""}" style="left:${left(i)}px;width:${bw}px;height:${h}px;top:${y(p.cumul)}px;background:${bandOf(p.rank).bg};animation:growY ${GROW}s ${d}s both"></div>
-      <div class="val" style="left:${left(i)}px;width:${bw}px;top:${y(p.cumul) + (inside ? 46 : -62)}px;color:${valColor};animation:fadeIn .3s ${d + GROW}s both">${frNum(p.cumul)}</div>
+      <div class="val" style="${valPos};width:${bw}px;top:${valTop}px;color:${valColor};animation:fadeIn .3s ${d + GROW}s both">${frNum(p.cumul)}</div>
       ${p.isPeak ? `<div class="peak mono" style="left:${Math.max(0, Math.min(CHART_W - 190, left(i) + bw / 2 - 95))}px;width:190px;top:${y(p.cumul) - 58}px;animation:pop .5s ${d + GROW + .1}s both">Sommet</div>` : ""}
       <div class="xl${p.isNow ? " now" : ""}" style="left:${left(i)}px;width:${bw}px;top:${BASE + 16}px;animation:fadeIn .3s ${d}s both">
         <div style="display:flex;justify-content:center">${celestial(hours[i], p.isNow ? COLORS.blue : COLORS.soft, 52)}</div><b>${hours[i]}h</b>${i === 0 || p.isNow ? `<span>${esc(momentOf(p.timeLabel)).replace("après-midi", "après\u2011midi")}</span>` : ""}

@@ -459,6 +459,20 @@ export function sceneIntro(opts: {
         // de la largeur de la colonne, donc d'une chose qu'aucune constante ne sait.
         var y=Math.round(h.getBoundingClientRect().bottom - s.getBoundingClientRect().top + 44);
         if (y > parseFloat(b.style.top || 0)) b.style.top = y + "px";
+        // La date suit le bandeau (48 px sous son haut), et le visuel du module
+        // prend ce qui reste dessous (--vis-h) : ni l'un ni l'autre ne monte sur
+        // la date, quel que soit le nombre de lignes du titre ou la plateforme.
+        var e=s.querySelector(".ed"); if(!e) return;
+        e.style.top=(b.offsetTop + 48) + "px"; e.style.bottom="auto";
+        // Une première ligne longue (« du mer. 16 sept au mar. 22 sept ») se
+        // resserre, puis rapetisse jusqu'à 26 px, plutôt que de laisser un mot
+        // orphelin sur une deuxième ligne.
+        var bb=e.querySelector("b"), fs=30;
+        if(bb){ bb.style.whiteSpace="nowrap";
+          if(bb.scrollWidth>bb.clientWidth) bb.style.letterSpacing=".04em";
+          while(bb.scrollWidth>bb.clientWidth && fs>26){ fs-=1; bb.style.fontSize=fs+"px"; }
+          if(bb.scrollWidth>bb.clientWidth) bb.style.whiteSpace="normal"; }
+        b.style.setProperty("--vis-h", Math.max(160, b.offsetTop + b.offsetHeight - (e.offsetTop + e.offsetHeight) - 36) + "px");
       });<\/script>
       <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${edition(opts.edition)}</div>`,
   };
@@ -479,7 +493,9 @@ export const INTRO_CSS = `
 /* DANS le bandeau d'encre (haut à y 1190), pas au-dessus : à bottom:760 (#823)
    la ligne tombait sur le papier, en couleur papier — invisible (20h du 17-09).
    À 600, ses deux lignes finissent à y 1320, 50 px sous le haut du bandeau et
-   50 px au-dessus des barres fantômes. */
+   50 px au-dessus des barres fantômes. Ce n'est plus qu'un repli : le script de
+   l'accroche la pose 48 px sous le haut RÉEL du bandeau (2026-09-22 : en
+   LinkedIn, la barre de 16h montait sur « 2026 » et le radar sur la date). */
 #intro .ed{position:absolute;left:${COL}px;right:${COL}px;bottom:600px;color:var(--paper);font-size:30px}
 #intro .ed b{display:block;font-weight:400}
 #intro .ed span{display:block;margin-top:12px;opacity:.72}

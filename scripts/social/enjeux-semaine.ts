@@ -37,7 +37,7 @@ const CSS = `
 /* Accroche commune : une miniature du classement réel de la semaine. */
 /* La miniature remonte : à 72 px du bas, elle passait sous la légende et la barre
    de navigation d'Instagram en plein écran (mesuré au simulateur, 17-09). */
-#intro .mini-ranks{position:absolute;left:${COL}px;right:${COL}px;bottom:420px;height:430px}
+#intro .mini-ranks{position:absolute;left:46px;right:46px;bottom:40px;height:min(430px,calc(var(--vis-h,470px) - 40px))}
 #intro .mini-ranks svg{display:block;width:100%;height:100%;overflow:visible}
 @keyframes traceRank{to{stroke-dashoffset:0}}
 

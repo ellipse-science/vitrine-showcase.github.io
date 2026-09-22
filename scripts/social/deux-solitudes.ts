@@ -29,7 +29,7 @@ import {
   type EditionRef, type SolitudeAxis, type SolitudeData,
 } from "@/lib/data/headlineEvents";
 import { MODULES } from "@/lib/modules";
-import { CONTENT_TOP, COL, FORMAT,
+import { CONTENT_BOTTOM, CONTENT_TOP, COL, FORMAT, HEIGHT, SAFE_COTE, WIDTH,
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, buildPage, chargerPartenaires, enjeuGlyph, esc, fleur, parseArgs, produce,
   sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
@@ -65,17 +65,25 @@ async function loadLogo(): Promise<string | null> {
   }
 }
 
+/** Le radar garde le rapport de son viewBox (840 × 720) : les pastilles, en
+ *  HTML, se posent en POURCENTAGES de la boîte et tombent ainsi au bout des
+ *  axes. 🪤 En pixels bruts dans une boîte de 600 px de haut, l'anneau était
+ *  décalé de 60 px du radar, et la pastille du bas mordait sur le titre de la
+ *  carte (vu le 2026-09-22, « Colombie-Britannique »). */
+const CHART_TOP = CONTENT_TOP + 156;
+const CHART_H = Math.round((WIDTH - 2 * COL) * 720 / 840);
+
 const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
 /* Le sonar : un seul plan, du début à la fin */
-#sonar .head{position:absolute;top:${CONTENT_TOP + 8}px;left:${COL}px;right:${COL}px}
+#sonar .head{position:absolute;top:${CONTENT_TOP + 8}px;left:${COL}px;right:${SAFE_COTE}px;white-space:nowrap}
 #sonar .kick{display:flex;align-items:center;gap:18px}
 #sonar .kick i{display:block;width:70px;height:8px;transform-origin:left}
-#sonar .chart{position:absolute;left:${COL}px;right:${COL}px;top:430px;height:600px}
+#sonar .chart{position:absolute;left:${COL}px;right:${COL}px;top:${CHART_TOP}px;height:${CHART_H}px}
 #sonar .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%}
 #sonar .vx{position:absolute;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
-#sonar .zone{position:absolute;left:${COL}px;right:${COL}px;top:1046px;bottom:420px}
+#sonar .zone{position:absolute;left:${COL}px;right:${COL}px;top:${CHART_TOP + CHART_H + 30}px;bottom:${HEIGHT - CONTENT_BOTTOM + 40}px}
 #sonar .carte{position:absolute;left:0;right:0;top:0}
 #sonar .carte .t{font-size:44px;line-height:1.06;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #sonar .bars{margin-top:18px;display:flex;flex-direction:column;gap:14px}
@@ -87,7 +95,7 @@ const CSS = `
 #sonar .conv b{font-family:"Playfair Display",serif;font-weight:900;font-size:110px;line-height:.86}
 #sonar .conv span{font-size:30px;font-style:italic;color:var(--soft);line-height:1.3}
 #sonar .conv u{text-decoration:none;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:28px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}
-#intro .mini{position:absolute;left:50%;bottom:40px;width:620px;transform:translateX(-50%)}
+#intro .mini{position:absolute;left:50%;bottom:40px;height:min(646px,calc(var(--vis-h,686px) - 40px));aspect-ratio:480/500;transform:translateX(-50%)}
 @keyframes tourne{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes carte{0%,3%{opacity:0;transform:translateY(26px)}9%,88%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-14px)}}
 @keyframes ping{from{transform:scale(.2);opacity:0}60%{transform:scale(1.25);opacity:1}to{transform:scale(1);opacity:1}}
@@ -161,7 +169,7 @@ function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
   const vertices = axes.map((a, k) => {
     const [px, py] = at(k, 1.15);
     const col = a.side === "qc" ? COLORS.blue : COLORS.red;
-    return `<div class="vx" style="left:${px - 31}px;top:${py - 31}px;background:${col};animation:ping .45s ${detect(k)}s both,${enVeille(k, "veille", .4)}">${enjeuGlyph(a.issueKey, COLORS.paper, 34)}</div>`;
+    return `<div class="vx" style="left:calc(${(px / 8.4).toFixed(3)}% - 31px);top:calc(${(py / 7.2).toFixed(3)}% - 31px);background:${col};animation:ping .45s ${detect(k)}s both,${enVeille(k, "veille", .4)}">${enjeuGlyph(a.issueKey, COLORS.paper, 34)}</div>`;
   }).join("");
 
   // Les six sujets détectés, on relie les points : les deux formes apparaissent.
