@@ -140,6 +140,20 @@ describe("getShareModuleContent — chiffre choc (stat)", () => {
     }
   });
 
+  it("polimetre-plus : la carte mène avec la promesse en tête, plus avec un pourcentage de promesses tenues", () => {
+    const { stat } = contenuDe("polimetre-plus");
+    expect(stat.value).not.toMatch(/%/);
+    expect(stat.label).not.toMatch(/tenues/);
+
+    // Avec donnée : manchette (kicker + titre court) et verbatim de l'engagement
+    // dans le cadre du bas. Sans donnée : le repli statique, qui n'a pas de kicker.
+    if (stat.kicker) {
+      expect(stat.context).toBeTruthy();
+      expect(stat.excerpt).toBeTruthy();
+      expect(stat.label).toMatch(/cette semaine$/);
+    }
+  });
+
   it("partis-et-couverture : quand un parti mène aujourd'hui, le libellé le nomme et le ton pilote la pointe éditoriale", () => {
     const content = contenuDe("partis-et-couverture");
     if (content.stat.value.endsWith("%")) {
