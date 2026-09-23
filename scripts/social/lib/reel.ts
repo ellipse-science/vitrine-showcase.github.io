@@ -77,12 +77,21 @@ export async function loadLogos(): Promise<Logos> {
     const png = await sharp(path.join(dir, file)).trim().png().toBuffer();
     return `data:image/png;base64,${png.toString("base64")}`;
   };
+  // Université Laval (public/images/partners/ULaval.png), SANS la mention
+  // « Faculté des sciences sociales » (Jules, 23-09) : on garde l'écusson et le
+  // mot-symbole (colonnes 0 à 155 ; le filet vertical est en 167, la mention
+  // commence en 177). Le fichier du site n'est pas modifié : la page des
+  // partenaires l'utilise entier. ⚠️ 277 × 74 px : trop petit pour l'impression.
+  const ulaval = async () => {
+    const png = await sharp(path.join(dir, "..", "partners", "ULaval.png"))
+      .extract({ left: 0, top: 0, width: 156, height: 74 }).png().toBuffer();
+    const rogne = await sharp(png).trim().png().toBuffer();
+    return `data:image/png;base64,${rogne.toString("base64")}`;
+  };
   return {
     vitrine: await uri("logo_vitrinedemocratique_bg-none_theme-black.png"),
     capp: await uri("logo_capp_1row_bg-none_theme-black.png"),
-    // Université Laval, Faculté des sciences sociales (public/images/partners/).
-    // ⚠️ 277 × 74 px : suffisant à l'écran, trop petit pour l'impression.
-    ulaval: await uri(path.join("..", "partners", "ULaval.png")),
+    ulaval: await ulaval(),
   };
 }
 

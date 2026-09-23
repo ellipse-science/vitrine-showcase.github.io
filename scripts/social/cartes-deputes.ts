@@ -1039,7 +1039,7 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
   .ord{text-transform:none;font-size:.62em;vertical-align:.5em;line-height:0}
   .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:18px}
   .marque-capp i.sep{width:1.5px;height:30px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
-  .marque-capp i.ulaval{width:162px;height:44px}
+  .marque-capp i.ulaval{width:100px;height:47px}
   .marque-capp i{display:block;width:150px;height:47px;background:${COLORS.paper};opacity:.8;
                  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                  -webkit-mask-position:center;mask-position:center}
@@ -1157,7 +1157,7 @@ function carteHTML(
   /* Signature discrète, tout au bas du carton, CENTRÉE ; même place au verso. */
   .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:18px}
   .marque-capp i.sep{width:1.5px;height:30px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
-  .marque-capp i.ulaval{width:162px;height:44px}
+  .marque-capp i.ulaval{width:100px;height:47px}
   .marque-capp i{display:block;width:150px;height:47px;background:${COLORS.softer};
                  -webkit-mask-size:contain;mask-size:contain;
                  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
@@ -1590,7 +1590,7 @@ function versoHTML(
   /* Signature CAPP : même place qu'au recto, à l'encre du papier comme le crédit. */
   .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:18px}
   .marque-capp i.sep{width:1.5px;height:30px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
-  .marque-capp i.ulaval{width:162px;height:44px}
+  .marque-capp i.ulaval{width:100px;height:47px}
   .marque-capp i{display:block;width:150px;height:47px;background:${COLORS.paper};opacity:.62;
                  -webkit-mask-size:contain;mask-size:contain;
                  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
