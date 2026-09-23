@@ -312,8 +312,9 @@ const STEP0 = 1.2, STEP = 0.8, GROW = 0.6;
  *  longueur. La boîte est cadrée à deux lignes pour laisser le compteur
  *  respirer : à 50 px, « Un bébé trouvé dans un campement bouleverse la
  *  campagne électorale » en demandait trois et se faisait couper (édition de
- *  20h du 17-09). On réduit le corps plutôt que d'amputer la nouvelle — un
- *  titre de Une ne se tronque pas. */
+ *  20h du 17-09). On réduit le corps plutôt que d'amputer la nouvelle ; un
+ *  titre qui ne tient pas même à 38 px est signalé « troncature » par le
+ *  contrôle du gabarit, et la vidéo n'est pas produite. */
 // Paliers MESURÉS dans la colonne de #823 (h3 de 652 px) : à 42 px, le titre du
 // bébé (66 caractères) prend trois lignes ; à 40 il en prend deux, 38 garde une
 // marge. 44 est le corps de base de Jules.

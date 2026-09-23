@@ -188,10 +188,13 @@ commun, une identité visuelle, un rappel marqué.**
     voulues — l'heure, puis la date — ce qui passe quelle que soit la date
     (« Mercredi 30 septembre » est le pire cas). Vaut pour tous les modules
     (`INTRO_CSS`).
-  - **Un titre de Une ne se tronque jamais.** Le 17-09 à 20h, « Un bébé trouvé
-    dans un campement bouleverse la campagne électorale » demandait trois lignes
-    dans une boîte cadrée à deux : le corps du titre s'adapte à sa longueur
-    (`tailleTitre`) plutôt que d'amputer la nouvelle.
+  - **Un titre de Une ne se tronque pas sans que le contrôle le signale.** Le
+    17-09 à 20h, « Un bébé trouvé dans un campement bouleverse la campagne
+    électorale » demandait trois lignes dans une boîte cadrée à deux : le corps
+    du titre s'adapte à sa longueur (`tailleTitre`, jusqu'à 38 px) plutôt que
+    d'amputer la nouvelle. Un titre qui ne tient pas même à 38 px est signalé
+    « troncature » par le contrôle du gabarit, et `--mp4` refuse de produire la
+    vidéo.
   - Règle générale : **un repli ou une coupe se DÉCIDENT, ils ne se subissent
     pas.** La coupe à une ligne des nouvelles n°2 et n°3 du classement est
     voulue et reste ; ce qui est proscrit, c'est la coupe qu'on n'a pas choisie.
