@@ -114,12 +114,15 @@ function codeFonction(tenues: { titre: string; pct: number }[], porteParole: boo
  *  (peu commune), trois arches et des flancs en vagues (rare), cinq arches et
  *  des vagues sur trois côtés (légendaire).
  *
- *  LA RÉSERVE DE L'ÉCUSSON (haut à droite) est un quart d'ellipse centré sur le
- *  coin, qui part EXACTEMENT du pied des arches : l'ancienne courbe en S,
- *  posée telle quelle, cassait les vagues à cet endroit. Pour la rare et la
- *  légendaire, elle est festonnée comme le reste du contour. L'écusson
- *  (x 793-935, y 23-131 dans le panneau) tient dans l'ellipse. */
-const RESERVE = { rx: 270, ry: 190 };
+ *  LA RÉSERVE DE L'ÉCUSSON (haut à droite) garde la VAGUE D'ORIGINE, en S, qui
+ *  plonge sous l'écusson puis remonte (tracé de Jules ; le commit 788d3e00
+ *  l'avait remplacée par erreur par un quart d'ellipse). Elle est la signature
+ *  de la carte : on ne la redessine pas (Jules, 22-09, après un essai en quart
+ *  d'ellipse rejeté). Quand les arches ont leurs pieds plus bas que le bord,
+ *  seul le premier point de contrôle suit ce pied ; le creux et l'arrivée sur
+ *  le flanc droit (979, 150) sont inchangés. */
+const RESERVE_X = 630;
+const RESERVE_Y_DROIT = 150;
 
 /** n arches en demi-ellipse entre x0 et x1 : pieds à y = creux, clés à y = 0. */
 function arches(x0: number, x1: number, n: number, creux: number): string {
@@ -150,38 +153,20 @@ function festonsBas(x0: number, x1: number, y: number, amplitude: number, period
   return d;
 }
 
-/** Réserve de l'écusson, du pied des arches (w − rx, y0) au flanc droit
- *  (w, y0 + ry). Festonnée si `amplitude` > 0 : les festons mordent vers la
- *  photo, comme sur les flancs. */
-function reserve(y0: number, amplitude = 0, festons = 6): string {
-  const w = PANNEAU.w;
-  const { rx, ry } = RESERVE;
-  if (!amplitude) return ` A ${rx} ${ry} 0 0 0 ${w} ${y0 + ry}`;
-  let d = "";
-  const pt = (t: number) => [w + rx * Math.cos(t), y0 + ry * Math.sin(t)];
-  for (let i = 0; i < festons; i++) {
-    const t0 = Math.PI - (i * Math.PI) / 2 / festons;
-    const t1 = Math.PI - ((i + 1) * Math.PI) / 2 / festons;
-    const [xm, ym] = pt((t0 + t1) / 2);
-    const [x1, y1] = pt(t1);
-    // Normale sortante (du coin vers la photo) au milieu de l'arc.
-    const nx = (xm - w) / rx;
-    const ny = (ym - y0) / ry;
-    const nn = Math.hypot(nx, ny);
-    d += ` Q ${(xm + (nx / nn) * amplitude * 2).toFixed(1)} ${(ym + (ny / nn) * amplitude * 2).toFixed(1)}, ${x1.toFixed(1)} ${y1.toFixed(1)}`;
-  }
-  return d;
+/** Vague d'origine de la réserve, du pied des arches (630, y0) au flanc droit. */
+function reserve(y0: number): string {
+  return ` C 720 ${y0}, 760 170, 855 170 C 915 170, 955 140, 979 ${RESERVE_Y_DROIT}`;
 }
 
 function cheminCadre(r: Rarete, ecusson: boolean): string {
   const w = PANNEAU.w;
   const h = PANNEAU.bas - PANNEAU.y;
-  const xFin = ecusson ? w - RESERVE.rx : w;
-  // Haut : les arches, puis la réserve (ou le coin droit) ; renvoie aussi le
-  // point où commence le flanc droit.
-  const haut = (n: number, creux: number, festonsReserve = 0) => ({
-    d: `M 0 ${creux}${n ? arches(0, xFin, n, creux) : ` H ${xFin}`}${ecusson ? reserve(creux, festonsReserve) : ""}`,
-    yDroit: ecusson ? creux + RESERVE.ry : creux,
+  const xFin = ecusson ? RESERVE_X : w;
+  // Haut : les arches, puis la vague de la réserve (ou le coin droit) ;
+  // renvoie aussi le point où commence le flanc droit.
+  const haut = (n: number, creux: number) => ({
+    d: `M 0 ${creux}${n ? arches(0, xFin, n, creux) : ` H ${xFin}`}${ecusson ? reserve(creux) : ""}`,
+    yDroit: ecusson ? RESERVE_Y_DROIT : creux,
   });
   switch (r) {
     case "commune": {
@@ -193,12 +178,12 @@ function cheminCadre(r: Rarete, ecusson: boolean): string {
       return `${t.d} V ${h} H 0 Z`;
     }
     case "rare": {
-      const t = haut(3, 44, 8);
+      const t = haut(3, 44);
       return `${t.d}${vagues(w, t.yDroit, h, 8, 110, -1)} H 0${vagues(0, h, 44, 8, 110, 1)} Z`;
     }
     case "legendaire":
     case "presidence": {
-      const t = haut(5, 36, 8);
+      const t = haut(5, 36);
       return `${t.d}${vagues(w, t.yDroit, h - 24, 9, 86, -1)} L ${w} ${h}${festonsBas(w, 0, h, 6, 70)}${vagues(0, h, 36, 9, 86, 1)} Z`;
     }
   }
