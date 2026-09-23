@@ -55,6 +55,14 @@ pas de consentement. ») ; Terres sortait enjeu dominant de 59 élus sur 129.
 Diagnostic et pistes : **aws-refiners#546**. Le site n'est pas modifié. À
 retirer quand le classifieur sera recalibré (`ENJEUX_EN_REVISION`).
 
+### Graphie des noms
+
+Deux noms mal écrits dans les données sont corrigés à l'impression seulement
+(`NOMS_IMPRIMES`) : Jolin-Barrette, Frédéric Beauchemin. Les appariements
+gardent la graphie des données. Reste à trancher : Benoit/Benoît Charette,
+Eric/Éric Girard (Lac-Saint-Jean), Etienne/Étienne Grandmont, « Brigitte B.
+Garceau » (graphies de l'Assemblée entre barres obliques en premier).
+
 ### Mot signature
 
 Repris du site. **Sans mot distinctif, l'encadré est retiré** (une
@@ -228,7 +236,7 @@ Grille du 23 septembre 2026 (décision de Jules).
   milliers d'interventions de procédure (Benjamin 10 577, Lévesque 9 701,
   Soucy 8 929, à 26 à 42 mots chacune) et occupaient la tête du classement
   par interventions. Limite : leurs mots de présidence comptent quand même
-  (Lévesque est 7e en mots, Benjamin est rare).
+  (Lévesque, 7e en mots, est rare).
 - **Chefs de parti dans le calcul**, sans catégorie d'office.
 - **La présidente (Nathalie Roy) est commune d'office.** Un sceau or sur
   la photo a été essayé puis retiré le 23-09. Dans les transcriptions, ce qu'elle dit en
@@ -238,9 +246,17 @@ Grille du 23 septembre 2026 (décision de Jules).
 - Pourcentages appliqués aux 126 élus classés, arrondis (13 et 44).
   Égalités départagées par le numéro de carte. Calculée sur la série
   entière, avant tout filtre : une carte tirée seule garde sa rareté.
-- **Données à vérifier** avant impression : Vincent Marissal (5 380 mots)
-  et Maïté Blanchette Vézina (5 989) sont presque en bas du classement,
-  peu plausible pour Marissal ; possible défaut d'appariement dans agora.
+- **Un élu, une ligne.** Agora publie une ligne par élu et par parti ; la
+  carte n'en lisait qu'une (Marissal : 5 380 mots au lieu de 223 184). Le
+  script réunit désormais les lignes des neuf élus qui ont changé
+  d'allégeance (`fusionnerLignesParParti`) : interventions et mots sommés,
+  ton et parts pondérés par les mots, richesse et mot signature de la ligne
+  la plus longue. Effet sur la rareté : Dubé devient rare, Benjamin peu
+  commun. Le site, qui range la parole par parti, n'est pas touché.
+- Relevé du 23-09 après correction : les vingt totaux les plus bas sont des
+  députés sans fonction ou élus en cours de route (François Tremblay, 1 260
+  mots en 9 interventions ; Denis Lamothe, 4 107 en 5). Plausible, non
+  vérifié contre les transcriptions.
 - Grilles abandonnées : le 22-09, poids des fonctions rémunérées et des
   duels de porte-parole, classé par camp (trop difficile à expliquer, et
   sans équivalent clair des ministres dans l'opposition) ; avant, cinq et
