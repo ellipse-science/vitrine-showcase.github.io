@@ -66,16 +66,23 @@ function ordinal(html: string): string {
 const MONTANT = new Intl.NumberFormat("fr-CA", { maximumFractionDigits: 0 });
 const POURCENT = new Intl.NumberFormat("fr-CA", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-/** RARETÉ (grille arrêtée avec Jules, 22-09). Légendaire : premiers ministres
- *  de la législature ; présidence : carte à part ; rare : les chefs de parti.
- *  Pour les autres, un POIDS — fonctions rémunérées (taux × jours) et, pour
- *  l'opposition, jours d'affrontement comme porte-parole — classé PAR CAMP,
- *  avec les mêmes proportions de part et d'autre : l'opposition, qui ne peut
- *  pas être ministre, a sa part de cartes peu communes. */
-type Rarete = "commune" | "peu-commune" | "rare" | "legendaire" | "presidence";
-const PROPORTIONS_RARETE: [Rarete, number][] = [["peu-commune", 0.45], ["commune", 0.55]];
+/** RARETÉ (grille arrêtée avec Jules, 23-09). Légendaire : les premiers
+ *  ministres de la législature, hors calcul. Tous les autres, chefs compris,
+ *  sont classés sur les MOTS PRONONCÉS au Salon bleu sur la législature (la
+ *  saillance de l'élu, durée du mandat comprise) : 10 % rares, 35 % peu
+ *  communes, le reste communes.
+ *  · Mots plutôt qu'interventions : les vice-présidents cumulent des milliers
+ *    d'interventions de procédure (26 à 42 mots chacune), qui les mettaient
+ *    en tête du classement.
+ *  · La présidente est commune d'office, avec un badge : dans les
+ *    transcriptions, ce qu'elle dit en présidant est attribué à « la
+ *    Présidente », pas à elle (6 interventions sur la législature).
+ *  Grille précédente (22-09, abandonnée) : poids des fonctions rémunérées et
+ *  des duels de porte-parole, classé par camp. */
+type Rarete = "commune" | "peu-commune" | "rare" | "legendaire";
+const PROPORTIONS_RARETE: [Rarete, number][] = [["rare", 0.10], ["peu-commune", 0.35]];
 const LIBELLE_RARETE: Record<Rarete, string> = {
-  commune: "Commune", "peu-commune": "Peu commune", rare: "Rare", legendaire: "Légendaire", presidence: "Présidence",
+  commune: "Commune", "peu-commune": "Peu commune", rare: "Rare", legendaire: "Légendaire",
 };
 
 /** CODE DE FONCTION, dans le carré à droite du nom (22-09) : la fonction la
@@ -123,7 +130,6 @@ const METAUX: Partial<Record<Rarete, { uni: string; arrets: string[] }>> = {
   "peu-commune": { uni: "#B9C0C8", arrets: ["#F2F4F6", "#9AA1AA", "#E6E9ED", "#7C838C"] },
   rare: { uni: "#CDA64C", arrets: ["#F6E3A1", "#C9A24A", "#F3D98A", "#9C7A2E"] },
   legendaire: { uni: "#BFE6FF", arrets: ["#FFFFFF", "#9ED8FF", "#F2FBFF", "#C9B8FF", "#A8F0E6", "#FFFFFF"] },
-  presidence: { uni: "#BFE6FF", arrets: ["#FFFFFF", "#9ED8FF", "#F2FBFF", "#C9B8FF", "#A8F0E6", "#FFFFFF"] },
 };
 
 function degradeMetal(r: Rarete, id = "metal"): string {
@@ -141,7 +147,7 @@ function degradeMetalCSS(r: Rarete): string {
 }
 
 /** Nombre de fleurs de lys sous la circonscription, au recto (22-09). */
-const FLEURS_PAR_RARETE: Record<Rarete, number> = { commune: 1, "peu-commune": 2, rare: 3, legendaire: 4, presidence: 4 };
+const FLEURS_PAR_RARETE: Record<Rarete, number> = { commune: 1, "peu-commune": 2, rare: 3, legendaire: 4 };
 
 /** Cadre d'origine (tracé de Jules) : la vague en S réserve le coin supérieur
  *  droit à l'écusson, sur le carton nu. Pour toutes les raretés sauf la rare. */
@@ -450,6 +456,8 @@ type Carte = {
   };
   /** Vis-à-vis ministre / porte-parole. Pas imprimé : sert à la rareté. */
   rarete?: Rarete;
+  /** Badge de la présidence de l'Assemblée (voir RARETÉ). */
+  badge?: "presidence";
   /** « PM », « M », « CO »… (voir CODES_FONCTION). */
   codeFonction?: string;
   /** Légendaires : autographe (URL du tracé blanc), s'il y en a un. */
@@ -1023,7 +1031,7 @@ function carteHTML(
   ecusson: string | null,
   logoCapp: string | null,
 ): string {
-  if (c.rarete === "legendaire" || c.rarete === "presidence") return carteLegendaireHTML(c, portrait, ecusson, logoCapp);
+  if (c.rarete === "legendaire") return carteLegendaireHTML(c, portrait, ecusson, logoCapp);
   const d = c.deputy;
   const parti = c.couleur;
   const enjeu = d.topIssueColor ?? COLORS.soft;
@@ -1145,6 +1153,17 @@ function carteHTML(
   /* flex:1 + min-width:0 donnent au bloc du nom une largeur DÉFINIE, sans quoi
      clientWidth vaut la largeur du texte et la mesure ne peut rien détecter. */
   .bande .qui{flex:1;min-width:0;overflow:hidden}
+  /* BADGE DE LA PRÉSIDENCE (Jules, 23-09) : la présidente est commune (voir
+     RARETÉ), mais sa carte se distingue par un sceau posé sur la photo, au-dessus
+     du sigle. Or de la ligne des rares, fond d'encre neutre (la présidence
+     est neutre), fleur de lys et mention en couleur papier. */
+  .badge{position:absolute;right:${marge + 34}px;bottom:${marge + BANDE + 22}px;width:150px;height:150px;border-radius:50%;
+         background:${degradeMetalCSS("rare")};padding:7px;box-sizing:border-box;z-index:5;
+         filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))}
+  .badge>div{width:100%;height:100%;border-radius:50%;background:${COLORS.ink};display:flex;flex-direction:column;
+             align-items:center;justify-content:center;gap:4px;box-shadow:inset 0 0 0 3px ${METAUX.rare!.uni}}
+  .badge span{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:12.5px;letter-spacing:.08em;
+              text-transform:uppercase;color:${COLORS.paper}}
   .nom{font-family:"Playfair Display",serif;font-weight:900;font-size:68px;
        line-height:1.0;letter-spacing:-.02em;color:${COLORS.paper};
        text-transform:uppercase;white-space:nowrap;overflow:hidden}
@@ -1177,6 +1196,7 @@ ${CSS_HOLO}
         ? `<div class="image"></div>`
         : `<div class="vide">${fleur(parti, 300)}</div>`}
     </div>
+    ${c.badge === "presidence" ? `<div class="badge" aria-label="Présidence de l'Assemblée nationale"><div>${fleur(COLORS.paper, 58)}<span>Présidence</span></div></div>` : ""}
     <div class="bande">
       <div class="qui">
         <p class="nom">${txt(d.name)}</p>
@@ -1646,11 +1666,12 @@ ${CSS_HOLO}
     <p class="metho">
       Sources&nbsp;: transcriptions du Salon bleu jusqu'au ${txt(derniereSeance.replace(/^\p{L}+ (?=\d)/u, ""))}, fiches de l'Assemblée nationale, résultats d'Élections Québec.
       Richesse lexicale&nbsp;: variété du vocabulaire (indice MATTR), de un à cinq points par rapport aux autres élus. Le ton est lui aussi situé par rapport aux autres élus, pas dans l'absolu.
-      ${c.parcours && c.remuneration ? `Frise&nbsp;: la fonction la mieux payée de chaque jour, celle qui fixe la rémunération. Rémunération&nbsp;: indemnité de base et la plus élevée des indemnités additionnelles (elles ne se cumulent pas), au jour près, sans allocations ni remboursements.` : ""}
+      ${c.parcours && c.remuneration ? `Frise&nbsp;: fonctions rémunérées au fil de la législature; quand plusieurs se chevauchent, seule la mieux payée est montrée, les indemnités ne se cumulant pas. Rémunération&nbsp;: indemnité de base et indemnité additionnelle la plus élevée, au jour près, sans allocations ni remboursements.` : ""}
       ${barre ? `Parts&nbsp;: interventions classées automatiquement par enjeu. Terres publiques et Affaires internationales, dont le classement est en révision, sont retirées et le reste ramené à 100&nbsp;%.` : ""}
       ${mot ? `Mot signature&nbsp;: l'expression la plus distinctive de l'élu par rapport aux autres, pas la plus fréquente.` : ""}
       Recto&nbsp;: le sigle indique la fonction la mieux payée de la législature, le filet de couleur l'enjeu dominant, les fleurs de lys la rareté.
-      Présidence, premiers ministres et chefs de parti ont une rareté fixée. Les autres sont classés dans leur camp selon leurs fonctions rémunérées et, hors ministres, leur temps comme porte-parole face à un ministre.
+      Les premiers ministres sont légendaires; les autres élus sont classés selon les mots prononcés au Salon bleu sur la législature (10&nbsp;% rares, 35&nbsp;% peu communes).
+      ${c.badge === "presidence" ? `Ce que la présidente dit en présidant n'est pas attribué à son nom dans les transcriptions&nbsp;: elle est commune d'office, avec un badge.` : ""}
       Traitement automatisé, relu à la main&nbsp;: des erreurs restent possibles. Corrections et méthodologie complète sur le site.
     </p>
 
@@ -1941,34 +1962,28 @@ async function main() {
 
   // RARETÉ — calculée sur la série ENTIÈRE, avant tout filtre (--only), pour
   // qu'une carte tirée seule garde sa rareté.
-  const rangs: { c: Carte; poids: number; camp: "gouvernement" | "opposition" }[] = [];
-  for (const c of cartes) {
-    const f = ficheParCarte.get(c);
-    const tenues = f?.fonctions_legislature ?? [];
-    const titres = tenues.map((x) => x.titre);
-    if (titres.some((t) => /^Président(?:e)? de l’Assemblée nationale$/.test(t))) { c.rarete = "presidence"; continue; }
-    if (titres.some((t) => /^Premi(?:ère|er) ministre$/.test(t))) { c.rarete = "legendaire"; continue; }
-    if (titres.some((t) => /^Chef(?:fe)? d/.test(t))) { c.rarete = "rare"; continue; }
-    const ministre = titres.some((t) => /^Ministre\b/.test(t));
-    let poids = 0;
-    for (let j = f?.debut_mandat ?? AXE_DEBUT; j <= (f?.fin_mandat ?? AXE_FIN); j = lendemain(j)) {
-      let p = 0;
-      for (const x of tenues) if (x.debut <= j && j <= x.fin && x.pct > p) p = x.pct;
-      poids += p;
-    }
-    // Un jour d'affrontement comme porte-parole vaut 20 %·jour : l'ordre de
-    // grandeur d'une fonction rémunérée, sans quoi les duels ne pèseraient rien.
-    if (!ministre) poids += 20 * (f?.vis_a_vis_legislature ?? []).reduce((t, v) => t + v.jours, 0);
-    rangs.push({ c, poids, camp: ministre || c.cle === "caq" ? "gouvernement" : "opposition" });
+  // Les mots de la LÉGISLATURE, quelle que soit la période des cartes :
+  // même élu, retrouvé par nom et circonscription.
+  const motsLegislature = new Map<string, number>();
+  const vueLeg = data.periods.legislature;
+  for (const r of vueLeg ? [...vueLeg.rows.flatMap((x) => x.deputies ?? []), ...(vueLeg.independants ?? [])] : []) {
+    motsLegislature.set(`${r.name}|${r.circonscription}`, r.wordsRaw);
   }
-  for (const camp of ["gouvernement", "opposition"] as const) {
-    const g = rangs.filter((r) => r.camp === camp).sort((a, b) => b.poids - a.poids || a.c.numero - b.c.numero);
+  const classes: { c: Carte; mots: number }[] = [];
+  for (const c of cartes) {
+    const titres = (ficheParCarte.get(c)?.fonctions_legislature ?? []).map((x) => x.titre);
+    if (titres.some((t) => /^Premi(?:ère|er) ministre$/.test(t))) { c.rarete = "legendaire"; continue; }
+    if (titres.some((t) => /^Président(?:e)? de l’Assemblée nationale$/.test(t))) { c.rarete = "commune"; c.badge = "presidence"; continue; }
+    classes.push({ c, mots: motsLegislature.get(`${c.deputy.name}|${c.deputy.circonscription}`) ?? c.deputy.wordsRaw ?? 0 });
+  }
+  classes.sort((a, b) => b.mots - a.mots || a.c.numero - b.c.numero);
+  {
     let i = 0;
     for (const [rarete, part] of PROPORTIONS_RARETE) {
-      const n = Math.round(part * g.length);
-      for (let k = 0; k < n && i < g.length; k++) g[i++].c.rarete = rarete;
+      const n = Math.round(part * classes.length);
+      for (let k = 0; k < n && i < classes.length; k++) classes[i++].c.rarete = rarete;
     }
-    for (; i < g.length; i++) g[i].c.rarete = "commune";
+    for (; i < classes.length; i++) classes[i].c.rarete = "commune";
   }
   for (const c of cartes) {
     const f = ficheParCarte.get(c);
@@ -2091,7 +2106,7 @@ async function main() {
   for (const c of cartes) {
     const portrait = await baseballURI(c.deputy);
     const ecusson = await ecussonURI(c.cle);
-    if (c.rarete === "legendaire" || c.rarete === "presidence") c.signature = await signatureURI(c.slug);
+    if (c.rarete === "legendaire") c.signature = await signatureURI(c.slug);
     const fiche = fiches.get(slugCirco(c.deputy)) ?? { [periode]: c.deputy };
     pages.push({ slug: c.slug, html: carteHTML(c, portrait, ecusson, logos.capp) });
     pages.push({ slug: `${c.slug}-verso`, html: versoHTML(c, fiche, maxAbs, libelles, portrait, ecusson, logos.vitrine, logos.capp, seance) });

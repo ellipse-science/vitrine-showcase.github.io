@@ -207,33 +207,44 @@ Un dossier de porte-parole (« … en matière de santé ») est rapproché du
 - **Sur toute la législature** : chaque dossier daté est apparié aux ministres
   successifs, au prorata des jours de chevauchement (Santé : Christian Dubé,
   puis Sonia Bélanger). 38 porte-parole, 78 élus liés à au moins un duel.
-- Les vis-à-vis **ne sont pas imprimés** : ils servent à la rareté.
+- Les vis-à-vis **ne sont pas imprimés** et ne servent plus à la rareté depuis le 23-09 (voir § 7). Ils restent calculés.
 
 ## 7. Rareté
 
+Grille du 23 septembre 2026 (décision de Jules).
+
 | Rareté | Qui | Cartes | Au recto |
 |---|---|---|---|
-| Commune | 55 % de chaque camp | 66 | 1 fleur de lys, cadre de base |
-| Peu commune | 45 % de chaque camp | 54 | 2 fleurs, ligne argent, coin de l'écusson à la couleur du parti |
-| Rare | les chefs de parti | 6 | 3 fleurs, bandeau à la couleur du parti, lignes or |
-| Légendaire | les premiers ministres de la législature | 2 | 4 fleurs, photo pleine, ligne diamant |
-| Présidence | la présidente de l'Assemblée | 1 | 4 fleurs, même gabarit |
+| Légendaire | les premiers ministres de la législature (Legault, Fréchette) | 2 | 4 fleurs, photo pleine, ligne diamant |
+| Rare | les 10 % d'élus qui ont prononcé le plus de mots | 13 | 3 fleurs, bandeau à la couleur du parti, lignes or |
+| Peu commune | les 35 % suivants | 44 | 2 fleurs, ligne argent, coin de l'écusson à la couleur du parti |
+| Commune | les autres, et la présidente | 70 | 1 fleur, cadre de base |
 
-- **Catégories fixées** : présidence, premiers ministres, chefs de parti (les
-  six qui ont été chef d'un groupe à l'Assemblée pendant la législature).
-- **Poids des autres** : les fonctions rémunérées (taux × jours, sans cumul)
-  et, pour qui n'a jamais été ministre, **20 %·jour par jour
-  d'affrontement** comme porte-parole. Le facteur 20 donne aux duels l'ordre
-  de grandeur d'une fonction rémunérée, sans quoi ils ne pèseraient rien.
-- **Classement par camp** : gouvernement (CAQ ou ancien ministre) et
-  opposition sont classés séparément, avec les mêmes proportions.
-  L'opposition, qui ne peut pas être ministre, a ainsi sa part de cartes peu
-  communes. Égalités départagées par le numéro de carte.
-- Calculée sur la série entière, avant tout filtre : une carte tirée seule
-  garde sa rareté.
-- Historique des grilles essayées puis abandonnées le 22 septembre (cinq et
-  six catégories, seuils fixes, quotas de 15 et 20 %) : pyramides inversées,
-  ou ministres majeurs partis en cours de route (Dubé, Guilbault) relégués.
+- **Mesure : les mots prononcés au Salon bleu sur la législature**, tels que
+  le verso les affiche. Ce qu'on mesure, c'est la saillance de l'élu sur
+  toute la législature : un mandat plus court donne moins de mots, et c'est
+  voulu (élus partiels, départs).
+- **Mots plutôt qu'interventions** : les vice-présidents cumulent des
+  milliers d'interventions de procédure (Benjamin 10 577, Lévesque 9 701,
+  Soucy 8 929, à 26 à 42 mots chacune) et occupaient la tête du classement
+  par interventions. Limite : leurs mots de présidence comptent quand même
+  (Lévesque est 7e en mots, Benjamin est rare).
+- **Chefs de parti dans le calcul**, sans catégorie d'office.
+- **La présidente (Nathalie Roy) est commune d'office, avec un badge**
+  (sceau or sur la photo). Dans les transcriptions, ce qu'elle dit en
+  présidant est attribué à « la Présidente », pas à son nom : 6
+  interventions et 18 371 mots sur la législature. Le calcul la classerait
+  commune pour un défaut de données ; on l'écrit plutôt que de le cacher.
+- Pourcentages appliqués aux 126 élus classés, arrondis (13 et 44).
+  Égalités départagées par le numéro de carte. Calculée sur la série
+  entière, avant tout filtre : une carte tirée seule garde sa rareté.
+- **Données à vérifier** avant impression : Vincent Marissal (5 380 mots)
+  et Maïté Blanchette Vézina (5 989) sont presque en bas du classement,
+  peu plausible pour Marissal ; possible défaut d'appariement dans agora.
+- Grilles abandonnées : le 22-09, poids des fonctions rémunérées et des
+  duels de porte-parole, classé par camp (trop difficile à expliquer, et
+  sans équivalent clair des ministres dans l'opposition) ; avant, cinq et
+  six catégories, seuils fixes, quotas de 15 et 20 %.
 
 ## 8. Présentation
 
@@ -246,8 +257,6 @@ Un dossier de porte-parole (« … en matière de santé ») est rapproché du
   (`scripts/social/donnees/signatures/<slug>.jpg`) ; seule celle de François
   Legault existe. **Question ouverte** : une mention « fac-similé » pour
   qu'on ne croie pas la carte signée ou approuvée par l'élu.
-- **Présidente** : même gabarit que les légendaires, à la couleur de la CAQ.
-  **Question ouverte** : une couleur neutre, la présidence étant neutre.
 - **Contrôles de rendu** : chaque page est mesurée (débordement en haut et en
   bas du panneau, lignes d'en-tête coupées, intitulés rapetissés). Le gabarit
   légendaire n'a pas de panneau : il n'est vérifié qu'à l'œil.
