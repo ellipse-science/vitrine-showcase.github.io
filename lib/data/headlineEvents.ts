@@ -1830,7 +1830,12 @@ export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { cla
   let raw: string;
   try {
     raw = await readDatasetText("public/data/headline-events.json");
-  } catch {
+  } catch (err) {
+    // Même règle que la garde de l'édition vivante, plus bas : pour l'édition
+    // COURANTE, une source illisible est une panne, pas une page sans Une. Le
+    // build échoue et la dernière édition complète reste en ligne. Une archive
+    // illisible rend simplement sa page vide.
+    if (!editionKey) throw err;
     return null;
   }
 
