@@ -1,5 +1,8 @@
 # Cartes de député : méthodologie
 
+> Passation et liste des tâches pour des cartes parfaites : [`cartes-deputes-passation.md`](./cartes-deputes-passation.md).
+
+
 Document de référence interne de la série de cartes de la 43e législature
 (`scripts/social/cartes-deputes.ts`). Il consigne **chaque choix
 méthodologique**, sa source et ses limites, pour qu'on puisse le défendre,
