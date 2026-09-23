@@ -222,7 +222,7 @@ async function fetchSnapshotRows(
   // la Une des Unes : impossible de dire ce que chaque build avait reçu, les
   // journaux étaient muets. Une ligne par jeu et par build (la copie locale
   // n'est téléchargée qu'une fois) suffit à trancher la prochaine fois.
-  console.log(`[source] ${dataset} : ${parsed.length} ligne(s) (instantané)`);
+  console.log(`[source] ${dataset}\u00a0: ${parsed.length} ligne(s) (instantané)`);
   return text;
 }
 
@@ -245,7 +245,7 @@ async function repliFichier(
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
     console.warn(
-      `[source] ${dataset} : ${raison}, et aucun fichier de repli. Jeu vide.`,
+      `[source] ${dataset}\u00a0: ${raison}, et aucun fichier de repli. Jeu vide.`,
     );
     return "[]";
   }
@@ -448,7 +448,7 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
         throw new Error("0 ligne renvoyée par l'API");
       }
       // Trace de provenance : voir le commentaire du mode instantané.
-      console.log(`[source] ${dataset} : ${rows.length} ligne(s) (API)`);
+      console.log(`[source] ${dataset}\u00a0: ${rows.length} ligne(s) (API)`);
       return JSON.stringify(rows);
     },
     "API",

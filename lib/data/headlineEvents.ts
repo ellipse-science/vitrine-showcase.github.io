@@ -1856,8 +1856,8 @@ export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { cla
       throw new Error(
         "Aucun événement pour l'édition courante après filtrage. La source a " +
         "servi des lignes sans saillance QC/ROC exploitable (colonnes " +
-        "`salience_index_qc` / `score_qc` nulles ?). Vérifiez /v1/health et le " +
-        "dernier cycle de synchro ; le déploiement en place (dernière édition " +
+        "`salience_index_qc` / `score_qc` nulles?). Vérifiez /v1/health et le " +
+        "dernier cycle de synchro; le déploiement en place (dernière édition " +
         "complète) reste en ligne.",
       );
     }
