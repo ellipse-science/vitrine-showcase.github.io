@@ -7,7 +7,7 @@ const MAX_B64_CHARS = 45_000 // garde une marge sous la limite de 65 535 du disp
 
 // Voie de repli quand la chaîne de signalement est cassée (#335). Même adresse
 // que la page « À propos » — une seule adresse publique à maintenir.
-const CONTACT_EMAIL = 'capp@ulaval.ca'
+const CONTACT_EMAIL = 'info@capp.ulaval.ca'
 
 type UIState = 'idle' | 'menu' | 'modal' | 'submitting' | 'success' | 'error'
 

@@ -182,8 +182,8 @@ export default function AproposPage() {
               >
                 Pour toute question ou collaboration&nbsp;:
                 <br />
-                <a href="mailto:capp@ulaval.ca" className="apropos-link">
-                  capp@ulaval.ca
+                <a href="mailto:info@capp.ulaval.ca" className="apropos-link">
+                  info@capp.ulaval.ca
                 </a>
               </p>
             </section>
