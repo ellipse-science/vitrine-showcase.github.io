@@ -18,6 +18,7 @@
 | Reference data registry: single source per concept (deputies, parties, media, issues, promises) across the 3 repos, known duplication debt | [`docs/reference/donnees-de-reference.md`](./docs/reference/donnees-de-reference.md) |
 | AWS backend: refiner lifecycle, deploy, schedules, active refiners, Athena | [`docs/reference/aws-backend.md`](./docs/reference/aws-backend.md) |
 | Deputy trading cards (`scripts/social/cartes-deputes.ts`): every methodological choice — numbering, salary, functions, vis-à-vis, rarity | [`docs/reference/cartes-deputes.md`](./docs/reference/cartes-deputes.md) |
+| Deputy trading cards handoff: what remains for perfect cards, data-at-the-source first (infra, refiners, pplmatch) | [`docs/reference/cartes-deputes-passation.md`](./docs/reference/cartes-deputes-passation.md) |
 | Procedures (skill candidates): add a section, diagnose stale data, modify/schedule a refiner, edit static HTML | [`docs/reference/procedures.md`](./docs/reference/procedures.md) |
 | Automated guardrails: the `PreToolUse` hook (`.claude/hooks/guard.py`) that blocks `public/data/` edits + AWS deploy paths | [`docs/reference/guardrails.md`](./docs/reference/guardrails.md) |
 | Visual / editorial design language | [`design_language.md`](./design_language.md) |
