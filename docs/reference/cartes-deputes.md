@@ -59,8 +59,7 @@ retirer quand le classifieur sera recalibré (`ENJEUX_EN_REVISION`).
 
 Repris du site. **Sans mot distinctif, l'encadré est retiré** (une
 cinquantaine d'élus), plutôt que d'afficher une boîte qui dit qu'il n'y a
-rien. Limite connue : la note de méthodologie du verso définit encore le mot
-signature sur ces cartes.
+rien. La note du verso ne le définit alors pas non plus.
 
 ## 3. Fonctions exercées
 
@@ -252,6 +251,15 @@ Un dossier de porte-parole (« … en matière de santé ») est rapproché du
 - **Contrôles de rendu** : chaque page est mesurée (débordement en haut et en
   bas du panneau, lignes d'en-tête coupées, intitulés rapetissés). Le gabarit
   légendaire n'a pas de panneau : il n'est vérifié qu'à l'œil.
+
+### Note de méthode (verso)
+
+Chaque élément visuel de la carte, recto compris, y est nommé et justifié en
+une phrase : sources, richesse lexicale, ton, frise, rémunération, parts,
+mot signature, sigle, filet de l'enjeu, fleurs de lys et règle de rareté. Une
+phrase ne paraît que si son élément paraît sur la carte. Corps de 15 px :
+à 17 px, onze versos débordaient. « Relu à la main » n'est vrai que parce
+que le verrou de `--png` impose la planche avant les images.
 
 ## Reproduire
 
