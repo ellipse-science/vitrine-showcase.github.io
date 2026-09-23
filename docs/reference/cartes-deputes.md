@@ -71,11 +71,12 @@ retirer quand le classifieur sera recalibré (`ENJEUX_EN_REVISION`).
 
 ### Graphie des noms
 
-Deux noms mal écrits dans les données sont corrigés à l'impression seulement
-(`NOMS_IMPRIMES`) : Jolin-Barrette, Frédéric Beauchemin. Les appariements
-gardent la graphie des données. Reste à trancher : Benoit/Benoît Charette,
-Eric/Éric Girard (Lac-Saint-Jean), Etienne/Étienne Grandmont, « Brigitte B.
-Garceau » (graphies de l'Assemblée entre barres obliques en premier).
+Graphie **accentuée** retenue (Jules, 23-09), même quand l'Assemblée écrit sans
+accent (Benoit Charette, Eric Girard, Etienne Grandmont sur ses fiches). Corrigés
+à l'impression seulement (`NOMS_IMPRIMES`) : Jolin-Barrette, Frédéric Beauchemin,
+Éric Girard (Groulx) ; les autres portent déjà l'accent dans les données des
+portraits. Les appariements gardent la graphie des données. « Brigitte Garceau »
+(l'Assemblée écrit « Brigitte B. Garceau ») est laissé tel quel.
 
 ### Mot signature
 
