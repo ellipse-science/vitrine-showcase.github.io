@@ -136,4 +136,19 @@ describe("repli quand la source distante est vide", () => {
 
     await expect(readDatasetText(FICHIER)).rejects.toThrow();
   });
+
+  it("une copie locale VIDE d'un build antérieur n'est pas réutilisée", async () => {
+    // Un build d'avant la garde a pu écrire « [] » pour ce cycle : le relire
+    // tel quel contournerait la garde zéro-ligne.
+    await depotTemporaire(true);
+    const copie = path.join(process.cwd(), ".next", "cache", "vitrine-data", "instantane-test");
+    await fs.mkdir(copie, { recursive: true });
+    await fs.writeFile(path.join(copie, "agora_decideurs_qc.json"), "[]");
+    instantaneVide();
+
+    const { readDatasetText } = await import("@/lib/data/source");
+    const texte = await readDatasetText(FICHIER);
+
+    expect(JSON.parse(texte).length).toBeGreaterThan(0);
+  });
 });

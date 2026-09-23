@@ -314,8 +314,10 @@ async function localCopy(
     const target = path.join(dir, `${dataset}.json`);
     await pruneOtherCycles(dir);
     try {
-      await fs.access(target);
-      return target;
+      // Une copie VIDE (« [] », 2 octets) n'est jamais réutilisée : depuis la
+      // garde zéro-ligne, aucun téléchargement n'en écrit, elle ne peut venir
+      // que d'un build antérieur du même cycle (vitrine#818). On retélécharge.
+      if ((await fs.stat(target)).size > 2) return target;
     } catch {
       // Pas encore téléchargée par ce build.
     }
