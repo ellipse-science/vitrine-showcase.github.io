@@ -46,12 +46,6 @@ import { buildEnjeuStack, loadAssemblee, type DeputyRow, type IssueKey, type Per
 import { PARTY_COLORS, PARTY_FULL_NAMES, type PartyKey } from "@/lib/data/parties";
 import { COLORS, TONE, enjeuGlyph, fleur, loadLogos, parseArgs, txt, openInBrowser } from "./lib/reel";
 
-// Glose d'absence du concept distinctif, RECOPIÉE du composant du site
-// (AssembleeVestiaire.tsx, conceptAbsent). La glose de présence (conceptGlose)
-// n'est plus reprise sous le mot (demande de Jules, 22-09) : la note de
-// méthodologie du verso dit déjà ce qu'est le mot signature.
-const ABSENCE = "Aucun mot ne ressort assez nettement de ceux des autres élu.es sur cette période.";
-
 /** Enjeux écartés des cartes tant que leur classifieur est en révision. */
 const ENJEUX_EN_REVISION: readonly IssueKey[] = ["public_lands_and_agriculture", "international_affairs_and_defense"];
 
@@ -109,104 +103,80 @@ function codeFonction(tenues: { titre: string; pct: number }[], porteParole: boo
   return porteParole ? "PP" : "D";
 }
 
-/** CONTOUR DE LA PHOTO — la FORME dit la rareté, à l'encre du parti seule
- *  (ni or ni argent, décision de Jules, 22-09) : droit (commune), une arche
- *  (peu commune), trois arches et des flancs en vagues (rare), cinq arches et
- *  des vagues sur trois côtés (légendaire).
+/** CADRE DES CARTES RARES (les chefs), d'après la Topps 1972 fournie par Jules
+ *  (22-09) : un bandeau uni à l'encre du parti entre deux filets, une fenêtre
+ *  au coin supérieur gauche arrondi, et en haut à droite la VAGUE du coin
+ *  d'origine, qui laisse paraître l'écusson (couleur papier sur le bandeau).
+ *  Une fine ligne à la couleur de l'enjeu le plus saillant double le contour
+ *  de la photo. Les communes, peu communes et légendaires gardent pour
+ *  l'instant le cadre d'origine.
  *
- *  LA RÉSERVE DE L'ÉCUSSON (haut à droite) garde la VAGUE D'ORIGINE, en S, qui
- *  plonge sous l'écusson puis remonte (tracé de Jules ; le commit 788d3e00
- *  l'avait remplacée par erreur par un quart d'ellipse). Elle est la signature
- *  de la carte : on ne la redessine pas (Jules, 22-09, après un essai en quart
- *  d'ellipse rejeté). Quand les arches ont leurs pieds plus bas que le bord,
- *  seul le premier point de contrôle suit ce pied ; le creux et l'arrivée sur
- *  le flanc droit (979, 150) sont inchangés. */
-const RESERVE_X = 630;
-const RESERVE_Y_DROIT = 150;
+ *  Coordonnées dans le panneau : bandeau de `bande` px, coin arrondi de
+ *  `arrondi` px. */
+const TOPPS = { bande: 30, arrondi: 70 };
 
-/** n arches en demi-ellipse entre x0 et x1 : pieds à y = creux, clés à y = 0. */
-function arches(x0: number, x1: number, n: number, creux: number): string {
-  const pas = (x1 - x0) / n;
-  let d = "";
-  for (let i = 1; i <= n; i++) d += ` A ${(pas / 2).toFixed(1)} ${creux} 0 0 1 ${(x0 + i * pas).toFixed(1)} ${creux}`;
-  return d;
+/** LA FINE LIGNE (contour de la photo et médaillon) dit la rareté par son
+ *  MÉTAL (Jules, 22-09) : argent pour les peu communes, or pour les rares,
+ *  diamant pour les légendaires. `uni` sert là où un dégradé est impossible
+ *  (ombre du médaillon). */
+const METAUX: Partial<Record<Rarete, { uni: string; arrets: string[] }>> = {
+  "peu-commune": { uni: "#B9C0C8", arrets: ["#F2F4F6", "#9AA1AA", "#E6E9ED", "#7C838C"] },
+  rare: { uni: "#CDA64C", arrets: ["#F6E3A1", "#C9A24A", "#F3D98A", "#9C7A2E"] },
+  legendaire: { uni: "#BFE6FF", arrets: ["#FFFFFF", "#9ED8FF", "#F2FBFF", "#C9B8FF", "#A8F0E6", "#FFFFFF"] },
+  presidence: { uni: "#BFE6FF", arrets: ["#FFFFFF", "#9ED8FF", "#F2FBFF", "#C9B8FF", "#A8F0E6", "#FFFFFF"] },
+};
+
+function degradeMetal(r: Rarete, id = "metal"): string {
+  const m = METAUX[r];
+  if (!m) return "";
+  const n = m.arrets.length - 1;
+  // Coordonnées du PANNEAU, pas de chaque tracé : sinon deux tracés qui se
+  // rejoignent (coin rempli et contour) n'ont pas la même teinte au raccord.
+  return `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${PANNEAU.w}" y2="${PANNEAU.bas - PANNEAU.y}">${m.arrets.map((c, i) => `<stop offset="${(i / n).toFixed(2)}" stop-color="${c}"/>`).join("")}</linearGradient>`;
 }
 
-/** Festons le long d'un côté vertical : chaque vague mord vers la photo. */
-function vagues(x: number, y0: number, y1: number, amplitude: number, periode: number, versInterieur: 1 | -1): string {
-  const n = Math.max(1, Math.round(Math.abs(y1 - y0) / periode));
-  const pas = (y1 - y0) / n;
-  let d = "";
-  for (let i = 0; i < n; i++) {
-    d += ` Q ${(x + versInterieur * amplitude * 2).toFixed(1)} ${(y0 + (i + 0.5) * pas).toFixed(1)}, ${x} ${(y0 + (i + 1) * pas).toFixed(1)}`;
-  }
-  return d;
+function degradeMetalCSS(r: Rarete): string {
+  const m = METAUX[r];
+  return m ? `linear-gradient(135deg,${m.arrets.join(",")})` : "transparent";
 }
 
-function festonsBas(x0: number, x1: number, y: number, amplitude: number, periode: number): string {
-  const n = Math.max(1, Math.round(Math.abs(x1 - x0) / periode));
-  const pas = (x1 - x0) / n;
-  let d = "";
-  for (let i = 0; i < n; i++) {
-    d += ` Q ${(x0 + (i + 0.5) * pas).toFixed(1)} ${(y - amplitude * 2).toFixed(1)}, ${(x0 + (i + 1) * pas).toFixed(1)} ${y}`;
-  }
-  return d;
+/** Nombre de fleurs de lys sous la circonscription, au recto (22-09). */
+const FLEURS_PAR_RARETE: Record<Rarete, number> = { commune: 1, "peu-commune": 2, rare: 3, legendaire: 4, presidence: 4 };
+
+/** Cadre d'origine (tracé de Jules) : la vague en S réserve le coin supérieur
+ *  droit à l'écusson, sur le carton nu. Pour toutes les raretés sauf la rare. */
+function cheminOrigine(ecusson: boolean): string {
+  const h = PANNEAU.bas - PANNEAU.y;
+  return ecusson
+    ? `M 0 0 H 630 C 720 0, 760 170, 855 170 C 915 170, 955 140, 979 150 V ${h} H 0 Z`
+    : `M 0 0 H ${PANNEAU.w} V ${h} H 0 Z`;
 }
 
-/** Vague d'origine de la réserve, du pied des arches (630, y0) au flanc droit. */
-function reserve(y0: number): string {
-  return ` C 720 ${y0}, 760 170, 855 170 C 915 170, 955 140, 979 ${RESERVE_Y_DROIT}`;
-}
-
-function cheminCadre(r: Rarete, ecusson: boolean): string {
+/** Fenêtre de la photo (et du bandeau du nom) des cartes rares : la vague
+ *  d'origine du coin, ramenée à l'intérieur du bandeau (même tracé, bords
+ *  décalés de `bande`). */
+function cheminFenetre(): string {
   const w = PANNEAU.w;
   const h = PANNEAU.bas - PANNEAU.y;
-  const xFin = ecusson ? RESERVE_X : w;
-  // Haut : les arches, puis la vague de la réserve (ou le coin droit) ;
-  // renvoie aussi le point où commence le flanc droit.
-  const haut = (n: number, creux: number) => ({
-    d: `M 0 ${creux}${n ? arches(0, xFin, n, creux) : ` H ${xFin}`}${ecusson ? reserve(creux) : ""}`,
-    yDroit: ecusson ? RESERVE_Y_DROIT : creux,
-  });
-  switch (r) {
-    case "commune": {
-      const t = haut(0, 0);
-      return `${t.d} V ${h} H 0 Z`;
-    }
-    case "peu-commune": {
-      const t = haut(1, 70);
-      return `${t.d} V ${h} H 0 Z`;
-    }
-    case "rare": {
-      const t = haut(3, 44);
-      return `${t.d}${vagues(w, t.yDroit, h, 8, 110, -1)} H 0${vagues(0, h, 44, 8, 110, 1)} Z`;
-    }
-    case "legendaire":
-    case "presidence": {
-      const t = haut(5, 36);
-      return `${t.d}${vagues(w, t.yDroit, h - 24, 9, 86, -1)} L ${w} ${h}${festonsBas(w, 0, h, 6, 70)}${vagues(0, h, 36, 9, 86, 1)} Z`;
-    }
-  }
+  const { bande: b, arrondi: r } = TOPPS;
+  return `M ${b} ${h - b} V ${b + r} A ${r} ${r} 0 0 1 ${b + r} ${b} H 630`
+    + ` C 720 ${b}, 760 170, 855 170 C 915 170, ${w - b - 24} 140, ${w - b} 150 V ${h - b} Z`;
 }
 
-/** Tracé du contour, à l'encre du parti : un filet (commune), une bande
- *  (peu commune), une bande doublée (rare), une bande doublée et pointillée
- *  (légendaire). */
-function cadreRarete(r: Rarete, ecusson: boolean, parti: string): string {
-  const chemin = cheminCadre(r, ecusson);
-  const trait = (couleur: string, ep: number, extra = "") =>
-    `<path d="${chemin}" fill="none" stroke="${couleur}" stroke-width="${ep}" stroke-linejoin="round"${extra}/>`;
-  switch (r) {
-    case "commune":
-      return trait(parti, 7) + trait(COLORS.ink, 2);
-    case "peu-commune":
-      return trait(parti, 14) + trait(COLORS.ink, 2);
-    case "rare":
-      return trait(parti, 20) + trait(COLORS.paper, 7) + trait(parti, 2.5);
-    case "legendaire":
-    case "presidence":
-      return trait(parti, 26) + trait(COLORS.paper, 10) + trait(parti, 4, ` stroke-dasharray="2 12" stroke-linecap="round"`);
-  }
+/** Bandeau uni, filets d'encre, et fine ligne de l'enjeu le plus saillant le
+ *  long de la fenêtre (posée sous le filet, elle déborde de 3 px de part et
+ *  d'autre). */
+function cadreTopps(parti: string): string {
+  const w = PANNEAU.w;
+  const h = PANNEAU.bas - PANNEAU.y;
+  const fenetre = cheminFenetre();
+  return `<defs>${degradeMetal("rare")}</defs>`
+    + `<path fill-rule="evenodd" fill="${parti}" d="M 0 0 H ${w} V ${h} H 0 Z ${fenetre}"/>`
+    // Filet extérieur doublé de la ligne de l'enjeu, comme la fenêtre (22-09).
+    + `<rect x="1.5" y="1.5" width="${w - 3}" height="${h - 3}" fill="none" stroke="url(#metal)" stroke-width="9"/>`
+    + `<rect x="1.5" y="1.5" width="${w - 3}" height="${h - 3}" fill="none" stroke="${COLORS.ink}" stroke-width="3"/>`
+    + `<path d="${fenetre}" fill="none" stroke="url(#metal)" stroke-width="9" stroke-linejoin="round"/>`
+    + `<path d="${fenetre}" fill="none" stroke="${COLORS.ink}" stroke-width="2.5" stroke-linejoin="round"/>`;
 }
 
 /** ÉDITION HOLOGRAPHIQUE — au VERSO seulement (décision de Jules, 22-09 : le
@@ -482,6 +452,8 @@ type Carte = {
   rarete?: Rarete;
   /** « PM », « M », « CO »… (voir CODES_FONCTION). */
   codeFonction?: string;
+  /** Légendaires : autographe (URL du tracé blanc), s'il y en a un. */
+  signature?: string | null;
   /** Version holographique de la carte (fichiers « -holo »). */
   holo?: boolean;
   visAVis?: string;
@@ -932,16 +904,133 @@ function ajusterVerso(): void {
   }
 }
 
+/** SIGNATURES — pour les cartes légendaires : scripts/social/donnees/
+ *  signatures/<slug>.jpg (encre sombre sur fond clair). Convertie en tracé
+ *  BLANC sur fond transparent, agrandie ×3 et mise en cache à côté des trames.
+ *  Renvoie une URL file://, ou null s'il n'y a pas de signature. */
+async function signatureURI(slug: string): Promise<string | null> {
+  const source = path.resolve(process.cwd(), "scripts/social/donnees/signatures", `${slug}.jpg`);
+  const octets = await fs.readFile(source).catch(() => null);
+  if (!octets) return null;
+  const cle = createHash("sha256").update(octets).digest("hex").slice(0, 12);
+  const fichier = path.join(CACHE_TRAMES, "signatures", `${slug}-${cle}.png`);
+  if (!(await fs.access(fichier).then(() => true, () => false))) {
+    const sharp = (await import("sharp")).default;
+    const { width = 0, height = 0 } = await sharp(octets).metadata();
+    const [w, h] = [width * 3, height * 3];
+    // Alpha = encre : on inverse la luminance, puis on durcit la courbe pour
+    // que le papier disparaisse et que le trait reste plein.
+    const alpha = await sharp(octets).resize(w, h, { kernel: "lanczos3" }).grayscale().negate()
+      .linear(1.8, -60).blur(0.6).raw().toBuffer();
+    await fs.mkdir(path.dirname(fichier), { recursive: true });
+    await sharp({ create: { width: w, height: h, channels: 3, background: "#ffffff" } })
+      .joinChannel(alpha, { raw: { width: w, height: h, channels: 1 } })
+      .png().toFile(fichier);
+  }
+  return pathToFileURL(fichier).href;
+}
+
+/** RECTO DES LÉGENDAIRES — vraiment à part (Jules, 22-09) : la photo couvre
+ *  toute la carte, sans cadre, et se fond dans l'encre du parti vers le bas ;
+ *  un double filet papier et enjeu, en retrait des bords, comme un
+ *  certificat ; un grand nom ; la signature en travers, quand on l'a. Médaillon, code de fonction, fleurs de
+ *  lys et pied restent ceux de la série. */
+function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string | null, logoCapp: string | null): string {
+  const d = c.deputy;
+  const parti = c.couleur;
+  const fleurs = Array.from({ length: FLEURS_PAR_RARETE[c.rarete ?? "legendaire"] }, () => fleur(COLORS.paper, 26)).join("");
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=block" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:${W}px;height:${H}px;background:${parti};color:${COLORS.paper};
+       font-family:"Source Serif 4",serif;position:relative;overflow:hidden}
+  .photo-pleine{position:absolute;inset:0;background-image:url("${portrait ?? ""}");
+                background-size:cover;background-position:center 18%}
+  /* Fondu vers l'encre du parti : le bas de la carte devient le bandeau. */
+  .fondu{position:absolute;inset:0;
+         background:linear-gradient(180deg,${parti}00 0%,${parti}00 44%,${parti}B3 66%,${parti} 82%)}
+  /* Double filet en retrait des bords, comme un certificat : il s'arrête
+     au-dessus du pied de carte, comme le panneau des autres cartes, pour ne
+     pas passer sur le logo du CAPP ni coller au pied. Le second filet est en
+     « diamant » (dégradé glacé), métal des légendaires. */
+  .filet{position:absolute;left:26px;right:26px;top:26px;bottom:${H - PANNEAU.bas}px;border:2px solid ${COLORS.paper};opacity:.85;pointer-events:none}
+  .filet-diamant{position:absolute;left:36px;right:36px;top:36px;bottom:${H - PANNEAU.bas + 10}px;border:4px solid transparent;
+                 border-image:${degradeMetalCSS(c.rarete ?? "legendaire")} 1;pointer-events:none}
+  .medaillon{position:absolute;left:14px;top:14px;width:124px;height:124px;border-radius:50%;
+             background:${parti};color:${COLORS.paper};border:6px solid ${COLORS.paper};
+             box-shadow:0 0 0 3px ${METAUX[c.rarete ?? "legendaire"]!.uni},0 0 0 6px ${COLORS.ink},0 0 0 9px ${METAUX[c.rarete ?? "legendaire"]!.uni};
+             display:flex;align-items:center;justify-content:center;font-family:"Playfair Display",serif;
+             font-weight:900;font-size:52px;line-height:1;transform:rotate(-6deg);z-index:3}
+  .medaillon i{display:block;font-style:normal;transform:translateY(-8px)}
+  .ecusson-haut{position:absolute;right:74px;top:66px;width:142px;height:108px;display:block}
+  .ecusson-haut i{display:block;width:100%;height:100%;background:${COLORS.paper};
+                  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+                  -webkit-mask-position:center;mask-position:center}
+  .bas{position:absolute;left:78px;right:78px;bottom:${H - PANNEAU.bas + 56}px}
+  .ligne-nom{display:flex;align-items:flex-end;gap:26px;margin-top:14px}
+  .nom{flex:1;min-width:0;white-space:nowrap;font-family:"Playfair Display",serif;font-weight:900;
+       font-size:104px;line-height:.98;letter-spacing:-.02em}
+  /* LE CODE DE FONCTION en pastille au-dessus du nom : filet papier, sans
+     fond, capitales espacées. Le carré plein des autres cartes, collé au bas
+     d'un nom de cette taille, tombait mal (Jules, 22-09). */
+  .pastille{display:inline-block;padding:7px 18px 6px;border:2px solid ${COLORS.paper};border-radius:4px;
+            font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:28px;letter-spacing:.3em;
+            line-height:1;margin-bottom:6px}
+  .sous{margin-top:16px;font-family:"IBM Plex Mono",monospace;font-size:27px;letter-spacing:.1em;
+        text-transform:uppercase;opacity:.8}
+  .fleurs{display:inline-flex;gap:6px;margin-left:16px;vertical-align:-3px}
+  /* L'autographe, en travers du bas de la photo, légèrement incliné. */
+  .signature{position:absolute;right:92px;bottom:440px;width:560px;transform:rotate(-7deg);
+             opacity:.95;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+  .pied{position:absolute;left:${MARGE + 4}px;right:${MARGE + 4}px;top:${PANNEAU.bas + 26}px;display:flex;
+        justify-content:space-between;font-family:"IBM Plex Mono",monospace;font-size:21px;
+        letter-spacing:.16em;text-transform:uppercase;opacity:.85}
+  .ord{text-transform:none;font-size:.62em;vertical-align:.5em;line-height:0}
+  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:2px;display:block}
+  .marque-capp i{display:block;width:112px;height:35px;background:${COLORS.paper};opacity:.8;
+                 -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+                 -webkit-mask-position:center;mask-position:center}
+  .grain,.mouchete{position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none}
+  .grain{opacity:.22}
+  .mouchete{opacity:.18}
+</style></head><body>
+  ${portrait ? `<div class="photo-pleine"></div>` : ""}
+  <div class="fondu"></div>
+  <div class="filet"></div>
+  <div class="filet-diamant"></div>
+  <span class="medaillon"><i>${c.numero}${c.variante}</i></span>
+  ${ecusson ? `<span class="ecusson-haut"><i style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></i></span>` : ""}
+  ${c.signature ? `<img class="signature" src="${c.signature}" alt="">` : ""}
+  <div class="bas">
+    ${c.codeFonction ? `<span class="pastille">${c.codeFonction}</span>` : ""}
+    <div class="ligne-nom">
+      <p class="nom">${txt(d.name)}</p>
+    </div>
+    <p class="sous">${d.circonscription ? txt(d.circonscription) : ""}<span class="fleurs" aria-label="${LIBELLE_RARETE[c.rarete ?? "legendaire"]}">${fleurs}</span></p>
+  </div>
+  <p class="pied"><span>${ordinal(txt(c.edition.split(" · ")[0]))}</span><span>vitrinedemocratique.com</span></p>
+  ${logoCapp ? `<span class="marque-capp"><i style="-webkit-mask-image:url('${logoCapp}');mask-image:url('${logoCapp}')"></i></span>` : ""}
+  <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
+  <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>
+</body></html>`;
+}
+
+
 function carteHTML(
   c: Carte,
   portrait: string | null,
   ecusson: string | null,
   logoCapp: string | null,
 ): string {
+  if (c.rarete === "legendaire" || c.rarete === "presidence") return carteLegendaireHTML(c, portrait, ecusson, logoCapp);
   const d = c.deputy;
   const parti = c.couleur;
   const enjeu = d.topIssueColor ?? COLORS.soft;
-  const cadrePath = cheminCadre(c.rarete ?? "commune", Boolean(ecusson));
+  // Style Topps pour les rares seulement ; cadre d'origine pour les autres.
+  const topps = c.rarete === "rare";
+  const cadrePath = topps ? cheminFenetre() : cheminOrigine(Boolean(ecusson));
+  const marge = topps ? TOPPS.bande : 0;
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=block" rel="stylesheet">
@@ -966,8 +1055,9 @@ function carteHTML(
      noir 45°. Les points varient avec la charge de chaque encre et leurs
      superpositions reconstruisent la couleur, exactement comme sur le détail
      de la carte Bowman fourni en référence. */
-  .photo{position:relative;height:${PHOTO_H}px;background:${COLORS.paper};overflow:hidden}
-  .photo .image{position:absolute;inset:0;background-image:url("${portrait ?? ""}");
+  .photo{position:absolute;left:${marge}px;right:${marge}px;top:0;height:${PHOTO_H - marge}px;
+         background:${COLORS.paper};overflow:hidden}
+  .photo .image{position:absolute;left:0;right:0;bottom:0;top:${topps ? TOPPS.bande : 0}px;background-image:url("${portrait ?? ""}");
                 background-size:cover;background-position:center 16%}
   .photo .vide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.18}
 
@@ -985,9 +1075,13 @@ function carteHTML(
      l'y rattache. */
   .medaillon{position:absolute;left:8px;top:8px;width:124px;height:124px;border-radius:50%;
              background:${parti};color:${COLORS.paper};border:6px solid ${COLORS.paper};
-             box-shadow:0 0 0 3px ${COLORS.ink};display:flex;align-items:center;
+             box-shadow:${c.rarete === "rare" || c.rarete === "peu-commune"
+               ? `0 0 0 3px ${METAUX[c.rarete]!.uni},0 0 0 6px ${COLORS.ink},0 0 0 9px ${METAUX[c.rarete]!.uni}`
+               : `0 0 0 3px ${COLORS.ink}`};display:flex;align-items:center;
              justify-content:center;font-family:"Playfair Display",serif;font-weight:900;
              font-size:52px;line-height:1;transform:rotate(-6deg)}
+  /* Peu communes et rares : le filet d'encre du médaillon est bordé de la
+     fine ligne de l'enjeu, comme le contour de la photo (Jules, 22-09). */
   /* DÉCALAGE MESURÉ, pas estimé. Centrer la boîte du texte ne centre pas
      l'ENCRE : Playfair réserve sous la ligne de base une place que le centrage
      compte comme du texte, et les chiffres retombent 10 px sous le centre du
@@ -1000,9 +1094,11 @@ function carteHTML(
 
   /* Comme le logo d'équipe sur la carte Tim Kerr : l'écusson du parti occupe
      la réserve de carton dans le coin supérieur droit, découpée en courbe. */
+  /* ÉCUSSON — dans la réserve du coin supérieur droit : à l'encre du parti
+     sur le carton nu ; couleur papier sur le bandeau des cartes rares. */
   .ecusson-haut{position:absolute;left:${PANNEAU.x + 793}px;top:${PANNEAU.y + 23}px;
                  width:142px;height:108px;display:block}
-  .ecusson-haut i{display:block;width:100%;height:100%;background:${parti};
+  .ecusson-haut i{display:block;width:100%;height:100%;background:${topps || c.rarete === "peu-commune" ? COLORS.paper : parti};
                   -webkit-mask-size:contain;mask-size:contain;
                   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                   -webkit-mask-position:center;mask-position:center}
@@ -1043,7 +1139,7 @@ function carteHTML(
      pictogramme, jamais une couleur seule, sans légende ». Le verso, lui,
      nomme l'enjeu et porte son pictogramme : la légende existe, elle est au
      dos. À valider. */
-  .bande{position:absolute;left:0;right:0;bottom:0;height:${BANDE}px;background:${parti};
+  .bande{position:absolute;left:${marge}px;right:${marge}px;bottom:${marge}px;height:${BANDE}px;background:${parti};
          box-shadow:inset 0 22px 0 ${enjeu};
          display:flex;align-items:center;justify-content:space-between;gap:28px;padding:0 40px}
   /* flex:1 + min-width:0 donnent au bloc du nom une largeur DÉFINIE, sans quoi
@@ -1054,6 +1150,10 @@ function carteHTML(
        text-transform:uppercase;white-space:nowrap;overflow:hidden}
   .sous{margin-top:12px;font-family:"IBM Plex Mono",monospace;font-size:27px;letter-spacing:.1em;
         text-transform:uppercase;color:${COLORS.paper};opacity:.72}
+  /* LA RARETÉ en fleurs de lys, à droite de la circonscription : 1 commune,
+     2 peu commune, 3 rare, 4 légendaire (Jules, 22-09). Sur la même ligne,
+     pour ne pas prendre de hauteur au nom. */
+  .fleurs{display:inline-flex;gap:6px;margin-left:16px;vertical-align:-3px;opacity:1}
 
   /* LE PIED DE CARTON — hors panneau, sur le carton nu. Tout petit. */
   .ord{text-transform:none;font-size:.62em;vertical-align:.5em;line-height:0}
@@ -1080,14 +1180,22 @@ ${CSS_HOLO}
     <div class="bande">
       <div class="qui">
         <p class="nom">${txt(d.name)}</p>
-        ${d.circonscription ? `<p class="sous">${txt(d.circonscription)}</p>` : ""}
+        <p class="sous">${d.circonscription ? txt(d.circonscription) : ""}<span class="fleurs" aria-label="${LIBELLE_RARETE[c.rarete ?? "commune"]}">${Array.from({ length: FLEURS_PAR_RARETE[c.rarete ?? "commune"] }, () => fleur(COLORS.paper, 24)).join("")}</span></p>
       </div>
       ${c.codeFonction ? `<span class="code-fonction${c.codeFonction.length > 2 ? " long" : ""}">${c.codeFonction}</span>` : ""}
     </div>
   </div>
 
   <svg class="cadre" viewBox="0 0 ${PANNEAU.w} ${PANNEAU.bas - PANNEAU.y}" aria-hidden="true">
-    ${cadreRarete(c.rarete ?? "commune", Boolean(ecusson), parti)}
+    ${/* Commune : filet d'encre seul (cadre de base). Peu commune : le même
+          contour doublé d'une ligne argent, et la réserve de l'écusson (coin
+          supérieur droit, au-delà de la vague) remplie à l'encre du parti et
+          cernée de la même ligne, le logo en couleur papier (Jules, 22-09).
+          Rare : cadre Topps. */ ""}
+    ${topps ? cadreTopps(parti)
+      : c.rarete === "peu-commune"
+        ? `<defs>${degradeMetal("peu-commune")}</defs>${ecusson ? `<path d="M 630 0 H 979 V 150 C 955 140, 915 170, 855 170 C 760 170, 720 0, 630 0 Z" fill="${parti}"/>` : ""}<path d="${cadrePath}" fill="none" stroke="url(#metal)" stroke-width="9" stroke-linejoin="round"/>${ecusson ? `<path d="M 630 0 H 979 V 150" fill="none" stroke="url(#metal)" stroke-width="9" stroke-linejoin="round"/>` : ""}<path d="${cadrePath}" fill="none" stroke="${COLORS.ink}" stroke-width="2.5" stroke-linejoin="round"/>${ecusson ? `<path d="M 630 0 H 979 V 150" fill="none" stroke="${COLORS.ink}" stroke-width="2.5" stroke-linejoin="round"/>` : ""}`
+        : `<path d="${cadrePath}" fill="none" stroke="${COLORS.ink}" stroke-width="3" stroke-linejoin="round"/>`}
   </svg>
 
   ${/* Plus de fleur de lys ici (Jules, 22-09) : accolée au nom de l'Assemblée,
@@ -1311,6 +1419,9 @@ function versoHTML(
      contenu. Avec justify-content:space-between, l'écart variait d'une carte
      et d'une boîte à l'autre (Jules, 22-09). */
   .bloc.signe{flex:1 0 auto;justify-content:center;text-align:center;padding:26px 38px 28px}
+  /* Sans mot signature, c'est la boîte des parts qui devient la dernière :
+     elle prend l'espace restant, pour garder l'écart constant. */
+  .panneau > div.bloc:last-of-type{flex:1 0 auto;justify-content:center}
 
   .losanges{text-align:center;font-size:15px;letter-spacing:.5em;opacity:.42;margin:12px 0}
   .rubrique{font-family:"Oswald",sans-serif;font-weight:600;font-size:27px;letter-spacing:.14em;
@@ -1400,7 +1511,6 @@ function versoHTML(
        text-transform:uppercase;margin-top:8px}
   .citation{font-size:25px;line-height:1.34;font-style:italic;margin-top:10px;opacity:.8;
             display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .absent{font-size:25px;line-height:1.34;font-style:italic;opacity:.7;margin-top:8px}
 
   /* PIED sur le carton. */
   /* GRILLE 1fr auto 1fr, et non space-between : le logo de la Vitrine (168 px)
@@ -1518,13 +1628,14 @@ ${CSS_HOLO}
       ${barre}
     </div>` : ""}
 
+    ${/* Pas de mot distinctif : pas d'encadré du tout (Jules, 22-09), plutôt
+          qu'une boîte qui dit qu'il n'y a rien. */ ""}
+    ${mot ? `
     <div class="bloc signe">
       <p class="rubrique">Mot signature</p>
-      ${mot
-        ? `<p class="mot">${txt(mot)}</p>
-           ${citation ? `<p class="citation">«&nbsp;${txt(citation)}&nbsp;»</p>` : ""}`
-        : `<p class="absent">${ABSENCE}</p>`}
-    </div>
+      <p class="mot">${txt(mot)}</p>
+      ${citation ? `<p class="citation">«&nbsp;${txt(citation)}&nbsp;»</p>` : ""}
+    </div>` : ""}
 
     <p class="metho">
       Source&nbsp;: transcriptions du Salon bleu, Assemblée nationale du Québec. Dernière séance couverte&nbsp;: ${txt(derniereSeance)}.
@@ -1978,6 +2089,7 @@ async function main() {
   for (const c of cartes) {
     const portrait = await baseballURI(c.deputy);
     const ecusson = await ecussonURI(c.cle);
+    if (c.rarete === "legendaire" || c.rarete === "presidence") c.signature = await signatureURI(c.slug);
     const fiche = fiches.get(slugCirco(c.deputy)) ?? { [periode]: c.deputy };
     pages.push({ slug: c.slug, html: carteHTML(c, portrait, ecusson, logos.capp) });
     pages.push({ slug: `${c.slug}-verso`, html: versoHTML(c, fiche, maxAbs, libelles, portrait, ecusson, logos.vitrine, logos.capp, seance) });
