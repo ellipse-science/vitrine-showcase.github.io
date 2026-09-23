@@ -40,6 +40,17 @@ moment de publier les cartes sur le site (voir la dernière section).
   (Maïté Blanchette Vézina, CAQ puis PCQ), la carte suit l'allégeance actuelle
   (`PARTI_ACTUEL_PAR_SIEGE`).
 
+### Élus qui finissent indépendants (23-09)
+
+Un élu dont la législature (ou le mandat, s'il est parti avant) se termine sans
+affiliation a une **carte indépendante** : couleur neutre, pas d'écusson, et la
+ligne « Indépendant (élu CAQ) » qui garde son parti d'élection. Règle : dernier
+segment d'affiliation « sans affiliation », ou clos par une défection sans
+segment suivant (Orford : la correction est dans pplmatch#9, pas encore
+republiée). Dix cartes : Chassin, Lefebvre, Dufour, Lakhoyan Olivier,
+Tremblay, Dubé, Poulet, Bélanger, Marissal, Rizqy. Blanchette Vézina finit au
+PCQ et Nichols au PLQ : elles gardent la carte de ce parti.
+
 ## 2. Parole à l'Assemblée (verso, tableau)
 
 - **Une seule ligne : la législature.** Ce sont des cartes de législature ; la
