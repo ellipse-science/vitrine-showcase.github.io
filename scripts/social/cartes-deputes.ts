@@ -523,6 +523,20 @@ function dateFr(iso?: string): string | null {
  *  affiliation DE LA PÉRIODE, si bien que neuf députés passés indépendants ou
  *  d'un parti à l'autre porteraient l'étiquette de leur ancien parti. Le
  *  dernier segment d'affiliationHistory fait foi. */
+/** LOGOS DES INSTITUTIONS au bas de chaque carte (Jules, 23-09) : le CAPP,
+ *  agrandi, et l'Université Laval à côté, séparés d'un filet. Mêmes couleur et
+ *  opacité que le CAPP avait seul sur chaque gabarit (règles .marque-capp i). */
+let LOGO_ULAVAL: string | null = null;
+function marquesInstitutions(logoCapp: string | null): string {
+  const masque = (uri: string) => `-webkit-mask-image:url('${uri}');mask-image:url('${uri}')`;
+  const parts = [
+    logoCapp ? `<i style="${masque(logoCapp)}"></i>` : "",
+    logoCapp && LOGO_ULAVAL ? `<i class="sep"></i>` : "",
+    LOGO_ULAVAL ? `<i class="ulaval" style="${masque(LOGO_ULAVAL)}"></i>` : "",
+  ].join("");
+  return parts ? `<span class="marque-capp">${parts}</span>` : "";
+}
+
 /** Vrai si le dernier segment d'affiliation est « sans affiliation », OU s'il
  *  se ferme sur une défection sans segment suivant : c'est ainsi qu'apparaît un
  *  passage à indépendant que les affiliations publiées ne portent pas encore
@@ -1023,8 +1037,10 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
         justify-content:space-between;font-family:"IBM Plex Mono",monospace;font-size:21px;
         letter-spacing:.16em;text-transform:uppercase;opacity:.85}
   .ord{text-transform:none;font-size:.62em;vertical-align:.5em;line-height:0}
-  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:2px;display:block}
-  .marque-capp i{display:block;width:112px;height:35px;background:${COLORS.paper};opacity:.8;
+  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:18px}
+  .marque-capp i.sep{width:1.5px;height:30px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
+  .marque-capp i.ulaval{width:162px;height:44px}
+  .marque-capp i{display:block;width:150px;height:47px;background:${COLORS.paper};opacity:.8;
                  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                  -webkit-mask-position:center;mask-position:center}
   .grain,.mouchete{position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none}
@@ -1046,7 +1062,7 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
     <p class="sous">${d.circonscription ? txt(d.circonscription) : ""}<span class="fleurs" aria-label="${LIBELLE_RARETE[c.rarete ?? "legendaire"]}">${fleurs}</span></p>
   </div>
   <p class="pied"><span>${ordinal(txt(c.edition.split(" · ")[0]))}</span><span>vitrinedemocratique.com</span></p>
-  ${logoCapp ? `<span class="marque-capp"><i style="-webkit-mask-image:url('${logoCapp}');mask-image:url('${logoCapp}')"></i></span>` : ""}
+  ${marquesInstitutions(logoCapp)}
   <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
   <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>
 </body></html>`;
@@ -1139,8 +1155,10 @@ function carteHTML(
                   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                   -webkit-mask-position:center;mask-position:center}
   /* Signature discrète, tout au bas du carton, CENTRÉE ; même place au verso. */
-  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:2px;display:block}
-  .marque-capp i{display:block;width:112px;height:35px;background:${COLORS.softer};
+  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:18px}
+  .marque-capp i.sep{width:1.5px;height:30px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
+  .marque-capp i.ulaval{width:162px;height:44px}
+  .marque-capp i{display:block;width:150px;height:47px;background:${COLORS.softer};
                  -webkit-mask-size:contain;mask-size:contain;
                  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                  -webkit-mask-position:center;mask-position:center}
@@ -1241,7 +1259,7 @@ ${CSS_HOLO}
   ${ecusson ? `<span class="ecusson-haut">
     <i style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></i>
   </span>` : ""}
-  ${logoCapp ? `<span class="marque-capp"><i style="-webkit-mask-image:url('${logoCapp}');mask-image:url('${logoCapp}')"></i></span>` : ""}
+  ${marquesInstitutions(logoCapp)}
   ${/* Plus de ruban au recto (22-09) : le titre est au verso. */ ""}
 
   <p class="pied">
@@ -1570,8 +1588,10 @@ function versoHTML(
                  -webkit-mask-position:center;mask-position:center}
   .ord{text-transform:none;font-size:.62em;vertical-align:.5em;line-height:0}
   /* Signature CAPP : même place qu'au recto, à l'encre du papier comme le crédit. */
-  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:2px;display:block}
-  .marque-capp i{display:block;width:112px;height:35px;background:${COLORS.paper};opacity:.62;
+  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:18px}
+  .marque-capp i.sep{width:1.5px;height:30px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
+  .marque-capp i.ulaval{width:162px;height:44px}
+  .marque-capp i{display:block;width:150px;height:47px;background:${COLORS.paper};opacity:.62;
                  -webkit-mask-size:contain;mask-size:contain;
                  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                  -webkit-mask-position:center;mask-position:center}
@@ -1710,7 +1730,7 @@ ${CSS_HOLO}
     <span>Portrait&nbsp;: Assemblée nationale du Québec &middot; usage non commercial autorisé</span>
     <span>${c.holo ? "Édition holographique" : ordinal(txt(c.edition))} &middot; carte ${c.numero}${c.variante} de ${c.total}</span>
   </p>
-  ${logoCapp ? `<span class="marque-capp"><i style="-webkit-mask-image:url('${logoCapp}');mask-image:url('${logoCapp}')"></i></span>` : ""}
+  ${marquesInstitutions(logoCapp)}
   <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
   <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>
 ${c.holo ? '<div class="holo"></div><div class="holo-reflet"></div>' : ""}
@@ -2167,6 +2187,7 @@ async function main() {
   }
 
   const logos = await loadLogos();
+  LOGO_ULAVAL = logos.ulaval;
   // « Dernière mise à jour du module : vendredi 12 juin 2026 » → « vendredi 12
   // juin 2026 ». Le libellé du site porte son propre préambule, qui ne
   // s'insère pas dans la phrase du disclaimer.
