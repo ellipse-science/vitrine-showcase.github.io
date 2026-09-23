@@ -109,6 +109,20 @@ gagne sa parole au fauteuil (23 565 interventions, 325 848 mots) ; Chassin
 redevient CAQ de 2022 à septembre 2024 ; parts d'enjeux recalculées par les
 nouveaux modèles.
 
+### Fermeture des issues (à la main, pas par les PR)
+
+Aucune PR ne porte de mot-clé de fermeture (elles disent « Refs »), et c'est
+voulu : une fusion ne règle pas ces issues, et la branche par défaut
+d'aws-refiners est `develop`, donc un « closes » fermerait #547 avant la
+graduation vers `main` et la reconstruction. Les fermer à la main, avec un
+commentaire qui résume ce qui a été fait et les chiffres vérifiés :
+
+| Issue | Fermer quand |
+|---|---|
+| aws-refiners#547 (doublons, présidence, « Mme Roy ») | après la bascule en PROD, chiffres vérifiés sur le site |
+| aws-refiners#546 (têtes INFER Terres et défense) | après vérification des parts d'enjeux reconstruites ; retirer alors `ENJEUX_EN_REVISION` des cartes |
+| pplmatch#10 (générateur des mandats) | quand `build_mandates.py` reproduit la table (décision d'Étienne) |
+
 ### 3. Infra, sans attendre personne
 
 - Attribuer « Le Président » (6 cas) et les vice-présidences nommées dans
