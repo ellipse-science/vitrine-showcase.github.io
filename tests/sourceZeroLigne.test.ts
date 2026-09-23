@@ -124,4 +124,16 @@ describe("repli quand la source distante est vide", () => {
 
     expect(JSON.parse(texte)).toEqual([]);
   });
+
+  it("un fichier de repli ILLISIBLE fait échouer, il ne devient pas un jeu vide", async () => {
+    // Seule l'absence (ENOENT) a droit au jeu vide : ici le chemin est un
+    // dossier (EISDIR), comme le serait une erreur de permission ou d'E/S.
+    await depotTemporaire(false);
+    await fs.mkdir(path.join(process.cwd(), FICHIER), { recursive: true });
+    instantaneVide();
+
+    const { readDatasetText } = await import("@/lib/data/source");
+
+    await expect(readDatasetText(FICHIER)).rejects.toThrow();
+  });
 });

@@ -226,12 +226,15 @@ async function fetchSnapshotRows(
   return text;
 }
 
-/** Repli sur le fichier publié, sans jamais casser le build.
+/** Repli sur le fichier publié, sans casser le build pour un fichier ABSENT.
  *
- *  Tout ce qui est `enabled` dans `scripts/tables.json` n'a pas forcément son
- *  fichier commité — `polimetre_promesses_neuves` n'en a aucun. Un repli qui
- *  suppose le fichier présent transformerait une panne de données en panne de
- *  build : on rend alors un jeu vide, comme avant, mais en le DISANT. */
+ *  Une table peut être activée dans `scripts/tables.json` avant d'avoir son
+ *  premier fichier commité (`polimetre_promesses_neuves` l'a été, en
+ *  septembre 2026). Un repli qui suppose le fichier présent transformerait une
+ *  panne de données en panne de build : on rend alors un jeu vide, en le
+ *  DISANT. Seul l'absence (`ENOENT`) a droit à ce traitement : une erreur de
+ *  permission ou d'E/S remonte, comme dans les autres loaders, plutôt que de
+ *  publier un module amputé sans alerte. */
 async function repliFichier(
   absolute: string,
   dataset: string,
@@ -239,7 +242,8 @@ async function repliFichier(
 ): Promise<string> {
   try {
     return await fs.readFile(absolute, "utf8");
-  } catch {
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
     console.warn(
       `[source] ${dataset} : ${raison}, et aucun fichier de repli. Jeu vide.`,
     );
@@ -413,7 +417,7 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
   // suffit à repartir des fichiers — on ne tente même pas les tables.
   if (USE_SNAPSHOT) {
     const manifest = await loadManifest();
-    if (!manifest) return fs.readFile(absolute, "utf8");
+    if (!manifest) return repliFichier(absolute, dataset, "instantané indisponible");
 
     const local = await localCopy(
       dataset,
@@ -424,13 +428,13 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     return local ? fs.readFile(local, "utf8") : repliFichier(absolute, dataset, "instantané indisponible");
   }
 
-  if (!(await apiIsFresh())) return fs.readFile(absolute, "utf8");
+  if (!(await apiIsFresh())) return repliFichier(absolute, dataset, "API périmée");
 
   if (!API_KEY) {
     console.warn(
       `[source] VITRINE_API_KEY absente. Repli sur les fichiers pour ${dataset}.`,
     );
-    return fs.readFile(absolute, "utf8");
+    return repliFichier(absolute, dataset, "clé d'API absente");
   }
 
   const local = await localCopy(

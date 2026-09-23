@@ -1846,17 +1846,19 @@ export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { cla
   // écrite pour ce cas précis (plus bas, SALIENCE_CUTOVER) était INATTEIGNABLE :
   // ce `return null` la précédait.
   //
-  // Échouer ici réveille le filet qui existe déjà : le job `secours-fichiers` de
-  // deploy-prod.yml (`if: failure()`) rebâtit en mode fichiers et publie. Une
-  // archive, elle, a le droit d'être vide : on ne casse que l'édition courante.
+  // Échouer ici garde en ligne la dernière édition COMPLÈTE : un build
+  // Cloudflare qui échoue ne remplace pas le déploiement en place, et le retard
+  // se voit (garde-fraicheur.yml). Le job `secours-fichiers` de deploy-prod.yml
+  // ne couvre que le déploiement manuel de secours. Une archive, elle, a le
+  // droit d'être vide : on ne casse que l'édition courante.
   if (unique.length === 0) {
     if (!editionKey) {
       throw new Error(
         "Aucun événement pour l'édition courante après filtrage. La source a " +
         "servi des lignes sans saillance QC/ROC exploitable (colonnes " +
         "`salience_index_qc` / `score_qc` nulles ?). Vérifiez /v1/health et le " +
-        "dernier cycle de synchro ; le build de secours en mode fichiers prend " +
-        "le relais.",
+        "dernier cycle de synchro ; le déploiement en place (dernière édition " +
+        "complète) reste en ligne.",
       );
     }
     return null;
