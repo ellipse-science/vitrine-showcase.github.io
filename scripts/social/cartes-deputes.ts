@@ -625,6 +625,10 @@ type Mandats = { parNomEtDistrict: Map<string, Mandat>; parDistrict: Map<string,
 const NOMS_IMPRIMES: Record<string, string> = {
   "Simon Jolin-Barette": "Simon Jolin-Barrette",
   "Frederic Beauchemin": "Frédéric Beauchemin",
+  // Graphie accentuée retenue par Jules (23-09), même là où l'Assemblée n'en
+  // met pas. Clé = graphie des données : seul le Girard de Groulx l'a sans
+  // accent (celui de Lac-Saint-Jean est déjà « Éric »).
+  "Eric Girard": "Éric Girard",
 };
 const nomImprime = (nom: string) => NOMS_IMPRIMES[nom] ?? nom;
 
