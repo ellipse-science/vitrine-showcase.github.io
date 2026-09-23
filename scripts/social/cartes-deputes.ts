@@ -604,6 +604,17 @@ type Mandats = { parNomEtDistrict: Map<string, Mandat>; parDistrict: Map<string,
  *    le district.
  *  Les index par nom seul et par district seul n'enregistrent donc que les
  *  valeurs UNIQUES ; une clé ambiguë est écartée plutôt que devinée. */
+/** GRAPHIE IMPRIMÉE des noms que les données écrivent mal (relevé du 23-09,
+ *  comparé aux fiches de l'Assemblée). Appliquée à l'AFFICHAGE seulement :
+ *  les appariements (mandat, fiche, scrutin, mots) gardent la graphie des
+ *  données, sur laquelle ils ont été vérifiés. La correction durable est en
+ *  amont (référentiel des portraits, données agora). */
+const NOMS_IMPRIMES: Record<string, string> = {
+  "Simon Jolin-Barette": "Simon Jolin-Barrette",
+  "Frederic Beauchemin": "Frédéric Beauchemin",
+};
+const nomImprime = (nom: string) => NOMS_IMPRIMES[nom] ?? nom;
+
 function trouverMandat(m: Mandats, nom: string, slug: string): Mandat | undefined {
   return m.parNomEtDistrict.get(`${cleDistrict(nom)}@${cleDistrict(slug)}`)
     ?? m.parDistrict.get(cleDistrict(slug))
@@ -1013,7 +1024,7 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
   <div class="bas">
     ${c.codeFonction ? `<span class="pastille">${c.codeFonction}</span>` : ""}
     <div class="ligne-nom">
-      <p class="nom">${txt(d.name)}</p>
+      <p class="nom">${txt(nomImprime(d.name))}</p>
     </div>
     <p class="sous">${d.circonscription ? txt(d.circonscription) : ""}<span class="fleurs" aria-label="${LIBELLE_RARETE[c.rarete ?? "legendaire"]}">${fleurs}</span></p>
   </div>
@@ -1187,7 +1198,7 @@ ${CSS_HOLO}
     </div>
     <div class="bande">
       <div class="qui">
-        <p class="nom">${txt(d.name)}</p>
+        <p class="nom">${txt(nomImprime(d.name))}</p>
         <p class="sous">${d.circonscription ? txt(d.circonscription) : ""}<span class="fleurs" aria-label="${LIBELLE_RARETE[c.rarete ?? "commune"]}">${Array.from({ length: FLEURS_PAR_RARETE[c.rarete ?? "commune"] }, () => fleur(COLORS.paper, 24)).join("")}</span></p>
       </div>
       ${c.codeFonction ? `<span class="code-fonction${c.codeFonction.length > 2 ? " long" : ""}">${c.codeFonction}</span>` : ""}
@@ -1587,7 +1598,7 @@ ${CSS_HOLO}
     <div class="haut">
       <span class="numero">${c.numero}${c.variante}</span>
       <span class="titre">
-        <span class="nom">${txt(d.name)}</span>
+        <span class="nom">${txt(nomImprime(d.name))}</span>
         <span class="identite">${picto}<span>${txt(identite)}${identite ? "&nbsp;&nbsp; · &nbsp;&nbsp;" : ""}<span class="parti-long">${txt(partiLong)}</span><span class="parti-court">${txt(partiCourt)}</span></span></span>
         ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${txt(c.chef.titre)}</span>`
           : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : ""}
@@ -1723,6 +1734,57 @@ function rapporterDebordements(liste: string[]): void {
   for (const l of liste) console.warn(`     · ${l}`);
 }
 
+/** UN ÉLU, UNE LIGNE (relevé du 23-09). Les données agora ont une ligne par
+ *  élu ET PAR PARTI : un élu qui a changé d'allégeance en a plusieurs, et la
+ *  carte n'en lisait qu'une, souvent la ligne « ind » de fin de mandat. Vincent
+ *  Marissal sortait à 5 380 mots au lieu de 223 184 ; neuf élus touchés à la
+ *  législature (Dubé, Marissal, Rizqy, Lakhoyan Olivier, Nichols, Blanchette
+ *  Vézina, Poulet, Dufour, Lefebvre). Le site, qui range la parole par parti,
+ *  n'est pas touché ; la carte, elle, parle d'un élu.
+ *  · Interventions et mots : sommés (exact).
+ *  · Ton et parts d'enjeux : moyennes pondérées par les mots (approximation :
+ *    les parts brutes ne portent pas leur propre dénominateur).
+ *  · Richesse lexicale et mot signature : ceux de la ligne la plus longue. Un
+ *    MATTR ne se moyenne pas, et le niveau est relatif aux autres élus.
+ *  Chaque ligne agora est retrouvée par ses mots et interventions, que le
+ *  loader recopie tels quels. */
+async function fusionnerLignesParParti(data: NonNullable<Awaited<ReturnType<typeof loadAssemblee>>>): Promise<void> {
+  type Brute = { period_type: PeriodKey; deputy_id: string | number; n_interventions: number; word_count: number;
+                 tone_score: number } & Record<string, unknown>;
+  const brutes = JSON.parse(await fs.readFile(path.resolve(process.cwd(), "public/data/agora/agora_decideurs_qc_deputes.json"), "utf8")) as Brute[];
+  const groupes = new Map<string, Brute[]>();
+  for (const r of brutes) {
+    const cle = `${r.period_type}|${r.deputy_id}`;
+    groupes.set(cle, [...(groupes.get(cle) ?? []), r]);
+  }
+  let fusions = 0;
+  for (const [cle, lignes] of groupes) {
+    if (lignes.length < 2) continue;
+    const vueP = data.periods[cle.split("|")[0] as PeriodKey];
+    if (!vueP) continue;
+    const tous = [...vueP.rows.flatMap((x) => x.deputies ?? []), ...(vueP.independants ?? [])];
+    const cibles = tous.filter((d) => lignes.some((r) => Number(r.word_count) === d.wordsRaw && Number(r.n_interventions) === d.interventions));
+    if (!cibles.length) continue;
+    const mots = lignes.reduce((t, r) => t + Number(r.word_count || 0), 0);
+    const pond = (f: (r: Brute) => number) => mots > 0 ? lignes.reduce((t, r) => t + f(r) * Number(r.word_count || 0), 0) / mots : 0;
+    const principale = [...lignes].sort((x, y) => Number(y.word_count) - Number(x.word_count))[0];
+    const modele = cibles.find((d) => d.wordsRaw === Number(principale.word_count)) ?? cibles[0];
+    const parts = Object.fromEntries(Object.keys(modele.issueShares).map((k) => [k, pond((r) => Number(r[k] || 0))])) as typeof modele.issueShares;
+    for (const d of cibles) {
+      d.interventions = lignes.reduce((t, r) => t + Number(r.n_interventions || 0), 0);
+      d.wordsRaw = mots;
+      d.wordsFormatted = MONTANT.format(mots);
+      d.toneScore = pond((r) => Number(r.tone_score || 0));
+      d.issueShares = parts;
+      d.richnessLevel = modele.richnessLevel;
+      d.signatureWord = modele.signatureWord;
+      d.signatureWordContext = modele.signatureWordContext;
+    }
+    fusions++;
+  }
+  console.log(`  ${fusions} élu·période(s) réunis sur plusieurs lignes de parti`);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const periode = (typeof args.periode === "string" ? args.periode : "legislature") as PeriodKey;
@@ -1730,6 +1792,7 @@ async function main() {
 
   const data = await loadAssemblee();
   if (!data) throw new Error("Aucune donnée d'Assemblée : public/data/agora/ est vide ou illisible.");
+  await fusionnerLignesParParti(data);
   // ENJEUX EN RÉVISION — retirés des cartes, leur part répartie entre les
   // autres. Les têtes INFER public_lands et defense, calibrées sur la presse,
   // se déclenchent sur les formules de procédure du Salon bleu (« Il n'y a pas
@@ -1810,7 +1873,7 @@ async function main() {
         titre: fin?.endReason === "resignation" ? `Démission le ${quand}`
           : fin?.endReason === "death" ? `Décès le ${quand}`
           : `A quitté son siège le ${quand}`,
-        successeur: `Siège repris par ${occupants[0].deputy.name} (carte ${rangSiege.get(s)})`,
+        successeur: `Siège repris par ${nomImprime(occupants[0].deputy.name)} (carte ${rangSiege.get(s)})`,
       });
     }
   }
@@ -1818,7 +1881,10 @@ async function main() {
   const mandats = await chargerMandats();
   let cartes: Carte[] = jeu.map((c) => ({
     ...c, numero: rangSiege.get(siege(c))!, variante: variante.get(c) ?? "",
-    total: sieges.length, salon: vue.subtitle, annee,
+    // « Législature 2026 · Salon bleu » : le libellé du site ne porte que
+    // l'année de fin. La ligne du tableau dit déjà « Législature 2022-2026 » ;
+    // l'en-tête n'a donc besoin que du lieu.
+    total: sieges.length, salon: periode === "legislature" ? "Salon bleu" : vue.subtitle, annee,
     // Édition imprimée : la législature entière. Les éditions de session, en
     // ligne, portent leur année.
     edition: periode === "legislature" ? EDITION_LEGISLATURE : `Édition ${annee}`,
