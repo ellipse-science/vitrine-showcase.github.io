@@ -306,7 +306,7 @@ que le verrou de `--png` impose la planche avant les images.
 ### Logos des institutions (23-09)
 
 Au bas de chaque carte, recto et verso : le logo du CAPP, agrandi (112 à
-150 px de large), un filet, puis celui de l'Université Laval (écusson et mot-symbole, sans la
+180 px de large), un filet, puis celui de l'Université Laval (écusson et mot-symbole, sans la
 mention « Faculté des sciences sociales », rognée au chargement), dans la
 couleur et l'opacité du gabarit. ⚠️ Le fichier de
 l'Université Laval (`public/images/partners/ULaval.png`) ne fait que 277 × 74 px :
