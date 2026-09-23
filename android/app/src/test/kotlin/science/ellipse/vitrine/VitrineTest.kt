@@ -53,7 +53,7 @@ class VitrineTest {
     fun `les schemas non web sont reconnus`() {
         assertTrue(Vitrine.estSchemaWeb("https://vitrinedemocratique.com/"))
         assertTrue(Vitrine.estSchemaWeb("http://exemple.org/"))
-        assertFalse(Vitrine.estSchemaWeb("mailto:capp@ulaval.ca"))
+        assertFalse(Vitrine.estSchemaWeb("mailto:info@capp.ulaval.ca"))
         assertFalse(Vitrine.estSchemaWeb("tel:+15815551234"))
     }
 
