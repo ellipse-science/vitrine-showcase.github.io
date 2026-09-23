@@ -1522,7 +1522,7 @@ function versoHTML(
         letter-spacing:.1em;text-transform:uppercase;opacity:.9}
   .pied>:first-child{justify-self:start}
   .pied>:last-child{justify-self:end}
-  .metho{padding-top:4px;font-size:17px;line-height:1.32;
+  .metho{padding-top:4px;font-size:15px;line-height:1.25;
          font-style:italic;opacity:.68;text-align:center}
   .pied .marque{width:168px;height:34px;background:${COLORS.paper};opacity:.92;
                 -webkit-mask-size:contain;mask-size:contain;
@@ -1637,19 +1637,21 @@ ${CSS_HOLO}
       ${citation ? `<p class="citation">«&nbsp;${txt(citation)}&nbsp;»</p>` : ""}
     </div>` : ""}
 
+    ${/* NOTE DE MÉTHODE (Jules, 23-09) : chaque visualisation de la carte,
+          recto compris, est nommée et justifiée en une phrase. Une phrase ne
+          paraît que si l'élément paraît : pas de définition du mot signature
+          sur une carte qui n'en a pas. « Relu à la main » engage le verrou de
+          --png : les images ne sortent pas sans la planche de cette version.
+          Détail : docs/reference/cartes-deputes.md. */ ""}
     <p class="metho">
-      Source&nbsp;: transcriptions du Salon bleu, Assemblée nationale du Québec. Dernière séance couverte&nbsp;: ${txt(derniereSeance)}.
-      Le mot signature est l'expression la plus DISTINCTIVE de cet élu par rapport aux autres, et non la plus fréquente.
-      La richesse mesure la variété du vocabulaire (indice MATTR) et se lit en cinq niveaux RELATIFS aux élus de la
-      même période&nbsp;: cinq points marquent le vocabulaire le plus varié observé, un point le moins varié.
-      ${/* « validé à la main » n'est vrai QUE si la planche-contact est
-            réellement relue avant l'envoi. C'est ce que le verrou de --png
-            impose : les images ne sortent pas tant que la planche de cette
-            version exacte n'a pas été produite. La phrase engage donc le
-            procédé, pas seulement l'intention. */ ""}
-      Terres publiques et Aff.&nbsp;internationales, en révision, sont exclus des parts.
-      Mesures produites par traitement automatisé (validé à la main)&nbsp;: des erreurs d'appariement ou de classement restent possibles.
-      Signalez-nous toute correction. Méthodologie complète sur le site.
+      Sources&nbsp;: transcriptions du Salon bleu jusqu'au ${txt(derniereSeance.replace(/^\p{L}+ (?=\d)/u, ""))}, fiches de l'Assemblée nationale, résultats d'Élections Québec.
+      Richesse lexicale&nbsp;: variété du vocabulaire (indice MATTR), de un à cinq points par rapport aux autres élus. Le ton est lui aussi situé par rapport aux autres élus, pas dans l'absolu.
+      ${c.parcours && c.remuneration ? `Frise&nbsp;: la fonction la mieux payée de chaque jour, celle qui fixe la rémunération. Rémunération&nbsp;: indemnité de base et la plus élevée des indemnités additionnelles (elles ne se cumulent pas), au jour près, sans allocations ni remboursements.` : ""}
+      ${barre ? `Parts&nbsp;: interventions classées automatiquement par enjeu. Terres publiques et Affaires internationales, dont le classement est en révision, sont retirées et le reste ramené à 100&nbsp;%.` : ""}
+      ${mot ? `Mot signature&nbsp;: l'expression la plus distinctive de l'élu par rapport aux autres, pas la plus fréquente.` : ""}
+      Recto&nbsp;: le sigle indique la fonction la mieux payée de la législature, le filet de couleur l'enjeu dominant, les fleurs de lys la rareté.
+      Présidence, premiers ministres et chefs de parti ont une rareté fixée. Les autres sont classés dans leur camp selon leurs fonctions rémunérées et, hors ministres, leur temps comme porte-parole face à un ministre.
+      Traitement automatisé, relu à la main&nbsp;: des erreurs restent possibles. Corrections et méthodologie complète sur le site.
     </p>
 
     <p class="pied">
