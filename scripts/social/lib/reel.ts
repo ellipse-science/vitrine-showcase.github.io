@@ -499,11 +499,13 @@ export function sceneIntro(opts: {
         // Une première ligne longue (« du mer. 16 sept au mar. 22 sept ») se
         // resserre, puis rapetisse jusqu'à 26 px, plutôt que de laisser un mot
         // orphelin sur une deuxième ligne.
-        var bb=e.querySelector("b"), fs=30;
-        if(bb){ bb.style.whiteSpace="nowrap";
-          if(bb.scrollWidth>bb.clientWidth) bb.style.letterSpacing=".04em";
-          while(bb.scrollWidth>bb.clientWidth && fs>26){ fs-=1; bb.style.fontSize=fs+"px"; }
-          if(bb.scrollWidth>bb.clientWidth) bb.style.whiteSpace="normal"; }
+        // Vaut pour les DEUX lignes : depuis la reprise de Jules (#826), « Édition
+        // de … » passe en tête et la période des 12 enjeux descend en seconde.
+        e.querySelectorAll("b, span").forEach(function(l){
+          var fs=parseFloat(getComputedStyle(l).fontSize); l.style.whiteSpace="nowrap";
+          if(l.scrollWidth>l.clientWidth) l.style.letterSpacing=".04em";
+          while(l.scrollWidth>l.clientWidth && fs>26){ fs-=1; l.style.fontSize=fs+"px"; }
+          if(l.scrollWidth>l.clientWidth) l.style.whiteSpace="normal"; });
         b.style.setProperty("--vis-h", Math.max(160, b.offsetTop + b.offsetHeight - (e.offsetTop + e.offsetHeight) - 36) + "px");
       });<\/script>
       <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${edition(opts.edition)}</div>`,
