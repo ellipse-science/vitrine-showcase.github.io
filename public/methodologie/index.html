@@ -125,11 +125,14 @@
     background: var(--paper, #f4efe6); border: 0.5px solid var(--rule);
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     transition: opacity 0.12s ease, visibility 0s linear 0.35s;
+    /* Libellés à droite dans les DEUX menus, comme sur l'accueil (hérité de `.header-utility`) : la barre
+       est alignée à droite. Sans cette ligne, « Méthodologie » s'alignait à gauche ici, à droite là-bas. */
+    text-align: right;
   }
   /* Le dernier menu s'ancre à DROITE, libellés alignés sous « À propos ». Ancré à gauche, son panneau de
      210px sortait de la page : même caché (`visibility: hidden` ne retire pas la boîte du débordement),
      il faisait défiler la page à l'horizontale sous 1332px de large (+76px à 768, +112px à 375). */
-  .sub-nav .nav-item:last-child .nav-menu { left: auto; right: -8px; text-align: right; }
+  .sub-nav .nav-item:last-child .nav-menu { left: auto; right: -8px; }
   .sub-nav .nav-item:hover .nav-menu,
   .sub-nav .nav-item:focus-within .nav-menu,
   .sub-nav .nav-menu:hover { visibility: visible; opacity: 1; transition-delay: 0s; }
