@@ -74,7 +74,7 @@ const POURCENT = new Intl.NumberFormat("fr-CA", { minimumFractionDigits: 1, maxi
  *  · Mots plutôt qu'interventions : les vice-présidents cumulent des milliers
  *    d'interventions de procédure (26 à 42 mots chacune), qui les mettaient
  *    en tête du classement.
- *  · La présidente est commune d'office, avec un badge : dans les
+ *  · La présidente est commune d'office (le sceau essayé le 23-09 a été retiré) : dans les
  *    transcriptions, ce qu'elle dit en présidant est attribué à « la
  *    Présidente », pas à elle (6 interventions sur la législature).
  *  Grille précédente (22-09, abandonnée) : poids des fonctions rémunérées et
@@ -456,8 +456,8 @@ type Carte = {
   };
   /** Vis-à-vis ministre / porte-parole. Pas imprimé : sert à la rareté. */
   rarete?: Rarete;
-  /** Badge de la présidence de l'Assemblée (voir RARETÉ). */
-  badge?: "presidence";
+  /** Présidente de l'Assemblée : commune d'office (voir RARETÉ). */
+  presidente?: boolean;
   /** « PM », « M », « CO »… (voir CODES_FONCTION). */
   codeFonction?: string;
   /** Légendaires : autographe (URL du tracé blanc), s'il y en a un. */
@@ -1153,17 +1153,6 @@ function carteHTML(
   /* flex:1 + min-width:0 donnent au bloc du nom une largeur DÉFINIE, sans quoi
      clientWidth vaut la largeur du texte et la mesure ne peut rien détecter. */
   .bande .qui{flex:1;min-width:0;overflow:hidden}
-  /* BADGE DE LA PRÉSIDENCE (Jules, 23-09) : la présidente est commune (voir
-     RARETÉ), mais sa carte se distingue par un sceau posé sur la photo, au-dessus
-     du sigle. Or de la ligne des rares, fond d'encre neutre (la présidence
-     est neutre), fleur de lys et mention en couleur papier. */
-  .badge{position:absolute;right:${marge + 34}px;bottom:${marge + BANDE + 22}px;width:150px;height:150px;border-radius:50%;
-         background:${degradeMetalCSS("rare")};padding:7px;box-sizing:border-box;z-index:5;
-         filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))}
-  .badge>div{width:100%;height:100%;border-radius:50%;background:${COLORS.ink};display:flex;flex-direction:column;
-             align-items:center;justify-content:center;gap:4px;box-shadow:inset 0 0 0 3px ${METAUX.rare!.uni}}
-  .badge span{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:12.5px;letter-spacing:.08em;
-              text-transform:uppercase;color:${COLORS.paper}}
   .nom{font-family:"Playfair Display",serif;font-weight:900;font-size:68px;
        line-height:1.0;letter-spacing:-.02em;color:${COLORS.paper};
        text-transform:uppercase;white-space:nowrap;overflow:hidden}
@@ -1196,7 +1185,6 @@ ${CSS_HOLO}
         ? `<div class="image"></div>`
         : `<div class="vide">${fleur(parti, 300)}</div>`}
     </div>
-    ${c.badge === "presidence" ? `<div class="badge" aria-label="Présidence de l'Assemblée nationale"><div>${fleur(COLORS.paper, 58)}<span>Présidence</span></div></div>` : ""}
     <div class="bande">
       <div class="qui">
         <p class="nom">${txt(d.name)}</p>
@@ -1671,7 +1659,7 @@ ${CSS_HOLO}
       ${mot ? `Mot signature&nbsp;: l'expression la plus distinctive de l'élu par rapport aux autres, pas la plus fréquente.` : ""}
       Recto&nbsp;: le sigle indique la fonction la mieux payée de la législature, le filet de couleur l'enjeu dominant, les fleurs de lys la rareté.
       Les premiers ministres sont légendaires; les autres élus sont classés selon les mots prononcés au Salon bleu sur la législature (10&nbsp;% rares, 35&nbsp;% peu communes).
-      ${c.badge === "presidence" ? `Ce que la présidente dit en présidant n'est pas attribué à son nom dans les transcriptions&nbsp;: elle est commune d'office, avec un badge.` : ""}
+      ${c.presidente ? `Ce que la présidente dit en présidant n'est pas attribué à son nom dans les transcriptions&nbsp;: elle est commune d'office.` : ""}
       Traitement automatisé, relu à la main&nbsp;: des erreurs restent possibles. Corrections et méthodologie complète sur le site.
     </p>
 
@@ -1973,7 +1961,7 @@ async function main() {
   for (const c of cartes) {
     const titres = (ficheParCarte.get(c)?.fonctions_legislature ?? []).map((x) => x.titre);
     if (titres.some((t) => /^Premi(?:ère|er) ministre$/.test(t))) { c.rarete = "legendaire"; continue; }
-    if (titres.some((t) => /^Président(?:e)? de l’Assemblée nationale$/.test(t))) { c.rarete = "commune"; c.badge = "presidence"; continue; }
+    if (titres.some((t) => /^Président(?:e)? de l’Assemblée nationale$/.test(t))) { c.rarete = "commune"; c.presidente = true; continue; }
     classes.push({ c, mots: motsLegislature.get(`${c.deputy.name}|${c.deputy.circonscription}`) ?? c.deputy.wordsRaw ?? 0 });
   }
   classes.sort((a, b) => b.mots - a.mots || a.c.numero - b.c.numero);

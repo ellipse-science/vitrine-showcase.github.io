@@ -230,8 +230,8 @@ Grille du 23 septembre 2026 (décision de Jules).
   par interventions. Limite : leurs mots de présidence comptent quand même
   (Lévesque est 7e en mots, Benjamin est rare).
 - **Chefs de parti dans le calcul**, sans catégorie d'office.
-- **La présidente (Nathalie Roy) est commune d'office, avec un badge**
-  (sceau or sur la photo). Dans les transcriptions, ce qu'elle dit en
+- **La présidente (Nathalie Roy) est commune d'office.** Un sceau or sur
+  la photo a été essayé puis retiré le 23-09. Dans les transcriptions, ce qu'elle dit en
   présidant est attribué à « la Présidente », pas à son nom : 6
   interventions et 18 371 mots sur la législature. Le calcul la classerait
   commune pour un défaut de données ; on l'écrit plutôt que de le cacher.
