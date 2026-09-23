@@ -65,7 +65,7 @@ export const BRAND = { top: SAFE.top, height: 62 };
 export const CONTENT_TOP = BRAND.top + BRAND.height + 62;
 export const CONTENT_BOTTOM = SAFE.bottom;
 
-export type Logos = { vitrine: string; capp: string };
+export type Logos = { vitrine: string; capp: string; ulaval: string };
 
 /** Logos officiels du site (public/images/brand/), noirs sur fond transparent.
  *  Leurs marges vides sont rognées pour que la hauteur affichée soit celle du
@@ -80,6 +80,9 @@ export async function loadLogos(): Promise<Logos> {
   return {
     vitrine: await uri("logo_vitrinedemocratique_bg-none_theme-black.png"),
     capp: await uri("logo_capp_1row_bg-none_theme-black.png"),
+    // Université Laval, Faculté des sciences sociales (public/images/partners/).
+    // ⚠️ 277 × 74 px : suffisant à l'écran, trop petit pour l'impression.
+    ulaval: await uri(path.join("..", "partners", "ULaval.png")),
   };
 }
 

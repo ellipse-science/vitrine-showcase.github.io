@@ -303,6 +303,15 @@ phrase ne paraît que si son élément paraît sur la carte. Corps de 15 px :
 à 17 px, onze versos débordaient. « Relu à la main » n'est vrai que parce
 que le verrou de `--png` impose la planche avant les images.
 
+### Logos des institutions (23-09)
+
+Au bas de chaque carte, recto et verso : le logo du CAPP, agrandi (112 à
+150 px de large), un filet, puis celui de l'Université Laval (Faculté des
+sciences sociales), dans la couleur et l'opacité du gabarit. ⚠️ Le fichier de
+l'Université Laval (`public/images/partners/ULaval.png`) ne fait que 277 × 74 px :
+suffisant à l'écran, trop petit pour l'impression. Obtenir la version vectorielle
+avant d'imprimer.
+
 ## Reproduire
 
 ```sh
