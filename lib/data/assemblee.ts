@@ -85,7 +85,7 @@ const PERIOD_TAB_LABELS: Record<PeriodKey, string> = {
   legislature: "Cette législature",
 };
 
-type IssueShares = Partial<Record<IssueKey, number>>;
+export type IssueShares = Partial<Record<IssueKey, number>>;
 
 type AgoraRow = IssueShares & {
   period_type: PeriodKey;
@@ -177,6 +177,8 @@ export type DeputyRow = {
   topIssueColor?: string;
   /** Répartition par enjeu, pour le verso statistique. */
   enjeuStack: EnjeuSegment[];
+  /** Parts brutes des 12 enjeux, pour qui doit recalculer la pile (cartes). */
+  issueShares: IssueShares;
   /** Parcours parlementaire pendant la législature courante. Présent seulement
    *  dans la vue « législature » lorsqu'un événement mérite d'être expliqué :
    *  changement d'affiliation, élection partielle ou démission. */
@@ -225,6 +227,9 @@ export type PeriodView = {
    *  plusieurs semaines (cf. SourceTip) — la date reflète la séance, pas le fetch. */
   lastUpdated: string;
   rows: AssembleeRow[];
+  /** Élus indépendants de la période : le site n'a pas de casier pour eux, mais
+   *  les cartes de député couvrent les 125 sièges. */
+  independants?: DeputyRow[];
 };
 
 export type AssembleeData = {
@@ -269,9 +274,16 @@ function computeRichnessLevels(mattrs: Record<string, number>): Record<string, n
   return result;
 }
 
-function buildEnjeuStack(row: IssueShares): EnjeuSegment[] {
-  const segments = ISSUE_META
-    .map((meta) => ({ meta, val: Number(row[meta.key] || 0) }))
+/** `exclus` retire des enjeux et répartit leur part entre les autres, qui
+ *  somment de nouveau à 100 %. Le site n'en passe aucun ; les cartes de député
+ *  s'en servent pour écarter les enjeux dont le classifieur est en révision. */
+export function buildEnjeuStack(row: IssueShares, exclus: readonly IssueKey[] = []): EnjeuSegment[] {
+  const gardes = ISSUE_META.filter((meta) => !exclus.includes(meta.key));
+  const total = exclus.length
+    ? gardes.reduce((t, meta) => t + Number(row[meta.key] || 0), 0)
+    : 1;
+  const segments = gardes
+    .map((meta) => ({ meta, val: total > 0 ? Number(row[meta.key] || 0) / total : 0 }))
     .filter((s) => s.val >= 0.04)
     .sort((a, b) => b.val - a.val);
 
@@ -653,7 +665,7 @@ function titleCaseName(raw: string): string {
 }
 
 function buildDeputyList(
-  partyKey: PartyKey,
+  partyKey: PartyKey | "ind",
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[],
   portraits: PortraitIndex,
@@ -706,6 +718,7 @@ function buildDeputyList(
       topIssueKey: top?.cle ?? undefined,
       topIssueColor: top?.color,
       enjeuStack: stack,
+      issueShares: Object.fromEntries(ISSUE_META.map((m) => [m.key, Number(r[m.key] || 0)])),
       affiliationHistory: affiliationHistoryFor(
         r.deputy,
         r.deputy_id,
@@ -832,6 +845,15 @@ function buildPeriodView(
     subtitle: buildSubtitle(period, endDate),
     lastUpdated: lastUpdatedLabel(endDate),
     rows: builtRows,
+    independants: buildDeputyList(
+      "ind",
+      period,
+      deputyRows,
+      portraits,
+      affiliations,
+      rows[0]?.period_start_date ?? endDate,
+      endDate,
+    ),
   };
 }
 
