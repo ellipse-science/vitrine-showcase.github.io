@@ -416,6 +416,8 @@ type Carte = {
   parti: string;
   cle: PartyKey | "ind";
   couleur: string;
+  /** Parti d'élection d'un élu qui a fini indépendant (voir finitIndependant). */
+  partiElu?: string;
   /** Rang du SIÈGE dans le jeu COMPLET, calculé avant tout filtre : une carte
    *  garde son numéro qu'on tire la série entière ou un seul élu. */
   numero: number;
@@ -521,7 +523,18 @@ function dateFr(iso?: string): string | null {
  *  affiliation DE LA PÉRIODE, si bien que neuf députés passés indépendants ou
  *  d'un parti à l'autre porteraient l'étiquette de leur ancien parti. Le
  *  dernier segment d'affiliationHistory fait foi. */
+/** Vrai si le dernier segment d'affiliation est « sans affiliation », OU s'il
+ *  se ferme sur une défection sans segment suivant : c'est ainsi qu'apparaît un
+ *  passage à indépendant que les affiliations publiées ne portent pas encore
+ *  (Orford, 21 avril 2026, corrigé dans pplmatch#9 mais pas encore republié). */
+function finitIndependant(deputy: DeputyRow): boolean {
+  const dernier = (deputy.affiliationHistory ?? []).at(-1);
+  if (!dernier) return false;
+  return /^sans affiliation/i.test(dernier.label) || dernier.endReason === "defection";
+}
+
 function ligneParti(c: Carte): string {
+  if (c.partiElu) return `Indépendant (élu ${c.partiElu})`;
   const nomParti = c.cle === "ind" ? c.parti : PARTY_FULL_NAMES[c.cle];
   const dernier = (c.deputy.affiliationHistory ?? []).at(-1);
   // « Sans affiliation à un parti », libellé officiel, faisait passer la ligne
@@ -1831,11 +1844,23 @@ async function main() {
     .map((deputy) => ({
       slug: slugCirco(deputy), deputy, parti: "Indépendant", cle: "ind" as const, couleur: COULEUR_INDEPENDANT,
     })));
-  const jeu = jeuBrut.filter((c) => {
+  const jeu: (typeof jeuBrut[number] & { partiElu?: string })[] = jeuBrut.filter((c) => {
     const partiActuel = PARTI_ACTUEL_PAR_SIEGE[c.slug];
     return !partiActuel || c.cle === partiActuel;
   });
   jeu.sort((a, b) => a.slug.localeCompare(b.slug, "fr"));
+
+  // FIN DE LÉGISLATURE INDÉPENDANTE ⇒ CARTE INDÉPENDANTE (Jules, 23-09). Le
+  // loader range un élu sous le parti de ses lignes de parole ; la carte, elle,
+  // montre ce qu'il EST au bout de la législature (ou à son départ). Couleur
+  // neutre, pas d'écusson ; le parti d'élection reste nommé (« élu CAQ »).
+  for (const c of jeu) {
+    if (c.cle === "ind" || !finitIndependant(c.deputy)) continue;
+    c.partiElu = c.parti;
+    c.parti = "Indépendant";
+    c.cle = "ind";
+    c.couleur = COULEUR_INDEPENDANT;
+  }
 
   // ANNÉE DE L'ÉDITION — heure de MONTRÉAL, comme tout ce qui porte une date
   // dans ce dépôt (règle dure : les horaires sont en heure locale, pas UTC).
