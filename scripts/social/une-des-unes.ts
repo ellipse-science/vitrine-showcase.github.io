@@ -269,7 +269,7 @@ function visuelAccroche(top: UneEvent): string {
   return `<div class="ghost">${barres}</div>`;
 }
 
-function sceneUne(top: UneEvent, art: string | null): Scene {
+function sceneUne(top: UneEvent, art: string | null, rang = 1, id = "une"): Scene {
   const visual = art
     ? `<div class="art" data-deco ${anim("fadeIn", .6, .1)}><img id="art" src="${art}"></div>
        <div class="credit" ${anim("fadeIn", .8, 1.4)}>${txt(ART_CREDIT)}</div>`
@@ -278,10 +278,10 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
   const salColor = top.saillanceRank >= 4 ? bandOf(top.saillanceRank).bg : COLORS.ink;
   const corps = top.title.length > 62 ? 62 : top.title.length > 46 ? 72 : 82;
   return {
-    id: "une", duration: 4.6,
+    id, duration: 4.6,
     html: `
       ${visual}
-      <div class="rank mono" ${anim("pop", .5, .6)}>Une n°1</div>
+      <div class="rank mono" ${anim("pop", .5, .6)}>Une n°${rang}</div>
       <div class="body">
         <div class="tag mono" style="background:${top.issueColor};animation:wipe .6s .7s both">${txt(top.issueFr)}</div>
         <h2 class="disp" data-cle style="font-size:${corps}px;animation:fadeUp .8s .9s both">${txt(top.title)}</h2>
@@ -289,7 +289,15 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
           <div class="stat" ${anim("fadeUp", .5, 1.8)}><b style="color:${salColor}">${txt(top.saillanceLabel)}</b><span class="pf">${top.scoreQcSum24h != null ? `${frNum(top.scoreQcSum24h)} points de saillance sur 24 heures` : "Saillance sur 24 heures"}</span></div>
           <div class="stat" ${anim("fadeUp", .5, 2.1)}><b style="color:var(--blue)">${top.qcOutletCount}/${top.totalQcOutlets}</b><span class="pf">${coverageLabel(top.qcOutletCount)}</span></div>
         </div>
-      </div>`,
+      </div>
+      <script>document.fonts.ready.then(function(){
+        // Un titre qui prend une ligne de plus pousse les chiffres hors de la
+        // zone (« Le PQ frôle la majorité… », 20h du 2026-09-22 : 5 px) : il
+        // rétrécit par pas de 2 px, jusqu'à 56 px, tant que le bloc dépasse.
+        var s=document.getElementById("${id}"), b=s&&s.querySelector(".body"), h=b&&b.querySelector("h2"); if(!h) return;
+        var fs=parseFloat(getComputedStyle(h).fontSize), lim=${CONTENT_BOTTOM - 4};
+        while(b.offsetTop + b.offsetHeight > lim && fs > 56){ fs-=2; h.style.fontSize=fs+"px"; }
+      });<\/script>`,
   };
 }
 
@@ -724,11 +732,21 @@ async function main() {
   const top3 = data?.top3 ?? [];
   const classement = data?.classement ?? top3;
   if (!top3.length) throw new Error(`Aucune Une pour l'édition ${edition.key}.`);
-  const top = top3[0];
+  // --vedette N : le reel porte sur la n°N du classement plutôt que sur la n°1
+  // (demande d'Adrien, 2026-09-22 : « tu peux pas le faire avec la nouvelle sur
+  // le PQ majoritaire plutôt ? »). Elle garde son RANG à l'écran (« Une n°2 ») :
+  // jamais présentée comme la plus saillante. Le site n'illustre que la n°1,
+  // donc pas d'image pour elle.
+  const vedette = Math.max(1, Math.min(classement.length, Number(args.vedette ?? 1) || 1));
+  const top = vedette > 1 ? classement[vedette - 1] : top3[0];
   console.log(`La Une des Unes · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
   console.log(`  n°1 : ${top.title}`);
 
-  const art = args["sans-illustration"] ? null : await resolveArt(edition, current, top);
+  // Avec --vedette, la n°1 garde sa scène et son illustration avant la vedette :
+  // voir que la politique n'est PAS la n°1 dit quelque chose (Adrien, 2026-09-22).
+  // Seule la n°1 est illustrée par le site ; la vedette prend le bloc de couleur.
+  const n1 = top3[0] ?? classement[0];
+  const art = args["sans-illustration"] ? null : await resolveArt(edition, current, n1);
   const logo = await loadLogo();
   const traj = sceneTrajectoire(top);
   const clsmt = sceneClassement(classement.slice(0, 3), edition);
@@ -738,14 +756,15 @@ async function main() {
       visuel: visuelAccroche(top),
       edition: `Édition de ${pubHourLabel(edition)} · ${edition.dateLabel}`,
     }),
-    sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
+    ...(vedette > 1 ? [sceneUne(n1, art, 1), sceneUne(top, null, vedette, "une2")] : [sceneUne(top, art, 1)]),
+    traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
     sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
     title: `La Une des Unes · ${edition.key}`,
-    css: CSS + INTRO_CSS + FIN_CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
+    css: CSS.replace(/#une(?=[\s.{:])/g, ":is(#une,#une2)") + INTRO_CSS + FIN_CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos: await loadLogos(),
     footerLeft: "La Vitrine démocratique",
@@ -753,7 +772,7 @@ async function main() {
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
-  const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}${FORMAT === "instagram" ? "" : `_${FORMAT}`}`);
+  const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}${vedette > 1 ? `_n${vedette}` : ""}${FORMAT === "instagram" ? "" : `_${FORMAT}`}`);
   await fs.mkdir(outDir, { recursive: true });
   // Un fichier par réseau, plus le premier commentaire (le même partout).
   const textes = formats(matiere(edition, classement));

@@ -27,10 +27,11 @@ import { instantPublicationBloc } from "@/lib/data/headlineEvents";
 export const WIDTH = 1080;
 export const HEIGHT = 1920;
 export const FPS = 30;
-/** Étirement global de la timeline. 1,4 = le rythme validé le 2026-09-16
- *  (« un peu moins rapide » que la première version). Les gabarits décrivent
- *  leurs scènes au rythme de base ; seul ce facteur règle la vitesse. */
-export const SLOW = 1.4;
+/** Étirement global de la timeline. Les gabarits décrivent leurs scènes au
+ *  rythme de base ; seul ce facteur règle la vitesse. 1,4 le 2026-09-16 (« un
+ *  peu moins rapide » que la première version), RENVERSÉ le 2026-09-22 par
+ *  Adrien devant un reel de 61 s : « Il est ben trop long, faut l'accélérer. » */
+export const SLOW = 1.0;
 
 export const SITE_URL = "https://vitrinedemocratique.com";
 
@@ -362,25 +363,52 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 @keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes pop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
 
-/* Le logo et son iridescence (logoAnime). */
-.logo-irise{position:relative;display:block}
-.logo-irise img{display:block;width:100%}
-.logo-irise .tache{position:absolute;left:36%;top:-10%;width:30%;height:120%;filter:blur(34px);opacity:.85;
+/* Le logo et son iridescence (logoAnime). Au repos, le tracé noir reste noir :
+   la couleur passe SUR les traits, puis vit AUTOUR (halo et aura, derrière). */
+.logo-irise{position:relative;display:block;isolation:isolate}
+.logo-irise img{position:relative;display:block;width:100%;z-index:1}
+.logo-irise .tache{position:absolute;left:22%;top:-10%;width:28%;height:120%;opacity:.8;z-index:0;
   background:
     radial-gradient(42% 42% at 32% 22%, #F0C3DD 0%, rgba(240,195,221,0) 70%),
     radial-gradient(42% 42% at 68% 34%, #C6E2F4 0%, rgba(198,226,244,0) 70%),
     radial-gradient(46% 46% at 46% 72%, #F4E3AE 0%, rgba(244,227,174,0) 70%),
     radial-gradient(38% 38% at 74% 76%, #C7E9D6 0%, rgba(199,233,214,0) 70%);
-  animation:respire 7s ease-in-out infinite alternate}
-.logo-irise .passe{position:absolute;inset:0;
-  -webkit-mask-image:var(--logo);mask-image:var(--logo);
-  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  filter:blur(34px);animation:respire 7s ease-in-out infinite alternate,teinte 14s linear infinite}
+.logo-irise .passe,.logo-irise .aura{position:absolute;top:0;bottom:0;left:20.8%;width:30.7%;
+  -webkit-mask-image:var(--logo),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='0,-5 100,-5 100,105 11.7,105 11.7,38 0,38'/%3E%3C/svg%3E");mask-image:var(--logo),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='0,-5 100,-5 100,105 11.7,105 11.7,38 0,38'/%3E%3C/svg%3E");
+  -webkit-mask-size:325.73% 100%,100% 100%;mask-size:325.73% 100%,100% 100%;
+  -webkit-mask-position:30.015% 0,0 0;mask-position:30.015% 0,0 0;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  background:linear-gradient(100deg,rgba(0,0,0,0) 36%,#E79FC6 44%,#8FCFEE 50%,#F3DE95 56%,#A9DFC4 62%,rgba(0,0,0,0) 70%);
-  background-size:260% 100%;background-position:135% 0;
-  animation:traverse 2.6s cubic-bezier(.4,0,.2,1) both}
+  -webkit-mask-composite:source-in;mask-composite:intersect}
+/* L'IRISATION VIT DANS LE VD, ET SEULEMENT LÀ (Adrien, 2026-09-22 : « elle est
+   censée apparaître juste dans le VD » ; la version pleine largeur « couvre tous
+   les logos »). Mesuré SUR LE RENDU (pas sur le PNG) : le VD va de 21,1 à 51,1 %
+   de la largeur, « DÉMOCRATIQUE » commence à 52 %, et le « E » de VITRINE
+   (21,3 → 23,3 %) est SOUS le coin du V — aucune coupe verticale ne les sépare.
+   D'où deux masques croisés : le logo lui-même, recalé sur une boîte 20,8 →
+   51,5 % (taille 100/30,7 = 325,73 %, position 30,015 %), et une fenêtre en L
+   qui retire le coin bas-gauche (x < 24,4 % du logo sous 38 % de sa hauteur),
+   où ne passe que le « E ». La vague, reflet blanc EN TÊTE, va de gauche à droite. Le calage
+   de background-position (99 % → 2 %) fait entrer la vague au premier instant
+   et sortir au dernier : pas de temps mort, pas d'éclair. */
+.logo-irise .passe{z-index:2;
+  background:linear-gradient(105deg,rgba(244,166,207,0) 34%,#F4A6CF 38%,#C3A5F2 43%,#86CFF3 48%,#97E3C1 53%,#F4DC8E 58%,#F4A6CF 62%,rgba(255,255,255,.95) 64.5%,rgba(255,255,255,0) 66.5%);
+  background-size:320% 100%;background-position:99% 0;
+  animation:traverse 2.4s cubic-bezier(.37,0,.63,1) both}
+/* Le faisceau : la même vague, NON découpée et floutée, DERRIÈRE les traits —
+   une lumière irisée qui passe sous le tracé noir. Fondue en haut et en bas. */
+/* Le halo tient dans la MÊME boîte que le VD : le masque radial coupe le flou
+   à ses bords, donc rien ne déborde sur « VITRINE » ni sur « DÉMOCRATIQUE »
+   (à 51 % de large, le « E » de VITRINE se teintait). */
+.logo-irise .halo{position:absolute;left:23.5%;width:28%;top:-26%;bottom:-26%;z-index:0;filter:blur(16px) saturate(1.15);opacity:.36;
+  -webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 30%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 30%,transparent 100%)}
+.logo-irise .halo .passe{left:0;width:100%;-webkit-mask-image:none;mask-image:none;-webkit-mask-composite:initial;mask-composite:initial}
+.logo-irise .aura{display:none}
 @keyframes respire{from{transform:translateX(-10px) scale(1)}to{transform:translateX(12px) scale(1.07)}}
-@keyframes traverse{from{background-position:135% 0}to{background-position:-35% 0}}
+@keyframes teinte{from{filter:blur(34px) hue-rotate(0deg)}to{filter:blur(34px) hue-rotate(360deg)}}
+@keyframes traverse{from{background-position:99% 0}to{background-position:2% 0}}
+@keyframes apparait{from{opacity:0}to{opacity:.6}}
+@keyframes derive{from{background-position:0% 0}to{background-position:-300% 0}}
 `;
 
 /** Assemble la page complète. `css` et `script` sont propres au gabarit ;
@@ -402,6 +430,10 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 export function logoAnime(logo: string, opts: { classe: string; taille: number; passe: number }): string {
   return `<div class="logo-irise ${opts.classe}" style="--logo:url('${logo}');width:${opts.taille}px">
     <div class="tache" data-deco></div>
+    <div class="halo" data-deco>
+      <div class="passe" style="animation-delay:${opts.passe}s"></div>
+      <div class="aura" style="animation-delay:${opts.passe + 1.5}s,0s"></div>
+    </div>
     <img src="${logo}" alt="La Vitrine démocratique">
     <div class="passe" style="animation-delay:${opts.passe}s"></div>
   </div>`;

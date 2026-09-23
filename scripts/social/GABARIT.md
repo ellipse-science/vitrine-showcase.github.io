@@ -103,8 +103,11 @@ commun, une identité visuelle, un rappel marqué.**
   (~2 Mo, instantané des données) : il se régénère en une commande.
 - **ARRÊTÉ · Format.** 1080×1920 (9:16), H.264, 30 images/s, piste audio muette
   (la musique s'ajoute dans Instagram).
-- **ARRÊTÉ · Rythme.** Durées de base étirées par `SLOW = 1,4` (`lib/reel.ts`).
-  La première version était jugée trop rapide.
+- ~~**ARRÊTÉ · Rythme.** Durées de base étirées par `SLOW = 1,4` (`lib/reel.ts`).
+  La première version était jugée trop rapide.~~
+  **RENVERSÉ le 2026-09-22 (Adrien, devant le reel LinkedIn de 61 s) :** « Il est
+  ben trop long, faut l'accélérer. » `SLOW = 1,0` : les scènes à leur rythme de
+  base, 43 s pour la Une des Unes.
 
 ### Mise en page
 
