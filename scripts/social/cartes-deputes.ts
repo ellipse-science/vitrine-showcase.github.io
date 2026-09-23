@@ -1037,10 +1037,10 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
         justify-content:space-between;font-family:"IBM Plex Mono",monospace;font-size:21px;
         letter-spacing:.16em;text-transform:uppercase;opacity:.85}
   .ord{text-transform:none;font-size:.62em;vertical-align:.5em;line-height:0}
-  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:18px}
-  .marque-capp i.sep{width:1.5px;height:30px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
-  .marque-capp i.ulaval{width:100px;height:47px}
-  .marque-capp i{display:block;width:150px;height:47px;background:${COLORS.paper};opacity:.8;
+  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:22px}
+  .marque-capp i.sep{width:1.5px;height:36px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
+  .marque-capp i.ulaval{width:120px;height:56px}
+  .marque-capp i{display:block;width:180px;height:56px;background:${COLORS.paper};opacity:.8;
                  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                  -webkit-mask-position:center;mask-position:center}
   .grain,.mouchete{position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none}
@@ -1155,10 +1155,10 @@ function carteHTML(
                   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                   -webkit-mask-position:center;mask-position:center}
   /* Signature discrète, tout au bas du carton, CENTRÉE ; même place au verso. */
-  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:18px}
-  .marque-capp i.sep{width:1.5px;height:30px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
-  .marque-capp i.ulaval{width:100px;height:47px}
-  .marque-capp i{display:block;width:150px;height:47px;background:${COLORS.softer};
+  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:22px}
+  .marque-capp i.sep{width:1.5px;height:36px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
+  .marque-capp i.ulaval{width:120px;height:56px}
+  .marque-capp i{display:block;width:180px;height:56px;background:${COLORS.softer};
                  -webkit-mask-size:contain;mask-size:contain;
                  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                  -webkit-mask-position:center;mask-position:center}
@@ -1588,10 +1588,10 @@ function versoHTML(
                  -webkit-mask-position:center;mask-position:center}
   .ord{text-transform:none;font-size:.62em;vertical-align:.5em;line-height:0}
   /* Signature CAPP : même place qu'au recto, à l'encre du papier comme le crédit. */
-  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:18px}
-  .marque-capp i.sep{width:1.5px;height:30px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
-  .marque-capp i.ulaval{width:100px;height:47px}
-  .marque-capp i{display:block;width:150px;height:47px;background:${COLORS.paper};opacity:.62;
+  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:22px}
+  .marque-capp i.sep{width:1.5px;height:36px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
+  .marque-capp i.ulaval{width:120px;height:56px}
+  .marque-capp i{display:block;width:180px;height:56px;background:${COLORS.paper};opacity:.62;
                  -webkit-mask-size:contain;mask-size:contain;
                  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
                  -webkit-mask-position:center;mask-position:center}
