@@ -1,5 +1,11 @@
 [
   {
+    "pr": 836,
+    "date": "2026-09-23T19:51:52Z",
+    "note": "L'adresse de contact de la Vitrine est maintenant info@capp.ulaval.ca.",
+    "version": "2.49.0-beta.4"
+  },
+  {
     "pr": 834,
     "date": "2026-09-23T18:54:07Z",
     "note": "Le sous-menu « À propos » (Équipe, Partenaires) s'affiche maintenant en entier sur les écrans d'ordinateur portable, où le bord de la fenêtre le coupait. La page Méthodologie ne glisse plus de côté sur téléphone et tablette.",
