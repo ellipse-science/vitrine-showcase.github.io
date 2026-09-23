@@ -145,7 +145,9 @@ caucus), PC (présidence de commission), AP (adjoint parlementaire), VC
 (vice-présidence de commission), PS (présidence de séance), B (Bureau), PP
 (porte-parole sans fonction rémunérée), D (député sans fonction).
 Conséquence connue : Pierre Dufour porte « M » pour 17 jours de ministère au
-début de la législature.
+début de la législature. **Décision de Jules (23-09) : conservé.** Le sigle dit
+la fonction la mieux payée, pas la plus longue ; une durée minimale a été
+écartée.
 
 ## 4. Rémunération
 
