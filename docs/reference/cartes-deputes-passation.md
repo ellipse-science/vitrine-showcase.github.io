@@ -43,7 +43,10 @@ sans conflit et tous les tests passent sur le résultat combiné.
 | pplmatch depuis `main`, règle de reconstruction | aws-refiners#551 | plus de commit épinglé (revue de Patrick) ; README : après un lot de merges dans pplmatch, une PR qui touche le dossier du raffineur reconstruit l'image en DEV puis en PROD | approuvée par Adrien ; **Patrick doit lever sa demande de changements** |
 | Release de #548 | aws-refiners#552 | graduation vers `main` | **fusionnée le 24-09** (`98ae5b9`), image PROD du raffineur des phrases reconstruite |
 | En-tête de présidence | aws-refiners#553 | « Le Vice-Président (M. Benjamin) » ne masque plus l'élu (398 interventions sur 1 513 perdaient leur `person_id` au test local) | **fusionnée le 24-09** (`4239a62`) ; release vers `main` : aws-refiners#566 |
-| Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques | **déploiement** de #549 |
+| Vice-présidents au fauteuil | aws-refiners#568 | l'en-tête « Le/La (Vice-)Président(e) » marque `presiding_officer` après l'appariement ; `person_id` intact ; 310 en-têtes sur 1 513 au test local | ouverte le 24-09 ; à fusionner (`--squash`), puis release vers `main` |
+| Release de #553 | aws-refiners#566 | graduation vers `main` | approuvée (Patrick) ; fusion `--rebase` par Jules |
+| Release de #549 | aws-refiners#567 | graduation vers `main` | approuvée (Adrien) ; fusion `--rebase` par Jules |
+| Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques ; § 08 : présidence de séance neutre, vice-présidents compris | **déploiement** de #549 et #568, puis bascule |
 
 Issues ouvertes : aws-refiners#546 (têtes INFER `public_lands`/`defense`),
 aws-refiners#547 (doublons, présidence, « Mme Roy » : diagnostic et chiffres à
@@ -62,7 +65,9 @@ indépendantes pour les dix élus qui finissent indépendants, graphie accentué
 - La présidente est commune d'office tant que sa parole au fauteuil n'est pas
   attribuée ; une fois pplmatch#7 et la reconstruction faits, elle entre dans le
   calcul (elle serait rare). Pas de badge (essayé, retiré).
-- Sa parole au fauteuil compte pour **elle**, **pas** dans le total de la CAQ.
+- La parole au fauteuil compte pour la **personne** et pour **aucun parti**,
+  présidente et vice-présidents confondus (décision du 24-09, aws-refiners#568).
+  Une seule règle ; l'en-tête officiel la rend détectable.
 - Un élu qui finit indépendant a une **carte indépendante** (« Indépendant (élu CAQ) »).
 - Graphie **accentuée** des noms, même quand l'Assemblée n'en met pas.
 - Sigle de fonction : la **mieux payée**, quelle que soit sa durée (Dufour garde « M »).
@@ -110,12 +115,11 @@ installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
 
 **Étapes, dans l'ordre :**
 
-1. Fusionner aws-refiners#553 (en-tête de présidence ; sans lui, la
-   reconstruction retirerait les vice-présidents de leurs propres chiffres),
-   aws-refiners#551 (règle de reconstruction documentée, aucun changement de
-   comportement), #549, et les graduer vers `main` (#552 pour #548, déjà
-   ouverte ; une release à part pour chacune des autres). Les images des deux
-   comptes embarquent alors le même code.
+1. Fusionner les releases #566 (#553) et #567 (#549) dans `main` (`--rebase`),
+   puis aws-refiners#568 (vice-présidents) et #551 (règle de reconstruction
+   documentée, aucun changement de comportement) dans `develop` (`--squash`),
+   chacune suivie d'une release vers `main`. Les images des deux comptes
+   embarquent alors le même code.
 2. Fusionner pplmatch#6 à #9, puis une PR aws-refiners qui **touche le dossier
    du raffineur des phrases** (le paragraphe pplmatch de son README, avec la
    date du lot) : son merge reconstruit l'image en DEV, sa graduation en PROD.
