@@ -24,7 +24,7 @@ export const PERSOS: Record<Perso, FichePerso> = {
   chien: {
     nom: "Défi Datagotchi",
     texte: "Es-tu prévisible? Viens le découvrir!",
-    action: "Tenter ma chance",
+    action: "Relever le défi",
     href: "https://quebec.datagotchi.com/?utm_source=vitrinedemocratique",
     image: "/datagotchi/chien.gif",
     imageFixe: "/datagotchi/chien.png",
