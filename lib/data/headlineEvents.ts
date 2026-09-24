@@ -1830,14 +1830,44 @@ export const loadHeadlineEvents = cache(async (editionKey?: string, opts?: { cla
   let raw: string;
   try {
     raw = await readDatasetText("public/data/headline-events.json");
-  } catch {
+  } catch (err) {
+    // Même règle que la garde de l'édition vivante, plus bas : pour l'édition
+    // COURANTE, une source illisible est une panne, pas une page sans Une. Le
+    // build échoue et la dernière édition complète reste en ligne. Une archive
+    // illisible rend simplement sa page vide.
+    if (!editionKey) throw err;
     return null;
   }
 
   const all = eventsUpTo(parseEvents(raw), editionKey);
   const unique = uniqueQcEvents(all);
 
-  if (unique.length === 0) return null;
+  // ÉDITION VIVANTE : un vide est une PANNE, jamais une accalmie de l'actualité.
+  //
+  // Nuit du 16 au 17 septembre 2026. Le build de prod a reçu de l'API des
+  // événements qui sont tous tombés au filtre `sumQc + sumRoc > 0` : la Une des
+  // Unes et Deux solitudes ont disparu du site, sans une seule erreur, pendant
+  // que les mêmes fichiers du dépôt donnaient un top3 plein. La garde bruyante
+  // écrite pour ce cas précis (plus bas, SALIENCE_CUTOVER) était INATTEIGNABLE :
+  // ce `return null` la précédait.
+  //
+  // Échouer ici garde en ligne la dernière édition COMPLÈTE : un build
+  // Cloudflare qui échoue ne remplace pas le déploiement en place, et le retard
+  // se voit (garde-fraicheur.yml). Le job `secours-fichiers` de deploy-prod.yml
+  // ne couvre que le déploiement manuel de secours. Une archive, elle, a le
+  // droit d'être vide : on ne casse que l'édition courante.
+  if (unique.length === 0) {
+    if (!editionKey) {
+      throw new Error(
+        "Aucun événement pour l'édition courante après filtrage. La source a " +
+        "servi des lignes sans saillance QC/ROC exploitable (colonnes " +
+        "`salience_index_qc` / `score_qc` nulles?). Vérifiez /v1/health et le " +
+        "dernier cycle de synchro; le déploiement en place (dernière édition " +
+        "complète) reste en ligne.",
+      );
+    }
+    return null;
+  }
 
   // GARDE DU JOUR J. Le mode d'échec redouté de la bascule n'est pas un mauvais
   // calcul, c'est un snapshot MUET : si `salience_index_qc` n'a pas encore été
