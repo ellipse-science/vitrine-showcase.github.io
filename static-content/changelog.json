@@ -1,5 +1,11 @@
 [
   {
+    "pr": 818,
+    "date": "2026-09-24T16:36:07Z",
+    "note": "Quand une source de données revient vide, le site garde en ligne sa dernière édition complète plutôt que de publier une page d'accueil incomplète.",
+    "version": "2.49.0-beta.7"
+  },
+  {
     "pr": 866,
     "date": "2026-09-24T15:48:53Z",
     "note": "Le bouton de la mascotte Datagotchi invite maintenant à relever le défi.",
