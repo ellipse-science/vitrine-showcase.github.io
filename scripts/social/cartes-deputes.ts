@@ -160,22 +160,25 @@ function cheminOrigine(ecusson: boolean): string {
 
 /** Fenêtre de la photo (et du bandeau du nom) des cartes rares : la vague
  *  d'origine du coin, ramenée à l'intérieur du bandeau (même tracé, bords
- *  décalés de `bande`). */
-function cheminFenetre(): string {
+ *  décalés de `bande`). Sans écusson (indépendants), pas de vague : le coin
+ *  supérieur droit est arrondi comme le gauche (Jules, 24-09). */
+function cheminFenetre(ecusson: boolean): string {
   const w = PANNEAU.w;
   const h = PANNEAU.bas - PANNEAU.y;
   const { bande: b, arrondi: r } = TOPPS;
-  return `M ${b} ${h - b} V ${b + r} A ${r} ${r} 0 0 1 ${b + r} ${b} H 630`
-    + ` C 720 ${b}, 760 170, 855 170 C 915 170, ${w - b - 24} 140, ${w - b} 150 V ${h - b} Z`;
+  const haut = ecusson
+    ? `H 630 C 720 ${b}, 760 170, 855 170 C 915 170, ${w - b - 24} 140, ${w - b} 150`
+    : `H ${w - b - r} A ${r} ${r} 0 0 1 ${w - b} ${b + r}`;
+  return `M ${b} ${h - b} V ${b + r} A ${r} ${r} 0 0 1 ${b + r} ${b} ${haut} V ${h - b} Z`;
 }
 
 /** Bandeau uni, filets d'encre, et fine ligne de l'enjeu le plus saillant le
  *  long de la fenêtre (posée sous le filet, elle déborde de 3 px de part et
  *  d'autre). */
-function cadreTopps(parti: string): string {
+function cadreTopps(parti: string, ecusson: boolean): string {
   const w = PANNEAU.w;
   const h = PANNEAU.bas - PANNEAU.y;
-  const fenetre = cheminFenetre();
+  const fenetre = cheminFenetre(ecusson);
   return `<defs>${degradeMetal("rare")}</defs>`
     + `<path fill-rule="evenodd" fill="${parti}" d="M 0 0 H ${w} V ${h} H 0 Z ${fenetre}"/>`
     // Filet extérieur doublé de la ligne de l'enjeu, comme la fenêtre (22-09).
@@ -1109,7 +1112,7 @@ function carteHTML(
   const enjeu = d.topIssueColor ?? COLORS.soft;
   // Style Topps pour les rares seulement ; cadre d'origine pour les autres.
   const topps = c.rarete === "rare";
-  const cadrePath = topps ? cheminFenetre() : cheminOrigine(Boolean(ecusson));
+  const cadrePath = topps ? cheminFenetre(Boolean(ecusson)) : cheminOrigine(Boolean(ecusson));
   const marge = topps ? TOPPS.bande : 0;
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
@@ -1232,7 +1235,10 @@ function carteHTML(
      Discret : la légende du recto, sans un mot. */
   .bulle-enjeu{position:absolute;left:${marge}px;bottom:${marge + BANDE - BULLE.ligne}px;width:${BULLE.w}px;height:${BULLE.h + BULLE.ligne}px;
                background:${enjeu};clip-path:path('${vagueBulle(0, 0)} V ${BULLE.h + BULLE.ligne} H 0 Z');
-               display:flex;align-items:center;justify-content:center;padding-right:${BULLE.w - BULLE.coeur}px;box-sizing:border-box}
+               display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+               /* Centré sur la partie VISIBLE : le trait du cadre (métal 9 px sur les
+                  peu communes et les rares, encre 3 px sinon) empiète à gauche. */
+               padding:0 ${BULLE.w - BULLE.coeur}px 0 ${topps || c.rarete === "peu-commune" ? 5 : 2}px}
   .bulle-enjeu svg{opacity:.92}
   .nom{font-family:"Playfair Display",serif;font-weight:900;font-size:68px;
        line-height:1.0;letter-spacing:-.02em;color:${COLORS.paper};
@@ -1283,7 +1289,7 @@ ${CSS_HOLO}
           supérieur droit, au-delà de la vague) remplie à l'encre du parti et
           cernée de la même ligne, le logo en couleur papier (Jules, 22-09).
           Rare : cadre Topps. */ ""}
-    ${topps ? cadreTopps(parti)
+    ${topps ? cadreTopps(parti, Boolean(ecusson))
       : c.rarete === "peu-commune"
         ? `<defs>${degradeMetal("peu-commune")}</defs>${ecusson ? `<path d="M 630 0 H 979 V 150 C 955 140, 915 170, 855 170 C 760 170, 720 0, 630 0 Z" fill="${parti}"/>` : ""}<path d="${cadrePath}" fill="none" stroke="url(#metal)" stroke-width="9" stroke-linejoin="round"/>${ecusson ? `<path d="M 630 0 H 979 V 150" fill="none" stroke="url(#metal)" stroke-width="9" stroke-linejoin="round"/>` : ""}<path d="${cadrePath}" fill="none" stroke="${COLORS.ink}" stroke-width="2.5" stroke-linejoin="round"/>${ecusson ? `<path d="M 630 0 H 979 V 150" fill="none" stroke="${COLORS.ink}" stroke-width="2.5" stroke-linejoin="round"/>` : ""}`
         : `<path d="${cadrePath}" fill="none" stroke="${COLORS.ink}" stroke-width="3" stroke-linejoin="round"/>`}

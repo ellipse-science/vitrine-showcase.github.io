@@ -241,7 +241,7 @@ Grille du 23 septembre 2026 (décision de Jules).
 | Rareté | Qui | Cartes | Au recto |
 |---|---|---|---|
 | Légendaire | les premiers ministres de la législature (Legault, Fréchette) | 2 | 4 fleurs, photo pleine, ligne diamant |
-| Rare | les 10 % d'élus qui ont prononcé le plus de mots | 13 | 3 fleurs, bandeau à la couleur du parti, lignes or |
+| Rare | les 10 % d'élus qui ont prononcé le plus de mots | 13 | 3 fleurs, bandeau à la couleur du parti, lignes or ; sans écusson (indépendants), le coin supérieur droit de la fenêtre est arrondi, pas de vague (24-09) |
 | Peu commune | les 35 % suivants | 44 | 2 fleurs, ligne argent, coin de l'écusson à la couleur du parti |
 | Commune | les autres, et la présidente | 70 | 1 fleur, cadre de base |
 
@@ -312,7 +312,9 @@ une courbe en S qui s'évase vers la droite et rejoint la ligne à l'horizontale
 (112 px de large, 52 px au-dessus de la ligne ; `BULLE`, `vagueBulle`). Elle
 porte le **pictogramme** de l'enjeu, en couleur papier, centré sur toute la
 hauteur colorée, ligne comprise. La ligne et la vague sont cernées du même
-trait d'encre que le cadre (`contourEnjeu`). Discret, sans un mot : c'est la
+trait d'encre que le cadre (`contourEnjeu`). Le pictogramme est centré sur la
+zone colorée **visible** : décalé de la moitié du trait du cadre, qui empiète à
+gauche (métal de 9 px sur les peu communes et les rares). Discret, sans un mot : c'est la
 légende du recto, et l'écart à la charte (« jamais une couleur seule ») est
 levé. Absente des légendaires, qui n'ont pas de bande.
 
