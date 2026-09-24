@@ -736,6 +736,10 @@ function ligneMandat(m: Mandat | undefined): string {
 // La fonction renvoie une URL file:// : les pages sont ouvertes depuis le
 // disque (cf. rendre()), pas injectées, sans quoi Chromium refuse l'image.
 const TRAME_VERSION = "1";
+// --cellule N : pas de la trame en pixels (4 par défaut). Plus la cellule est
+// grande, plus la trame est grosse et plus elle cache le peu de détail des
+// portraits source (150 x 200 px). Fait partie de la clé du cache des trames.
+const CELLULE_TRAME = Math.max(2, Number(typeof parseArgs(process.argv.slice(2)).cellule === "string" ? parseArgs(process.argv.slice(2)).cellule : 4));
 const CACHE_TRAMES = path.resolve(process.cwd(), "social-out/.cache-trames");
 const cacheBaseball = new Map<string, string | null>();
 async function baseballURI(deputy: DeputyRow): Promise<string | null> {
@@ -745,7 +749,7 @@ async function baseballURI(deputy: DeputyRow): Promise<string | null> {
   const source = path.resolve(process.cwd(), "public/images/deputes", `${asset}.jpg`);
   const octets = await fs.readFile(source).catch(() => null);
   if (!octets) { cacheBaseball.set(asset, null); return null; }
-  const cle = createHash("sha256").update(octets).update(TRAME_VERSION).digest("hex").slice(0, 12);
+  const cle = createHash("sha256").update(octets).update(TRAME_VERSION).update(`cellule=${CELLULE_TRAME}`).digest("hex").slice(0, 12);
   const fichier = path.join(CACHE_TRAMES, `${asset}-${cle}.png`);
   const url = pathToFileURL(fichier).href;
   if (await fs.access(fichier).then(() => true, () => false)) {
@@ -764,7 +768,7 @@ async function baseballURI(deputy: DeputyRow): Promise<string | null> {
     return null;
   }
   const { data, info } = prepared;
-  const cell = 4;
+  const cell = CELLULE_TRAME;
   const cx = info.width / 2; const cy = info.height / 2;
   const channels = [
     { angle: 15, fill: "#00CBE6", gain: 1.04, protectHighlights: true, value: (r: number) => 1 - r / 255 },
