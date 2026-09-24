@@ -542,12 +542,27 @@ function marquesInstitutions(logoCapp: string | null): string {
  *  de la bulle (.bulle-enjeu : 56 × 50 px, arrondi de 34 px à droite), puis le
  *  sommet de la ligne jusqu'au bord droit ; un second passe sous la ligne
  *  (22 px). Coordonnées du panneau, comme cadrePath. */
+/** LA BULLE : une vague évasée (Jules, 24-09). Plate en haut sur `coeur` px,
+ *  puis une courbe en S qui s'ouvre vers la droite et rejoint la ligne de
+ *  l'enjeu à l'horizontale. `h` au-dessus de la ligne, `ligne` = la ligne
+ *  elle-même (22 px), que la bulle recouvre pour que le pictogramme se centre
+ *  sur toute la hauteur colorée. */
+const BULLE = { w: 112, h: 52, ligne: 22, coeur: 52 };
+/** Tracé du dessus de la vague, depuis (x, y) = coin supérieur gauche de la
+ *  bulle, jusqu'au point où elle rejoint la ligne. Sert au clip-path (origine
+ *  locale) et au contour d'encre (coordonnées du panneau). */
+function vagueBulle(x: number, y: number): string {
+  const { w, h, coeur } = BULLE;
+  // Plat court, puis une S aux points de contrôle bien écartés : l'épaule est
+  // ronde et la descente douce, plutôt qu'un quart d'angle (Jules, 24-09).
+  return `M ${x} ${y} H ${x + 16} C ${x + coeur + 26} ${y}, ${x + coeur + 8} ${y + h}, ${x + w} ${y + h}`;
+}
 function contourEnjeu(marge: number, epaisseur: number): string {
   const haut = PANNEAU.bas - PANNEAU.y - marge - BANDE;
-  const g = marge, d = PANNEAU.w - marge, r = 34, bw = 56, bh = 50;
+  const g = marge, d = PANNEAU.w - marge;
   const trait = `fill="none" stroke="${COLORS.ink}" stroke-width="${epaisseur}" stroke-linejoin="round" stroke-linecap="square"`;
-  return `<path d="M ${g} ${haut - bh} H ${g + bw - r} A ${r} ${r} 0 0 1 ${g + bw} ${haut - bh + r} V ${haut} H ${d}" ${trait}/>`
-    + `<path d="M ${g} ${haut + 22} H ${d}" ${trait}/>`;
+  return `<path d="${vagueBulle(g, haut - BULLE.h)} H ${d}" ${trait}/>`
+    + `<path d="M ${g} ${haut + BULLE.ligne} H ${d}" ${trait}/>`;
 }
 
 /** Vrai si le dernier segment d'affiliation est « sans affiliation », OU s'il
@@ -1215,9 +1230,9 @@ function carteHTML(
      l'enjeu, au coin inférieur gauche, un petit quart-de-rond de la même
      couleur monte dans la photo et porte le pictogramme, en couleur papier.
      Discret : la légende du recto, sans un mot. */
-  .bulle-enjeu{position:absolute;left:${marge}px;bottom:${marge + BANDE}px;width:56px;height:50px;
-               background:${enjeu};border-radius:0 34px 0 0;
-               display:flex;align-items:center;justify-content:center;padding:0 4px 2px 0;box-sizing:border-box}
+  .bulle-enjeu{position:absolute;left:${marge}px;bottom:${marge + BANDE - BULLE.ligne}px;width:${BULLE.w}px;height:${BULLE.h + BULLE.ligne}px;
+               background:${enjeu};clip-path:path('${vagueBulle(0, 0)} V ${BULLE.h + BULLE.ligne} H 0 Z');
+               display:flex;align-items:center;justify-content:center;padding-right:${BULLE.w - BULLE.coeur}px;box-sizing:border-box}
   .bulle-enjeu svg{opacity:.92}
   .nom{font-family:"Playfair Display",serif;font-weight:900;font-size:68px;
        line-height:1.0;letter-spacing:-.02em;color:${COLORS.paper};
