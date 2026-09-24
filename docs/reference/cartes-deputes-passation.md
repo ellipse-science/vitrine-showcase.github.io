@@ -40,7 +40,7 @@ est en revue sur pplmatch.
 | Reconstruction, A4, présidence hors parti | aws-refiners#549 | tables suffixées, table `agora_decideurs_qc_personnes`, outils de reconstruction, comparaison et bascule, parole au fauteuil hors des totaux de parti | #548 |
 | Doc agents | aws-refiners#550 | environnements DEV/PROD dans `.claude/CLAUDE.md` | **mergée** |
 | pplmatch depuis `main`, règle de reconstruction | aws-refiners#551 | plus de commit épinglé (revue de Patrick) ; README : après un lot de merges dans pplmatch, une PR qui touche le dossier du raffineur reconstruit l'image en DEV puis en PROD | rien |
-| Release de #548 | aws-refiners#552 | graduation vers `main` | rien |
+| Release de #548 | aws-refiners#552 | graduation vers `main` | **fusionnée le 24-09** (`98ae5b9`), image PROD du raffineur des phrases reconstruite |
 | En-tête de présidence | aws-refiners#553 | « Le Vice-Président (M. Benjamin) » ne masque plus l'élu (398 interventions sur 1 513 perdaient leur `person_id` au test local) | **avant la reconstruction** |
 | Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques | **déploiement** de #549 |
 
@@ -222,6 +222,10 @@ commentaire qui résume ce qui a été fait et les chiffres vérifiés :
 
 ## Règles à respecter (non négociables)
 
+- Fusions dans aws-refiners : **squash** vers `develop`, mais **rebase seulement**
+  vers `main` (règle du dépôt ; `--squash` est refusé sur une release). Une
+  release = une branche `release/…` depuis `main` avec le cherry-pick du squash
+  de `develop`, un seul commit, fusionnée avec `gh pr merge --rebase`.
 - Ne jamais modifier `public/data/` à la main.
 - Ne jamais écrire dans un datamart ni lancer `--go`, `--apply` ou une
   republication sans demande explicite, et, en PROD ou sur une donnée partagée,
