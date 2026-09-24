@@ -38,11 +38,11 @@ sans conflit et tous les tests passent sur le résultat combiné.
 | A3 « Mme Roy » | pplmatch#8 | alias retiré ; l'en-tête (« Mme Roy (Montarville) ») tranche | rien |
 | A6 Anomalies | pplmatch#9 | Chassin, Nichols, Anglade, Girard (Groulx), Bélanger (Orford) | rien |
 | A1 Doublons | aws-refiners#548 | dédoublonnage sur `id` avant la segmentation | **mergée** ; release vers `main` prête |
-| Reconstruction, A4, présidence hors parti | aws-refiners#549 | tables suffixées, table `agora_decideurs_qc_personnes`, outils de reconstruction, comparaison et bascule, parole au fauteuil hors des totaux de parti | **approuvée** (Adrien, 24-09), à fusionner puis graduer |
+| Reconstruction, A4, présidence hors parti | aws-refiners#549 | tables suffixées, table `agora_decideurs_qc_personnes`, outils de reconstruction, comparaison et bascule, parole au fauteuil hors des totaux de parti | **fusionnée le 24-09** (`4597848`) ; release vers `main` ouverte |
 | Doc agents | aws-refiners#550 | environnements DEV/PROD dans `.claude/CLAUDE.md` | **mergée** |
 | pplmatch depuis `main`, règle de reconstruction | aws-refiners#551 | plus de commit épinglé (revue de Patrick) ; README : après un lot de merges dans pplmatch, une PR qui touche le dossier du raffineur reconstruit l'image en DEV puis en PROD | approuvée par Adrien ; **Patrick doit lever sa demande de changements** |
 | Release de #548 | aws-refiners#552 | graduation vers `main` | **fusionnée le 24-09** (`98ae5b9`), image PROD du raffineur des phrases reconstruite |
-| En-tête de présidence | aws-refiners#553 | « Le Vice-Président (M. Benjamin) » ne masque plus l'élu (398 interventions sur 1 513 perdaient leur `person_id` au test local) | **approuvée** (Adrien, 24-09), à fusionner **avant la reconstruction**, puis graduer |
+| En-tête de présidence | aws-refiners#553 | « Le Vice-Président (M. Benjamin) » ne masque plus l'élu (398 interventions sur 1 513 perdaient leur `person_id` au test local) | **fusionnée le 24-09** (`4239a62`) ; release vers `main` : aws-refiners#566 |
 | Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques | **déploiement** de #549 |
 
 Issues ouvertes : aws-refiners#546 (têtes INFER `public_lands`/`defense`),
