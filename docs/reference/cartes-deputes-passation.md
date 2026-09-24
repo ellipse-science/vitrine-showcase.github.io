@@ -44,8 +44,8 @@ sans conflit et tous les tests passent sur le résultat combiné.
 | Release de #548 | aws-refiners#552 | graduation vers `main` | **fusionnée le 24-09** (`98ae5b9`), image PROD du raffineur des phrases reconstruite |
 | En-tête de présidence | aws-refiners#553 | « Le Vice-Président (M. Benjamin) » ne masque plus l'élu (398 interventions sur 1 513 perdaient leur `person_id` au test local) | **fusionnée le 24-09** (`4239a62`) ; release vers `main` : aws-refiners#566 |
 | Vice-présidents au fauteuil | aws-refiners#568 | l'en-tête « Le/La (Vice-)Président(e) » marque `presiding_officer` après l'appariement ; `person_id` intact ; 310 en-têtes sur 1 513 au test local | ouverte le 24-09 ; à fusionner (`--squash`), puis release vers `main` |
-| Release de #553 | aws-refiners#566 | graduation vers `main` | approuvée (Patrick) ; fusion `--rebase` par Jules |
-| Release de #549 | aws-refiners#567 | graduation vers `main` | approuvée (Adrien) ; fusion `--rebase` par Jules |
+| Release de #553 | aws-refiners#566 | graduation vers `main` | **fusionnée le 24-09** (`017ee9c`) ; image PROD des phrases rebâtie |
+| Release de #549 | aws-refiners#567 | graduation vers `main` | **fusionnée le 24-09** (`ca026db`) ; images PROD `agora-decideurs-qc-phrases`, `agora-decideurs-qc` et `sonar-pipeline` rebâties |
 | Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques ; § 08 : présidence de séance neutre, vice-présidents compris | **déploiement** de #549 et #568, puis bascule |
 
 Issues ouvertes : aws-refiners#546 (têtes INFER `public_lands`/`defense`),
@@ -115,11 +115,11 @@ installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
 
 **Étapes, dans l'ordre :**
 
-1. Fusionner les releases #566 (#553) et #567 (#549) dans `main` (`--rebase`),
-   puis aws-refiners#568 (vice-présidents) et #551 (règle de reconstruction
-   documentée, aucun changement de comportement) dans `develop` (`--squash`),
-   chacune suivie d'une release vers `main`. Les images des deux comptes
-   embarquent alors le même code.
+1. Fait le 24-09 : #566 (#553) et #567 (#549) sont dans `main`, images PROD
+   rebâties. Reste aws-refiners#568 (vice-présidents) et #551 (règle de
+   reconstruction documentée, aucun changement de comportement) à fusionner
+   dans `develop` (`--squash`), chacune suivie d'une release vers `main`. Les
+   images des deux comptes embarquent alors le même code.
 2. Fusionner pplmatch#6 à #9, puis une PR aws-refiners qui **touche le dossier
    du raffineur des phrases** (le paragraphe pplmatch de son README, avec la
    date du lot) : son merge reconstruit l'image en DEV, sa graduation en PROD.
