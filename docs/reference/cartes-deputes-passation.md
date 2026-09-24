@@ -33,10 +33,10 @@ sans conflit et tous les tests passent sur le résultat combiné.
 
 | Tâche | Dépôt et PR | Contenu | Dépend de |
 |---|---|---|---|
-| Dimension enrichie | pplmatch#6 | tables `functions`, `election_results`, `indemnities`, `indemnity_scale` | rien |
-| A2 Présidence | pplmatch#7 | « La Présidente » attribuée à la personne au fauteuil (`presiding_officer`) | #6 |
-| A3 « Mme Roy » | pplmatch#8 | alias retiré ; l'en-tête (« Mme Roy (Montarville) ») tranche | rien |
-| A6 Anomalies | pplmatch#9 | Chassin, Nichols, Anglade, Girard (Groulx), Bélanger (Orford) | rien |
+| A2 Présidence, table des fonctions | pplmatch#7 | « La Présidente » attribuée à la personne au fauteuil (`presiding_officer`) ; `functions_qc.csv` et son générateur | **fusionnée le 24-09** (`91ba64e`) |
+| A3 « Mme Roy » | pplmatch#8 | alias retiré ; l'en-tête (« Mme Roy (Montarville) ») tranche | **fusionnée le 24-09** (`564aa40`) |
+| A6 Anomalies | pplmatch#9 | Chassin, Nichols, Anglade, Girard (Groulx), Bélanger (Orford) | **fusionnée le 24-09** (`f57ac18`) |
+| Dimension enrichie | pplmatch#6 | `election_results`, `indemnities`, `indemnity_scale`, publication de la dimension ; réduite le 24-09 à ce qui ne sert pas aux raffineurs | revue d'Étienne, sans urgence ; à rebaser sur `main` avant fusion |
 | A1 Doublons | aws-refiners#548 | dédoublonnage sur `id` avant la segmentation | **mergée** ; release vers `main` prête |
 | Reconstruction, A4, présidence hors parti | aws-refiners#549 | tables suffixées, table `agora_decideurs_qc_personnes`, outils de reconstruction, comparaison et bascule, parole au fauteuil hors des totaux de parti | **fusionnée le 24-09** (`4597848`) ; release vers `main` ouverte |
 | Doc agents | aws-refiners#550 | environnements DEV/PROD dans `.claude/CLAUDE.md` | **mergée** |
@@ -79,8 +79,10 @@ indépendantes pour les dix élus qui finissent indépendants, graphie accentué
 
 ### 1. Revues et déploiement (humains)
 
-1. Fusionner pplmatch#6, puis #7 ; #8 et #9 à tout moment. L'image des
-   raffineurs installe pplmatch depuis `main` au moment du build.
+1. Fait le 24-09 : pplmatch#7, #8 et #9 sont dans `main` (fusion sans revue
+   d'Étienne, décision de Jules : #7 réduite au strict nécessaire, tests et
+   CI verts, test local du raffineur). L'image des raffineurs installe pplmatch
+   depuis `main` au moment du build.
 2. Fusionner aws-refiners#548 puis #549 dans `develop`, puis les **graduer vers
    `main`** (branche `release/…`, procédure du `CLAUDE.md` d'aws-refiners).
 3. Reconstruire les images `agora-decideurs-qc-phrases` et `agora-decideurs-qc`
@@ -120,9 +122,9 @@ installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
    reconstruction documentée, aucun changement de comportement) à fusionner
    dans `develop` (`--squash`), chacune suivie d'une release vers `main`. Les
    images des deux comptes embarquent alors le même code.
-2. Fusionner pplmatch#6 à #9, puis une PR aws-refiners qui **touche le dossier
-   du raffineur des phrases** (le paragraphe pplmatch de son README, avec la
-   date du lot) : son merge reconstruit l'image en DEV, sa graduation en PROD.
+2. Rebâtir l'image du raffineur des phrases avec ce pplmatch : aws-refiners#568
+   (vice-présidents) touche ce dossier, son merge reconstruit l'image en DEV,
+   sa release en PROD. Aucune PR supplémentaire n'est nécessaire.
    Un merge dans pplmatch seul ne reconstruit aucune image (build par diff), et
    `main` de pplmatch est la seule référence : pas de commit épinglé (revue de
    Patrick, #551).
