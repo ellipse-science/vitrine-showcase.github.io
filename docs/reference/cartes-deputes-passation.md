@@ -36,9 +36,10 @@ est en revue sur pplmatch.
 | A2 Présidence | pplmatch#7 | « La Présidente » attribuée à la personne au fauteuil (`presiding_officer`) | #6 |
 | A3 « Mme Roy » | pplmatch#8 | alias retiré ; l'en-tête (« Mme Roy (Montarville) ») tranche | rien |
 | A6 Anomalies | pplmatch#9 | Chassin, Nichols, Anglade, Girard (Groulx), Bélanger (Orford) | rien |
-| A1 Doublons | aws-refiners#548 | dédoublonnage sur `id` avant la segmentation | rien |
+| A1 Doublons | aws-refiners#548 | dédoublonnage sur `id` avant la segmentation | **mergée** ; release vers `main` prête |
 | Reconstruction, A4, présidence hors parti | aws-refiners#549 | tables suffixées, table `agora_decideurs_qc_personnes`, outils de reconstruction, comparaison et bascule, parole au fauteuil hors des totaux de parti | #548 |
-| Doc agents | aws-refiners#550 | environnements DEV/PROD dans `.claude/CLAUDE.md` | rien |
+| Doc agents | aws-refiners#550 | environnements DEV/PROD dans `.claude/CLAUDE.md` | **mergée** |
+| Version pplmatch épinglée | aws-refiners#551 | `pplmatch@cab7e29` dans le raffineur des phrases | rien |
 | Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques | **déploiement** de #549 |
 
 Issues ouvertes : aws-refiners#546 (têtes INFER `public_lands`/`defense`),
@@ -78,36 +79,75 @@ indépendantes pour les dix élus qui finissent indépendants, graphie accentué
    dans les deux comptes ; vérifier que l'image contient `table_suffix` avant
    tout run avec suffixe (sinon le run écrirait dans les tables canoniques).
 
-### 2. Reconstruction de l'historique (humain qui lance, agent qui contrôle)
+### 2. Reconstruction de l'historique : séquence sûre (DEV d'abord, puis PROD par la migration)
 
-Accord d'une **deuxième personne** requis (écriture dans un datamart partagé).
-Éviter le mardi entre 5h et 7h (Montréal), quand les raffineurs agora tournent.
+Alignée sur la stratégie de migration de Patrick (`docs/STRATEGIE_MIGRATION.md`
+et `tools/migrate_all.sh` d'aws-refiners) : **DEV est la source, PROD la reçoit
+par `tools/migrate_table_dev_to_prod.R`** (téléversements bridés, validation des
+comptes et des statistiques par colonne, chemin CAST corrigé par #537). On ne
+reconstruit donc qu'une fois, en DEV, et INFER ne travaille qu'une fois ; DEV et
+PROD finissent identiques par construction.
 
-```sh
-# Répétition en DEV (noms réels des Lambdas du compte DEV) :
-ENV=DEV FN_PHRASES=<lambda phrases> FN_AGREGATS=<lambda agrégats> \
-  tools/reconstruire_agora_parallele.sh --dry-run      # puis --go
-Rscript tools/comparer_reconstruction_agora.R --env=DEV --suffixe=_reconstruction
-# Même chose en PROD, puis la bascule :
-Rscript tools/basculer_reconstruction_agora.R --env=PROD --suffixe=_reconstruction \
-  --go --accord="<nom>" --sauvegarde=~/sauvegardes-agora
-```
+**État de départ vérifié le 23-09** : les tables agora de DEV et de PROD sont
+identiques (821 285 phrases, 287 jours, mêmes mots, 141 affiliations). Les deux
+comptes lisent la même source (`rootSourceEnv = 'PROD'`).
 
-- `--go` du script de reconstruction : 196 fenêtres de 7 jours, une à la fois,
-  arrêt au premier échec (reprendre avec `REPRENDRE_A=`), jamais en relançant
-  une fenêtre déjà publiée.
-- La comparaison doit passer : couverture des jours, mots par année à ±3 % de
-  la source dédoublonnée, aucune phrase en double, même nombre d'élus.
-- La bascule sauvegarde chaque table canonique avant de la remplacer (dans
-  `tube`, « remplacer » supprime d'abord), et attend le bon compte de lignes.
-- Ensuite : fusionner vitrine#858, vérifier le site, retirer les tables
-  `_reconstruction` à la main.
+**Ce qui change en PROD avant la reconstruction.** L'Assemblée est dissoute
+depuis le 27 août : pas de nouvelle séance avant la 44e législature, donc les
+runs du mardi ne font que republier les instantanés. Phrases, identités et
+agrégats journaliers : inchangés. `agora_decideurs_qc` et `_deputes` : republiées
+à l'identique. `agora_decideurs_qc_personnes` : créée (le site ne la lit pas).
+`agora_decideurs_qc_affiliations` (lue par le site) : **change** dès que l'image
+installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
 
-Effets attendus : mots et interventions en baisse d'environ 30 % en médiane
-(jusqu'à la moitié pour les élus actifs surtout en 2022-2024) ; Nathalie Roy
-gagne sa parole au fauteuil (23 565 interventions, 325 848 mots) ; Chassin
-redevient CAQ de 2022 à septembre 2024 ; parts d'enjeux recalculées par les
-nouveaux modèles.
+**Étapes, dans l'ordre :**
+
+1. Fusionner aws-refiners#551 (version de pplmatch épinglée sur `cab7e29`,
+   aucun changement de comportement), #549, et les graduer vers `main` avec
+   #548 (branche `release/agora-doublons-source` déjà poussée). Les images des
+   deux comptes embarquent alors le même code et la même version de pplmatch.
+2. Fusionner pplmatch#6 à #9, puis une PR aws-refiners qui **avance le SHA
+   épinglé** vers le nouveau `main` de pplmatch (elle reconstruit l'image du
+   raffineur des phrases ; la graduer aussi). Un merge dans pplmatch seul ne
+   reconstruit aucune image.
+3. Prévenir Shannon : créneaux utilisés et évités (chaîne radar à 3, 7, 11, 15,
+   19, 23 h ; promesses neuves à 9, 13, 17, 21 h ; passage agora du mardi).
+4. Accord d'une deuxième personne. Reconstruction **en DEV**, lancée par un
+   humain (le script attend les créneaux libres, pause de 2 min entre fenêtres,
+   sonde de garde-fou avant tout) :
+   ```sh
+   ENV=DEV FN_PHRASES=<lambda DEV phrases> FN_AGREGATS=<lambda DEV agrégats> \
+     tools/reconstruire_agora_parallele.sh --go
+   Rscript tools/comparer_reconstruction_agora.R --env=DEV --suffixe=_reconstruction
+   ```
+   Si l'agrégation finale dépasse 15 min : `AGREGATS_SEULEMENT=1`.
+5. Contrôles ciblés (valeurs connues) : Fitzgibbon à la moitié de ses mots ;
+   Marissal 223 184 mots sur une ligne ; Nathalie Roy environ 23 500
+   interventions au fauteuil ; Chassin CAQ en 2023 ; « Mme Roy (Montarville) » à
+   Nathalie Roy. Échantillon vérifié à la main dans le Journal des débats.
+6. Bascule **en DEV** (sauvegarde `.rds`, puis remplacement), puis une
+   restauration d'essai et une nouvelle bascule pour valider le retour arrière :
+   ```sh
+   Rscript tools/basculer_reconstruction_agora.R --env=DEV --suffixe=_reconstruction \
+     --go --accord="<nom>" --sauvegarde=~/sauvegardes-agora
+   ```
+7. **Migration DEV → PROD** des dix tables agora avec l'outil de Patrick, hors
+   mardi, **rafraîchissement du site suspendu** pendant l'opération (le workflow
+   `refresh-data` : réglage de dépôt, fait par un humain), puis relancé une fois
+   les comptes vérifiés. Ordre amont d'abord : phrases, identités, affiliations,
+   annotées, annotées par député, caches, puis `agora_decideurs_qc`, `_deputes`,
+   `_personnes`.
+   ```sh
+   R --slave -f tools/migrate_table_dev_to_prod.R --args --table-key=agora_datamart-agora_decideurs_qc_phrases
+   ```
+   (même commande pour chaque table ; Patrick relit la liste avant.)
+8. Parité : relancer la comparaison DEV/PROD (mêmes comptes et mêmes mots par
+   élu), fusionner vitrine#858, vérifier le site, retirer les tables
+   `_reconstruction` en DEV.
+
+⚠️ À signaler à Patrick : son `STRATEGIE_MIGRATION.md` (point 15b) dit
+qu'aucun raffineur ne produit `agora_decideurs_qc_affiliations` ; le raffineur
+des phrases la publie désormais (`build_affiliation_dimension`).
 
 ### Fermeture des issues (à la main, pas par les PR)
 
