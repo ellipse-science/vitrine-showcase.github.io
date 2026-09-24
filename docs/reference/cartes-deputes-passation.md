@@ -39,7 +39,7 @@ est en revue sur pplmatch.
 | A1 Doublons | aws-refiners#548 | dédoublonnage sur `id` avant la segmentation | **mergée** ; release vers `main` prête |
 | Reconstruction, A4, présidence hors parti | aws-refiners#549 | tables suffixées, table `agora_decideurs_qc_personnes`, outils de reconstruction, comparaison et bascule, parole au fauteuil hors des totaux de parti | #548 |
 | Doc agents | aws-refiners#550 | environnements DEV/PROD dans `.claude/CLAUDE.md` | **mergée** |
-| Version pplmatch épinglée | aws-refiners#551 | `pplmatch@cab7e29` dans le raffineur des phrases | rien |
+| pplmatch depuis `main`, règle de reconstruction | aws-refiners#551 | plus de commit épinglé (revue de Patrick) ; README : après un lot de merges dans pplmatch, une PR qui touche le dossier du raffineur reconstruit l'image en DEV puis en PROD | rien |
 | Release de #548 | aws-refiners#552 | graduation vers `main` | rien |
 | En-tête de présidence | aws-refiners#553 | « Le Vice-Président (M. Benjamin) » ne masque plus l'élu (398 interventions sur 1 513 perdaient leur `person_id` au test local) | **avant la reconstruction** |
 | Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques | **déploiement** de #549 |
@@ -111,14 +111,16 @@ installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
 
 1. Fusionner aws-refiners#553 (en-tête de présidence ; sans lui, la
    reconstruction retirerait les vice-présidents de leurs propres chiffres),
-   aws-refiners#551 (version de pplmatch épinglée sur `cab7e29`,
-   aucun changement de comportement), #549, et les graduer vers `main` avec
-   #548 (branche `release/agora-doublons-source` déjà poussée). Les images des
-   deux comptes embarquent alors le même code et la même version de pplmatch.
-2. Fusionner pplmatch#6 à #9, puis une PR aws-refiners qui **avance le SHA
-   épinglé** vers le nouveau `main` de pplmatch (elle reconstruit l'image du
-   raffineur des phrases ; la graduer aussi). Un merge dans pplmatch seul ne
-   reconstruit aucune image.
+   aws-refiners#551 (règle de reconstruction documentée, aucun changement de
+   comportement), #549, et les graduer vers `main` (#552 pour #548, déjà
+   ouverte ; une release à part pour chacune des autres). Les images des deux
+   comptes embarquent alors le même code.
+2. Fusionner pplmatch#6 à #9, puis une PR aws-refiners qui **touche le dossier
+   du raffineur des phrases** (le paragraphe pplmatch de son README, avec la
+   date du lot) : son merge reconstruit l'image en DEV, sa graduation en PROD.
+   Un merge dans pplmatch seul ne reconstruit aucune image (build par diff), et
+   `main` de pplmatch est la seule référence : pas de commit épinglé (revue de
+   Patrick, #551).
 3. Prévenir Shannon : créneaux utilisés et évités (chaîne radar à 3, 7, 11, 15,
    19, 23 h ; promesses neuves à 9, 13, 17, 21 h ; passage agora du mardi).
 4. Accord d'une deuxième personne. Reconstruction **en DEV**, lancée par un
