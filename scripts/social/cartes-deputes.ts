@@ -1188,17 +1188,24 @@ function carteHTML(
      porte la couleur SECONDAIRE, celle de l'enjeu dominant, sans filet d'encre
      au-dessus (retiré le 22-09). */
   /* L'ENJEU DOMINANT NE S'ÉCRIT PLUS (demande de Jules, 22-09) : il se donne
-     par la COULEUR, en bandeau épais au sommet de la bande du nom.
-     ⚠️ Écart assumé à GABARIT.md, qui arrête « Enjeux = couleur ET
-     pictogramme, jamais une couleur seule, sans légende ». Le verso, lui,
-     nomme l'enjeu et porte son pictogramme : la légende existe, elle est au
-     dos. À valider. */
+     par la COULEUR, en bandeau épais au sommet de la bande du nom, et depuis
+     le 24-09 par son PICTOGRAMME dans la bulle du coin inférieur gauche
+     (.bulle-enjeu). L'écart à GABARIT.md (« jamais une couleur seule, sans
+     légende ») est donc levé ; le verso, lui, nomme l'enjeu. */
   .bande{position:absolute;left:${marge}px;right:${marge}px;bottom:${marge}px;height:${BANDE}px;background:${parti};
          box-shadow:inset 0 22px 0 ${enjeu};
          display:flex;align-items:center;justify-content:space-between;gap:28px;padding:0 40px}
   /* flex:1 + min-width:0 donnent au bloc du nom une largeur DÉFINIE, sans quoi
      clientWidth vaut la largeur du texte et la mesure ne peut rien détecter. */
   .bande .qui{flex:1;min-width:0;overflow:hidden}
+  /* LA BULLE DE L'ENJEU (Jules, 24-09) : dans le prolongement de la ligne de
+     l'enjeu, au coin inférieur gauche, un petit quart-de-rond de la même
+     couleur monte dans la photo et porte le pictogramme, en couleur papier.
+     Discret : la légende du recto, sans un mot. */
+  .bulle-enjeu{position:absolute;left:${marge}px;bottom:${marge + BANDE}px;width:56px;height:50px;
+               background:${enjeu};border-radius:0 34px 0 0;
+               display:flex;align-items:center;justify-content:center;padding:0 4px 2px 0;box-sizing:border-box}
+  .bulle-enjeu svg{opacity:.92}
   .nom{font-family:"Playfair Display",serif;font-weight:900;font-size:68px;
        line-height:1.0;letter-spacing:-.02em;color:${COLORS.paper};
        text-transform:uppercase;white-space:nowrap;overflow:hidden}
@@ -1231,6 +1238,7 @@ ${CSS_HOLO}
         ? `<div class="image"></div>`
         : `<div class="vide">${fleur(parti, 300)}</div>`}
     </div>
+    ${d.topIssueKey ? `<div class="bulle-enjeu">${enjeuGlyph(d.topIssueKey, COLORS.paper, 26)}</div>` : ""}
     <div class="bande">
       <div class="qui">
         <p class="nom">${txt(nomImprime(d.name))}</p>
@@ -1705,7 +1713,7 @@ ${CSS_HOLO}
       ${c.parcours && c.remuneration ? `Frise&nbsp;: fonctions rémunérées au fil de la législature; quand plusieurs se chevauchent, seule la mieux payée est montrée, les indemnités ne se cumulant pas. Rémunération&nbsp;: indemnité de base et indemnité additionnelle la plus élevée, au jour près, sans allocations ni remboursements.` : ""}
       ${barre ? `Parts&nbsp;: interventions classées automatiquement par enjeu. Terres publiques et Affaires internationales, dont le classement est en révision, sont retirées et le reste ramené à 100&nbsp;%.` : ""}
       ${mot ? `Mot signature&nbsp;: l'expression la plus distinctive de l'élu par rapport aux autres, pas la plus fréquente.` : ""}
-      Recto&nbsp;: le sigle indique la fonction la mieux payée de la législature, le filet de couleur l'enjeu dominant, les fleurs de lys la rareté.
+      Recto&nbsp;: le sigle indique la fonction la mieux payée de la législature, le filet de couleur et sa bulle l'enjeu dominant, les fleurs de lys la rareté.
       Les premiers ministres sont légendaires; les autres élus sont classés selon les mots prononcés au Salon bleu sur la législature (10&nbsp;% rares, 35&nbsp;% peu communes).
       ${c.presidente ? `Ce que la présidente dit en présidant n'est pas attribué à son nom dans les transcriptions&nbsp;: elle est commune d'office.` : ""}
       Traitement automatisé, relu à la main&nbsp;: des erreurs restent possibles. Corrections et méthodologie complète sur le site.
