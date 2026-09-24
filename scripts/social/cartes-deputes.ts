@@ -188,17 +188,6 @@ function cadreTopps(parti: string, ecusson: boolean): string {
     + `<path d="${fenetre}" fill="none" stroke="${COLORS.ink}" stroke-width="2.5" stroke-linejoin="round"/>`;
 }
 
-/** ÉDITION HOLOGRAPHIQUE — au VERSO seulement (décision de Jules, 22-09 : le
- *  recto irisé a été rejeté deux fois). Le recto d'une carte holo est le recto
- *  ordinaire. */
-const CSS_HOLO = `
-  .holo{position:absolute;inset:0;pointer-events:none;z-index:50;mix-blend-mode:color-dodge;opacity:.5;
-        background:
-          linear-gradient(125deg,rgba(255,0,128,.6) 0%,rgba(255,214,0,.55) 17%,rgba(0,255,170,.5) 34%,rgba(0,170,255,.6) 51%,rgba(170,0,255,.55) 68%,rgba(255,0,128,.6) 85%,rgba(255,214,0,.55) 100%),
-          repeating-linear-gradient(35deg,rgba(255,255,255,.22) 0 2px,transparent 2px 8px)}
-  .holo-reflet{position:absolute;inset:0;pointer-events:none;z-index:51;mix-blend-mode:soft-light;
-        background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%)}`;
-
 /** INTITULÉS COURTS pour la légende de la frise. Les intitulés officiels vont
  *  jusqu'à 180 caractères ; on ne les tronque JAMAIS en plein mot. On les
  *  abrège comme le fait la presse, par règles qui gardent un intitulé vrai :
@@ -467,8 +456,6 @@ type Carte = {
   codeFonction?: string;
   /** Légendaires : autographe (URL du tracé blanc), s'il y en a un. */
   signature?: string | null;
-  /** Version holographique de la carte (fichiers « -holo »). */
-  holo?: boolean;
   visAVis?: string;
   /** « 43e législature · 2022-2026 » ; pied du recto et du verso. */
   edition: string;
@@ -1264,7 +1251,6 @@ function carteHTML(
   .grain,.mouchete{position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none}
   .grain{opacity:.22}
   .mouchete{opacity:.18}
-${CSS_HOLO}
 </style></head><body>
   <div class="panneau">
     <div class="photo">
@@ -1672,7 +1658,6 @@ function versoHTML(
   .grain,.mouchete{position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none}
   .grain{opacity:.26}
   .mouchete{opacity:.22}
-${CSS_HOLO}
 </style></head><body>
   <div class="panneau">
     <div class="haut">
@@ -1771,12 +1756,11 @@ ${CSS_HOLO}
 
   <p class="credit">
     <span>Portrait&nbsp;: Assemblée nationale du Québec &middot; usage non commercial autorisé</span>
-    <span>${c.holo ? "Édition holographique" : ordinal(txt(c.edition))} &middot; carte ${c.numero}${c.variante} de ${c.total}</span>
+    <span>${ordinal(txt(c.edition))} &middot; carte ${c.numero}${c.variante} de ${c.total}</span>
   </p>
   ${marquesInstitutions(logoCapp)}
   <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
   <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>
-${c.holo ? '<div class="holo"></div><div class="holo-reflet"></div>' : ""}
 </body></html>`;
 }
 
@@ -1801,7 +1785,7 @@ function plancheHTML(slugs: string[], vignettes: string[], empreinte: string, pe
   figure img{width:100%;display:block}
   figcaption{margin-top:8px;font-size:13px;line-height:1.35;opacity:.85}
 </style></head><body>
-  <h1>Cartes de député · ${slugs.filter((x) => !x.endsWith("-verso") && !x.endsWith("-holo")).length} cartes recto-verso${slugs.some((x) => x.endsWith("-holo-verso")) ? " (+ versos holo)" : ""} · ${txt(periodeLabel)}</h1>
+  <h1>Cartes de député · ${slugs.filter((x) => !x.endsWith("-verso")).length} cartes recto-verso · ${txt(periodeLabel)}</h1>
   <p class="sous">Relire, puis relancer avec <b>--png</b>.</p>
   <div class="grille">${cases}</div>
 </body></html>`;
@@ -2257,13 +2241,6 @@ async function main() {
     const fiche = fiches.get(slugCirco(c.deputy)) ?? { [periode]: c.deputy };
     pages.push({ slug: c.slug, html: carteHTML(c, portrait, ecusson, logos.capp) });
     pages.push({ slug: `${c.slug}-verso`, html: versoHTML(c, fiche, maxAbs, libelles, portrait, ecusson, logos.vitrine, logos.capp, seance) });
-    // Chaque carte a son verso holographique. --sans-holo le saute, le temps
-    // d'une retouche.
-    if (!args["sans-holo"]) {
-      // Holo au verso seulement : le recto d'une carte holo est le recto ordinaire.
-      const h = { ...c, holo: true };
-      pages.push({ slug: `${c.slug}-holo-verso`, html: versoHTML(h, fiche, maxAbs, libelles, portrait, ecusson, logos.vitrine, logos.capp, seance) });
-    }
   }
 
   await fs.mkdir(outDir, { recursive: true });

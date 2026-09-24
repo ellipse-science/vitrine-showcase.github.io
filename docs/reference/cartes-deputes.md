@@ -283,9 +283,6 @@ Grille du 23 septembre 2026 (décision de Jules).
 
 - **Édition** : « 43e législature » au recto, « 43e législature · 2022-2026 »
   au verso ; « carte N de 125 ».
-- **Édition holographique** : chaque carte a un verso holographique (reflet
-  irisé), sans numéro de tirage ; le recto d'une carte holo est le recto
-  ordinaire.
 - **Signature** (légendaires) : tracé blanc tiré d'une image fournie
   (`scripts/social/donnees/signatures/<slug>.jpg`) ; seule celle de François
   Legault existe. **Question ouverte** : une mention « fac-similé » pour

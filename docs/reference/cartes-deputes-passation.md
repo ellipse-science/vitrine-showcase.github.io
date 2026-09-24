@@ -231,7 +231,8 @@ commentaire qui résume ce qui a été fait et les chiffres vérifiés :
 - Relire les 77 citations du mot signature.
 - Droits : photos (Assemblée), signature de Legault, logos des partis.
 - Impression : texte du verso illisible au format carte (environ 2,5 points),
-  fichiers imprimeur (fonds perdus, CMJN), procédé holographique, épreuve papier.
+  fichiers imprimeur (fonds perdus, CMJN), épreuve papier. Plus d'édition
+  holographique (retirée le 24-09, décision de Jules).
 - Page de méthode publique des cartes et moyen de signaler une correction.
 - PR de `feat/cartes-deputes` : rebaser sur `develop`, corps court, « Impact
   méthodologie », proposée à Jules avant d'être ouverte.
