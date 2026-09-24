@@ -46,7 +46,7 @@ sans conflit et tous les tests passent sur le résultat combiné.
 | Vice-présidents au fauteuil | aws-refiners#568 | l'en-tête « Le/La (Vice-)Président(e) » marque `presiding_officer` après l'appariement ; `person_id` intact ; 310 en-têtes sur 1 513 au test local | **fusionnée le 24-09** (`f684440`, approuvée par Adrien) ; image DEV rebâtie avec pplmatch#7-9 ; release vers `main` : aws-refiners#570, **fusionnée le 24-09** (`764b1bd`, approuvée par Adrien) |
 | Release de #553 | aws-refiners#566 | graduation vers `main` | **fusionnée le 24-09** (`017ee9c`) ; image PROD des phrases rebâtie |
 | Release de #549 | aws-refiners#567 | graduation vers `main` | **fusionnée le 24-09** (`ca026db`) ; images PROD `agora-decideurs-qc-phrases`, `agora-decideurs-qc` et `sonar-pipeline` rebâties |
-| Lecture d'INFER (classe positive, 500 textes par appel) | aws-refiners#571 | trouvé au rejeu local du 24-09 : sept têtes d'enjeux redéployées répondent `_yes`/`_no`, le raffineur lisait `"1"` ; sept enjeux muets, dont Terres publiques et Défense (#546). Plus 500 textes par appel comme #485 (231 appels par semaine au lieu de 1 764) | ouverte le 24-09 ; **à fusionner et graduer AVANT la reconstruction** |
+| Lecture d'INFER (classe positive, 500 textes par appel) | aws-refiners#571 | trouvé au rejeu local du 24-09 : sept têtes d'enjeux redéployées répondent `_yes`/`_no`, le raffineur lisait `"1"` ; sept enjeux muets, dont Terres publiques et Défense (#546). Plus 500 textes par appel comme #485 (231 appels par semaine au lieu de 1 764) | **fusionnée le 24-09** (`55b5c4e`, approuvée par Adrien) ; release vers `main` : branche `release/agora-phrases-lecture-infer` prête (`8a0a123`), PR à ouvrir |
 | Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques ; § 08 : présidence de séance neutre, vice-présidents compris | **déploiement** de #549 et #568, puis bascule |
 
 Issues ouvertes : aws-refiners#546 (têtes INFER `public_lands`/`defense`),
@@ -135,9 +135,11 @@ installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
 
 **Étapes, dans l'ordre :**
 
-0. **Fusionner et graduer aws-refiners#571 d'abord** (lecture d'INFER) : sans
-   elle, la reconstruction mettrait sept enjeux à zéro sur toute la législature
-   et une semaine dense dépasserait les 15 min de la Lambda.
+0. aws-refiners#571 (lecture d'INFER) est dans `develop` ; **graduer sa release
+   vers `main` avant la reconstruction** : sans elle, la reconstruction mettrait
+   sept enjeux à zéro sur toute la législature. Mesuré : une semaine dense
+   prend 20 min même à 500 par appel, donc trop pour la Lambda en fenêtres de
+   7 jours ; rejeu depuis un poste recommandé (voir plus bas).
 1. Fait le 24-09 : #566 (#553), #567 (#549) et #570 (#568) sont dans `main` ;
    les images des deux comptes embarquent le même code et le même pplmatch
    (#7, #8, #9). Reste #551 (règle de reconstruction documentée, aucun
