@@ -40,6 +40,8 @@ est en revue sur pplmatch.
 | Reconstruction, A4, présidence hors parti | aws-refiners#549 | tables suffixées, table `agora_decideurs_qc_personnes`, outils de reconstruction, comparaison et bascule, parole au fauteuil hors des totaux de parti | #548 |
 | Doc agents | aws-refiners#550 | environnements DEV/PROD dans `.claude/CLAUDE.md` | **mergée** |
 | Version pplmatch épinglée | aws-refiners#551 | `pplmatch@cab7e29` dans le raffineur des phrases | rien |
+| Release de #548 | aws-refiners#552 | graduation vers `main` | rien |
+| En-tête de présidence | aws-refiners#553 | « Le Vice-Président (M. Benjamin) » ne masque plus l'élu (398 interventions sur 1 513 perdaient leur `person_id` au test local) | **avant la reconstruction** |
 | Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques | **déploiement** de #549 |
 
 Issues ouvertes : aws-refiners#546 (têtes INFER `public_lands`/`defense`),
@@ -88,6 +90,11 @@ comptes et des statistiques par colonne, chemin CAST corrigé par #537). On ne
 reconstruit donc qu'une fois, en DEV, et INFER ne travaille qu'une fois ; DEV et
 PROD finissent identiques par construction.
 
+**Test local du 23-09** (vrai `lambda_handler`, publication interceptée, arrêt
+avant INFER, trois fenêtres réelles lues en PROD) : doublons écartés, présidence
+attribuée, « Mme Roy » résolue, et le défaut corrigé par #553 trouvé. Données dans
+`~/Desktop/Travail/CLESSN/Vitrine/test-local-agora/` (hors dépôt).
+
 **État de départ vérifié le 23-09** : les tables agora de DEV et de PROD sont
 identiques (821 285 phrases, 287 jours, mêmes mots, 141 affiliations). Les deux
 comptes lisent la même source (`rootSourceEnv = 'PROD'`).
@@ -102,7 +109,9 @@ installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
 
 **Étapes, dans l'ordre :**
 
-1. Fusionner aws-refiners#551 (version de pplmatch épinglée sur `cab7e29`,
+1. Fusionner aws-refiners#553 (en-tête de présidence ; sans lui, la
+   reconstruction retirerait les vice-présidents de leurs propres chiffres),
+   aws-refiners#551 (version de pplmatch épinglée sur `cab7e29`,
    aucun changement de comportement), #549, et les graduer vers `main` avec
    #548 (branche `release/agora-doublons-source` déjà poussée). Les images des
    deux comptes embarquent alors le même code et la même version de pplmatch.
@@ -131,7 +140,12 @@ installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
    Rscript tools/basculer_reconstruction_agora.R --env=DEV --suffixe=_reconstruction \
      --go --accord="<nom>" --sauvegarde=~/sauvegardes-agora
    ```
-7. **Migration DEV → PROD** des dix tables agora avec l'outil de Patrick, hors
+7. ⚠️ Trois tables agora **n'existent pas en PROD** (vérifié le 23-09) :
+   `agora_decideurs_qc_phrase_identities`, `agora_decideurs_qc_deputes_annotated`
+   et `agora_decideurs_qc_concept_cache_deputes`. Sans les identités, le raffineur
+   d'agrégats ne peut pas produire sa vue par député en PROD. La migration doit
+   les inclure.
+   **Migration DEV → PROD** des dix tables agora avec l'outil de Patrick, hors
    mardi, **rafraîchissement du site suspendu** pendant l'opération (le workflow
    `refresh-data` : réglage de dépôt, fait par un humain), puis relancé une fois
    les comptes vérifiés. Ordre amont d'abord : phrases, identités, affiliations,
