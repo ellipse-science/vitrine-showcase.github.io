@@ -46,6 +46,7 @@ sans conflit et tous les tests passent sur le résultat combiné.
 | Vice-présidents au fauteuil | aws-refiners#568 | l'en-tête « Le/La (Vice-)Président(e) » marque `presiding_officer` après l'appariement ; `person_id` intact ; 310 en-têtes sur 1 513 au test local | **fusionnée le 24-09** (`f684440`, approuvée par Adrien) ; image DEV rebâtie avec pplmatch#7-9 ; release vers `main` : aws-refiners#570, **fusionnée le 24-09** (`764b1bd`, approuvée par Adrien) |
 | Release de #553 | aws-refiners#566 | graduation vers `main` | **fusionnée le 24-09** (`017ee9c`) ; image PROD des phrases rebâtie |
 | Release de #549 | aws-refiners#567 | graduation vers `main` | **fusionnée le 24-09** (`ca026db`) ; images PROD `agora-decideurs-qc-phrases`, `agora-decideurs-qc` et `sonar-pipeline` rebâties |
+| Lecture d'INFER (classe positive, 500 textes par appel) | aws-refiners#571 | trouvé au rejeu local du 24-09 : sept têtes d'enjeux redéployées répondent `_yes`/`_no`, le raffineur lisait `"1"` ; sept enjeux muets, dont Terres publiques et Défense (#546). Plus 500 textes par appel comme #485 (231 appels par semaine au lieu de 1 764) | ouverte le 24-09 ; **à fusionner et graduer AVANT la reconstruction** |
 | Métho | vitrine#858 | swimlanes : table `_personnes`, noms `_deputes` canoniques ; § 08 : présidence de séance neutre, vice-présidents compris | **déploiement** de #549 et #568, puis bascule |
 
 Issues ouvertes : aws-refiners#546 (têtes INFER `public_lands`/`defense`),
@@ -98,6 +99,23 @@ comptes et des statistiques par colonne, chemin CAST corrigé par #537). On ne
 reconstruit donc qu'une fois, en DEV, et INFER ne travaille qu'une fois ; DEV et
 PROD finissent identiques par construction.
 
+**Rejeu local du 24-09** (vrai `lambda_handler` en mode débogage local, pplmatch
+`main`, INFER réel, `ellipse_publish` intercepté, semaine du 5 au 12 février
+2023) : 795 interventions, 5 208 phrases, 35 min avec les paquets de 64 ;
+doublons écartés (la table publiée est exactement doublée sur ces jours) ;
+fauteuil marqué (Roy 388 phrases, Benjamin 260, Lévesque 144, Soucy 119) ;
+0 non apparié ; 42 % des phrases avec un enjeu contre 72 % publiées (les
+anciennes têtes Terres publiques et Défense étiquetaient 40 % des phrases ; les
+seuils calibrés sont plus stricts, coup de sonde : faux positifs). INFER est
+irrégulier (35 s à 7 min par sous-lot de 250 selon l'heure) : prévenir Antoine
+avant la reconstruction. Données dans `test-local-agora/pilote-fix/`, script
+`test_pilote.R` dans le scratchpad de la session (à verser dans `tools/`).
+Estimation pour la législature (~630 000 phrases) : 12 à 15 h de calcul si
+INFER est rapide, 30 à 35 h sinon, avec #571 ; le double sans. Option retenue
+à étudier : rouler la reconstruction depuis un poste (comme Patrick et Adrien
+l'ont fait), sans plafond de 15 min, fenêtres de 7 jours, en respectant les
+créneaux et en prévenant Antoine (anti-abus INFER sur une clé de poste).
+
 **Test local du 23-09** (vrai `lambda_handler`, publication interceptée, arrêt
 avant INFER, trois fenêtres réelles lues en PROD) : doublons écartés, présidence
 attribuée, « Mme Roy » résolue, et le défaut corrigé par #553 trouvé. Données dans
@@ -117,6 +135,9 @@ installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
 
 **Étapes, dans l'ordre :**
 
+0. **Fusionner et graduer aws-refiners#571 d'abord** (lecture d'INFER) : sans
+   elle, la reconstruction mettrait sept enjeux à zéro sur toute la législature
+   et une semaine dense dépasserait les 15 min de la Lambda.
 1. Fait le 24-09 : #566 (#553), #567 (#549) et #570 (#568) sont dans `main` ;
    les images des deux comptes embarquent le même code et le même pplmatch
    (#7, #8, #9). Reste #551 (règle de reconstruction documentée, aucun
