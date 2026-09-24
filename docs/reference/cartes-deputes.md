@@ -307,14 +307,14 @@ que le verrou de `--png` impose la planche avant les images.
 
 Au recto, dans le prolongement de la ligne de l'enjeu dominant (le bandeau de
 22 px au sommet de la bande du nom), une **vague** de la même couleur monte
-dans la photo au coin inférieur gauche : plate sur 34 px, puis une courbe en S
-qui s'évase vers la droite et rejoint la ligne à l'horizontale (112 px de large,
-52 px au-dessus de la ligne ; `BULLE`, `vagueBulle`). Elle porte le
-**pictogramme** de l'enjeu, en couleur papier, centré sur toute la hauteur
-colorée, ligne comprise. La ligne et la vague sont cernées du même trait d'encre
-que le cadre (`contourEnjeu`). Discret, sans un mot :
-c'est la légende du recto, et l'écart à la charte (« jamais une couleur seule »)
-est levé. Absente des légendaires, qui n'ont pas de bande.
+dans la photo au coin inférieur gauche : un court plat, une épaule ronde, puis
+une courbe en S qui s'évase vers la droite et rejoint la ligne à l'horizontale
+(112 px de large, 52 px au-dessus de la ligne ; `BULLE`, `vagueBulle`). Elle
+porte le **pictogramme** de l'enjeu, en couleur papier, centré sur toute la
+hauteur colorée, ligne comprise. La ligne et la vague sont cernées du même
+trait d'encre que le cadre (`contourEnjeu`). Discret, sans un mot : c'est la
+légende du recto, et l'écart à la charte (« jamais une couleur seule ») est
+levé. Absente des légendaires, qui n'ont pas de bande.
 
 ### Logos des institutions (23-09)
 
