@@ -537,6 +537,19 @@ function marquesInstitutions(logoCapp: string | null): string {
   return parts ? `<span class="marque-capp">${parts}</span>` : "";
 }
 
+/** CONTOUR D'ENCRE de la ligne de l'enjeu et de sa bulle (Jules, 24-09) : le
+ *  même trait que le cadre, dans le même calque SVG. Un tracé suit le dessus
+ *  de la bulle (.bulle-enjeu : 56 × 50 px, arrondi de 34 px à droite), puis le
+ *  sommet de la ligne jusqu'au bord droit ; un second passe sous la ligne
+ *  (22 px). Coordonnées du panneau, comme cadrePath. */
+function contourEnjeu(marge: number, epaisseur: number): string {
+  const haut = PANNEAU.bas - PANNEAU.y - marge - BANDE;
+  const g = marge, d = PANNEAU.w - marge, r = 34, bw = 56, bh = 50;
+  const trait = `fill="none" stroke="${COLORS.ink}" stroke-width="${epaisseur}" stroke-linejoin="round" stroke-linecap="square"`;
+  return `<path d="M ${g} ${haut - bh} H ${g + bw - r} A ${r} ${r} 0 0 1 ${g + bw} ${haut - bh + r} V ${haut} H ${d}" ${trait}/>`
+    + `<path d="M ${g} ${haut + 22} H ${d}" ${trait}/>`;
+}
+
 /** Vrai si le dernier segment d'affiliation est « sans affiliation », OU s'il
  *  se ferme sur une défection sans segment suivant : c'est ainsi qu'apparaît un
  *  passage à indépendant que les affiliations publiées ne portent pas encore
@@ -1249,6 +1262,7 @@ ${CSS_HOLO}
   </div>
 
   <svg class="cadre" viewBox="0 0 ${PANNEAU.w} ${PANNEAU.bas - PANNEAU.y}" aria-hidden="true">
+    ${contourEnjeu(marge, topps || c.rarete === "peu-commune" ? 2.5 : 3)}
     ${/* Commune : filet d'encre seul (cadre de base). Peu commune : le même
           contour doublé d'une ligne argent, et la réserve de l'écusson (coin
           supérieur droit, au-delà de la vague) remplie à l'encre du parti et
