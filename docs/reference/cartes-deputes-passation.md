@@ -125,7 +125,7 @@ installe pplmatch#9 (Chassin, Nichols, Bélanger, Anglade corrigés).
    humain (le script attend les créneaux libres, pause de 2 min entre fenêtres,
    sonde de garde-fou avant tout) :
    ```sh
-   ENV=DEV FN_PHRASES=<lambda DEV phrases> FN_AGREGATS=<lambda DEV agrégats> \
+   PUBLICATION_ENV=DEV FN_PHRASES=<lambda DEV phrases> FN_AGREGATS=<lambda DEV agrégats> \
      tools/reconstruire_agora_parallele.sh --go
    Rscript tools/comparer_reconstruction_agora.R --env=DEV --suffixe=_reconstruction
    ```
