@@ -291,6 +291,13 @@ Grille du 23 septembre 2026 (décision de Jules).
   une carte par page, recto puis verso) et la planche d'épreuve maison se
   font avec `scripts/social/paquet-imprimeur.py`. Le PDF est en sRGB : la
   conversion CMJN revient à l'imprimeur, sur épreuve.
+- **Logos** : CAPP et Vitrine viennent de `public/images/brand/` (PNG de
+  1 500 à 1 800 px, suffisants). Université Laval : le logo monochrome
+  officiel du kit des normes graphiques (`public/images/partners/ULaval-N.eps`,
+  vectoriel, gardé pour l'imprimeur), rendu en noir sur transparent à 2 000 px
+  (`ULaval-N.png`) ; oiseaux et croix transparents, puisque la carte affiche
+  les logos en masque. L'ancien `ULaval.png` (277 px, avec la mention de
+  faculté) reste pour la page des partenaires du site.
 - **Portraits** : les photos de l'Assemblée font 150 × 200 px, trop peu
   pour le papier (66 ppp sur la carte). Elles sont agrandies puis redessinées en
   trame de points vectoriels à quatre couleurs (style carte de baseball), pas de
