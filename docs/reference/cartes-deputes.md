@@ -281,6 +281,16 @@ Grille du 23 septembre 2026 (décision de Jules).
 
 ## 8. Présentation
 
+- **Impression** (`--impression`) : la carte fait 63,5 × 88,9 mm (1 071 px =
+  428 ppp). Le mode ajoute 3 mm de fond perdu de chaque côté (page 69,5 × 94,9
+  mm), dans la couleur et les textures de la face, et réduit la face d'une
+  échelle uniforme (0,9055) pour que le cadre reste à 3 mm de la coupe :
+  un liseré de papier de 3 mm sur les côtés, 4,2 mm en haut et en bas, comme
+  une vraie carte. Sortie à l'échelle 2 (856 ppp) dans
+  `social-out/cartes-deputes/impression/`. Le paquet pour l'imprimeur (un PDF
+  une carte par page, recto puis verso) et la planche d'épreuve maison se
+  font avec `scripts/social/paquet-imprimeur.py`. Le PDF est en sRGB : la
+  conversion CMJN revient à l'imprimeur, sur épreuve.
 - **Portraits** : les photos de l'Assemblée font 150 × 200 px, trop peu
   pour le papier (66 ppp sur la carte). Elles sont agrandies puis redessinées en
   trame de points vectoriels à quatre couleurs (style carte de baseball), pas de
