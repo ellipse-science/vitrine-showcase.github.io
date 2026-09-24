@@ -1,5 +1,11 @@
 [
   {
+    "pr": 866,
+    "date": "2026-09-24T15:48:53Z",
+    "note": "Le bouton de la mascotte Datagotchi invite maintenant à relever le défi.",
+    "version": "2.49.0-beta.6"
+  },
+  {
     "pr": 865,
     "date": "2026-09-24T15:08:36Z",
     "note": "La bulle de la mascotte Datagotchi affiche maintenant « Es-tu prévisible? Viens le découvrir! ».",
