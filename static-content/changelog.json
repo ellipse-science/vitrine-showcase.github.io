@@ -1,5 +1,137 @@
 [
   {
+    "pr": 818,
+    "date": "2026-09-24T16:36:07Z",
+    "note": "Quand une source de données revient vide, le site garde en ligne sa dernière édition complète plutôt que de publier une page d'accueil incomplète.",
+    "version": "2.49.0-beta.7"
+  },
+  {
+    "pr": 866,
+    "date": "2026-09-24T15:48:53Z",
+    "note": "Le bouton de la mascotte Datagotchi invite maintenant à relever le défi.",
+    "version": "2.49.0-beta.6"
+  },
+  {
+    "pr": 865,
+    "date": "2026-09-24T15:08:36Z",
+    "note": "La bulle de la mascotte Datagotchi affiche maintenant « Es-tu prévisible? Viens le découvrir! ».",
+    "version": "2.49.0-beta.5"
+  },
+  {
+    "pr": 836,
+    "date": "2026-09-23T19:51:52Z",
+    "note": "L'adresse de contact de la Vitrine est maintenant info@capp.ulaval.ca.",
+    "version": "2.49.0-beta.4"
+  },
+  {
+    "pr": 834,
+    "date": "2026-09-23T18:54:07Z",
+    "note": "Le sous-menu « À propos » (Équipe, Partenaires) s'affiche maintenant en entier sur les écrans d'ordinateur portable, où le bord de la fenêtre le coupait. La page Méthodologie ne glisse plus de côté sur téléphone et tablette.",
+    "version": "2.49.0-beta.3"
+  },
+  {
+    "pr": 857,
+    "date": "2026-09-22T23:50:33Z",
+    "note": "La page du Pool de la Grande Soirée annonçait la mauvaise salle. La soirée électorale transpartisane du 5 octobre se tient à l'amphithéâtre Hydro-Québec du pavillon Alphonse-Desjardins, à l'Université Laval.",
+    "version": null
+  },
+  {
+    "pr": 856,
+    "date": "2026-09-22T23:35:35Z",
+    "note": "Le site accueille la page du Pool de la Grande Soirée, un défi de pronostics où l'on répartit les 127 sièges de l'Assemblée nationale avant le scrutin du 5 octobre. Son adresse n'est pas répertoriée et se donne en privé aux personnes inscrites à la soirée électorale transpartisane.",
+    "version": null
+  },
+  {
+    "pr": 851,
+    "date": "2026-09-22T15:17:14Z",
+    "note": "Aucun changement visible pour les visiteurs du site (documentation interne de gouvernance des données).",
+    "version": null
+  },
+  {
+    "pr": 837,
+    "date": "2026-09-22T13:55:27Z",
+    "note": "La carte que l'on obtient en partageant le Polimètre+ montre désormais la promesse la plus couverte par les médias de la semaine, plutôt qu'un pourcentage global de promesses tenues.",
+    "version": "2.49.0-beta.2"
+  },
+  {
+    "pr": 840,
+    "date": "2026-09-22T13:44:48Z",
+    "note": "Dans le Polimètre+, les filtres « En cours » et « En suspens » n'apparaissent plus quand aucune promesse de la période n'a ce statut.",
+    "version": "2.49.0-beta.1"
+  },
+  {
+    "pr": 838,
+    "date": "2026-09-22T13:36:42Z",
+    "note": "Le Polimètre+, en mode « promesses de la campagne », offre un troisième onglet, Campagne, qui classe les promesses selon leur écho dans les Unes depuis le déclenchement des élections. Tant que ce classement n'a pas été publié, l'onglet le dit plutôt que d'afficher une liste vide.",
+    "version": "2.49.0-beta.0"
+  },
+  {
+    "pr": 839,
+    "date": "2026-09-22T13:10:47Z",
+    "note": "Dans le Polimètre+, les promesses de la campagne affichent maintenant le symbole de leur enjeu, comme les promesses de 2022.",
+    "version": "2.48.0-beta.1"
+  },
+  {
+    "pr": 841,
+    "date": "2026-09-22T12:59:48Z",
+    "note": "Dans le Polimètre+, les promesses formulées pendant la campagne s'affichent maintenant au-dessus des promesses de 2022, sans avoir à changer de mode.",
+    "version": "2.48.0-beta.0"
+  },
+  {
+    "pr": 848,
+    "date": "2026-09-22T03:09:10Z",
+    "note": "_Sans objet_ — document de travail interne à l'équipe, aucun label `semver`. Rien ne change pour le visiteur du site.",
+    "version": null
+  },
+  {
+    "pr": 846,
+    "date": "2026-09-22T02:59:49Z",
+    "note": "Aucune. Correction de trois notes du journal lui-même, rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 845,
+    "date": "2026-09-22T02:55:38Z",
+    "note": "L'illustration de la Une ne disparaît plus quand son archivage échoue : elle part avec le titre, et l'archivage est retenté à l'édition suivante.",
+    "version": "2.47.0-beta.5"
+  },
+  {
+    "pr": 844,
+    "date": "2026-09-21T20:16:26Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 843,
+    "date": "2026-09-21T18:32:01Z",
+    "note": "Le point d'exclamation du personnage de Datagotchi prend la forme d'une petite bulle de parole : on comprend mieux qu'il a un message à montrer.",
+    "version": "2.47.0-beta.4"
+  },
+  {
+    "pr": 842,
+    "date": "2026-09-21T18:09:47Z",
+    "note": "Le personnage de Datagotchi au bas de la page d'accueil se fait plus discret : il arrive après quinze secondes, et son message ne s'affiche que si on le survole ou le touche. On peut refermer le message sans faire partir le personnage.",
+    "version": "2.47.0-beta.3"
+  },
+  {
+    "pr": 807,
+    "date": "2026-09-21T14:59:15Z",
+    "note": "La Méthodologie précise que, pour chaque paragraphe de Une, le modèle ne juge que les trente promesses de campagne les plus proches par le vocabulaire.",
+    "version": null
+  },
+  {
+    "pr": 808,
+    "date": "2026-09-21T01:20:01Z",
+    "note": "La page Méthodologie explique maintenant ce que fait la Vitrine quand la Une de CNN est une vidéo : elle retient le premier article du même bloc, ou écarte la capture s'il s'agit d'un épisode payant.",
+    "version": "2.47.0-beta.2"
+  },
+  {
+    "pr": 833,
+    "date": "2026-09-21T01:19:48Z",
+    "note": "L'illustration de la Une change maintenant au même instant que le titre pour tous les visiteurs. Avant, l'image de l'édition précédente pouvait rester affichée jusqu'à une heure sous la nouvelle Une.",
+    "version": "2.47.0-beta.1"
+  },
+  {
     "pr": 829,
     "date": "2026-09-19T11:45:06Z",
     "note": "La collecte des comptes de réseaux sociaux des candidats tourne désormais toute la journée plutôt qu'une demi-journée, afin de remonter plus vite l'historique des publications, et les comptes officiels des cinq partis rejoignent les 601 comptes de candidats déjà suivis. Rien ne change sur le site : cette collecte ne publie aucune table et n'alimente aucun module.",
@@ -32,7 +164,7 @@
   {
     "pr": 823,
     "date": "2026-09-18T00:28:32Z",
-    "note": "Décisions consignées dans `scripts/social/GABARIT.md`, section 6 bis.",
+    "note": "Rien ne change sur le site : retouches aux vidéos destinées aux réseaux sociaux.",
     "version": null
   },
   {
@@ -68,7 +200,7 @@
   {
     "pr": 817,
     "date": "2026-09-17T03:18:26Z",
-    "note": "Le module sur l'Assemblée nationale reprend les couleurs d'un alignement de hockey.",
+    "note": "Sur le site de travail seulement : le module sur l'Assemblée nationale s'essaie aux couleurs d'un alignement de hockey. Rien ne change sur le site public.",
     "version": null
   },
   {
@@ -80,7 +212,7 @@
   {
     "pr": 815,
     "date": "2026-09-17T02:17:07Z",
-    "note": "Le module sur la couverture des partis s'affiche désormais sur un fond sombre, comme une console de mixage.",
+    "note": "Sur le site de travail seulement : le module sur la couverture des partis s'essaie à un fond sombre, comme une console de mixage. Rien ne change sur le site public.",
     "version": null
   },
   {

@@ -206,7 +206,49 @@ async function fetchSnapshotRows(
   if (parsed.length !== entry.rows) {
     throw new Error(`${parsed.length} lignes reçues, ${entry.rows} annoncées`);
   }
+  // GARDE ZÉRO-LIGNE, jumelle de celle du Worker (sync-athena.ts). Un jeu VIDE
+  // passe la vérification ci-dessus quand le manifeste annonce lui-même zéro :
+  // le build reçoit « [] » sans erreur, et la section rend null sans que rien
+  // ne le signale. Nuit du 16 au 17 septembre 2026 : l'instantané des
+  // événements est revenu vide, la Une des Unes et Deux solitudes ont disparu
+  // de la prod pendant que dev, qui lit les fichiers, les affichait. Zéro
+  // ligne n'est jamais une réalité éditoriale pour ces tables : on échoue, et
+  // l'appelant repart du fichier publié.
+  if (parsed.length === 0) {
+    throw new Error("0 ligne dans l'instantané");
+  }
+  // TRACE DE PROVENANCE. Le 17 septembre 2026, prod et dev ont bâti à la même
+  // minute, sur le même code et la même clé, et seule la prod est sortie sans
+  // la Une des Unes : impossible de dire ce que chaque build avait reçu, les
+  // journaux étaient muets. Une ligne par jeu et par build (la copie locale
+  // n'est téléchargée qu'une fois) suffit à trancher la prochaine fois.
+  console.log(`[source] ${dataset}\u00a0: ${parsed.length} ligne(s) (instantané)`);
   return text;
+}
+
+/** Repli sur le fichier publié, sans casser le build pour un fichier ABSENT.
+ *
+ *  Une table peut être activée dans `scripts/tables.json` avant d'avoir son
+ *  premier fichier commité (`polimetre_promesses_neuves` l'a été, en
+ *  septembre 2026). Un repli qui suppose le fichier présent transformerait une
+ *  panne de données en panne de build : on rend alors un jeu vide, en le
+ *  DISANT. Seul l'absence (`ENOENT`) a droit à ce traitement : une erreur de
+ *  permission ou d'E/S remonte, comme dans les autres loaders, plutôt que de
+ *  publier un module amputé sans alerte. */
+async function repliFichier(
+  absolute: string,
+  dataset: string,
+  raison: string,
+): Promise<string> {
+  try {
+    return await fs.readFile(absolute, "utf8");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+    console.warn(
+      `[source] ${dataset}\u00a0: ${raison}, et aucun fichier de repli. Jeu vide.`,
+    );
+    return "[]";
+  }
 }
 
 /** COPIE LOCALE PAR JEU DE DONNÉES, valable pour les deux modes distants.
@@ -272,8 +314,10 @@ async function localCopy(
     const target = path.join(dir, `${dataset}.json`);
     await pruneOtherCycles(dir);
     try {
-      await fs.access(target);
-      return target;
+      // Une copie VIDE (« [] », 2 octets) n'est jamais réutilisée : depuis la
+      // garde zéro-ligne, aucun téléchargement n'en écrit, elle ne peut venir
+      // que d'un build antérieur du même cycle (vitrine#818). On retélécharge.
+      if ((await fs.stat(target)).size > 2) return target;
     } catch {
       // Pas encore téléchargée par ce build.
     }
@@ -375,7 +419,7 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
   // suffit à repartir des fichiers — on ne tente même pas les tables.
   if (USE_SNAPSHOT) {
     const manifest = await loadManifest();
-    if (!manifest) return fs.readFile(absolute, "utf8");
+    if (!manifest) return repliFichier(absolute, dataset, "instantané indisponible");
 
     const local = await localCopy(
       dataset,
@@ -383,23 +427,33 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
       () => fetchSnapshotRows(dataset, manifest),
       "instantané",
     );
-    return fs.readFile(local ?? absolute, "utf8");
+    return local ? fs.readFile(local, "utf8") : repliFichier(absolute, dataset, "instantané indisponible");
   }
 
-  if (!(await apiIsFresh())) return fs.readFile(absolute, "utf8");
+  if (!(await apiIsFresh())) return repliFichier(absolute, dataset, "API périmée");
 
   if (!API_KEY) {
     console.warn(
       `[source] VITRINE_API_KEY absente. Repli sur les fichiers pour ${dataset}.`,
     );
-    return fs.readFile(absolute, "utf8");
+    return repliFichier(absolute, dataset, "clé d'API absente");
   }
 
   const local = await localCopy(
     dataset,
     `api-${apiCycleKey || "sans-cycle"}`,
-    async () => JSON.stringify(await fetchAllRows(dataset)),
+    async () => {
+      const rows = await fetchAllRows(dataset);
+      // Même garde que pour l'instantané : une réponse vide est une panne
+      // amont, pas une actualité sans événements.
+      if (rows.length === 0) {
+        throw new Error("0 ligne renvoyée par l'API");
+      }
+      // Trace de provenance : voir le commentaire du mode instantané.
+      console.log(`[source] ${dataset}\u00a0: ${rows.length} ligne(s) (API)`);
+      return JSON.stringify(rows);
+    },
     "API",
   );
-  return fs.readFile(local ?? absolute, "utf8");
+  return local ? fs.readFile(local, "utf8") : repliFichier(absolute, dataset, "API indisponible");
 }

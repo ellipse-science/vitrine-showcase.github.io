@@ -10,6 +10,7 @@ import {
   generationAllowed,
   selectReferenceNames,
   uneKey,
+  writeThenUpload,
 } from "@/scripts/art_logic";
 
 /**
@@ -190,5 +191,46 @@ describe("buildMetadata", () => {
 
   it("les fichiers locaux sont ceux que la section et le partage connaissent", () => {
     expect([...ART_LOCAL_FILES].sort()).toEqual(["latest.avif", "latest.json", "latest.png", "latest.webp"]);
+  });
+});
+
+describe("writeThenUpload — l'image part avec sa Une, même si R2 boude", () => {
+  it("écrit localement AVANT de déposer", async () => {
+    const ordre: string[] = [];
+    await writeThenUpload(
+      async () => { ordre.push("local"); },
+      async () => { ordre.push("r2"); },
+      () => { ordre.push("avertissement"); },
+    );
+    expect(ordre).toEqual(["local", "r2"]);
+  });
+
+  it("un dépôt expiré n'est qu'un avertissement : l'image est déjà écrite", async () => {
+    // Le cas du 21 septembre 2026 à midi : image générée, PUT expiré après 120 s.
+    const ordre: string[] = [];
+    const avertissements: string[] = [];
+    await expect(
+      writeThenUpload(
+        async () => { ordre.push("local"); },
+        async () => { throw new Error("The operation was aborted due to timeout"); },
+        (m) => { avertissements.push(m); },
+      ),
+    ).resolves.toBeUndefined();
+    expect(ordre).toEqual(["local"]);
+    expect(avertissements).toHaveLength(1);
+    expect(avertissements[0]).toContain("The operation was aborted due to timeout");
+    expect(avertissements[0]).toContain("l'image part quand même");
+  });
+
+  it("une écriture locale manquée remonte à l'appelant, et rien n'est déposé", async () => {
+    let depose = false;
+    await expect(
+      writeThenUpload(
+        async () => { throw new Error("ENOSPC"); },
+        async () => { depose = true; },
+        () => {},
+      ),
+    ).rejects.toThrow("ENOSPC");
+    expect(depose).toBe(false);
   });
 });

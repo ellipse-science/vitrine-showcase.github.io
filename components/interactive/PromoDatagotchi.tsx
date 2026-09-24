@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { basePath } from "@/lib/site";
 import {
-  CLE_FERME,
-  CLE_PERSO,
   PERSOS,
   choisirPerso,
   largeurBulle,
@@ -12,41 +10,24 @@ import {
 } from "@/lib/promoDatagotchi";
 
 // La mascotte Datagotchi, à la manière du trombone d'Office : le personnage
-// jette un œil par-dessus le bord, monte, puis sa bulle s'ouvre et le texte
-// s'écrit. Un seul temps fort, joué une fois ; ensuite il ne bouge presque plus.
+// jette un œil par-dessus le bord puis monte, seul, avec un « ! ». Un seul
+// temps fort, joué une fois ; ensuite il ne bouge presque plus.
 //
-// RÈGLE : la bulle ne recouvre jamais le contenu du site de son propre chef.
-// Elle ne s'ouvre seule que si elle tient dans la marge à droite de la colonne
-// (écrans larges). Ailleurs, le personnage arrive seul avec un « ! », et la
-// bulle ne s'ouvre qu'à la demande du visiteur (survol, clic, toucher, focus).
+// RÈGLE : la bulle ne s'ouvre jamais de son propre chef, quel que soit
+// l'écran. Elle ne s'ouvre qu'à la demande du visiteur (survol, clic, toucher,
+// focus) ; le texte s'écrit alors. Le « × » ne ferme que la bulle : le
+// personnage reste, et la bulle se rouvre à la prochaine demande.
 //
 // Les phases pilotent le CSS (`data-phase`), qui n'anime que transform et
 // opacity : rien ne recalcule la mise en page pendant que la page défile.
-type Phase = "attente" | "entre" | "parle" | "sort";
+type Phase = "attente" | "entre" | "parle";
 
-const DELAI_APPARITION_MS = 3500;
+// Le visiteur lit d'abord la Une : le personnage n'arrive qu'ensuite.
+const DELAI_APPARITION_MS = 15000;
 const DUREE_ENTREE_MS = 1350;
 const DUREE_BULLE_MS = 420;
-const DUREE_SORTIE_MS = 520;
 const DELAI_REPLI_MS = 450;
 const MS_PAR_LETTRE = 26;
-
-function lire(stockage: "localStorage" | "sessionStorage", cle: string): string | null {
-  // Navigation privée, stockage bloqué : l'accès lui-même peut lever.
-  try {
-    return window[stockage].getItem(cle);
-  } catch {
-    return null;
-  }
-}
-
-function ecrire(stockage: "localStorage" | "sessionStorage", cle: string, valeur: string) {
-  try {
-    window[stockage].setItem(cle, valeur);
-  } catch {
-    /* sans stockage, la mascotte revient à la prochaine page : acceptable */
-  }
-}
 
 // Largeur libre entre la colonne de contenu et le bord droit de la fenêtre.
 function margeDroite(): number {
@@ -62,14 +43,17 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
   const [phase, setPhase] = useState<Phase>("attente");
   const [lettres, setLettres] = useState(0);
   const [source, setSource] = useState("");
-  // Largeur de bulle qui tient dans la marge ; null = elle n'y tient pas.
+  // Largeur de bulle qui tient dans la marge : ouverte, elle ne mord pas sur
+  // la colonne. null = elle n'y tient pas, elle prend sa largeur par défaut.
   const [largeur, setLargeur] = useState<number | null>(null);
   const [demande, setDemande] = useState(false);
   const racine = useRef<HTMLElement>(null);
+  const lienPerso = useRef<HTMLAnchorElement>(null);
   const minuteries = useRef<number[]>([]);
   const repli = useRef(0);
   const dejaLues = useRef(0);
   const ouvertAuAppui = useRef(false);
+  const focusMuet = useRef(false);
 
   const plusTard = useCallback((fn: () => void, ms: number) => {
     const id = window.setTimeout(fn, ms);
@@ -78,9 +62,7 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
   }, []);
 
   useEffect(() => {
-    if (lire("sessionStorage", CLE_FERME)) return;
-    const choix = choisirPerso(lire("localStorage", CLE_PERSO), Math.random());
-    ecrire("localStorage", CLE_PERSO, choix);
+    const choix = choisirPerso(Math.random());
 
     // L'image est chargée AVANT l'entrée : un personnage qui monte en se
     // dessinant par morceaux ruinerait le seul moment qui compte.
@@ -119,7 +101,7 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
     };
   }, [plusTard]);
 
-  const ouvert = phase === "parle" && (largeur !== null || demande);
+  const ouvert = phase === "parle" && demande;
 
   // Le texte s'écrit lettre par lettre à la première ouverture. Le texte
   // complet est toujours dans le DOM (la suite est seulement invisible) : la
@@ -157,17 +139,19 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
     return () => document.removeEventListener("pointerdown", dehors);
   }, [demande]);
 
-  const fermer = useCallback(() => {
-    ecrire("sessionStorage", CLE_FERME, "1");
-    setPhase("sort");
-    plusTard(() => setPerso(null), DUREE_SORTIE_MS);
-  }, [plusTard]);
+  // Ne ferme que la bulle. Au clavier, le focus retourne au personnage sans
+  // la rouvrir : sinon il resterait dans la bulle, devenue inerte.
+  const fermerBulle = useCallback((auClavier: boolean) => {
+    setDemande(false);
+    if (!auClavier) return;
+    focusMuet.current = true;
+    lienPerso.current?.focus();
+  }, []);
 
   if (!perso) return null;
 
   const fiche = PERSOS[perso];
   const fini = lettres >= fiche.texte.length;
-  const discret = largeur === null;
 
   return (
     <aside
@@ -176,14 +160,12 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
       data-perso={perso}
       data-phase={phase}
       data-ouvert={ouvert ? "" : undefined}
-      data-discret={discret ? "" : undefined}
       data-leve={surLabo ? "" : undefined}
       aria-label={fiche.nom}
       style={largeur === null ? undefined : { ["--dg-largeur" as string]: `${largeur}px` }}
       onKeyDown={(e) => {
-        if (e.key !== "Escape") return;
-        if (discret && demande) setDemande(false);
-        else fermer();
+        if (e.key !== "Escape" || !ouvert) return;
+        fermerBulle(racine.current?.contains(document.activeElement) ?? false);
       }}
       onPointerEnter={(e) => {
         window.clearTimeout(repli.current);
@@ -200,7 +182,12 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
       }}
     >
       <div className="dg-bulle" data-fini={fini ? "" : undefined} inert={!ouvert}>
-        <button type="button" className="dg-fermer" onClick={fermer} aria-label="Fermer">
+        <button
+          type="button"
+          className="dg-fermer"
+          onClick={(e) => fermerBulle(e.detail === 0)}
+          aria-label="Fermer la bulle"
+        >
           <svg viewBox="0 0 10 10" width="12" height="12" aria-hidden="true">
             <path d="M1 1 9 9M9 1 1 9" />
           </svg>
@@ -222,13 +209,17 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
         </svg>
       </div>
       <a
+        ref={lienPerso}
         className="dg-perso"
         href={fiche.href}
         target="_blank"
         rel="noopener"
         aria-label={`${fiche.nom} : ${fiche.action.toLowerCase()}`}
         tabIndex={phase === "parle" ? 0 : -1}
-        onFocus={() => setDemande(true)}
+        onFocus={() => {
+          if (focusMuet.current) focusMuet.current = false;
+          else setDemande(true);
+        }}
         onPointerDown={() => {
           ouvertAuAppui.current = ouvert;
         }}
@@ -236,9 +227,9 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
           // Bulle fermée : le premier clic (ou toucher) l'ouvre ; le lien ne
           // s'active qu'une fois le message visible. L'état se lit À L'APPUI :
           // le focus que provoque ce même appui ouvre la bulle avant le clic.
-          // `detail === 0` : activation au clavier, la bulle est déjà ouverte
-          // par le focus.
-          if (e.detail !== 0 && !ouvertAuAppui.current) {
+          // `detail === 0` : activation au clavier, sans appui ; la bulle est
+          // ouverte par le focus, sauf si le visiteur vient de la fermer.
+          if (!(e.detail === 0 ? ouvert : ouvertAuAppui.current)) {
             e.preventDefault();
             setDemande(true);
           }
@@ -246,6 +237,10 @@ export function PromoDatagotchi({ surLabo = false }: { surLabo?: boolean }) {
       >
         <span className="dg-signe" aria-hidden="true">
           !
+          <svg className="dg-signe-queue" viewBox="0 0 14 10" width="14" height="10">
+            <path className="dg-signe-queue-fond" d="M0 0H14V10H5V5H0Z" />
+            <path className="dg-signe-queue-trait" d="M1 0V4H6V9H13V0" />
+          </svg>
         </span>
         <span className="dg-perso-vie">
           {/* eslint-disable-next-line @next/next/no-img-element */}

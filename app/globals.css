@@ -570,9 +570,20 @@
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     transition: opacity 0.12s ease, visibility 0s linear 0.35s;
   }
+  /* Le dernier menu s'ancre à DROITE. « À propos » clôt une barre alignée à droite : ancré à gauche, son
+     panneau de 210px sortait de la page (libellés coupés de 64px de 901 à ~1430px de large, dont 1280).
+     `visibility: hidden` ne retire pas la boîte du débordement : seul `overflow-x: clip` sur html/body
+     empêchait la page de défiler — la page Méthodologie, qui n'a pas cette ceinture, défilait. */
+  .sub-nav .nav-item:last-child .nav-menu { left: auto; right: -8px; }
   .sub-nav .nav-item:hover .nav-menu,
   .sub-nav .nav-item:focus-within .nav-menu,
   .sub-nav .nav-menu:hover { visibility: visible; opacity: 1; transition-delay: 0s; }
+  /* Les deux panneaux se chevauchent, et celui qui se referme reste cliquable 0,35 s (délai de
+     `visibility` ci-dessus) : le panneau actif passe devant, sinon l'autre, invisible mais placé après
+     dans le DOM, reprenait le survol et se rouvrait à sa place. Deux étages, et non un seul : à égalité,
+     l'ordre du DOM donnerait toujours raison à « À propos » — le survol l'emporte donc sur le focus. */
+  .sub-nav .nav-item:focus-within .nav-menu { z-index: 31; }
+  .sub-nav .nav-item:hover .nav-menu { z-index: 32; }
   .sub-nav .nav-menu a {
     display: block; padding: 11px 18px; white-space: nowrap; line-height: 1.2;
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
@@ -7906,6 +7917,14 @@
     --ppl-parti-pcq: #5A3B6E;
   }
 
+  /* Le bloc « campagne » prend la hauteur de son contenu, pas les 390px de
+     .ppl-grid : ce plancher réservait de l'air sous une liste courte quand le
+     module était seul ; empilé au-dessus du bloc « 2022 », cet air séparait
+     les deux blocs plus que leur marge. Le rail (six filtres de parti) reste le
+     plancher naturel, donc une liste d'une promesse ne fait pas sauter la
+     hauteur. */
+  .polimeter-plus--neuves .ppl-grid { min-height: 0; }
+
   /* Rang : lavis du parti + anneau plein, exactement comme les verdicts. */
   .ppl-promise--parti-plq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-plq) 20%, transparent); border-color: var(--ppl-parti-plq); }
   .ppl-promise--parti-caq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-caq) 20%, transparent); border-color: var(--ppl-parti-caq); }
@@ -7988,10 +8007,26 @@
     border-radius: 3px;
   }
 
-  /* Inverseur de mode — au-dessus des onglets de période, dont il est la
-     hiérarchie supérieure : il change la SOURCE des promesses, les onglets ne
-     changent que la fenêtre. */
-  .ppl-mode-switch { margin-bottom: 8px; }
+  /* Sous-titres du Polimètre+ : plus gros et en gras que le .period-subtitle
+     des autres modules (10px, 400), parce que celui du bloc « 2022 » est le
+     seul titre de son bloc. Les deux blocs suivent, pour rester jumeaux.
+     Portée limitée au module : les autres sous-titres du site ne bougent pas.
+     Le 700 est une vraie graisse (chargée dans app/layout.tsx), pas un gras
+     synthétisé par le navigateur. */
+  .polimeter-plus .period-subtitle { font-size: 14px; font-weight: 700; }
+  /* Bloc « 2022 » sous le bloc « campagne » : son sous-titre est un h3 (le plan
+     de la page doit encore nommer le bloc), rendu EXACTEMENT comme le
+     .period-subtitle en div du bloc du haut — on efface la marge que h3
+     apporte de lui-même. */
+  .ppl-sous-titre { margin: 0; }
+  /* …et il se tient tout près : 12px au lieu des 56px inter-modules de
+     .partis-title-row (10px au lieu de 40px sous le même seuil de 768px que
+     sa marge mobile). Le bloc « 2022 » se lit comme la suite du module, pas
+     comme un module de plus. */
+  .polimeter-plus--second .partis-title-row { margin-top: 12px; }
+  @media (max-width: 768px) {
+    .polimeter-plus--second .partis-title-row { margin-top: 10px; }
+  }
 
   /* Le verbatim du communiqué. En serif et en retrait : c'est une CITATION, la
      pièce justificative du mode — ce que le parti a écrit, mot pour mot. */
@@ -11529,7 +11564,7 @@
   position: relative;
   box-sizing: border-box;
   /* --dg-largeur : posée par le composant quand la bulle tient dans la marge
-     à droite de la colonne. Sinon elle ne s'ouvre qu'à la demande. */
+     à droite de la colonne. Dans tous les cas, elle ne s'ouvre qu'à la demande. */
   width: var(--dg-largeur, min(348px, calc(100vw - 32px)));
   margin: 0 0 24px;
   padding: 16px 20px 19px;
@@ -11685,9 +11720,6 @@
 .dg-promo[data-phase="parle"] .dg-perso {
   animation: dg-monte 1350ms both;
 }
-.dg-promo[data-phase="sort"] .dg-perso {
-  animation: dg-descend 420ms 100ms both;
-}
 
 /* Un coup d'œil par-dessus le bord, une hésitation, puis le saut. */
 @keyframes dg-monte {
@@ -11699,23 +11731,21 @@
   89% { transform: translateY(2.5%); animation-timing-function: ease-out; }
   100% { transform: translateY(0); }
 }
-@keyframes dg-descend {
-  0% { transform: translateY(0); animation-timing-function: ease-out; }
-  28% { transform: translateY(-6%); animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.5); }
-  100% { transform: translateY(calc(112% + var(--dg-bas))); }
-}
 
-/* Le « ! » : seulement quand la bulle ne tient pas dans la marge. Il dit qu'il
-   y a un message sans rien poser sur le contenu ; il s'efface bulle ouverte. */
+/* Le « ! » : il dit qu'il y a un message sans rien poser sur le contenu ; il
+   s'efface bulle ouverte et revient quand elle se referme. C'est une petite
+   bulle de parole, avec la même queue en escalier que la grande : un carré
+   seul se lisait comme une alerte, pas comme « j'ai quelque chose à dire ». */
 .dg-signe {
   position: absolute;
   /* Au-dessus de la tête, à l'intérieur de la largeur du personnage : posé à
-     sa gauche, il mordait sur la colonne à 1440. */
-  top: -22px;
-  left: 6px;
+     sa gauche, il mordait sur la colonne à 1440. Remonté de la hauteur de la
+     queue (10 px), dont la pointe vise la tête. */
+  top: -34px;
+  left: 4px;
   display: grid;
   place-items: center;
-  width: 26px;
+  width: 32px;
   height: 26px;
   box-sizing: border-box;
   background: var(--dg-ambre);
@@ -11728,12 +11758,27 @@
   line-height: 1;
   color: var(--dg-encre);
   opacity: 0;
+  /* Elle sort de la pointe de sa queue, comme la grande bulle. */
+  transform-origin: calc(100% - 8px) calc(100% + 10px);
   transform: scale(0.3);
   transition: transform 160ms ease-in, opacity 120ms ease-in;
   pointer-events: none;
 }
+.dg-signe-queue {
+  position: absolute;
+  /* Même raccord que .dg-queue : le fond recouvre les 2 px du contour. */
+  top: 100%;
+  right: 4px;
+  overflow: visible;
+  shape-rendering: crispEdges;
+}
+.dg-signe-queue-fond { fill: var(--dg-ambre); }
+.dg-signe-queue-trait { fill: none; stroke: var(--dg-encre); stroke-width: 2; }
 .dg-perso { position: relative; }
-.dg-promo[data-discret][data-phase="parle"]:not([data-ouvert]) .dg-signe {
+/* La tête du chien est plus bas dans son image (l'antenne dépasse à droite) :
+   sa bulle descend d'autant, sinon elle flotte loin au-dessus de lui. */
+.dg-promo[data-perso="chien"] .dg-signe { top: -20px; }
+.dg-promo[data-phase="parle"]:not([data-ouvert]) .dg-signe {
   opacity: 1;
   transform: none;
   transition: transform 420ms var(--dg-ressort) 120ms, opacity 140ms ease-out 120ms;
@@ -11766,7 +11811,8 @@
   .dg-promo[data-perso="prof"] img { width: 54px; height: 71px; }
   .dg-perso { margin-right: 6px; }
   .dg-queue { right: 22px; }
-  .dg-signe { top: -24px; left: 0; }
+  .dg-signe { top: -36px; left: -2px; }
+  .dg-promo[data-perso="chien"] .dg-signe { top: -27px; }
 }
 /* Sur dev seulement : au-dessus du panneau du laboratoire de palettes. */
 .dg-promo[data-leve] { --dg-bas: 70px; }
@@ -11781,7 +11827,6 @@
   .dg-perso { transform: none; opacity: 0; transition: opacity 300ms; }
   .dg-promo[data-phase="entre"] .dg-perso,
   .dg-promo[data-phase="parle"] .dg-perso { animation: none; opacity: 1; }
-  .dg-promo[data-phase="sort"] .dg-perso { animation: none; opacity: 0; }
   .dg-promo[data-perso="prof"][data-phase="parle"] .dg-perso-vie { animation: none; }
   .dg-bulle,
   .dg-promo[data-ouvert] .dg-bulle { transform: none; transition: opacity 200ms, visibility 0s; }

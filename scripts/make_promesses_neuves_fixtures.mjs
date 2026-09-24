@@ -116,9 +116,10 @@ const PROMESSES = [
   // d'alerte (runtime.R) — mais il écarte au lieu d'afficher.
 ];
 
-// Le raffineur publie DEUX fenêtres. La règle d'appartenance étant l'écho
-// médiatique, une promesse ancienne peut figurer dans la fenêtre du jour : la
-// fixture le reproduit, sinon on ne pourrait pas éprouver ce comportement.
+// Le raffineur publie jusqu'à TROIS fenêtres (day ⊂ week ⊂ campaign). La règle
+// d'appartenance étant l'écho médiatique, une promesse ancienne peut figurer
+// dans la fenêtre du jour : la fixture le reproduit, sinon on ne pourrait pas
+// éprouver ce comportement.
 function lignes(windowKey, garder) {
   return PROMESSES.filter(garder)
     .map(([parti, verbatim, label, age, mentions, categorie, articles], i) => ({
@@ -142,19 +143,22 @@ function lignes(windowKey, garder) {
 }
 
 // « Aujourd'hui » : celles reprises aujourd'hui — donc les plus fort écho, quel
-// que soit leur âge. « Semaine » : tout le jeu.
+// que soit leur âge. « Semaine » et « Campagne » : tout le jeu (la fixture n'a
+// rien de plus vieux qu'une semaine à offrir au cumul de campagne).
 const rows = [
   ...lignes("day", ([, , , , mentions]) => mentions >= 3),
   ...lignes("week", () => true),
+  ...lignes("campaign", () => true),
 ];
 
 await fs.mkdir(OUT_DIR, { recursive: true });
 await fs.writeFile(path.join(OUT_DIR, OUT_FILE), JSON.stringify(rows, null, 2) + "\n", "utf8");
 
 console.log(`${rows.length} lignes écrites dans fixtures/promesses-neuves/${OUT_FILE}`);
-console.log(`  fenêtre du jour    : ${rows.filter((r) => r.window_key === "day").length}`);
-console.log(`  fenêtre de semaine : ${rows.filter((r) => r.window_key === "week").length}`);
-console.log(`  partis            : ${[...new Set(rows.map((r) => r.party_id))].join(", ")}`);
+console.log(`  fenêtre du jour     : ${rows.filter((r) => r.window_key === "day").length}`);
+console.log(`  fenêtre de semaine  : ${rows.filter((r) => r.window_key === "week").length}`);
+console.log(`  fenêtre de campagne : ${rows.filter((r) => r.window_key === "campaign").length}`);
+console.log(`  partis              : ${[...new Set(rows.map((r) => r.party_id))].join(", ")}`);
 console.log("");
 console.log("Pour développer avec :");
 console.log(`  VITRINE_NEUVES_FIXTURES=fixtures/promesses-neuves/${OUT_FILE} npm run dev`);

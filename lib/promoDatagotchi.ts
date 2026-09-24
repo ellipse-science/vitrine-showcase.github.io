@@ -1,7 +1,7 @@
-// La mascotte Datagotchi du coin inférieur droit : un personnage par visiteur,
-// tiré au sort à la première visite puis gardé — deux personnages à la fois
-// auraient encombré la page. Logique pure ici (testable sans navigateur),
-// affichage dans components/interactive/PromoDatagotchi.tsx.
+// La mascotte Datagotchi du coin inférieur droit : un seul personnage à la
+// fois (deux auraient encombré la page), tiré au sort à chaque chargement
+// pour que les deux projets soient vus. Logique pure ici (testable sans
+// navigateur), affichage dans components/interactive/PromoDatagotchi.tsx.
 
 export type Perso = "chien" | "prof";
 
@@ -23,8 +23,8 @@ export type FichePerso = {
 export const PERSOS: Record<Perso, FichePerso> = {
   chien: {
     nom: "Défi Datagotchi",
-    texte: "Croyez-vous que vous êtes prévisible? Viens tenter ta chance!",
-    action: "Tenter ma chance",
+    texte: "Es-tu prévisible? Viens le découvrir!",
+    action: "Relever le défi",
     href: "https://quebec.datagotchi.com/?utm_source=vitrinedemocratique",
     image: "/datagotchi/chien.gif",
     imageFixe: "/datagotchi/chien.png",
@@ -44,25 +44,16 @@ export const PERSOS: Record<Perso, FichePerso> = {
   },
 };
 
-export const CLE_PERSO = "vitrine:datagotchi:perso";
-export const CLE_FERME = "vitrine:datagotchi:ferme";
-
-export function estPerso(valeur: unknown): valeur is Perso {
-  return valeur === "chien" || valeur === "prof";
-}
-
-// `memorise` vient du localStorage : toute valeur inconnue (clé d'une ancienne
-// version, stockage trafiqué) retombe sur un nouveau tirage.
-export function choisirPerso(memorise: unknown, hasard: number): Perso {
-  if (estPerso(memorise)) return memorise;
+// `hasard` : un nombre de [0, 1[, moitié-moitié entre les deux personnages.
+export function choisirPerso(hasard: number): Perso {
   return hasard < 0.5 ? "chien" : "prof";
 }
 
-// La bulle ne recouvre jamais le contenu de son propre chef : elle ne s'ouvre
-// seule que si elle tient dans la marge à droite de la colonne. `marge` est la
-// largeur libre (px) entre la colonne et le bord de la fenêtre ; le résultat
-// est la largeur à donner à la bulle, ou null si elle n'y tient pas (elle ne
-// s'ouvre alors qu'à la demande du visiteur).
+// La bulle ne s'ouvre qu'à la demande du visiteur. Sur écran large, elle se
+// loge alors dans la marge à droite de la colonne plutôt que sur le contenu.
+// `marge` est la largeur libre (px) entre la colonne et le bord de la fenêtre ;
+// le résultat est la largeur à donner à la bulle, ou null si elle n'y tient pas
+// (elle prend alors sa largeur par défaut, par-dessus le contenu).
 export const BULLE_MAX = 348;
 export const BULLE_MIN = 300;
 // 20 px jusqu'au bord de la fenêtre + 16 px d'air avant la colonne.
