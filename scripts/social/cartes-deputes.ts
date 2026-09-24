@@ -37,6 +37,8 @@
 //   npm run carte:deputes -- --only tanguay  → une carte, par nom ou circo
 //   npm run carte:deputes                    → la planche des 128
 //   npm run carte:deputes -- --png           → les PNG, la planche une fois vue
+//   npm run carte:deputes -- --impression    → les PNG pour l'imprimeur : fond
+//                                              perdu de 3 mm, échelle 2, dans impression/
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -390,6 +392,15 @@ function toneWording(score: number, maxAbs: number): string {
 
 const W = 1071;
 const H = 1496;
+// IMPRESSION (--impression). La carte fait 63,5 x 88,9 mm, donc 1071 px = 63,5 mm
+// (428 ppp). Le massicot dévie : on dessine 3 mm de FOND PERDU au-delà de la
+// coupe, dans la couleur de fond de la face, et on garde le trait du cadre à
+// 3 mm en deçà (zone de sécurité). Pour ne rien redessiner, la face entière est
+// réduite d'une échelle uniforme et centrée : 3 mm de papier sur les côtés,
+// 4,2 mm en haut et en bas, comme le liseré d'une vraie carte. Sortie à
+// l'échelle 2 (856 ppp), une image de 69,5 x 94,9 mm.
+const FOND_PERDU = 51;                          // 3 mm à 428 ppp
+const ECHELLE_IMPRESSION = (63.5 - 6) / 63.5;   // le cadre à 3 mm de la coupe
 
 /** Fenêtre conservée par la grille du profil Instagram (carré centré). */
 const COEUR = { top: Math.round((H - W) / 2), bottom: Math.round((H + W) / 2) };
@@ -2266,8 +2277,10 @@ async function main() {
     // attend ses polices et ses images, et le processeur reste inoccupé pendant
     // ce temps. --parallele N règle le nombre d'onglets (4 par défaut).
     const parallele = Math.max(1, Number(typeof args.parallele === "string" ? args.parallele : 4));
+    const impression = !!args.impression;
+    const fond = impression ? FOND_PERDU : 0;
     const onglets = await Promise.all(Array.from({ length: Math.min(parallele, pages.length) }, () =>
-      browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })));
+      browser.newPage({ viewport: { width: W + 2 * fond, height: H + 2 * fond }, deviceScaleFactor: impression ? 2 : 1 })));
     // Chaque page est écrite sur disque puis OUVERTE (goto), pas injectée
     // (setContent) : injectée, elle vit sur about:blank, d'où Chromium refuse de
     // charger les trames référencées en file://.
@@ -2307,7 +2320,7 @@ async function main() {
     // élu n'est pas rattrapable. Un échantillon ou une carte seule sort
     // directement : on la regarde justement pour décider.
     const cible = args.echantillon || typeof args.only === "string";
-    if (args.png) {
+    if (args.png || impression) {
       if (!cible) {
         const vue = await fs.readFile(planche, "utf8").catch(() => "");
         if (!vue.includes(`data-empreinte="${empreinte}"`)) {
@@ -2317,10 +2330,31 @@ async function main() {
           );
         }
       }
+      const dossierSortie = impression ? path.join(outDir, "impression") : outDir;
+      await fs.mkdir(dossierSortie, { recursive: true });
       await rendre(async (page, i) => {
-        await page.screenshot({ path: path.join(outDir, `${pages[i].slug}.png`), type: "png" });
+        if (impression) {
+          // Après les mesures (elles se font à l'échelle 1, sur la face entière).
+          // Le fond perdu doit porter la même couleur ET les mêmes textures (grain,
+          // moucheté) que la face, sans couture : on agrandit donc le <body> à la
+          // page entière (les textures s'y étirent), et tout le reste de la face
+          // est déplacé dans un conteneur réduit et centré. Les textures restent
+          // au-dessus (elles sont les derniers enfants du body).
+          await page.evaluate(({ W, H, s, mx, my, pw, ph }) => {
+            const body = document.body;
+            body.style.width = `${pw}px`; body.style.height = `${ph}px`;
+            const face = document.createElement("div");
+            face.style.cssText = `position:absolute;left:${mx}px;top:${my}px;width:${W}px;height:${H}px;transform:scale(${s});transform-origin:top left`;
+            for (const el of Array.from(body.children)) {
+              if (el.matches("svg.grain, svg.mouchete")) { (el as HTMLElement).style.width = "100%"; (el as HTMLElement).style.height = "100%"; continue; }
+              face.appendChild(el);
+            }
+            body.prepend(face);
+          }, { W, H, s: ECHELLE_IMPRESSION, mx: fond + (W - W * ECHELLE_IMPRESSION) / 2, my: fond + (H - H * ECHELLE_IMPRESSION) / 2, pw: W + 2 * fond, ph: H + 2 * fond });
+        }
+        await page.screenshot({ path: path.join(dossierSortie, `${pages[i].slug}.png`), type: "png" });
       }, "images");
-      console.log(`\n  ${cartes.length} cartes (recto + verso) → ${outDir}`);
+      console.log(`\n  ${cartes.length} cartes (recto + verso) → ${dossierSortie}${impression ? " (fond perdu 3 mm, 856 ppp)" : ""}`);
       rapporterDebordements(debordements);
       rapporterRetours();
       return;
