@@ -281,6 +281,13 @@ Grille du 23 septembre 2026 (décision de Jules).
 
 ## 8. Présentation
 
+- **Portraits** : les photos de l'Assemblée font 150 × 200 px, trop peu
+  pour le papier (66 ppp sur la carte). Elles sont agrandies puis redessinées en
+  trame de points vectoriels à quatre couleurs (style carte de baseball), pas de
+  cellule 8 px (`--cellule`, décision du 24-09 sur planche d'essai) : environ
+  82 lignes par pouce, assez gros pour cacher le manque de détail et rester
+  loin de la trame de l'imprimeur (150 à 175), donc sans moiré. Pas
+  d'agrandissement par IA : ce serait inventer des traits à des élus réels.
 - **Édition** : « 43e législature » au recto, « 43e législature · 2022-2026 »
   au verso ; « carte N de 125 ».
 - **Signature** (légendaires) : tracé blanc tiré d'une image fournie

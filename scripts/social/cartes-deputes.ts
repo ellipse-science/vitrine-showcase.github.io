@@ -736,10 +736,12 @@ function ligneMandat(m: Mandat | undefined): string {
 // La fonction renvoie une URL file:// : les pages sont ouvertes depuis le
 // disque (cf. rendre()), pas injectées, sans quoi Chromium refuse l'image.
 const TRAME_VERSION = "1";
-// --cellule N : pas de la trame en pixels (4 par défaut). Plus la cellule est
-// grande, plus la trame est grosse et plus elle cache le peu de détail des
-// portraits source (150 x 200 px). Fait partie de la clé du cache des trames.
-const CELLULE_TRAME = Math.max(2, Number(typeof parseArgs(process.argv.slice(2)).cellule === "string" ? parseArgs(process.argv.slice(2)).cellule : 4));
+// --cellule N : pas de la trame en pixels, 8 par défaut (décision de Jules,
+// 24-09, sur planche d'essai à 4, 6, 8 et 10). Les portraits source font
+// 150 x 200 px : une trame grosse cache ce manque de détail, et à 8 px elle
+// fait environ 82 lignes par pouce sur la carte, loin des 150 à 175 de la trame
+// de l'imprimeur, donc sans moiré. Fait partie de la clé du cache des trames.
+const CELLULE_TRAME = Math.max(2, Number(typeof parseArgs(process.argv.slice(2)).cellule === "string" ? parseArgs(process.argv.slice(2)).cellule : 8));
 const CACHE_TRAMES = path.resolve(process.cwd(), "social-out/.cache-trames");
 const cacheBaseball = new Map<string, string | null>();
 async function baseballURI(deputy: DeputyRow): Promise<string | null> {
