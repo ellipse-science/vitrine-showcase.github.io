@@ -498,21 +498,24 @@ const PHOTO_H = PANNEAU.bas - BANDE - PANNEAU.y;
 /** POSITION DU CARRÉ DE LA FONCTION, EN DUR PAR TYPE DE CARTE (Jules, 25-09) :
  *  au sein d'un type, le carré est au même endroit sur toutes les cartes ;
  *  d'un type à l'autre, il suit la bande du nom (rentrée de TOPPS.bande sur
- *  les rares). Coordonnées dans la bande, sous son filet de 22 px : colonne de
- *  `largeur` px contre le bord droit, carré de `carre` px à `haut` px du haut,
- *  libellé dessous sur deux lignes au plus. Budget vertical : 30 + 104 + 5 +
- *  2 × 17,6 = 174 px, pour une bande de 196 : 22 px de marge. Les légendaires
- *  ont leur propre gabarit (PASTILLE_LEGENDAIRE). */
+ *  les rares). Coordonnées dans la bande : colonne de `largeur` px contre le
+ *  bord droit, carré de `carre` px à `haut` px du haut, soit CENTRÉ dans la
+ *  partie colorée, sous le filet de 22 px : 22 + (196 − 22 − 104) / 2 = 57.
+ *  Le code porte un astérisque ; ce qu'il veut dire est écrit au pied de la
+ *  carte (« * Ministre »), à la place de l'adresse du site, qui est au verso.
+ *  Un libellé sous le carré obligeait à le décentrer vers le haut. Les
+ *  légendaires ont leur propre gabarit (PASTILLE_LEGENDAIRE). */
 /** Légendaires : la pastille de fonction, au-dessus du nom, fixée en dur à la
  *  place qu'elle occupe quand le nom est à sa taille pleine (mesuré le 25-09 :
  *  x 78, y 1102). Dans le flux, elle descendait dès qu'ajusterNom réduisait un
- *  nom long. Son libellé en clair se place À CÔTÉ : le nom occupe le dessous. */
+ *  nom long. Comme le carré des autres cartes, elle porte un astérisque renvoyé
+ *  au pied (« * Premier ministre »). */
 const PASTILLE_LEGENDAIRE = { gauche: 78, haut: 1102 };
 
 const FONCTION: Record<Exclude<Rarete, "legendaire">, { largeur: number; carre: number; haut: number }> = {
-  commune:       { largeur: 200, carre: 104, haut: 30 },
-  "peu-commune": { largeur: 200, carre: 104, haut: 30 },
-  rare:          { largeur: 200, carre: 104, haut: 30 },
+  commune:       { largeur: 200, carre: 104, haut: 57 },
+  "peu-commune": { largeur: 200, carre: 104, haut: 57 },
+  rare:          { largeur: 200, carre: 104, haut: 57 },
 };
 
 type Carte = {
@@ -1188,8 +1191,7 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
   .fonction-leg{position:absolute;left:${PASTILLE_LEGENDAIRE.gauche}px;top:${PASTILLE_LEGENDAIRE.haut}px;
                 display:flex;align-items:center;gap:18px;z-index:2}
   .fonction-leg .pastille{margin-bottom:0}
-  .libelle-pastille{font-family:"IBM Plex Mono",monospace;font-size:24px;letter-spacing:.14em;
-                    text-transform:uppercase;color:${COLORS.paper};opacity:.85;white-space:nowrap}
+  .renvoi{font-size:.6em;vertical-align:super;line-height:0;margin-left:2px;letter-spacing:0}
   .pastille{display:inline-block;padding:7px 18px 6px;border:2px solid ${COLORS.paper};border-radius:4px;
             font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:28px;letter-spacing:.3em;
             line-height:1;margin-bottom:6px}
@@ -1220,14 +1222,14 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
   <span class="medaillon"><i>${c.numero}${c.variante}</i></span>
   ${ecusson ? `<span class="ecusson-haut"><i style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></i></span>` : ""}
   ${c.signature ? `<img class="signature" src="${c.signature}" alt="">` : ""}
-  ${c.codeFonction ? `<div class="fonction-leg"><span class="pastille">${c.codeFonction}</span>${c.libelleFonction ? `<span class="libelle-pastille">${txt(c.libelleFonction)}</span>` : ""}</div>` : ""}
+  ${c.codeFonction ? `<div class="fonction-leg"><span class="pastille">${c.codeFonction}${c.libelleFonction ? `<sup class="renvoi">*</sup>` : ""}</span></div>` : ""}
   <div class="bas">
     <div class="ligne-nom">
       <p class="nom">${txt(nomImprime(d.name))}</p>
     </div>
     <p class="sous">${d.circonscription ? txt(d.circonscription) : ""}<span class="fleurs" aria-label="${LIBELLE_RARETE[c.rarete ?? "legendaire"]}">${fleurs}</span></p>
   </div>
-  <p class="pied"><span>${ordinal(txt(c.edition.split(" · ")[0]))}</span><span>vitrinedemocratique.com</span></p>
+  <p class="pied"><span>${ordinal(txt(c.edition.split(" · ")[0]))}</span><span>${c.libelleFonction ? `*&nbsp;${txt(c.libelleFonction)}` : "vitrinedemocratique.com"}</span></p>
   ${marquesInstitutions(logoCapp)}
   <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
   <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>
@@ -1293,9 +1295,7 @@ function carteHTML(
      104, 8 d'écart, puis deux lignes de libellé au plus. */
   .fonction{flex:0 0 ${fonc.largeur}px;width:${fonc.largeur}px;align-self:stretch;position:relative}
   .fonction .code-fonction{position:absolute;top:${fonc.haut}px;left:${(fonc.largeur - fonc.carre) / 2}px}
-  .libelle-fonction{position:absolute;left:0;right:0;top:${fonc.haut + fonc.carre + 5}px;
-                    font-family:"IBM Plex Mono",monospace;font-size:16px;line-height:1.1;letter-spacing:.06em;
-                    text-transform:uppercase;text-align:center;color:${COLORS.paper};opacity:.85}
+  .renvoi{font-size:.45em;vertical-align:super;line-height:0;margin-left:1px}
   .code-fonction{flex:0 0 auto;width:${fonc.carre}px;height:${fonc.carre}px;background:${COLORS.paper};color:${parti};
                  display:flex;align-items:center;justify-content:center;
                  font-family:"Oswald",sans-serif;font-weight:700;font-size:60px;letter-spacing:.02em;line-height:1}
@@ -1428,7 +1428,7 @@ function carteHTML(
         <p class="nom">${txt(nomImprime(d.name))}</p>
         <p class="sous">${d.circonscription ? txt(d.circonscription) : ""}<span class="fleurs" aria-label="${LIBELLE_RARETE[c.rarete ?? "commune"]}">${Array.from({ length: FLEURS_PAR_RARETE[c.rarete ?? "commune"] }, () => fleur(COLORS.paper, 24)).join("")}</span></p>
       </div>
-      ${c.codeFonction ? `<div class="fonction"><span class="code-fonction${c.codeFonction.length > 2 ? " long" : ""}">${c.codeFonction}</span>${c.libelleFonction ? `<span class="libelle-fonction">${txt(c.libelleFonction)}</span>` : ""}</div>` : ""}
+      ${c.codeFonction ? `<div class="fonction"><span class="code-fonction${c.codeFonction.length > 2 ? " long" : ""}">${c.codeFonction}${c.libelleFonction ? `<sup class="renvoi">*</sup>` : ""}</span></div>` : ""}
     </div>
   </div>
 
@@ -1457,7 +1457,7 @@ function carteHTML(
 
   <p class="pied">
     <span>${ordinal(txt(c.edition.split(" · ")[0]))}</span>
-    <span>vitrinedemocratique.com</span>
+    <span>${c.libelleFonction ? `*&nbsp;${txt(c.libelleFonction)}` : "vitrinedemocratique.com"}</span>
   </p>
 
   <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
