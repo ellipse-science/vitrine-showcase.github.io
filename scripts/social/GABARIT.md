@@ -386,7 +386,7 @@ Rejeté le 17-09 : cinq scènes en slides, puis deux slides chiffre + record.
 
 **Légende** : Instagram seulement pour l'instant (`_instagram.txt`), en récit suivi :
 meneur et suivants, meneur par média, ton, campagne, puis le lien et les mots-clics.
-Les autres réseaux (`lib/reseaux.ts`) sont écrits pour la Une des Unes : À FAIRE.
+Les autres réseaux (`reseaux/`, un fichier par réseau) sont écrits pour la Une des Unes : À FAIRE.
 
 ### Rejeté (ne pas réintroduire)
 
@@ -496,6 +496,14 @@ un bloc de taille fixe qui reçoit un texte variable finit par déborder.
 et il intersecte chaque ligne de texte avec l'ancêtre qui la ROGNE (`overflow`,
 `-webkit-line-clamp`, ellipsis). Sans ça, un titre coupé à deux lignes était
 signalé comme empilé sur ce qui suit, alors qu'à l'écran il n'y a rien.
+
+**La zone descend (17-09, soir).** « Baisse le tout vers le bas, on perd trop
+d'espace pour les slides sur les analyses. » La réserve du bas passe de 380 à
+350 px : la zone sûre s'arrête maintenant à y 1570, douze pixels avant la
+légende d'Instagram en plein écran (mesurée à y 1582), au lieu de 1540. La
+hauteur utile d'une scène passe de 1226 à 1296 px. Ce qui porte `data-cle` doit
+toujours tenir dans le carré central (1500) : un bloc clé placé en dernier dans
+la colonne garde automatiquement 70 px de marge basse.
 
 ## 7. Points ouverts
 

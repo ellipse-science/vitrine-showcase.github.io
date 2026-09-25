@@ -10,9 +10,11 @@ export const anim = (name: string, dur: number, delay: number) => `style="animat
 /** « 20h » : heure de publication de l'édition (heures collées, règle #7). */
 export const pubHourLabel = (edition: EditionRef) => `${edition.pubHour % 24}h`;
 
-/** « Édition de 20h · 16.09.2026 », pour le pied de page. */
-export const footerEdition = (edition: EditionRef) =>
-  `Édition de ${pubHourLabel(edition)} · ${edition.navDateIso.split("-").reverse().join(".")}`;
+/** LA DATE DE L'EN-TÊTE, en toutes lettres : « Jeudi 17 septembre 2026 »
+ *  (Jules Piral, 2026-09-18). SANS l'heure d'édition : elle ne sert qu'à qui
+ *  suit les six éditions, et elle alourdissait la seule ligne que le public doit
+ *  lire d'un coup d'œil. `dateLabel` vient des données, pas d'un format recopié. */
+export const dateLongue = (edition: EditionRef) => edition.dateLabel;
 
 /** « A, B et C ». */
 export const joinFr = (items: string[]) =>

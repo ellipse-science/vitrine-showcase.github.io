@@ -3,7 +3,7 @@
 // du jour.
 
 import { SIGLE_ARTICLE, cap } from "../../lib/partis";
-import { CSS_BARRES, ECHELLE_BARRES, barresHtml, scriptBarres, type Analyse } from "../plan";
+import { AXE_LABEL, CSS_BARRES, ECHELLE_BARRES, barresHtml, scriptBarres, type Analyse } from "../plan";
 
 export const bascule: Analyse = {
   id: "bascule",
@@ -27,10 +27,11 @@ export const bascule: Analyse = {
   } else {${scriptBarres({ t0: 3.1, d: 1.3, decale: 0 })}
   }`,
       phrases: [
-        { a: "Depuis lundi, le parti le plus présent en Une :", b: `${cap(SIGLE_ARTICLE[avant.key])}, avec ${avant.sovPct} %`, couleur: avant.color, debut: .15, fin: 3.0 },
+        { a: "Depuis lundi, le parti le plus présent en Une de l’actualité :", b: `${cap(SIGLE_ARTICLE[avant.key])}, avec ${avant.sovPct} %`, couleur: avant.color, debut: .15, fin: 3.0 },
         { a: "Aujourd’hui, tout bascule :", b: `${cap(SIGLE_ARTICLE[lead.key])} grimpe à ${lead.sovPct} %`, couleur: lead.color, debut: 3.1 },
       ],
-      legende: `Depuis lundi, ${SIGLE_ARTICLE[avant.key]} menait avec ${avant.sovPct} % du temps que les Unes consacrent aux partis. Aujourd’hui, ${SIGLE_ARTICLE[lead.key]} passe devant, à ${lead.sovPct} %.`,
+      methode: AXE_LABEL,
+      legende: `Depuis lundi, ${SIGLE_ARTICLE[avant.key]} menait avec ${avant.sovPct} % du temps que les Unes de l’actualité consacrent aux partis. Aujourd’hui, ${SIGLE_ARTICLE[lead.key]} passe devant, à ${lead.sovPct} %.`,
     };
   },
 };

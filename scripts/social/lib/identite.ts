@@ -1,11 +1,19 @@
-// LE TEXTE QUI ACCOMPAGNE UN REEL — commun à tous les modules.
+// L'IDENTITÉ COMMUNE AUX CINQ RÉSEAUX — figée.
 //
-// Un reel ne se publie jamais seul : il part avec un post et, pour la Une des
-// Unes, un premier commentaire. Le gabarit du post est le même partout (demande
-// d'Adrien, 2026-09-16 : « un template qu'on peut reprendre chaque jour et
-// automatiser facilement »), et TOUT CE QUI SE MODIFIE À LA MAIN est ici :
-// émojis, phrase de rappel, mots-clics, comptes à identifier. Le reste vient
-// des données.
+// Ce fichier est la source unique de ce qui doit être IDENTIQUE sur LinkedIn,
+// X, Facebook, Instagram et TikTok : les émojis du titre, le rappel sous le
+// trait, le vocabulaire de mots-clics, les comptes à identifier, la typographie
+// OQLF. Le pendant visuel est `GABARIT.md` §0 (palette, accroche, fin, logos),
+// lu par `lib/reel.ts` et `lib/modules.ts`.
+//
+// ⚠️ RÈGLE D'ÉTANCHÉITÉ. Rien de propre à UN réseau n'entre ici. Le nombre de
+// mots-clics, la limite de caractères, « lien dans la bio » : tout cela vit
+// dans `reseaux/<réseau>.ts`, et nulle part ailleurs. Modifier ce fichier-ci
+// change les cinq réseaux d'un coup — c'est fait exprès, et ça se décide à
+// deux (Jules et Adrien), pas en passant.
+//
+// Ce qui change d'une publication à l'autre — les chiffres, les titres, les
+// liens — ne s'écrit pas ici non plus : ça vient des données.
 
 /** Émojis du titre. Une ligne à changer. */
 export const EMOJIS = "📰 ⚜️";
