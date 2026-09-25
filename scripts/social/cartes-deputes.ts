@@ -499,7 +499,9 @@ const PHOTO_H = PANNEAU.bas - BANDE - PANNEAU.y;
  *  au sein d'un type, le carré est au même endroit sur toutes les cartes ;
  *  d'un type à l'autre, il suit la bande du nom (rentrée de TOPPS.bande sur
  *  les rares). Coordonnées dans la bande : colonne de `largeur` px contre le
- *  bord droit, carré de `carre` px à `haut` px du haut, soit CENTRÉ dans la
+ *  bord droit (= le carré lui-même : collé à la marge intérieure de 40 px, la
+ *  même que le nom à gauche, Jules 25-09), carré de `carre` px à `haut` px du
+ *  haut, soit CENTRÉ dans la
  *  partie colorée, sous le filet de 22 px : 22 + (196 − 22 − 104) / 2 = 57.
  *  Le code porte un astérisque ; ce qu'il veut dire est écrit au pied de la
  *  carte (« * Ministre »), à la place de l'adresse du site, qui est au verso.
@@ -513,9 +515,9 @@ const PHOTO_H = PANNEAU.bas - BANDE - PANNEAU.y;
 const PASTILLE_LEGENDAIRE = { gauche: 78, haut: 1102 };
 
 const FONCTION: Record<Exclude<Rarete, "legendaire">, { largeur: number; carre: number; haut: number }> = {
-  commune:       { largeur: 200, carre: 104, haut: 57 },
-  "peu-commune": { largeur: 200, carre: 104, haut: 57 },
-  rare:          { largeur: 200, carre: 104, haut: 57 },
+  commune:       { largeur: 104, carre: 104, haut: 57 },
+  "peu-commune": { largeur: 104, carre: 104, haut: 57 },
+  rare:          { largeur: 104, carre: 104, haut: 57 },
 };
 
 type Carte = {
