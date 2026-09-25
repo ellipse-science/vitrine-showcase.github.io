@@ -43,10 +43,12 @@
 //   · impression : trame de 8 px (~82 lignes par pouce, sans moiré avec la
 //     trame de l'imprimeur, décision du 24-09), fond perdu de 3 mm, échelle 2 ;
 //     identique à --impression.
-//   · web : trame de 6 px, où le visage se lit mieux à l'écran (retenue pour
-//     les cartes du podcast, essai à 8, 6, 5 et 4 px ; en dessous de 6, la
-//     trame ne cache plus que la photo source ne fait que 150 x 200 px), sans
-//     fond perdu, échelle 2 (2142 x 2992 px), trame rastérisée à cette échelle.
+//   · web : trame de 4 px, la plus lisse à l'écran (retenue par Jules le 25-09
+//     sur planche à 6, 5 et 4 px, contre un rendu 3x — qui ne change rien : ce
+//     qu'on voit, ce sont les points, pas les pixels — et une trame adoucie,
+//     qui paraît floue). Sans fond perdu, échelle 2 (2142 x 2992 px), trame
+//     rastérisée à cette échelle. Plus fin encore, la trame ne cacherait plus
+//     que la photo source ne fait que 150 x 200 px.
 // Sans --style, rien ne change. --cellule et --echelle l'emportent sur le style,
 // pour un essai.
 //   npm run carte:deputes -- --mention "Carte en développement"  → tampon sur chaque face
@@ -789,7 +791,7 @@ const TRAME_VERSION = "1";
 // de l'imprimeur, donc sans moiré. Fait partie de la clé du cache des trames.
 const STYLES = {
   impression: { cellule: 8, echelle: 2, impression: true },
-  web: { cellule: 6, echelle: 2, impression: false },
+  web: { cellule: 4, echelle: 2, impression: false },
 } as const;
 type StyleCarte = keyof typeof STYLES;
 const ARGS_CARTES = parseArgs(process.argv.slice(2));
