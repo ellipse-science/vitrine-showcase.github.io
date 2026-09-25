@@ -1,0 +1,908 @@
+{
+ "_note": "Candidatures 2026 des élus de la 43e, pour le verso des cartes (« S'est représenté en 2026 »). SEULES les entrées verifie=true sont affichées : une absence des rôles de candidats ne prouve pas qu'un élu ne s'est pas représenté. Statut : 'candidat' ou 'non-candidat'. Vérifier sur la liste officielle d'Élections Québec (www.electionsquebec.qc.ca/voter/candidats/).",
+ "deputes": {
+  "17827": {
+   "nom": "Agnès Grondin",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19263": {
+   "nom": "Alejandra Zaga Mendez",
+   "statut": null,
+   "parti": "Québec solidaire",
+   "circonscription": "Verdun",
+   "verifie": false
+  },
+  "20141": {
+   "nom": "Alex Boissonneault",
+   "statut": null,
+   "parti": "Parti québécois",
+   "circonscription": "Arthabaska-L’Érable",
+   "verifie": false
+  },
+  "17935": {
+   "nom": "Alexandre Leduc",
+   "statut": null,
+   "parti": "Québec solidaire",
+   "circonscription": "Hochelaga-Maisonneuve",
+   "verifie": false
+  },
+  "19315": {
+   "nom": "Alice Abou-Khalil",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19273": {
+   "nom": "Amélie Dionne",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Rivière-du-Loup–Témiscouata–Les Basques",
+   "verifie": false
+  },
+  "19253": {
+   "nom": "André Albert Morin",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17859": {
+   "nom": "André Bachand",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "15383": {
+   "nom": "André Fortin",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Pontiac",
+   "verifie": false
+  },
+  "15401": {
+   "nom": "André Lamontagne",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17913": {
+   "nom": "Andrée Laforest",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17953": {
+   "nom": "Andrés Fontecilla",
+   "statut": null,
+   "parti": "Québec solidaire",
+   "circonscription": "Laurier-Dorion",
+   "verifie": false
+  },
+  "19325": {
+   "nom": "Audrey Bogemans",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Iberville",
+   "verifie": false
+  },
+  "195": {
+   "nom": "Benoit Charette",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "209": {
+   "nom": "Bernard Drainville",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Lévis",
+   "verifie": false
+  },
+  "19271": {
+   "nom": "Brigitte B. Garceau",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19351": {
+   "nom": "Carole Mallette",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17837": {
+   "nom": "Caroline Proulx",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19251": {
+   "nom": "Catherine Blouin",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Bonaventure",
+   "verifie": false
+  },
+  "20131": {
+   "nom": "Catherine Gentilcore",
+   "statut": null,
+   "parti": "Parti québécois",
+   "circonscription": "Terrebonne",
+   "verifie": false
+  },
+  "17931": {
+   "nom": "Chantal Rouleau",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Pointe-aux-Trembles",
+   "verifie": false
+  },
+  "15417": {
+   "nom": "Chantal Soucy",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17959": {
+   "nom": "Chantale Jeannotte",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "12223": {
+   "nom": "Christian Dubé",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19269": {
+   "nom": "Christine Fréchette",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Trois-Rivières",
+   "verifie": false
+  },
+  "17889": {
+   "nom": "Christine Labrie",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17873": {
+   "nom": "Christopher Skeete",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Sainte-Rose",
+   "verifie": false
+  },
+  "17833": {
+   "nom": "Claude Reid",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Beauharnois",
+   "verifie": false
+  },
+  "19309": {
+   "nom": "Céline Haytayan",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "13": {
+   "nom": "Daniel Bernard",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17901": {
+   "nom": "Denis Lamothe",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "12165": {
+   "nom": "Donald Martel",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Nicolet-Bécancour",
+   "verifie": false
+  },
+  "19283": {
+   "nom": "Désirée McGraw",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Notre-Dame-de-Grâce",
+   "verifie": false
+  },
+  "19301": {
+   "nom": "Elisabeth Prass",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "D'Arcy-McGee",
+   "verifie": false
+  },
+  "17943": {
+   "nom": "Enrico Ciccone",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Marquette",
+   "verifie": false
+  },
+  "17929": {
+   "nom": "Eric Girard",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Groulx",
+   "verifie": false
+  },
+  "17957": {
+   "nom": "Eric Girard",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Groulx",
+   "verifie": false
+  },
+  "19267": {
+   "nom": "Etienne Grandmont",
+   "statut": null,
+   "parti": "Québec solidaire",
+   "circonscription": "Taschereau",
+   "verifie": false
+  },
+  "1171": {
+   "nom": "Filomena Rotiroti",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Jeanne-Mance–Viger",
+   "verifie": false
+  },
+  "19257": {
+   "nom": "France-Élaine Duranceau",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Bertrand",
+   "verifie": false
+  },
+  "17909": {
+   "nom": "Frantz Benjamin",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Viau",
+   "verifie": false
+  },
+  "11": {
+   "nom": "François Bonnardel",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17937": {
+   "nom": "François Jacques",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Mégantic",
+   "verifie": false
+  },
+  "4131": {
+   "nom": "François Legault",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19321": {
+   "nom": "François St-Louis",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17917": {
+   "nom": "François Tremblay",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19307": {
+   "nom": "Frédéric Beauchemin",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Brome-Missisquoi",
+   "verifie": false
+  },
+  "16827": {
+   "nom": "Gabriel Nadeau-Dubois",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "16885": {
+   "nom": "Geneviève Guilbault",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17877": {
+   "nom": "Geneviève Hébert",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Saint-François",
+   "verifie": false
+  },
+  "17925": {
+   "nom": "Gilles Bélanger",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17951": {
+   "nom": "Gregory Kelley",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Jacques-Cartier",
+   "verifie": false
+  },
+  "19593": {
+   "nom": "Guillaume Cliche-Rivard",
+   "statut": null,
+   "parti": "Québec solidaire",
+   "circonscription": "Saint-Henri–Sainte-Anne",
+   "verifie": false
+  },
+  "19305": {
+   "nom": "Haroun Bouazzi",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17903": {
+   "nom": "Ian Lafrenière",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Vachon",
+   "verifie": false
+  },
+  "17845": {
+   "nom": "Isabelle Charest",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17945": {
+   "nom": "Isabelle Lecours",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19311": {
+   "nom": "Isabelle Poulet",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17899": {
+   "nom": "Jean Boulet",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17857": {
+   "nom": "Jean-Bernard Émond",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Richelieu",
+   "verifie": false
+  },
+  "15361": {
+   "nom": "Jean-François Roberge",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Chambly",
+   "verifie": false
+  },
+  "5369": {
+   "nom": "Jean-François Simard",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Montmorency",
+   "verifie": false
+  },
+  "17911": {
+   "nom": "Jennifer Maccarone",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Westmount–Saint-Louis",
+   "verifie": false
+  },
+  "17855": {
+   "nom": "Jonatan Julien",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17947": {
+   "nom": "Joël Arseneau",
+   "statut": null,
+   "parti": "Parti québécois",
+   "circonscription": "Îles-de-la-Madeleine",
+   "verifie": false
+  },
+  "18561": {
+   "nom": "Joëlle Boutin",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19291": {
+   "nom": "Kariane Bourassa",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Charlevoix–Côte-de-Beaupré",
+   "verifie": false
+  },
+  "19255": {
+   "nom": "Karine Boivin Roy",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Anjou–Louis-Riel",
+   "verifie": false
+  },
+  "19303": {
+   "nom": "Kateri Champagne Jourdain",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Duplessis",
+   "verifie": false
+  },
+  "19313": {
+   "nom": "Linda Caron",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "La Pinière",
+   "verifie": false
+  },
+  "17893": {
+   "nom": "Lionel Carmant",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17879": {
+   "nom": "Louis Lemieux",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "18073": {
+   "nom": "Louis-Charles Thouin",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Rousseau",
+   "verifie": false
+  },
+  "17829": {
+   "nom": "Luc Provençal",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17949": {
+   "nom": "Lucie Lecours",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19261": {
+   "nom": "Madwa-Nika Cadet",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Bourassa-Sauvé",
+   "verifie": false
+  },
+  "15421": {
+   "nom": "Manon Massé",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "11789": {
+   "nom": "Marc Tanguay",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "LaFontaine",
+   "verifie": false
+  },
+  "19293": {
+   "nom": "Marie-Belle Gendron",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Châteauguay",
+   "verifie": false
+  },
+  "15439": {
+   "nom": "Marie-Claude Nichols",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "20193": {
+   "nom": "Marie-Karlynn Laflamme",
+   "statut": null,
+   "parti": "Parti québécois",
+   "circonscription": "Chicoutimi",
+   "verifie": false
+  },
+  "18071": {
+   "nom": "Marie-Louise Tardif",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17891": {
+   "nom": "Marilyne Picard",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Soulanges",
+   "verifie": false
+  },
+  "17905": {
+   "nom": "Mario Asselin",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "15357": {
+   "nom": "Mario Laframboise",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Blainville",
+   "verifie": false
+  },
+  "19297": {
+   "nom": "Martine Biron",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Chutes-de-la-Chaudière",
+   "verifie": false
+  },
+  "17883": {
+   "nom": "Marwah Rizqy",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17927": {
+   "nom": "Mathieu Lacombe",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "15403": {
+   "nom": "Mathieu Lemay",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17851": {
+   "nom": "Mathieu Lévesque",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Chapleau",
+   "verifie": false
+  },
+  "19299": {
+   "nom": "Mathieu Rivest",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Côte-du-Sud",
+   "verifie": false
+  },
+  "19275": {
+   "nom": "Maïté Blanchette Vézina",
+   "statut": null,
+   "parti": "Parti conservateur du Québec",
+   "circonscription": "La Peltrie",
+   "verifie": false
+  },
+  "19285": {
+   "nom": "Michelle Setlakwe",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Mont-Royal–Outremont",
+   "verifie": false
+  },
+  "17923": {
+   "nom": "Monsef Derraji",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Nelligan",
+   "verifie": false
+  },
+  "18247": {
+   "nom": "Nancy Guillemette",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "12187": {
+   "nom": "Nathalie Roy",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Montarville",
+   "verifie": false
+  },
+  "991": {
+   "nom": "Pascal Bérubé",
+   "statut": null,
+   "parti": "Parti québécois",
+   "circonscription": "Matane-Matapédia-Mitis",
+   "verifie": false
+  },
+  "19999": {
+   "nom": "Pascal Paradis",
+   "statut": null,
+   "parti": "Parti québécois",
+   "circonscription": "Jean-Talon",
+   "verifie": false
+  },
+  "19277": {
+   "nom": "Pascale Déry",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Repentigny",
+   "verifie": false
+  },
+  "19289": {
+   "nom": "Paul St-Pierre Plamondon",
+   "statut": null,
+   "parti": "Parti québécois",
+   "circonscription": "Camille-Laurin",
+   "verifie": false
+  },
+  "17823": {
+   "nom": "Pierre Dufour",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Abitibi-Est",
+   "verifie": false
+  },
+  "17897": {
+   "nom": "Pierre Fitzgibbon",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17921": {
+   "nom": "Robert Bussière",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "17933": {
+   "nom": "Ruba Ghazal",
+   "statut": null,
+   "parti": "Québec solidaire",
+   "circonscription": "Mercier",
+   "verifie": false
+  },
+  "17831": {
+   "nom": "Samuel Poulin",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Beauce-Sud",
+   "verifie": false
+  },
+  "19063": {
+   "nom": "Shirley Dorismond",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Marie-Victorin",
+   "verifie": false
+  },
+  "17941": {
+   "nom": "Simon Allaire",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Maskinongé",
+   "verifie": false
+  },
+  "15359": {
+   "nom": "Simon Jolin-Barrette",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Borduas",
+   "verifie": false
+  },
+  "17955": {
+   "nom": "Sol Zanetti",
+   "statut": null,
+   "parti": "Québec solidaire",
+   "circonscription": "Jean-Lesage",
+   "verifie": false
+  },
+  "19295": {
+   "nom": "Sona Lakhoyan Olivier",
+   "statut": null,
+   "parti": "Indépendant",
+   "circonscription": "Chomedey",
+   "verifie": false
+  },
+  "19281": {
+   "nom": "Sonia Bélanger",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Prévost",
+   "verifie": false
+  },
+  "17847": {
+   "nom": "Sonia LeBel",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19319": {
+   "nom": "Stéphane Sainte-Croix",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Gaspé",
+   "verifie": false
+  },
+  "17835": {
+   "nom": "Stéphanie Lachance",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Bellechasse",
+   "verifie": false
+  },
+  "17825": {
+   "nom": "Suzanne Blais",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Abitibi-Ouest",
+   "verifie": false
+  },
+  "19265": {
+   "nom": "Suzanne Roy",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19323": {
+   "nom": "Suzanne Tremblay",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Hull",
+   "verifie": false
+  },
+  "12213": {
+   "nom": "Sylvain Lévesque",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "15399": {
+   "nom": "Sylvie D'Amours",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "5909": {
+   "nom": "Sébastien Schneeberger",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Drummond–Bois-Francs",
+   "verifie": false
+  },
+  "19259": {
+   "nom": "Valérie Schmaltz",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Vimont-Auteuil",
+   "verifie": false
+  },
+  "17849": {
+   "nom": "Vincent Caron",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Portneuf",
+   "verifie": false
+  },
+  "17867": {
+   "nom": "Vincent Marissal",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19287": {
+   "nom": "Virginie Dufour",
+   "statut": null,
+   "parti": "Parti libéral du Québec",
+   "circonscription": "Mille-Îles",
+   "verifie": false
+  },
+  "19317": {
+   "nom": "Yannick Gagnon",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "Jonquière",
+   "verifie": false
+  },
+  "17881": {
+   "nom": "Youri Chassin",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "19279": {
+   "nom": "Yves Montigny",
+   "statut": null,
+   "parti": "Coalition avenir Québec",
+   "circonscription": "René-Lévesque",
+   "verifie": false
+  },
+  "485": {
+   "nom": "Éric Caire",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  },
+  "16777": {
+   "nom": "Éric Lefebvre",
+   "statut": null,
+   "parti": null,
+   "circonscription": null,
+   "verifie": false
+  }
+ }
+}
