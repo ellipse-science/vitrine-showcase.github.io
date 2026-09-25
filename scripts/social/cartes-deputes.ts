@@ -36,6 +36,7 @@
 //   npm run carte:deputes -- --limite 10     → les 10 premières de la série
 //   npm run carte:deputes -- --only tanguay  → une carte, par nom ou circo
 //   npm run carte:deputes -- --mention "Carte en développement"  → tampon sur chaque face
+//   npm run carte:deputes -- --png --echelle 2  → PNG deux fois plus grands, pour l'écran
 //   npm run carte:deputes                    → la planche des 128
 //   npm run carte:deputes -- --png           → les PNG, la planche une fois vue
 //   npm run carte:deputes -- --impression    → les PNG pour l'imprimeur : fond
@@ -2300,8 +2301,12 @@ async function main() {
     const parallele = Math.max(1, Number(typeof args.parallele === "string" ? args.parallele : 4));
     const impression = !!args.impression;
     const fond = impression ? FOND_PERDU : 0;
+    // --echelle N : PNG N fois plus grands pour l'écran (vidéo 4K, zoom), sans
+    // le fond perdu ni la réduction de --impression. Le texte et la trame
+    // gagnent en netteté ; pas la photo, dont la source fait 150 x 200 px.
+    const echelle = impression ? 2 : Math.max(1, Number(typeof args.echelle === "string" ? args.echelle : 1));
     const onglets = await Promise.all(Array.from({ length: Math.min(parallele, pages.length) }, () =>
-      browser.newPage({ viewport: { width: W + 2 * fond, height: H + 2 * fond }, deviceScaleFactor: impression ? 2 : 1 })));
+      browser.newPage({ viewport: { width: W + 2 * fond, height: H + 2 * fond }, deviceScaleFactor: echelle })));
     // Chaque page est écrite sur disque puis OUVERTE (goto), pas injectée
     // (setContent) : injectée, elle vit sur about:blank, d'où Chromium refuse de
     // charger les trames référencées en file://.
