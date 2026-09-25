@@ -495,6 +495,13 @@ const MARGE = 46;
 const PANNEAU = { x: MARGE, y: MARGE, w: W - MARGE * 2, bas: H - 120 };
 const BANDE = 196;
 const PHOTO_H = PANNEAU.bas - BANDE - PANNEAU.y;
+/** Colonne de la fonction dans la bande du recto : largeur, côté du carré et
+ *  position de son bord haut, en coordonnées de la bande d'une carte COMMUNE
+ *  (sous son filet de 22 px). Les cartes rares ont une bande rentrée de
+ *  TOPPS.bande sur trois côtés : le décalage est compensé pour que le carré
+ *  tombe au même endroit SUR LA CARTE, quel que soit le type. 96 px et deux
+ *  lignes de 16 px : ce qui tient dans la bande plus courte des rares. */
+const FONCTION = { largeur: 200, carre: 96, haut: 29 };
 
 type Carte = {
   slug: string;
@@ -1261,10 +1268,17 @@ function carteHTML(
      la fonction la mieux payée de la législature, à l'encre du parti. */
   /* Le libellé en clair sous le carré (25-09) : carré ramené de 118 à 104 px
      pour loger une ou deux lignes dans la bande, sous le filet du haut. */
-  .fonction{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:200px;margin-top:22px}
-  .libelle-fonction{font-family:"IBM Plex Mono",monospace;font-size:17px;line-height:1.15;letter-spacing:.06em;
+  /* LE CARRÉ À LA MÊME PLACE SUR TOUTES LES CARTES (Jules, 25-09) : colonne de
+     largeur FIXE sur toute la hauteur de la bande, carré posé à une position
+     fixe, libellé en position absolue dessous. Ni un nom long ni un libellé
+     sur deux lignes ne le déplacent. Hauteur : filet 22 + 11 de marge, carré
+     104, 8 d'écart, puis deux lignes de libellé au plus. */
+  .fonction{flex:0 0 ${FONCTION.largeur}px;width:${FONCTION.largeur}px;align-self:stretch;position:relative}
+  .fonction .code-fonction{position:absolute;top:${FONCTION.haut + marge}px;left:${(FONCTION.largeur - FONCTION.carre) / 2 + marge}px}
+  .libelle-fonction{position:absolute;left:${marge}px;right:${-marge}px;top:${FONCTION.haut + marge + FONCTION.carre + 4}px;
+                    font-family:"IBM Plex Mono",monospace;font-size:16px;line-height:1.05;letter-spacing:.06em;
                     text-transform:uppercase;text-align:center;color:${COLORS.paper};opacity:.85}
-  .code-fonction{flex:0 0 auto;width:104px;height:104px;background:${COLORS.paper};color:${parti};
+  .code-fonction{flex:0 0 auto;width:${FONCTION.carre}px;height:${FONCTION.carre}px;background:${COLORS.paper};color:${parti};
                  display:flex;align-items:center;justify-content:center;
                  font-family:"Oswald",sans-serif;font-weight:700;font-size:60px;letter-spacing:.02em;line-height:1}
   .code-fonction.long{font-size:40px}
