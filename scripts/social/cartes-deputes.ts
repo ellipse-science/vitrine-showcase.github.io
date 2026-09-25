@@ -342,6 +342,26 @@ async function chargerFonctions(): Promise<FicheFonctions[]> {
   return (JSON.parse(brut) as { deputes: FicheFonctions[] }).deputes;
 }
 
+/** Genre grammatical des élus, clé assnat_id : donnees/genre-deputes.json,
+ *  chaque entrée avec sa source (pplmatch, ou la fiche de l'Assemblée :
+ *  « Députée de … »). Rien n'est déduit d'un prénom. */
+async function chargerGenres(): Promise<Map<string, "f" | "m">> {
+  const fichier = path.resolve(process.cwd(), "scripts/social/donnees/genre-deputes.json");
+  const brut = await fs.readFile(fichier, "utf8").catch(() => null);
+  if (!brut) {
+    console.warn("  ⚠️ genre-deputes.json absent : « Élu.e » reste neutre sur toutes les cartes.");
+    return new Map();
+  }
+  const d = JSON.parse(brut) as { deputes: Record<string, { genre: "f" | "m" }> };
+  return new Map(Object.entries(d.deputes).map(([id, e]) => [id, e.genre]));
+}
+
+/** « Élu.e le 3 octobre 2022 » → « Élu le… » ou « Élue le… ». */
+function accorderGenre(ligne: string, genre: "f" | "m" | undefined): string {
+  if (!genre) return ligne;
+  return ligne.replace(/Élu\.e/g, genre === "f" ? "Élue" : "Élu");
+}
+
 /** Distance d'édition (Levenshtein), pour tolérer une coquille de graphie. */
 function distance(a: string, b: string): number {
   let prec = Array.from({ length: b.length + 1 }, (_, j) => j);
@@ -762,8 +782,9 @@ function ligneMandat(m: Mandat | undefined): string {
   if (!m) return "";
   const quand = dateFr(m.debut);
   if (!quand) return "";
-  // « élu.e » avec un POINT, comme « élu.es » ailleurs dans le dépôt. Et
-  // formulation neutre en genre : la carte ne connaît pas celui de la personne.
+  // « Élu.e » est un GABARIT : accorderGenre() le remplace par « Élu » ou
+  // « Élue » (Jules, 25-09), d'après donnees/genre-deputes.json. La forme
+  // neutre ne reste que si le genre de l'élu n'y figure pas (avertissement).
   const comment = m.motif === "byelection" ? "Élu.e à la partielle du"
     : m.motif === "defection" ? "Siège depuis le"
     : "Élu.e le";
@@ -1774,9 +1795,12 @@ function versoHTML(
           </ul>
         </div>
         <div class="paie">
-          <b>${MONTANT.format(c.remuneration)}&nbsp;$</b>
-          <span>sur la législature</span>
-          ${c.remunerationMoyenne ? `<b class="moy">${MONTANT.format(c.remunerationMoyenne)}&nbsp;$</b><span>par année</span>` : ""}
+          ${/* Le montant PAR ANNÉE en tête et en gros (Jules, 25-09) : il se
+                compare d'un élu à l'autre, le total dépend de la durée du mandat. */ ""}
+          ${c.remunerationMoyenne
+            ? `<b>${MONTANT.format(c.remunerationMoyenne)}&nbsp;$</b><span>par année</span>
+          <b class="moy">${MONTANT.format(c.remuneration)}&nbsp;$</b><span>sur la législature</span>`
+            : `<b>${MONTANT.format(c.remuneration)}&nbsp;$</b><span>sur la législature</span>`}
         </div>
       </div>
     </div>` : ""}
@@ -2093,6 +2117,16 @@ async function main() {
     fichesVues.set(f.assnat_id, c.deputy.name);
   }
   if (sansFiche.length) console.warn(`  ⚠️ ${sansFiche.length} élu(s) sans fiche de fonctions : ${sansFiche.join(", ")}`);
+  // ACCORD « Élu » / « Élue » : par la fiche de l'Assemblée de chaque carte.
+  const genres = await chargerGenres();
+  const neutres: string[] = [];
+  for (const c of cartes) {
+    if (!c.mandat.includes("Élu.e")) continue;
+    const g = genres.get(ficheParCarte.get(c)?.assnat_id ?? "");
+    if (!g) neutres.push(c.deputy.name);
+    c.mandat = accorderGenre(c.mandat, g);
+  }
+  if (neutres.length) console.warn(`  ⚠️ ${neutres.length} carte(s) gardent « Élu.e », genre inconnu : ${neutres.join(", ")}`);
   const partiDe = new Map([...ficheParCarte].map(([c, f]) => [f.assnat_id, c.cle]));
   const familleDe = new Map(fonctions.map((f) => [f.assnat_id, f.nom_famille ?? f.nom]));
   const ORDRE_OPPOSITION = ["plq", "qs", "pq", "pcq", "ind"];
