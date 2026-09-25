@@ -143,6 +143,32 @@ const CODES_FONCTION: [RegExp, string][] = [
   [/^Membre du Bureau/, "B"],
 ];
 
+/** CE QUE LE CODE VEUT DIRE, sous le carré (Jules, 25-09 : « ça ne parle pas
+ *  à tout le monde »). Accordé au genre de l'élu (donnees/genre-deputes.json) ;
+ *  genre inconnu = forme masculine suivie de la féminine (« Député·e »). « CO »
+ *  couvre les chefs de TOUS les groupes d'opposition, d'où « de parti ». */
+const LIBELLES_FONCTION: Record<string, [string, string]> = {
+  PM: ["Premier ministre", "Première ministre"],
+  PAN: ["Président de l’Assemblée", "Présidente de l’Assemblée"],
+  CO: ["Chef de parti", "Cheffe de parti"],
+  M: ["Ministre", "Ministre"],
+  VP: ["Vice-président de l’Assemblée", "Vice-présidente de l’Assemblée"],
+  LP: ["Leader parlementaire", "Leader parlementaire"],
+  W: ["Whip", "Whip"],
+  PCA: ["Président de caucus", "Présidente de caucus"],
+  PC: ["Président de commission", "Présidente de commission"],
+  AP: ["Adjoint parlementaire", "Adjointe parlementaire"],
+  VC: ["Vice-président de commission", "Vice-présidente de commission"],
+  PS: ["Président de séance", "Présidente de séance"],
+  B: ["Membre du Bureau", "Membre du Bureau"],
+  PP: ["Porte-parole", "Porte-parole"],
+  D: ["Député", "Députée"],
+};
+function libelleFonction(code: string, genre: "f" | "m" | undefined): string {
+  const [m, f] = LIBELLES_FONCTION[code] ?? [code, code];
+  return genre === "f" ? f : genre === "m" || m === f ? m : `${m} / ${f}`;
+}
+
 function codeFonction(tenues: { titre: string; pct: number }[], porteParole: boolean): string {
   const triees = [...tenues].sort((a, b) => b.pct - a.pct);
   for (const [re, code] of CODES_FONCTION) if (triees.some((t) => re.test(t.titre))) return code;
@@ -522,6 +548,8 @@ type Carte = {
   presidente?: boolean;
   /** « PM », « M », « CO »… (voir CODES_FONCTION). */
   codeFonction?: string;
+  /** Ce que le code veut dire, accordé : « Ministre », « Députée »… */
+  libelleFonction?: string;
   /** Légendaires : autographe (URL du tracé blanc), s'il y en a un. */
   signature?: string | null;
   visAVis?: string;
@@ -1231,10 +1259,15 @@ function carteHTML(
      Le carré net reprend les petites cases de position des cartes sportives. */
   /* LE CODE DE FONCTION remplace le carré de l'enjeu (22-09) : PM, M, CO…
      la fonction la mieux payée de la législature, à l'encre du parti. */
-  .code-fonction{flex:0 0 auto;width:118px;height:118px;background:${COLORS.paper};color:${parti};
+  /* Le libellé en clair sous le carré (25-09) : carré ramené de 118 à 104 px
+     pour loger une ou deux lignes dans la bande, sous le filet du haut. */
+  .fonction{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:200px;margin-top:22px}
+  .libelle-fonction{font-family:"IBM Plex Mono",monospace;font-size:17px;line-height:1.15;letter-spacing:.06em;
+                    text-transform:uppercase;text-align:center;color:${COLORS.paper};opacity:.85}
+  .code-fonction{flex:0 0 auto;width:104px;height:104px;background:${COLORS.paper};color:${parti};
                  display:flex;align-items:center;justify-content:center;
                  font-family:"Oswald",sans-serif;font-weight:700;font-size:60px;letter-spacing:.02em;line-height:1}
-  .code-fonction.long{font-size:44px}
+  .code-fonction.long{font-size:40px}
 
   /* LE MÉDAILLON — à cheval sur le coin, moitié carton moitié panneau. Double
      anneau : le liseré clair détache le disque de la trame, le filet d'encre
@@ -1305,9 +1338,12 @@ function carteHTML(
      par la COULEUR, en bandeau épais au sommet de la bande du nom, et depuis
      le 24-09 par son PICTOGRAMME dans la bulle du coin inférieur gauche
      (.bulle-enjeu). L'écart à GABARIT.md (« jamais une couleur seule, sans
-     légende ») est donc levé ; le verso, lui, nomme l'enjeu. */
+     légende ») est donc levé ; le verso, lui, nomme l'enjeu.
+     FILET ET BULLE AU BEIGE DU CARTON (Jules, 25-09) : la même couleur sur
+     toutes les cartes ; l'enjeu reste dit par le pictogramme, à l'encre du
+     parti. */
   .bande{position:absolute;left:${marge}px;right:${marge}px;bottom:${marge}px;height:${BANDE}px;background:${parti};
-         box-shadow:inset 0 22px 0 ${enjeu};
+         box-shadow:inset 0 22px 0 ${COLORS.paper};
          display:flex;align-items:center;justify-content:space-between;gap:28px;padding:0 40px}
   /* flex:1 + min-width:0 donnent au bloc du nom une largeur DÉFINIE, sans quoi
      clientWidth vaut la largeur du texte et la mesure ne peut rien détecter. */
@@ -1317,7 +1353,7 @@ function carteHTML(
      couleur monte dans la photo et porte le pictogramme, en couleur papier.
      Discret : la légende du recto, sans un mot. */
   .bulle-enjeu{position:absolute;left:${marge}px;bottom:${marge + BANDE - BULLE.ligne}px;width:${BULLE.w}px;height:${BULLE.h + BULLE.ligne}px;
-               background:${enjeu};clip-path:path('${vagueBulle(0, 0)} V ${BULLE.h + BULLE.ligne} H 0 Z');
+               background:${COLORS.paper};clip-path:path('${vagueBulle(0, 0)} V ${BULLE.h + BULLE.ligne} H 0 Z');
                display:flex;align-items:center;justify-content:center;box-sizing:border-box;
                /* Centré sur la partie VISIBLE : le trait du cadre (métal 9 px sur les
                   peu communes et les rares, encre 3 px sinon) empiète à gauche. */
@@ -1354,13 +1390,13 @@ function carteHTML(
         ? `<div class="image"></div>`
         : `<div class="vide">${fleur(parti, 300)}</div>`}
     </div>
-    ${d.topIssueKey ? `<div class="bulle-enjeu">${enjeuGlyph(d.topIssueKey, COLORS.paper, 26)}</div>` : ""}
+    ${d.topIssueKey ? `<div class="bulle-enjeu">${enjeuGlyph(d.topIssueKey, parti, 26)}</div>` : ""}
     <div class="bande">
       <div class="qui">
         <p class="nom">${txt(nomImprime(d.name))}</p>
         <p class="sous">${d.circonscription ? txt(d.circonscription) : ""}<span class="fleurs" aria-label="${LIBELLE_RARETE[c.rarete ?? "commune"]}">${Array.from({ length: FLEURS_PAR_RARETE[c.rarete ?? "commune"] }, () => fleur(COLORS.paper, 24)).join("")}</span></p>
       </div>
-      ${c.codeFonction ? `<span class="code-fonction${c.codeFonction.length > 2 ? " long" : ""}">${c.codeFonction}</span>` : ""}
+      ${c.codeFonction ? `<div class="fonction"><span class="code-fonction${c.codeFonction.length > 2 ? " long" : ""}">${c.codeFonction}</span>${c.libelleFonction ? `<span class="libelle-fonction">${txt(c.libelleFonction)}</span>` : ""}</div>` : ""}
     </div>
   </div>
 
@@ -2229,6 +2265,7 @@ async function main() {
   for (const c of cartes) {
     const f = ficheParCarte.get(c);
     c.codeFonction = codeFonction(f?.fonctions_legislature ?? [], (f?.porte_parole_legislature?.length ?? 0) > 0);
+    c.libelleFonction = libelleFonction(c.codeFonction, genres.get(f?.assnat_id ?? ""));
   }
   const decompte = new Map<Rarete, number>();
   for (const c of cartes) decompte.set(c.rarete ?? "commune", (decompte.get(c.rarete ?? "commune") ?? 0) + 1);
