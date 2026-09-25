@@ -1136,8 +1136,10 @@ function ajusterVerso(): void {
     if (citation && citation.style.webkitLineClamp !== "1") { citation.style.webkitLineClamp = "1"; continue; }
     if (mot && taille > 34) { taille -= 2; mot.style.fontSize = `${taille}px`; continue; }
     // Dernière concession (25-09, ligne d'ancienneté) : la note des sources,
-    // de 15 à 13 px au plus bas (~6 points imprimés, encore lisible). Elle
-    // suffit aux cartes à lettre et à ruban, qui débordaient de 11 à 32 px.
+    // de 15 à 13 px au plus bas. Elle suffit aux cartes à lettre et à ruban,
+    // qui débordaient de 11 à 32 px. ⚠️ À l'IMPRESSION (1071 px = 63,5 mm),
+    // 15 px font 2,5 points et 13 px 2,2 points : illisible sans loupe. Bon
+    // pour l'écran seulement ; la note est à repenser pour le tirage papier.
     if (metho && tailleMetho > 13) { tailleMetho -= 0.5; metho.style.fontSize = `${tailleMetho}px`; continue; }
     return;
   }
