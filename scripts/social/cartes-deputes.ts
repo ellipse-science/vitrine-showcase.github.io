@@ -35,6 +35,7 @@
 //   npm run carte:deputes -- --echantillon   → 5 cartes, une par parti
 //   npm run carte:deputes -- --limite 10     → les 10 premières de la série
 //   npm run carte:deputes -- --only tanguay  → une carte, par nom ou circo
+//   npm run carte:deputes -- --mention "Carte en développement"  → tampon sur chaque face
 //   npm run carte:deputes                    → la planche des 128
 //   npm run carte:deputes -- --png           → les PNG, la planche une fois vue
 //   npm run carte:deputes -- --impression    → les PNG pour l'imprimeur : fond
@@ -54,6 +55,25 @@ const ENJEUX_EN_REVISION: readonly IssueKey[] = ["public_lands_and_agriculture",
 /** Encre des élus sans parti : un gris d'ardoise, lisible sous le papier et
  *  qu'aucun parti n'emploie. */
 const COULEUR_INDEPENDANT = "#4A4F57";
+
+/** MENTION (--mention "…") : un tampon posé sur CHAQUE face, pour les cartes
+ *  montrées avant que leurs données soient définitives (avant la
+ *  reconstruction agora d'aws-refiners#547, par exemple). Encre rouge du ton
+ *  défavorable (TONE.negative). Recto : centré entre le médaillon et
+ *  l'écusson, légèrement de travers, au-dessus de la tête. Verso : plus petit
+ *  et droit, dans la bande libre entre la ligne d'élection et la fiche — posé
+ *  en haut comme au recto, il couvrait le nom. Absente, la carte est inchangée. */
+function avecMention(html: string, mention: string | null, face: "recto" | "verso"): string {
+  if (!mention) return html;
+  const place = face === "recto"
+    ? "top:78px;transform:translateX(-50%) rotate(-3deg);padding:9px 20px 8px;font-size:26px;border-width:4px"
+    : "top:190px;transform:translateX(-50%);padding:5px 14px 4px;font-size:19px;border-width:3px";
+  const tampon = `<div class="mention-dev" style="position:absolute;left:50%;z-index:20;${place};` +
+    `border-style:solid;border-color:#B0473A;border-radius:6px;background:rgba(243,236,221,.94);color:#B0473A;` +
+    `font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:.16em;text-transform:uppercase;` +
+    `white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.25)">${txt(mention)}</div>`;
+  return html.replace("</body>", `${tampon}</body>`);
+}
 
 /** Mention d'édition de la série imprimée. À changer à la prochaine législature. */
 const EDITION_LEGISLATURE = "43e législature · 2022-2026";
@@ -1869,6 +1889,7 @@ async function fusionnerLignesParParti(data: NonNullable<Awaited<ReturnType<type
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const periode = (typeof args.periode === "string" ? args.periode : "legislature") as PeriodKey;
+  const mention = typeof args.mention === "string" ? args.mention : null;
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out/cartes-deputes");
 
   const data = await loadAssemblee();
@@ -2256,8 +2277,8 @@ async function main() {
     const ecusson = await ecussonURI(c.cle);
     if (c.rarete === "legendaire") c.signature = await signatureURI(c.slug);
     const fiche = fiches.get(slugCirco(c.deputy)) ?? { [periode]: c.deputy };
-    pages.push({ slug: c.slug, html: carteHTML(c, portrait, ecusson, logos.capp) });
-    pages.push({ slug: `${c.slug}-verso`, html: versoHTML(c, fiche, maxAbs, libelles, portrait, ecusson, logos.vitrine, logos.capp, seance) });
+    pages.push({ slug: c.slug, html: avecMention(carteHTML(c, portrait, ecusson, logos.capp), mention, "recto") });
+    pages.push({ slug: `${c.slug}-verso`, html: avecMention(versoHTML(c, fiche, maxAbs, libelles, portrait, ecusson, logos.vitrine, logos.capp, seance), mention, "verso") });
   }
 
   await fs.mkdir(outDir, { recursive: true });
