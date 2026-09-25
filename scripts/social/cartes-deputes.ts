@@ -382,6 +382,37 @@ async function chargerGenres(): Promise<Map<string, "f" | "m">> {
   return new Map(Object.entries(d.deputes).map(([id, e]) => [id, e.genre]));
 }
 
+/** ANCIENNETÉ ET CANDIDATURE 2026 (Jules, 25-09), troisième ligne sous le nom
+ *  au verso. Ancienneté : donnees/carriere-deputes.json (pplmatch, mandates_qc,
+ *  par identifiant de l'Assemblée). Candidature : donnees/candidatures-2026.json,
+ *  et SEULEMENT les entrées vérifiées sur la liste officielle d'Élections Québec
+ *  (verifie = true) — une absence des rôles de candidats ne prouve rien. Au
+ *  PASSÉ : les cartes sont imprimées à la fin de la campagne. */
+type Carriere = { premiere_election: string; mandats: number };
+type Candidature = { statut: "candidat" | "non-candidat" | null; circonscription: string | null; verifie: boolean };
+async function chargerJsonDeputes<T>(fichier: string): Promise<Map<string, T>> {
+  const brut = await fs.readFile(path.resolve(process.cwd(), "scripts/social/donnees", fichier), "utf8").catch(() => null);
+  if (!brut) { console.warn(`  ⚠️ ${fichier} absent.`); return new Map(); }
+  return new Map(Object.entries((JSON.parse(brut) as { deputes: Record<string, T> }).deputes));
+}
+function ligneCarriere(car: Carriere | undefined, cand: Candidature | undefined, genre: "f" | "m" | undefined,
+                       circonscription: string | undefined): string {
+  const e = genre === "f" ? "e" : "";
+  const bouts: string[] = [];
+  if (car) {
+    const rang = car.mandats === 1 ? "1er" : `${car.mandats}e`;
+    bouts.push(`${genre === "f" ? "Élue" : "Élu"} pour la première fois en ${car.premiere_election} · ${rang} mandat`);
+  }
+  if (cand?.verifie && cand.statut === "candidat") {
+    const ailleurs = cand.circonscription && circonscription && cand.circonscription !== circonscription
+      ? ` dans ${cand.circonscription}` : "";
+    bouts.push(`S'est représenté${e} en 2026${ailleurs}`);
+  } else if (cand?.verifie && cand.statut === "non-candidat") {
+    bouts.push(`Ne s'est pas représenté${e} en 2026`);
+  }
+  return bouts.join(" · ");
+}
+
 /** « Élu.e le 3 octobre 2022 » → « Élu le… » ou « Élue le… ». */
 function accorderGenre(ligne: string, genre: "f" | "m" | undefined): string {
   if (!genre) return ligne;
@@ -574,6 +605,8 @@ type Carte = {
   codeFonction?: string;
   /** Ce que le code veut dire, accordé : « Ministre », « Députée »… */
   libelleFonction?: string;
+  /** « Élue pour la première fois en 2018 · 2e mandat · S'est représentée en 2026 » */
+  carriere?: string;
   /** Légendaires : autographe (URL du tracé blanc), s'il y en a un. */
   signature?: string | null;
   visAVis?: string;
@@ -1841,6 +1874,7 @@ function versoHTML(
           : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : ""}
         ${vitaux ? `<span class="vitaux">${txt(vitaux)}</span>` : ""}
         ${parcoursLigne ? `<span class="vitaux">${txt(parcoursLigne)}</span>` : ""}
+        ${c.carriere ? `<span class="vitaux">${txt(c.carriere)}</span>` : ""}
       </span>
     </div>
 
@@ -2203,6 +2237,15 @@ async function main() {
     c.mandat = accorderGenre(c.mandat, g);
   }
   if (neutres.length) console.warn(`  ⚠️ ${neutres.length} carte(s) gardent « Élu.e », genre inconnu : ${neutres.join(", ")}`);
+  const carrieres = await chargerJsonDeputes<Carriere>("carriere-deputes.json");
+  const candidatures = await chargerJsonDeputes<Candidature>("candidatures-2026.json");
+  let verifiees = 0;
+  for (const c of cartes) {
+    const id = ficheParCarte.get(c)?.assnat_id ?? "";
+    if (candidatures.get(id)?.verifie) verifiees++;
+    c.carriere = ligneCarriere(carrieres.get(id), candidatures.get(id), genres.get(id), c.deputy.circonscription) || undefined;
+  }
+  console.log(`  candidatures 2026 vérifiées : ${verifiees}/${cartes.length} (les autres cartes n'en disent rien)`);
   const partiDe = new Map([...ficheParCarte].map(([c, f]) => [f.assnat_id, c.cle]));
   const familleDe = new Map(fonctions.map((f) => [f.assnat_id, f.nom_famille ?? f.nom]));
   const ORDRE_OPPOSITION = ["plq", "qs", "pq", "pcq", "ind"];
