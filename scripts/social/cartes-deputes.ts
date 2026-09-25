@@ -1529,17 +1529,15 @@ function versoHTML(
     .trim();
 
   // La ligne d'identité du carton : « GOALIE   CHICAGO BLACK HAWKS ».
-  // L'enjeu garde son PICTOGRAMME, faute de pouvoir garder sa couleur : sur un
-  // carton à deux encres, une troisième teinte casserait le parti pris. Le
-  // recto, lui, porte toujours la couleur de l'enjeu.
+  // Circonscription et parti seulement : l'enjeu dominant et son pictogramme
+  // en ont été retirés (Jules, 25-09). Le verso le donne déjà dans « Part de
+  // ses interventions », le recto par le pictogramme de la bulle.
   // Le parti existe en deux formes : le nom complet, et le sigle que
   // ajusterIdentite n'affiche QUE si la ligne passait sur deux rangs
   // (« Charlevoix–Côte-de-Beaupré · Coalition avenir Québec »).
-  const identite = [d.topIssueLabel, d.circonscription].filter(Boolean).join("   ·   ");
+  const identite = d.circonscription ?? "";
   const partiLong = ligneParti(c);
   const partiCourt = partiLong === (c.cle === "ind" ? c.parti : PARTY_FULL_NAMES[c.cle]) ? c.parti : partiLong;
-  const picto = d.topIssueKey
-    ? `<span class="glyphe">${enjeuGlyph(d.topIssueKey, "#fff", 26)}</span>` : "";
 
   // Vitaux du carton — « Ht: 6'0"  Wt: 178  Born: 5-12-56 ». Les nôtres
   // viennent d'affiliationHistory : date d'élection, et bascule d'allégeance
@@ -1838,7 +1836,7 @@ function versoHTML(
       <span class="numero">${c.numero}${c.variante}</span>
       <span class="titre">
         <span class="nom">${txt(nomImprime(d.name))}</span>
-        <span class="identite">${picto}<span>${txt(identite)}${identite ? "&nbsp;&nbsp; · &nbsp;&nbsp;" : ""}<span class="parti-long">${txt(partiLong)}</span><span class="parti-court">${txt(partiCourt)}</span></span></span>
+        <span class="identite"><span>${txt(identite)}${identite ? "&nbsp;&nbsp; · &nbsp;&nbsp;" : ""}<span class="parti-long">${txt(partiLong)}</span><span class="parti-court">${txt(partiCourt)}</span></span></span>
         ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${txt(c.chef.titre)}</span>`
           : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : ""}
         ${vitaux ? `<span class="vitaux">${txt(vitaux)}</span>` : ""}
