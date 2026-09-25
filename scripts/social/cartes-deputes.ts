@@ -774,6 +774,14 @@ const TRAME_VERSION = "1";
 // fait environ 82 lignes par pouce sur la carte, loin des 150 à 175 de la trame
 // de l'imprimeur, donc sans moiré. Fait partie de la clé du cache des trames.
 const CELLULE_TRAME = Math.max(2, Number(typeof parseArgs(process.argv.slice(2)).cellule === "string" ? parseArgs(process.argv.slice(2)).cellule : 8));
+// DENSITÉ DE LA TRAME : le SVG des points est rastérisé à 1500 x 2000 px, que
+// la carte agrandit déjà de ~30 % à --echelle 2 : les points y devenaient
+// flous, et plus encore avec une --cellule fine. La trame est donc rastérisée
+// à la même échelle que la carte (density de sharp) : mêmes points, mêmes
+// positions, contours nets. 1 par défaut = rendu inchangé.
+const ARGS_TRAME = parseArgs(process.argv.slice(2));
+const DENSITE_TRAME = ARGS_TRAME.impression ? 2
+  : Math.max(1, Number(typeof ARGS_TRAME.echelle === "string" ? ARGS_TRAME.echelle : 1));
 const CACHE_TRAMES = path.resolve(process.cwd(), "social-out/.cache-trames");
 const cacheBaseball = new Map<string, string | null>();
 async function baseballURI(deputy: DeputyRow): Promise<string | null> {
@@ -783,7 +791,7 @@ async function baseballURI(deputy: DeputyRow): Promise<string | null> {
   const source = path.resolve(process.cwd(), "public/images/deputes", `${asset}.jpg`);
   const octets = await fs.readFile(source).catch(() => null);
   if (!octets) { cacheBaseball.set(asset, null); return null; }
-  const cle = createHash("sha256").update(octets).update(TRAME_VERSION).update(`cellule=${CELLULE_TRAME}`).digest("hex").slice(0, 12);
+  const cle = createHash("sha256").update(octets).update(TRAME_VERSION).update(`cellule=${CELLULE_TRAME}`).update(DENSITE_TRAME > 1 ? `densite=${DENSITE_TRAME}` : "").digest("hex").slice(0, 12);
   const fichier = path.join(CACHE_TRAMES, `${asset}-${cle}.png`);
   const url = pathToFileURL(fichier).href;
   if (await fs.access(fichier).then(() => true, () => false)) {
@@ -836,7 +844,7 @@ async function baseballURI(deputy: DeputyRow): Promise<string | null> {
     groups.push(`<g fill="${ch.fill}" style="mix-blend-mode:multiply" transform="rotate(${ch.angle} ${cx} ${cy})">${dots.join("")}</g>`);
   }
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${info.width}" height="${info.height}"><rect width="100%" height="100%" fill="#FAF7EF"/>${groups.join("")}</svg>`;
-  const buf = await sharp(Buffer.from(svg)).png({ compressionLevel: 8 }).toBuffer().catch(() => null);
+  const buf = await sharp(Buffer.from(svg), { density: 72 * DENSITE_TRAME }).png({ compressionLevel: 8 }).toBuffer().catch(() => null);
   if (!buf) { cacheBaseball.set(asset, null); return null; }
   await fs.mkdir(path.dirname(fichier), { recursive: true }); // « historique/16777 »
   await fs.writeFile(fichier, buf);
