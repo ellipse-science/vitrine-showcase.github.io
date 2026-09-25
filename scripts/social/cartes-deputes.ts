@@ -495,13 +495,25 @@ const MARGE = 46;
 const PANNEAU = { x: MARGE, y: MARGE, w: W - MARGE * 2, bas: H - 120 };
 const BANDE = 196;
 const PHOTO_H = PANNEAU.bas - BANDE - PANNEAU.y;
-/** Colonne de la fonction dans la bande du recto : largeur, côté du carré et
- *  position de son bord haut, en coordonnées de la bande d'une carte COMMUNE
- *  (sous son filet de 22 px). Les cartes rares ont une bande rentrée de
- *  TOPPS.bande sur trois côtés : le décalage est compensé pour que le carré
- *  tombe au même endroit SUR LA CARTE, quel que soit le type. 96 px et deux
- *  lignes de 16 px : ce qui tient dans la bande plus courte des rares. */
-const FONCTION = { largeur: 200, carre: 96, haut: 29 };
+/** POSITION DU CARRÉ DE LA FONCTION, EN DUR PAR TYPE DE CARTE (Jules, 25-09) :
+ *  au sein d'un type, le carré est au même endroit sur toutes les cartes ;
+ *  d'un type à l'autre, il suit la bande du nom (rentrée de TOPPS.bande sur
+ *  les rares). Coordonnées dans la bande, sous son filet de 22 px : colonne de
+ *  `largeur` px contre le bord droit, carré de `carre` px à `haut` px du haut,
+ *  libellé dessous sur deux lignes au plus. Budget vertical : 30 + 104 + 5 +
+ *  2 × 17,6 = 174 px, pour une bande de 196 : 22 px de marge. Les légendaires
+ *  ont leur propre gabarit (PASTILLE_LEGENDAIRE). */
+/** Légendaires : la pastille de fonction, au-dessus du nom, fixée en dur à la
+ *  place qu'elle occupe quand le nom est à sa taille pleine (mesuré le 25-09 :
+ *  x 78, y 1102). Dans le flux, elle descendait dès qu'ajusterNom réduisait un
+ *  nom long. Son libellé en clair se place À CÔTÉ : le nom occupe le dessous. */
+const PASTILLE_LEGENDAIRE = { gauche: 78, haut: 1102 };
+
+const FONCTION: Record<Exclude<Rarete, "legendaire">, { largeur: number; carre: number; haut: number }> = {
+  commune:       { largeur: 200, carre: 104, haut: 30 },
+  "peu-commune": { largeur: 200, carre: 104, haut: 30 },
+  rare:          { largeur: 200, carre: 104, haut: 30 },
+};
 
 type Carte = {
   slug: string;
@@ -1173,6 +1185,11 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
   /* LE CODE DE FONCTION en pastille au-dessus du nom : filet papier, sans
      fond, capitales espacées. Le carré plein des autres cartes, collé au bas
      d'un nom de cette taille, tombait mal (Jules, 22-09). */
+  .fonction-leg{position:absolute;left:${PASTILLE_LEGENDAIRE.gauche}px;top:${PASTILLE_LEGENDAIRE.haut}px;
+                display:flex;align-items:center;gap:18px;z-index:2}
+  .fonction-leg .pastille{margin-bottom:0}
+  .libelle-pastille{font-family:"IBM Plex Mono",monospace;font-size:24px;letter-spacing:.14em;
+                    text-transform:uppercase;color:${COLORS.paper};opacity:.85;white-space:nowrap}
   .pastille{display:inline-block;padding:7px 18px 6px;border:2px solid ${COLORS.paper};border-radius:4px;
             font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:28px;letter-spacing:.3em;
             line-height:1;margin-bottom:6px}
@@ -1203,8 +1220,8 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
   <span class="medaillon"><i>${c.numero}${c.variante}</i></span>
   ${ecusson ? `<span class="ecusson-haut"><i style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></i></span>` : ""}
   ${c.signature ? `<img class="signature" src="${c.signature}" alt="">` : ""}
+  ${c.codeFonction ? `<div class="fonction-leg"><span class="pastille">${c.codeFonction}</span>${c.libelleFonction ? `<span class="libelle-pastille">${txt(c.libelleFonction)}</span>` : ""}</div>` : ""}
   <div class="bas">
-    ${c.codeFonction ? `<span class="pastille">${c.codeFonction}</span>` : ""}
     <div class="ligne-nom">
       <p class="nom">${txt(nomImprime(d.name))}</p>
     </div>
@@ -1232,6 +1249,7 @@ function carteHTML(
   const topps = c.rarete === "rare";
   const cadrePath = topps ? cheminFenetre(Boolean(ecusson)) : cheminOrigine(Boolean(ecusson));
   const marge = topps ? TOPPS.bande : 0;
+  const fonc = FONCTION[c.rarete ?? "commune"];
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=block" rel="stylesheet">
@@ -1273,12 +1291,12 @@ function carteHTML(
      fixe, libellé en position absolue dessous. Ni un nom long ni un libellé
      sur deux lignes ne le déplacent. Hauteur : filet 22 + 11 de marge, carré
      104, 8 d'écart, puis deux lignes de libellé au plus. */
-  .fonction{flex:0 0 ${FONCTION.largeur}px;width:${FONCTION.largeur}px;align-self:stretch;position:relative}
-  .fonction .code-fonction{position:absolute;top:${FONCTION.haut + marge}px;left:${(FONCTION.largeur - FONCTION.carre) / 2 + marge}px}
-  .libelle-fonction{position:absolute;left:${marge}px;right:${-marge}px;top:${FONCTION.haut + marge + FONCTION.carre + 4}px;
-                    font-family:"IBM Plex Mono",monospace;font-size:16px;line-height:1.05;letter-spacing:.06em;
+  .fonction{flex:0 0 ${fonc.largeur}px;width:${fonc.largeur}px;align-self:stretch;position:relative}
+  .fonction .code-fonction{position:absolute;top:${fonc.haut}px;left:${(fonc.largeur - fonc.carre) / 2}px}
+  .libelle-fonction{position:absolute;left:0;right:0;top:${fonc.haut + fonc.carre + 5}px;
+                    font-family:"IBM Plex Mono",monospace;font-size:16px;line-height:1.1;letter-spacing:.06em;
                     text-transform:uppercase;text-align:center;color:${COLORS.paper};opacity:.85}
-  .code-fonction{flex:0 0 auto;width:${FONCTION.carre}px;height:${FONCTION.carre}px;background:${COLORS.paper};color:${parti};
+  .code-fonction{flex:0 0 auto;width:${fonc.carre}px;height:${fonc.carre}px;background:${COLORS.paper};color:${parti};
                  display:flex;align-items:center;justify-content:center;
                  font-family:"Oswald",sans-serif;font-weight:700;font-size:60px;letter-spacing:.02em;line-height:1}
   .code-fonction.long{font-size:40px}
