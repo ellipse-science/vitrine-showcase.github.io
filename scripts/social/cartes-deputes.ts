@@ -164,28 +164,12 @@ const LIBELLES_FONCTION: Record<string, [string, string]> = {
   PP: ["Porte-parole", "Porte-parole"],
   D: ["Député", "Députée"],
 };
-/** LÉGENDE DE LA FRISE À L'IMPRESSION (25-09) : à 30 px, « Adjointe
- *  parlementaire (Administration gouvernementale) et 1 autre » ne tient pas et
- *  rapetissait jusqu'à 15 px (2,5 pt). On retire la parenthèse et le « et N
- *  autres » ; si c'est encore trop long, on garde la catégorie (« Adjointe
- *  parlementaire »), accordée d'après le titre lui-même. « Ministre de
- *  l'Économie » ou « Ministre (3 portefeuilles) » restent tels quels. */
-const LEGENDE_IMPRESSION_MAX = 30;
 /** Rubans de chef à l'impression : le nom du parti en sigle, pour tenir sur une
  *  ligne à 30 px (« Co-porte-parole de Québec solidaire » passait à deux). */
 function sigleParti(titre: string): string {
   return titre.replace(/Québec solidaire/g, "QS").replace(/Parti québécois/g, "PQ")
     .replace(/Parti libéral du Québec/g, "PLQ").replace(/Coalition avenir Québec/g, "CAQ")
     .replace(/Parti conservateur du Québec/g, "PCQ");
-}
-
-function titreImpression(titre: string): string {
-  const court = titre.replace(/ et \d+ autres?$/, "").replace(/\s*\([^)]*\)/g, "").trim();
-  if (court.length <= LEGENDE_IMPRESSION_MAX || /^Ministre \(/.test(titre)) return court;
-  const code = CODES_FONCTION.find(([re]) => re.test(court))?.[1];
-  if (!code) return court;
-  const f = /\b(Adjointe|Présidente|Vice-présidente|Première|Cheffe)\b/i.test(court);
-  return libelleFonction(code, f ? "f" : "m");
 }
 
 function libelleFonction(code: string, genre: "f" | "m" | undefined): string {
@@ -445,6 +429,31 @@ function distance(a: string, b: string): number {
  *  une ligne à tout le verso. Compte les rangées DISTINCTES du texte, avec
  *  12 px de tolérance : le pictogramme d'enjeu ne s'aligne pas au pixel près
  *  sur le texte qui le suit. Pas de fonction imbriquée (cf. ajusterVerso). */
+/** TEXTE TRONQUÉ OU MASQUÉ, sur l'une ou l'autre face : un élément à
+ *  overflow:hidden dont le texte dépasse EN LARGEUR (le nom, un intitulé), une
+ *  citation rognée par son line-clamp, ou un élément masqué par un ajusteur.
+ *  La hauteur seule n'est pas comptée : avec line-height:1, les accents des
+ *  capitales (É, Ë) dépassent la boîte du nom sans être coupés à l'image.
+ *  À l'impression, toute ligne ici bloque les PNG (Jules, 25-09 : aucun mot
+ *  tronqué, toutes les informations sur toutes les cartes). */
+function mesurerCoupes(): string[] {
+  const out: string[] = [];
+  const els = document.querySelectorAll<HTMLElement>("body *");
+  for (let i = 0; i < els.length; i++) {
+    const e = els[i];
+    if (e.closest("svg") || e.tagName === "SCRIPT" || e.tagName === "STYLE") continue;
+    const t = (e.textContent || "").trim();
+    if (!t) continue;
+    if (e.style.display === "none" && !e.classList.contains("parti-long")) { out.push(`masqué : ${t.slice(0, 60)}`); continue; }
+    const cs = getComputedStyle(e);
+    if (cs.display === "none") continue;
+    const cache = cs.overflowX === "hidden" || cs.textOverflow === "ellipsis";
+    if (cache && e.scrollWidth > e.clientWidth + 1) out.push(`coupé : ${t.slice(0, 60)}`);
+    else if (e.classList.contains("citation") && e.scrollHeight > e.clientHeight + 1) out.push(`citation rognée : ${t.slice(0, 60)}`);
+  }
+  return out;
+}
+
 function mesurerRetours(): string[] {
   const coupees: string[] = [];
   const els = document.querySelectorAll<HTMLElement>(".identite, .chef, .vitaux, .pied span, .credit span");
@@ -556,9 +565,18 @@ const PASTILLE_LEGENDAIRE = { gauche: 78, haut: 1102 };
 /** VERSO IMPRIMÉ (Jules, 25-09) : plancher de 30 px, soit 5 points à 1071 px
  *  pour 63,5 mm. Mesuré avant : note des sources à 2,5 pt, légendes et lignes
  *  sous le nom entre 2,9 et 4 pt, illisibles sur carton. Le contenu est allégé
- *  en conséquence dans versoHTML (note réduite à une ligne, deux lignes de
- *  frise, deux enjeux nommés, sans les voix d'avance ni les losanges). Le style
+ *  en conséquence : note de méthode réduite à sa ligne-lien et sans losanges ;
+ *  tout le reste paraît en entier (Jules, 25-09 : aucun mot tronqué, toutes les
+ *  informations sur toutes les cartes), la frise sur toute la largeur. Le style
  *  web garde la version complète. */
+/** LIBELLÉS D'ENJEU EN ENTIER à l'impression (Jules, 25-09 : aucun mot
+ *  tronqué). Le module du site abrège pour sa barre empilée (« Gouv. »,
+ *  « Environ. ») ; la carte imprimée écrit le mot. */
+const LIBELLE_ENJEU_ENTIER: Record<string, string> = {
+  "Gouv.": "Gouvernance", "Environ.": "Environnement", "Éduc.": "Éducation",
+  "Aff. int.": "International", "Immig.": "Immigration", "Tech.": "Technologie",
+};
+
 /** PLANCHER DU TEXTE IMPRIMÉ, en px (30 px = 5 points). Appliqué à la page par
  *  SCRIPT_PLANCHER, quel que soit le sélecteur du gabarit, et lu (data-plancher)
  *  par les fonctions d'ajustement, qui ne rapetissent plus en dessous : ce qui
@@ -573,6 +591,9 @@ const SCRIPT_PLANCHER = `<script>(() => {
   }
 })();</script>`;
 
+/** Pixels rendus au panneau du verso imprimé par le crédit remonté sur le rang
+ *  des logos (le rang libéré fait 66 px ; 16 restent en marge). */
+const PANNEAU_BAS_IMPRESSION = 50;
 const VERSO_IMPRESSION_CSS = `
   .graduations{height:36px}
   .legende-parcours{margin-top:4px}
@@ -587,6 +608,27 @@ const VERSO_IMPRESSION_CSS = `
   .citation{font-size:30px}
   .pied{font-size:30px}
   .metho-courte{font-size:30px;text-align:center}
+  /* RIEN N'EST TRONQUÉ NI RETIRÉ À L'IMPRESSION (Jules, 25-09) : la frise
+     prend toute la largeur, ses intitulés passent à la ligne au besoin, et la
+     rémunération (les deux montants) se lit sur un rang en dessous. */
+  .grille-parcours{grid-template-columns:minmax(0,1fr);gap:10px}
+  .legende-parcours .ft{white-space:normal;line-height:1.1}
+  .paie{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:baseline;
+        column-gap:12px;border-left:0;border-top:1px solid currentColor;padding:10px 0 0}
+  .paie b.moy{margin:0 0 0 22px}
+  .paie span{margin-top:0}
+  .citation{display:block;-webkit-line-clamp:unset;overflow:visible}
+  .lignes-haut{margin-top:-6px;text-align:center}
+  .lignes-haut .vitaux{display:block}
+  thead th{letter-spacing:0;padding-left:8px;padding-right:8px}
+  tbody th,tbody td{padding-left:8px;padding-right:8px}
+  .ton .piste{width:100px}
+  .legende{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
+  /* Le crédit sur le rang des logos CAPP et Laval, réduits : un rang de moins
+     sous le panneau, rendu au panneau (voir PANNEAU_BAS_IMPRESSION). */
+  .credit{top:auto;bottom:14px;align-items:center}
+  .marque-capp{transform:translateX(-50%) scale(.62);transform-origin:center bottom}
+  .panneau{height:${PANNEAU.bas - PANNEAU.y + PANNEAU_BAS_IMPRESSION}px}
 `;
 
 const FONCTION: Record<Exclude<Rarete, "legendaire">, { largeur: number; carre: number; haut: number }> = {
@@ -1169,8 +1211,13 @@ function ajusterVerso(): void {
   let rembourrage = blocs.length ? parseFloat(getComputedStyle(blocs[0]).paddingTop) : 0;
   const metho = document.querySelector<HTMLElement>(".metho");
   let tailleMetho = metho ? parseFloat(getComputedStyle(metho).fontSize) : 0;
+  const imprime = !!document.body.dataset.plancher;
+  let ecart = parseFloat(getComputedStyle(panneau).rowGap) || 0;
+  const cellules = Array.from(document.querySelectorAll<HTMLElement>("tbody tr:not(.secondaire) th, tbody tr:not(.secondaire) td"));
+  let cellule = cellules.length ? parseFloat(getComputedStyle(cellules[0]).paddingTop) : 0;
+  const haut = document.querySelector<HTMLElement>(".haut");
 
-  for (let etape = 0; etape < 40; etape++) {
+  for (let etape = 0; etape < 80; etape++) {
     const bas = panneau.getBoundingClientRect().bottom;
     let plusBas = 0;
     const tous = panneau.querySelectorAll<HTMLElement>("*");
@@ -1194,35 +1241,48 @@ function ajusterVerso(): void {
       }
       continue;
     }
+    // À L'IMPRESSION (plancher fixé), RIEN NE DISPARAÎT NI N'EST TRONQUÉ
+    // (Jules, 25-09) : on ne cède que du blanc, puis la taille de
+    // l'expression distinctive, jamais sous le plancher. Ce qui ne tient
+    // toujours pas est signalé par mesurerDebordement et bloque les PNG.
+    if (imprime) {
+      if (ecart > 6) { ecart -= 2; panneau.style.gap = `${ecart}px`; continue; }
+      if (cellule > 6) {
+        cellule -= 1;
+        for (let j = 0; j < cellules.length; j++) {
+          cellules[j].style.paddingTop = `${cellule}px`;
+          cellules[j].style.paddingBottom = `${cellule}px`;
+        }
+        continue;
+      }
+      if (haut && haut.style.minHeight !== "0px") { haut.style.minHeight = "0px"; continue; }
+      if (mot && taille > 40) { taille -= 2; mot.style.fontSize = `${taille}px`; continue; }
+      // Derniers blancs : sous l'en-tête, au-dessus du pied, entre les rangs
+      // de la frise, puis le rembourrage des panneaux jusqu'à 8 px.
+      if (!panneau.dataset.serre) {
+        panneau.dataset.serre = "1";
+        if (haut) haut.style.paddingBottom = "4px";
+        const pied = document.querySelector<HTMLElement>(".pied");
+        if (pied) pied.style.paddingTop = "0px";
+        const rangs = document.querySelectorAll<HTMLElement>(".legende-parcours li");
+        for (let j = 0; j < rangs.length; j++) { rangs[j].style.paddingTop = "0px"; rangs[j].style.paddingBottom = "0px"; }
+        continue;
+      }
+      if (rembourrage > 8 && blocs.length) {
+        rembourrage -= 2;
+        for (let j = 0; j < blocs.length; j++) {
+          blocs[j].style.paddingTop = `${rembourrage}px`;
+          blocs[j].style.paddingBottom = `${rembourrage}px`;
+        }
+        continue;
+      }
+      return;
+    }
     if (citation && citation.style.webkitLineClamp !== "1") { citation.style.webkitLineClamp = "1"; continue; }
-    // À l'IMPRESSION seulement (plancher fixé) : le second montant, « sur la
-    // législature », cède avant l'expression distinctive ; le salaire annuel
-    // reste. Seules les cartes qui débordent le perdent.
-    const moy = document.querySelector<HTMLElement>(".paie b.moy");
-    if (document.body.dataset.plancher && moy && moy.style.display !== "none") {
-      moy.style.display = "none";
-      const l = document.querySelector<HTMLElement>(".paie .moy-l");
-      if (l) l.style.display = "none";
-      continue;
-    }
     if (mot && taille > 34) { taille -= 2; mot.style.fontSize = `${taille}px`; continue; }
-    // Dernière concession (25-09, ligne d'ancienneté) : la note des sources,
-    // de 15 à 13 px au plus bas. Elle suffit aux cartes à lettre et à ruban,
-    // qui débordaient de 11 à 32 px. ⚠️ À l'IMPRESSION (1071 px = 63,5 mm),
-    // 15 px font 2,5 points et 13 px 2,2 points : illisible sans loupe. Bon
-    // pour l'écran seulement ; la note est à repenser pour le tirage papier.
-    // Tout dernier recours, à l'IMPRESSION : la ligne d'ancienneté (cartes à
-    // lettre, qui portent déjà le départ et le successeur sous le nom).
-    const carriere = document.querySelector<HTMLElement>(".vitaux.carriere");
-    if (document.body.dataset.plancher && carriere && carriere.style.display !== "none" && !moy) {
-      carriere.style.display = "none";
-      continue;
-    }
-    if (document.body.dataset.plancher && carriere && carriere.style.display !== "none" && moy && moy.style.display === "none") {
-      carriere.style.display = "none";
-      continue;
-    }
-    if (metho && tailleMetho > Math.max(13, Number(document.body.dataset.plancher || 0))) { tailleMetho -= 0.5; metho.style.fontSize = `${tailleMetho}px`; continue; }
+    // Dernière concession à l'écran (25-09, ligne d'ancienneté) : la note des
+    // sources, de 15 à 13 px au plus bas.
+    if (metho && tailleMetho > 13) { tailleMetho -= 0.5; metho.style.fontSize = `${tailleMetho}px`; continue; }
     return;
   }
 }
@@ -1659,7 +1719,7 @@ function versoHTML(
   const [vitaux, parcoursLigne] = [
     c.mandat
       ? c.scrutin
-        ? `${c.mandat} avec ${POURCENT.format(c.scrutin.pourcentage)}\u00a0% des voix${MODE_IMPRESSION ? "" : ` (${MONTANT.format(c.scrutin.avance)} voix d'avance)`}`
+        ? `${c.mandat} avec ${POURCENT.format(c.scrutin.pourcentage)}\u00a0% des voix (${MONTANT.format(c.scrutin.avance)} voix d'avance)`
         : c.mandat
       : "",
     c.depart ? c.depart.successeur
@@ -1676,8 +1736,18 @@ function versoHTML(
   // croire à un total tronqué. Les segments sont des TRAMES de l'encre du
   // parti, du plein au clair : c'est ainsi qu'on distinguait des séries sur
   // une presse à deux encres, et ça préserve la bichromie.
+  // Élection, départ ou allégeance, ancienneté. À l'IMPRESSION, ces lignes
+  // quittent la colonne du nom (resserrée par le portrait) pour toute la
+  // largeur du panneau : à 30 px, « … des voix (8 209 voix d'avance) » y
+  // passait sur deux rangs.
+  const lignesVitaux = [
+    vitaux ? `<span class="vitaux">${txt(vitaux)}</span>` : "",
+    parcoursLigne ? `<span class="vitaux">${txt(parcoursLigne)}</span>` : "",
+    c.carriere ? `<span class="vitaux carriere">${txt(c.carriere)}</span>` : "",
+  ].join("");
+
   const pile = d.enjeuStack.filter((x) => x.widthPct > 0);
-  const nommes = pile.filter((x) => !x.isReste && x.cle).slice(0, MODE_IMPRESSION ? 2 : 3);
+  const nommes = pile.filter((x) => !x.isReste && x.cle).slice(0, 3);
   const TRAMES = [1, .68, .42];
   const barre = pile.length
     ? `<div class="empilee">${pile.map((x) => {
@@ -1689,7 +1759,7 @@ function versoHTML(
          <li>
            <span class="puce" style="background:${parti};opacity:${TRAMES[i]}"></span>
            <span class="pg">${enjeuGlyph(x.cle, parti, 24)}</span>
-           <span class="pl">${txt(x.label)}</span>
+           <span class="pl">${txt(MODE_IMPRESSION ? LIBELLE_ENJEU_ENTIER[x.label] ?? x.label : x.label)}</span>
            <b>${Math.round(x.widthPct)}&nbsp;%</b>
          </li>`).join("")}
          <li class="reste"><span class="puce" style="background:${parti};opacity:.16"></span>
@@ -1947,22 +2017,21 @@ function versoHTML(
         <span class="identite"><span>${txt(identite)}${identite ? "&nbsp;&nbsp; · &nbsp;&nbsp;" : ""}<span class="parti-long">${txt(partiLong)}</span><span class="parti-court">${txt(partiCourt)}</span></span></span>
         ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${txt(MODE_IMPRESSION ? sigleParti(c.chef.titre) : c.chef.titre)}</span>`
           : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : ""}
-        ${vitaux ? `<span class="vitaux">${txt(vitaux)}</span>` : ""}
-        ${parcoursLigne ? `<span class="vitaux">${txt(parcoursLigne)}</span>` : ""}
-        ${c.carriere ? `<span class="vitaux carriere">${txt(c.carriere)}</span>` : ""}
+        ${MODE_IMPRESSION ? "" : lignesVitaux}
       </span>
     </div>
+    ${MODE_IMPRESSION && lignesVitaux.trim() ? `<div class="lignes-haut">${lignesVitaux}</div>` : ""}
 
     <div class="bloc fiche">
       <p class="rubrique">Fiche à l'Assemblée &middot; ${txt(c.salon)}</p>
       ${MODE_IMPRESSION ? "" : losanges}
       <table>
-        <colgroup><col style="width:30%"><col style="width:16%"><col style="width:19%"><col style="width:16%"><col style="width:19%"></colgroup>
+        <colgroup>${(MODE_IMPRESSION ? [25, 26, 17, 17, 15] : [30, 16, 19, 16, 19]).map((w) => `<col style="width:${w}%">`).join("")}</colgroup>
         <thead><tr>
           ${MODE_IMPRESSION
-            // Un mot par colonne à l'impression : à 30 px, « interventions »
-            // débordait du tableau et de l'encadré (25-09).
-            ? `<th>Période</th><th>Interv.</th><th>Mots</th><th>Richesse</th><th>Ton</th>`
+            // Un mot ENTIER par colonne à l'impression (Jules, 25-09 : pas
+            // d'« Interv. ») ; les colonnes sont rééquilibrées en conséquence.
+            ? `<th>Période</th><th>Interventions</th><th>Mots</th><th>Richesse</th><th>Ton</th>`
             : `<th>Période</th><th>Inter-<br>ventions</th><th>Mots<br>prononcés</th><th>Richesse<br>lexicale</th><th>Ton des<br>interventions</th>`}
         </tr></thead>
         <tbody>${lignes}</tbody>
@@ -1979,8 +2048,8 @@ function versoHTML(
             ${c.parcours.segments.map((s) => `<i style="left:${s.g}%;width:${s.w}%;opacity:${s.o}"></i>`).join("")}
           </div>
           <div class="graduations">${[2023, 2024, 2025, 2026].map((a) => `<span style="left:${positionAxe(`${a}-01-01`)}%">${a}</span>`).join("")}</div>
-          <ul class="legende-parcours${c.parcours.legende.length > 3 && !MODE_IMPRESSION ? " dense" : ""}">${(MODE_IMPRESSION ? c.parcours.legende.slice(0, 2) : c.parcours.legende).map((l) => `
-            <li><span class="puce"><i style="opacity:${l.o}"></i></span><span class="ft">${ordinal(txt(MODE_IMPRESSION ? titreImpression(l.titre) : l.titre))}</span><span class="fa">${l.annees}</span></li>`).join("")}
+          <ul class="legende-parcours${c.parcours.legende.length > 3 && !MODE_IMPRESSION ? " dense" : ""}">${c.parcours.legende.map((l) => `
+            <li><span class="puce"><i style="opacity:${l.o}"></i></span><span class="ft">${ordinal(txt(l.titre))}</span><span class="fa">${l.annees}</span></li>`).join("")}
           </ul>
         </div>
         <div class="paie">
@@ -2564,6 +2633,7 @@ async function main() {
 
   const debordements: string[] = [];
   const retours: string[] = [];
+  const coupes: string[] = [];
   const browser = await chromium.launch().catch(() => chromium.launch({ channel: "chrome" }));
   try {
     // RENDU EN PARALLÈLE — plusieurs onglets puisent dans la même file de
@@ -2604,6 +2674,7 @@ async function main() {
           const debord = await page.evaluate(mesurerDebordement);
           if (debord > 0) debordements.push(`${pages[i].slug} (${debord} px)`);
           for (const t of await page.evaluate(mesurerRetours)) retours.push(`${pages[i].slug} : « ${t} »`);
+          for (const t of await page.evaluate(mesurerCoupes)) coupes.push(`${pages[i].slug} : ${t}`);
           await action(page, i);
           process.stdout.write(`\r  ${++faits}/${pages.length} ${libelle}`);
         }
@@ -2611,11 +2682,17 @@ async function main() {
       // L'ordre d'arrivée dépend des onglets : on trie pour un rapport stable.
       debordements.sort();
       retours.sort();
+      coupes.sort();
     };
     const rapporterRetours = () => {
       if (!retours.length) return;
       console.warn(`  ⚠️ ${retours.length} ligne(s) d'en-tête coupée(s) sur deux rangs :`);
       for (const r of retours) console.warn(`     · ${r}`);
+    };
+    const rapporterCoupes = () => {
+      if (!coupes.length) return;
+      console.warn(`  ⚠️ ${coupes.length} texte(s) tronqué(s) ou masqué(s) :`);
+      for (const r of coupes) console.warn(`     · ${r}`);
     };
 
     // VERROU DE RELECTURE, calqué sur celui des reels. Envoyer une carte à un
@@ -2659,6 +2736,7 @@ async function main() {
       console.log(`\n  ${cartes.length} cartes (recto + verso) → ${dossierSortie}${impression ? " (fond perdu 3 mm, 856 ppp)" : ""}`);
       rapporterDebordements(debordements);
       rapporterRetours();
+      rapporterCoupes();
       return;
     }
 
@@ -2669,11 +2747,16 @@ async function main() {
       const buf = await page.screenshot({ type: "jpeg", quality: 76, scale: "css" });
       vignettes[i] = `data:image/jpeg;base64,${buf.toString("base64")}`;
     }, "vignettes");
-    await fs.writeFile(planche, plancheHTML(pages.map((p) => p.slug), vignettes, empreinte, vue.tabLabel), "utf8");
+    // À l'IMPRESSION, une planche où un texte déborde, est tronqué ou masqué
+    // ne porte pas d'empreinte : le verrou refuse alors --png.
+    const bloquee = MODE_IMPRESSION && (debordements.length > 0 || coupes.length > 0);
+    await fs.writeFile(planche, plancheHTML(pages.map((p) => p.slug), vignettes, bloquee ? "bloquee" : empreinte, vue.tabLabel), "utf8");
     console.log(`\n  planche → ${planche}`);
     console.log(`  ${cartes.length} cartes · ${pages.length} images · cœur de la grille : y ${COEUR.top} → ${COEUR.bottom}`);
     rapporterDebordements(debordements);
     rapporterRetours();
+    rapporterCoupes();
+    if (bloquee) console.warn("  ⛔ Impression : corriger les cartes ci-dessus avant --png (verrou fermé).");
     if (!args["sans-ouvrir"]) openInBrowser(planche);
   } finally {
     await browser.close();
