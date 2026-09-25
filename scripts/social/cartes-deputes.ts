@@ -1959,7 +1959,11 @@ function versoHTML(
       <table>
         <colgroup><col style="width:30%"><col style="width:16%"><col style="width:19%"><col style="width:16%"><col style="width:19%"></colgroup>
         <thead><tr>
-          <th>Période</th><th>Inter-<br>ventions</th><th>Mots<br>prononcés</th><th>Richesse<br>lexicale</th><th>Ton des<br>interventions</th>
+          ${MODE_IMPRESSION
+            // Un mot par colonne à l'impression : à 30 px, « interventions »
+            // débordait du tableau et de l'encadré (25-09).
+            ? `<th>Période</th><th>Interv.</th><th>Mots</th><th>Richesse</th><th>Ton</th>`
+            : `<th>Période</th><th>Inter-<br>ventions</th><th>Mots<br>prononcés</th><th>Richesse<br>lexicale</th><th>Ton des<br>interventions</th>`}
         </tr></thead>
         <tbody>${lignes}</tbody>
       </table>
