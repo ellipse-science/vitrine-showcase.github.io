@@ -164,6 +164,30 @@ const LIBELLES_FONCTION: Record<string, [string, string]> = {
   PP: ["Porte-parole", "Porte-parole"],
   D: ["Député", "Députée"],
 };
+/** LÉGENDE DE LA FRISE À L'IMPRESSION (25-09) : à 30 px, « Adjointe
+ *  parlementaire (Administration gouvernementale) et 1 autre » ne tient pas et
+ *  rapetissait jusqu'à 15 px (2,5 pt). On retire la parenthèse et le « et N
+ *  autres » ; si c'est encore trop long, on garde la catégorie (« Adjointe
+ *  parlementaire »), accordée d'après le titre lui-même. « Ministre de
+ *  l'Économie » ou « Ministre (3 portefeuilles) » restent tels quels. */
+const LEGENDE_IMPRESSION_MAX = 30;
+/** Rubans de chef à l'impression : le nom du parti en sigle, pour tenir sur une
+ *  ligne à 30 px (« Co-porte-parole de Québec solidaire » passait à deux). */
+function sigleParti(titre: string): string {
+  return titre.replace(/Québec solidaire/g, "QS").replace(/Parti québécois/g, "PQ")
+    .replace(/Parti libéral du Québec/g, "PLQ").replace(/Coalition avenir Québec/g, "CAQ")
+    .replace(/Parti conservateur du Québec/g, "PCQ");
+}
+
+function titreImpression(titre: string): string {
+  const court = titre.replace(/ et \d+ autres?$/, "").replace(/\s*\([^)]*\)/g, "").trim();
+  if (court.length <= LEGENDE_IMPRESSION_MAX || /^Ministre \(/.test(titre)) return court;
+  const code = CODES_FONCTION.find(([re]) => re.test(court))?.[1];
+  if (!code) return court;
+  const f = /\b(Adjointe|Présidente|Vice-présidente|Première|Cheffe)\b/i.test(court);
+  return libelleFonction(code, f ? "f" : "m");
+}
+
 function libelleFonction(code: string, genre: "f" | "m" | undefined): string {
   const [m, f] = LIBELLES_FONCTION[code] ?? [code, code];
   return genre === "f" ? f : genre === "m" || m === f ? m : `${m} / ${f}`;
@@ -528,6 +552,42 @@ const PHOTO_H = PANNEAU.bas - BANDE - PANNEAU.y;
  *  nom long. Comme le carré des autres cartes, elle porte un astérisque renvoyé
  *  au pied (« * Premier ministre »). */
 const PASTILLE_LEGENDAIRE = { gauche: 78, haut: 1102 };
+
+/** VERSO IMPRIMÉ (Jules, 25-09) : plancher de 30 px, soit 5 points à 1071 px
+ *  pour 63,5 mm. Mesuré avant : note des sources à 2,5 pt, légendes et lignes
+ *  sous le nom entre 2,9 et 4 pt, illisibles sur carton. Le contenu est allégé
+ *  en conséquence dans versoHTML (note réduite à une ligne, deux lignes de
+ *  frise, deux enjeux nommés, sans les voix d'avance ni les losanges). Le style
+ *  web garde la version complète. */
+/** PLANCHER DU TEXTE IMPRIMÉ, en px (30 px = 5 points). Appliqué à la page par
+ *  SCRIPT_PLANCHER, quel que soit le sélecteur du gabarit, et lu (data-plancher)
+ *  par les fonctions d'ajustement, qui ne rapetissent plus en dessous : ce qui
+ *  ne tient pas est signalé, jamais réduit en silence. */
+const PLANCHER_IMPRESSION = 30;
+const SCRIPT_PLANCHER = `<script>(() => {
+  const m = ${PLANCHER_IMPRESSION};
+  for (const e of document.querySelectorAll("body *")) {
+    if (e.closest("svg") || e.tagName === "SCRIPT") continue;
+    if (![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+    if (parseFloat(getComputedStyle(e).fontSize) < m) e.style.fontSize = m + "px";
+  }
+})();</script>`;
+
+const VERSO_IMPRESSION_CSS = `
+  .graduations{height:36px}
+  .legende-parcours{margin-top:4px}
+  .identite{font-size:32px}
+  .chef{font-size:30px}
+  .vitaux{font-size:30px;margin-top:3px}
+  .rubrique{font-size:32px}
+  th,.per-type,.per-date,.pivot .per-date,.secondaire td,.vide td,.secondaire.vide td{font-size:30px}
+  .graduations,.legende-parcours li,.legende-parcours .fa,.legende-parcours.dense li,.legende-parcours.dense .fa{font-size:30px}
+  .paie span{font-size:30px}
+  .legende li,.legende b{font-size:30px}
+  .citation{font-size:30px}
+  .pied{font-size:30px}
+  .metho-courte{font-size:30px;text-align:center}
+`;
 
 const FONCTION: Record<Exclude<Rarete, "legendaire">, { largeur: number; carre: number; haut: number }> = {
   commune:       { largeur: 104, carre: 104, haut: 57 },
@@ -1021,7 +1081,8 @@ function ajusterFonctions(): void {
   const els = document.querySelectorAll<HTMLElement>(".legende-parcours .ft");
   for (let i = 0; i < els.length; i++) {
     let taille = parseFloat(getComputedStyle(els[i]).fontSize);
-    while (els[i].scrollWidth > els[i].clientWidth && taille > 15) {
+    const plancher = Number(document.body.dataset.plancher || 15);
+    while (els[i].scrollWidth > els[i].clientWidth && taille > plancher) {
       taille -= 1;
       els[i].style.fontSize = `${taille}px`;
     }
@@ -1134,13 +1195,34 @@ function ajusterVerso(): void {
       continue;
     }
     if (citation && citation.style.webkitLineClamp !== "1") { citation.style.webkitLineClamp = "1"; continue; }
+    // À l'IMPRESSION seulement (plancher fixé) : le second montant, « sur la
+    // législature », cède avant l'expression distinctive ; le salaire annuel
+    // reste. Seules les cartes qui débordent le perdent.
+    const moy = document.querySelector<HTMLElement>(".paie b.moy");
+    if (document.body.dataset.plancher && moy && moy.style.display !== "none") {
+      moy.style.display = "none";
+      const l = document.querySelector<HTMLElement>(".paie .moy-l");
+      if (l) l.style.display = "none";
+      continue;
+    }
     if (mot && taille > 34) { taille -= 2; mot.style.fontSize = `${taille}px`; continue; }
     // Dernière concession (25-09, ligne d'ancienneté) : la note des sources,
     // de 15 à 13 px au plus bas. Elle suffit aux cartes à lettre et à ruban,
     // qui débordaient de 11 à 32 px. ⚠️ À l'IMPRESSION (1071 px = 63,5 mm),
     // 15 px font 2,5 points et 13 px 2,2 points : illisible sans loupe. Bon
     // pour l'écran seulement ; la note est à repenser pour le tirage papier.
-    if (metho && tailleMetho > 13) { tailleMetho -= 0.5; metho.style.fontSize = `${tailleMetho}px`; continue; }
+    // Tout dernier recours, à l'IMPRESSION : la ligne d'ancienneté (cartes à
+    // lettre, qui portent déjà le départ et le successeur sous le nom).
+    const carriere = document.querySelector<HTMLElement>(".vitaux.carriere");
+    if (document.body.dataset.plancher && carriere && carriere.style.display !== "none" && !moy) {
+      carriere.style.display = "none";
+      continue;
+    }
+    if (document.body.dataset.plancher && carriere && carriere.style.display !== "none" && moy && moy.style.display === "none") {
+      carriere.style.display = "none";
+      continue;
+    }
+    if (metho && tailleMetho > Math.max(13, Number(document.body.dataset.plancher || 0))) { tailleMetho -= 0.5; metho.style.fontSize = `${tailleMetho}px`; continue; }
     return;
   }
 }
@@ -1577,7 +1659,7 @@ function versoHTML(
   const [vitaux, parcoursLigne] = [
     c.mandat
       ? c.scrutin
-        ? `${c.mandat} avec ${POURCENT.format(c.scrutin.pourcentage)}\u00a0% des voix (${MONTANT.format(c.scrutin.avance)} voix d'avance)`
+        ? `${c.mandat} avec ${POURCENT.format(c.scrutin.pourcentage)}\u00a0% des voix${MODE_IMPRESSION ? "" : ` (${MONTANT.format(c.scrutin.avance)} voix d'avance)`}`
         : c.mandat
       : "",
     c.depart ? c.depart.successeur
@@ -1595,7 +1677,7 @@ function versoHTML(
   // parti, du plein au clair : c'est ainsi qu'on distinguait des séries sur
   // une presse à deux encres, et ça préserve la bichromie.
   const pile = d.enjeuStack.filter((x) => x.widthPct > 0);
-  const nommes = pile.filter((x) => !x.isReste && x.cle).slice(0, 3);
+  const nommes = pile.filter((x) => !x.isReste && x.cle).slice(0, MODE_IMPRESSION ? 2 : 3);
   const TRAMES = [1, .68, .42];
   const barre = pile.length
     ? `<div class="empilee">${pile.map((x) => {
@@ -1855,24 +1937,25 @@ function versoHTML(
   .grain,.mouchete{position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none}
   .grain{opacity:.26}
   .mouchete{opacity:.22}
-</style></head><body>
+  ${MODE_IMPRESSION ? VERSO_IMPRESSION_CSS : ""}
+</style></head><body${MODE_IMPRESSION ? ` data-plancher="${PLANCHER_IMPRESSION}"` : ""}>
   <div class="panneau">
     <div class="haut">
       <span class="numero">${c.numero}${c.variante}</span>
       <span class="titre">
         <span class="nom">${txt(nomImprime(d.name))}</span>
         <span class="identite"><span>${txt(identite)}${identite ? "&nbsp;&nbsp; · &nbsp;&nbsp;" : ""}<span class="parti-long">${txt(partiLong)}</span><span class="parti-court">${txt(partiCourt)}</span></span></span>
-        ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${txt(c.chef.titre)}</span>`
+        ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${txt(MODE_IMPRESSION ? sigleParti(c.chef.titre) : c.chef.titre)}</span>`
           : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : ""}
         ${vitaux ? `<span class="vitaux">${txt(vitaux)}</span>` : ""}
         ${parcoursLigne ? `<span class="vitaux">${txt(parcoursLigne)}</span>` : ""}
-        ${c.carriere ? `<span class="vitaux">${txt(c.carriere)}</span>` : ""}
+        ${c.carriere ? `<span class="vitaux carriere">${txt(c.carriere)}</span>` : ""}
       </span>
     </div>
 
     <div class="bloc fiche">
       <p class="rubrique">Fiche à l'Assemblée &middot; ${txt(c.salon)}</p>
-      ${losanges}
+      ${MODE_IMPRESSION ? "" : losanges}
       <table>
         <colgroup><col style="width:30%"><col style="width:16%"><col style="width:19%"><col style="width:16%"><col style="width:19%"></colgroup>
         <thead><tr>
@@ -1892,8 +1975,8 @@ function versoHTML(
             ${c.parcours.segments.map((s) => `<i style="left:${s.g}%;width:${s.w}%;opacity:${s.o}"></i>`).join("")}
           </div>
           <div class="graduations">${[2023, 2024, 2025, 2026].map((a) => `<span style="left:${positionAxe(`${a}-01-01`)}%">${a}</span>`).join("")}</div>
-          <ul class="legende-parcours${c.parcours.legende.length > 3 ? " dense" : ""}">${c.parcours.legende.map((l) => `
-            <li><span class="puce"><i style="opacity:${l.o}"></i></span><span class="ft">${ordinal(txt(l.titre))}</span><span class="fa">${l.annees}</span></li>`).join("")}
+          <ul class="legende-parcours${c.parcours.legende.length > 3 && !MODE_IMPRESSION ? " dense" : ""}">${(MODE_IMPRESSION ? c.parcours.legende.slice(0, 2) : c.parcours.legende).map((l) => `
+            <li><span class="puce"><i style="opacity:${l.o}"></i></span><span class="ft">${ordinal(txt(MODE_IMPRESSION ? titreImpression(l.titre) : l.titre))}</span><span class="fa">${l.annees}</span></li>`).join("")}
           </ul>
         </div>
         <div class="paie">
@@ -1901,7 +1984,7 @@ function versoHTML(
                 compare d'un élu à l'autre, le total dépend de la durée du mandat. */ ""}
           ${c.remunerationMoyenne
             ? `<b>${MONTANT.format(c.remunerationMoyenne)}&nbsp;$</b><span>par année</span>
-          <b class="moy">${MONTANT.format(c.remuneration)}&nbsp;$</b><span>sur la législature</span>`
+          <b class="moy">${MONTANT.format(c.remuneration)}&nbsp;$</b><span class="moy-l">sur la législature</span>`
             : `<b>${MONTANT.format(c.remuneration)}&nbsp;$</b><span>sur la législature</span>`}
         </div>
       </div>
@@ -1928,7 +2011,9 @@ function versoHTML(
           sur une carte qui n'en a pas. « Relu à la main » engage le verrou de
           --png : les images ne sortent pas sans la planche de cette version.
           Détail : docs/reference/cartes-deputes.md. */ ""}
-    <p class="metho">
+    ${MODE_IMPRESSION
+      ? `<p class="metho metho-courte">Sources et méthode complète&nbsp;: vitrinedemocratique.com/methodologie</p>`
+      : `<p class="metho">
       Sources&nbsp;: transcriptions du Salon bleu jusqu'au ${txt(derniereSeance.replace(/^\p{L}+ (?=\d)/u, ""))}, fiches de l'Assemblée nationale, résultats d'Élections Québec.
       Richesse lexicale&nbsp;: variété du vocabulaire (indice MATTR), de un à cinq points par rapport aux autres élus. Le ton est lui aussi situé par rapport aux autres élus, pas dans l'absolu.
       ${c.parcours && c.remuneration ? `Frise&nbsp;: fonctions rémunérées au fil de la législature; quand plusieurs se chevauchent, seule la mieux payée est montrée, les indemnités ne se cumulant pas. Rémunération&nbsp;: indemnité de base et indemnité additionnelle la plus élevée, au jour près, sans allocations ni remboursements.` : ""}
@@ -1938,7 +2023,7 @@ function versoHTML(
       Les premiers ministres sont légendaires; les autres élus sont classés selon les mots prononcés au Salon bleu sur la législature (10&nbsp;% rares, 35&nbsp;% peu communes).
       ${c.presidente ? `Ce que la présidente dit en présidant n'est pas attribué à son nom dans les transcriptions&nbsp;: elle est commune d'office.` : ""}
       Traitement automatisé, relu à la main&nbsp;: des erreurs restent possibles. Corrections et méthodologie complète sur le site.
-    </p>
+    </p>`}
 
     <p class="pied">
       ${/* Une fleur de lys ici doublonnait avec l'écusson du parti : le logo
@@ -1956,12 +2041,15 @@ function versoHTML(
   <span class="rond">${portrait ? `<span class="image"></span>` : fleur(parti, 100)}</span>
 
   <p class="credit">
-    <span>Portrait&nbsp;: Assemblée nationale du Québec &middot; usage non commercial autorisé</span>
-    <span>${ordinal(txt(c.edition))} &middot; carte ${c.numero}${c.variante} de ${c.total}</span>
+    ${MODE_IMPRESSION
+      ? `<span>Portrait&nbsp;: Assemblée nationale</span><span>Carte ${c.numero}${c.variante} de ${c.total}</span>`
+      : `<span>Portrait&nbsp;: Assemblée nationale du Québec &middot; usage non commercial autorisé</span>
+    <span>${ordinal(txt(c.edition))} &middot; carte ${c.numero}${c.variante} de ${c.total}</span>`}
   </p>
   ${marquesInstitutions(logoCapp)}
   <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
   <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>
+${MODE_IMPRESSION ? SCRIPT_PLANCHER : ""}
 </body></html>`;
 }
 
@@ -2479,7 +2567,11 @@ async function main() {
     // attend ses polices et ses images, et le processeur reste inoccupé pendant
     // ce temps. --parallele N règle le nombre d'onglets (4 par défaut).
     const parallele = Math.max(1, Number(typeof args.parallele === "string" ? args.parallele : 4));
-    const impression = MODE_IMPRESSION;
+    // Fond perdu et échelle 2 pour les IMAGES seulement : avec --style impression
+    // sans --png, on produit d'abord la planche de relecture, dans la mise en
+    // page imprimée (VERSO_IMPRESSION_CSS) mais sans fond perdu. L'ancien
+    // --impression sort les images directement, comme avant.
+    const impression = MODE_IMPRESSION && (!!args.png || !!args.impression);
     const fond = impression ? FOND_PERDU : 0;
     // --echelle N : PNG N fois plus grands pour l'écran (vidéo 4K, zoom), sans
     // le fond perdu ni la réduction de --impression. Le texte et la trame
