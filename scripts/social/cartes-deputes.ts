@@ -1030,7 +1030,7 @@ function ajusterVerso(): void {
     // Concessions successives, du moins coûteux au plus coûteux : d'abord le
     // BLANC des panneaux, qui ne retire aucune information ; puis la citation,
     // qui illustre le mot ; puis le mot lui-même, qui le porte. Un cas comme
-    // celui de la carte 22 — ruban de chef, mot signature ET citation — ne
+    // celui de la carte 22 — ruban de chef, expression distinctive ET citation — ne
     // dépasse que de quelques pixels : les rogner sur le rembourrage vaut mieux
     // que d'amputer le texte.
     if (rembourrage > 12 && blocs.length) {
@@ -1577,7 +1577,7 @@ function versoHTML(
      contenu. Avec justify-content:space-between, l'écart variait d'une carte
      et d'une boîte à l'autre (Jules, 22-09). */
   .bloc.signe{flex:1 0 auto;justify-content:center;text-align:center;padding:26px 38px 28px}
-  /* Sans mot signature, c'est la boîte des parts qui devient la dernière :
+  /* Sans expression distinctive, c'est la boîte des parts qui devient la dernière :
      elle prend l'espace restant, pour garder l'écart constant. */
   .panneau > div.bloc:last-of-type{flex:1 0 auto;justify-content:center}
 
@@ -1791,14 +1791,14 @@ function versoHTML(
           qu'une boîte qui dit qu'il n'y a rien. */ ""}
     ${mot ? `
     <div class="bloc signe">
-      <p class="rubrique">Mot signature</p>
+      <p class="rubrique">Expression distinctive</p>
       <p class="mot">${txt(mot)}</p>
       ${citation ? `<p class="citation">«&nbsp;${txt(citation)}&nbsp;»</p>` : ""}
     </div>` : ""}
 
     ${/* NOTE DE MÉTHODE (Jules, 23-09) : chaque visualisation de la carte,
           recto compris, est nommée et justifiée en une phrase. Une phrase ne
-          paraît que si l'élément paraît : pas de définition du mot signature
+          paraît que si l'élément paraît : pas de définition de l'expression distinctive
           sur une carte qui n'en a pas. « Relu à la main » engage le verrou de
           --png : les images ne sortent pas sans la planche de cette version.
           Détail : docs/reference/cartes-deputes.md. */ ""}
@@ -1807,7 +1807,7 @@ function versoHTML(
       Richesse lexicale&nbsp;: variété du vocabulaire (indice MATTR), de un à cinq points par rapport aux autres élus. Le ton est lui aussi situé par rapport aux autres élus, pas dans l'absolu.
       ${c.parcours && c.remuneration ? `Frise&nbsp;: fonctions rémunérées au fil de la législature; quand plusieurs se chevauchent, seule la mieux payée est montrée, les indemnités ne se cumulant pas. Rémunération&nbsp;: indemnité de base et indemnité additionnelle la plus élevée, au jour près, sans allocations ni remboursements.` : ""}
       ${barre ? `Parts&nbsp;: interventions classées automatiquement par enjeu. Terres publiques et Affaires internationales, dont le classement est en révision, sont retirées et le reste ramené à 100&nbsp;%.` : ""}
-      ${mot ? `Mot signature&nbsp;: l'expression la plus distinctive de l'élu par rapport aux autres, pas la plus fréquente.` : ""}
+      ${mot ? `Expression distinctive&nbsp;: celle qui distingue le plus l'élu des autres, pas la plus fréquente.` : ""}
       Recto&nbsp;: le sigle indique la fonction la mieux payée de la législature, le filet de couleur et sa bulle l'enjeu dominant, les fleurs de lys la rareté.
       Les premiers ministres sont légendaires; les autres élus sont classés selon les mots prononcés au Salon bleu sur la législature (10&nbsp;% rares, 35&nbsp;% peu communes).
       ${c.presidente ? `Ce que la présidente dit en présidant n'est pas attribué à son nom dans les transcriptions&nbsp;: elle est commune d'office.` : ""}
@@ -1883,7 +1883,7 @@ function rapporterDebordements(liste: string[]): void {
  *  · Interventions et mots : sommés (exact).
  *  · Ton et parts d'enjeux : moyennes pondérées par les mots (approximation :
  *    les parts brutes ne portent pas leur propre dénominateur).
- *  · Richesse lexicale et mot signature : ceux de la ligne la plus longue. Un
+ *  · Richesse lexicale et expression distinctive : ceux de la ligne la plus longue. Un
  *    MATTR ne se moyenne pas, et le niveau est relatif aux autres élus.
  *  Chaque ligne agora est retrouvée par ses mots et interventions, que le
  *  loader recopie tels quels. */
