@@ -1191,7 +1191,8 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
   .fonction-leg{position:absolute;left:${PASTILLE_LEGENDAIRE.gauche}px;top:${PASTILLE_LEGENDAIRE.haut}px;
                 display:flex;align-items:center;gap:18px;z-index:2}
   .fonction-leg .pastille{margin-bottom:0}
-  .renvoi{font-size:.6em;vertical-align:super;line-height:0;margin-left:2px;letter-spacing:0}
+  .pastille .lettres{position:relative}
+  .pastille .renvoi{position:absolute;left:100%;top:-.1em;margin-left:.08em;font-size:.6em;line-height:1;letter-spacing:0}
   .pastille{display:inline-block;padding:7px 18px 6px;border:2px solid ${COLORS.paper};border-radius:4px;
             font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:28px;letter-spacing:.3em;
             line-height:1;margin-bottom:6px}
@@ -1222,7 +1223,7 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
   <span class="medaillon"><i>${c.numero}${c.variante}</i></span>
   ${ecusson ? `<span class="ecusson-haut"><i style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></i></span>` : ""}
   ${c.signature ? `<img class="signature" src="${c.signature}" alt="">` : ""}
-  ${c.codeFonction ? `<div class="fonction-leg"><span class="pastille">${c.codeFonction}${c.libelleFonction ? `<sup class="renvoi">*</sup>` : ""}</span></div>` : ""}
+  ${c.codeFonction ? `<div class="fonction-leg"><span class="pastille"><span class="lettres">${c.codeFonction}${c.libelleFonction ? `<span class="renvoi">*</span>` : ""}</span></span></div>` : ""}
   <div class="bas">
     <div class="ligne-nom">
       <p class="nom">${txt(nomImprime(d.name))}</p>
@@ -1295,11 +1296,18 @@ function carteHTML(
      104, 8 d'écart, puis deux lignes de libellé au plus. */
   .fonction{flex:0 0 ${fonc.largeur}px;width:${fonc.largeur}px;align-self:stretch;position:relative}
   .fonction .code-fonction{position:absolute;top:${fonc.haut}px;left:${(fonc.largeur - fonc.carre) / 2}px}
-  .renvoi{font-size:.45em;vertical-align:super;line-height:0;margin-left:1px}
+  /* L'ASTÉRISQUE EN EXPOSANT, en haut à droite des lettres (Jules, 25-09),
+     hors du flux : les lettres restent centrées dans le carré, l'astérisque
+     tombe dans la marge droite du carré. */
+  .code-fonction .lettres{position:relative;line-height:1}
+  .code-fonction .renvoi{position:absolute;left:100%;top:-.04em;margin-left:.01em;font-size:.34em;line-height:1}
   .code-fonction{flex:0 0 auto;width:${fonc.carre}px;height:${fonc.carre}px;background:${COLORS.paper};color:${parti};
                  display:flex;align-items:center;justify-content:center;
                  font-family:"Oswald",sans-serif;font-weight:700;font-size:60px;letter-spacing:.02em;line-height:1}
   .code-fonction.long{font-size:40px}
+  /* Deux lettres larges (PP, VP) : 54 px laissent à l'astérisque au moins
+     6 px de marge dans le carré, contre 1 px à 60. */
+  .code-fonction.deux{font-size:54px}
 
   /* LE MÉDAILLON — à cheval sur le coin, moitié carton moitié panneau. Double
      anneau : le liseré clair détache le disque de la trame, le filet d'encre
@@ -1428,7 +1436,7 @@ function carteHTML(
         <p class="nom">${txt(nomImprime(d.name))}</p>
         <p class="sous">${d.circonscription ? txt(d.circonscription) : ""}<span class="fleurs" aria-label="${LIBELLE_RARETE[c.rarete ?? "commune"]}">${Array.from({ length: FLEURS_PAR_RARETE[c.rarete ?? "commune"] }, () => fleur(COLORS.paper, 24)).join("")}</span></p>
       </div>
-      ${c.codeFonction ? `<div class="fonction"><span class="code-fonction${c.codeFonction.length > 2 ? " long" : ""}">${c.codeFonction}${c.libelleFonction ? `<sup class="renvoi">*</sup>` : ""}</span></div>` : ""}
+      ${c.codeFonction ? `<div class="fonction"><span class="code-fonction${c.codeFonction.length > 2 ? " long" : c.codeFonction.length === 2 ? " deux" : ""}"><span class="lettres">${c.codeFonction}${c.libelleFonction ? `<span class="renvoi">*</span>` : ""}</span></span></div>` : ""}
     </div>
   </div>
 
