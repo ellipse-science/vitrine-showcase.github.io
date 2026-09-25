@@ -4,10 +4,30 @@ import { describe, it, expect } from "vitest";
 import { __test__ } from "@/lib/data/assemblee";
 
 const {
-  fmtDateFr, fmtWords, computeRichnessLevels, buildEnjeuStack, buildSubtitle,
+  sourceCitation, fmtDateFr, fmtWords, computeRichnessLevels, buildEnjeuStack, buildSubtitle,
   buildPeriodView, buildPortraitIndex, lookupPortrait, citationExtrait,
   citationComplete, buildAffiliationIndex, affiliationHistoryFor,
 } = __test__;
+
+describe("sourceCitation", () => {
+  const brut = { signature_word_date: "2024-03-12", signature_word_time: "10:01",
+    signature_word_url: "https://www.assnat.qc.ca/fr/travaux-parlementaires/assemblee-nationale/43-1/journal-debats/20240312/372731.html" };
+
+  it("rend la séance, l'heure et la page du Journal des débats", () => {
+    expect(sourceCitation(brut, "Une citation.")).toEqual({ date: "2024-03-12", heure: "10:01", url: brut.signature_word_url });
+  });
+
+  it("ne source pas une citation qui n'est pas affichée", () => {
+    expect(sourceCitation(brut, undefined)).toBeUndefined();
+  });
+
+  it("ignore une date absente ou mal formée, une heure ou un lien inattendus", () => {
+    expect(sourceCitation({ ...brut, signature_word_date: "NA" }, "c")).toBeUndefined();
+    expect(sourceCitation({ ...brut, signature_word_date: "12 mars" }, "c")).toBeUndefined();
+    expect(sourceCitation({ ...brut, signature_word_time: "10h01", signature_word_url: "https://ailleurs.example/x" }, "c"))
+      .toEqual({ date: "2024-03-12", heure: undefined, url: undefined });
+  });
+});
 
 describe("citationExtrait", () => {
   it("ancre l'extrait sur le concept quand il se trouve après le budget", () => {

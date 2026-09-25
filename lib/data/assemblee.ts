@@ -101,6 +101,11 @@ type AgoraRow = IssueShares & {
   // en attente de son premier run réussi) — toujours optionnelles côté JSON.
   signature_word?: string;
   signature_word_context?: string;
+  /** Source de la citation (aws-refiners#573) : date de séance (AAAA-MM-JJ),
+   *  heure de l'intervention (HH:MM) et page du Journal des débats. */
+  signature_word_date?: string;
+  signature_word_time?: string;
+  signature_word_url?: string;
 };
 
 // Ligne brute de agora_decideurs_qc_deputes.json (agrégation par député, PR
@@ -122,6 +127,11 @@ type DeputyAgoraRow = IssueShares & {
   tone_score: number;
   signature_word?: string;
   signature_word_context?: string;
+  /** Source de la citation (aws-refiners#573) : date de séance (AAAA-MM-JJ),
+   *  heure de l'intervention (HH:MM) et page du Journal des débats. */
+  signature_word_date?: string;
+  signature_word_time?: string;
+  signature_word_url?: string;
 };
 
 // Projection datée du référentiel de mandats utilisé par pplmatchQC(). Elle est
@@ -150,6 +160,10 @@ export type EnjeuSegment = {
   isReste?: boolean;
 };
 
+/** D'où vient la citation de l'expression distinctive : la séance, l'heure de
+ *  l'intervention et sa page du Journal des débats. */
+export type SourceCitation = { date: string; heure?: string; url?: string };
+
 export type DeputyRow = {
   /** Graphie de l'Assemblée nationale quand le portrait est apparié
    *  (« Jean-François Roberge ») ; sinon la graphie brute du référentiel,
@@ -161,6 +175,7 @@ export type DeputyRow = {
   toneLeftPct: number;
   signatureWord?: string;
   signatureWordContext?: string;
+  signatureWordSource?: SourceCitation;
   // Champs de carte. circonscription et portrait manquent quand l'appariement
   // avec le référentiel de l'ANQ échoue (cf. PORTRAIT_ALIASES).
   circonscription?: string;
@@ -211,6 +226,7 @@ export type AssembleeRow = {
   // le publie pas ; le composant masque simplement cette info le cas échéant.
   signatureWord?: string;
   signatureWordContext?: string;
+  signatureWordSource?: SourceCitation;
   // Députés du parti pour la période (tableau d'enquête) — absent tant que
   // agora_decideurs_qc_deputes.json n'a pas encore été publié.
   deputies?: DeputyRow[];
@@ -392,6 +408,24 @@ function findConceptSpan(text: string, concept?: string): ConceptSpan | undefine
     if (found) return { start: textTokens[i].start, end: textTokens[cursor].end };
   }
   return undefined;
+}
+
+/** Source de la citation, seulement si la citation est AFFICHÉE : une source
+ *  sans citation désignerait une phrase que le lecteur ne voit pas. Date au
+ *  format AAAA-MM-JJ, heure HH:MM ; valeurs inattendues ignorées. */
+function sourceCitation(
+  r: { signature_word_date?: string; signature_word_time?: string; signature_word_url?: string },
+  citation: string | undefined,
+): SourceCitation | undefined {
+  const date = cleanText(r.signature_word_date);
+  if (!citation || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return undefined;
+  const heure = cleanText(r.signature_word_time);
+  const url = cleanText(r.signature_word_url);
+  return {
+    date,
+    heure: heure && /^\d{2}:\d{2}$/.test(heure) ? heure : undefined,
+    url: url && url.startsWith("https://www.assnat.qc.ca/") ? url : undefined,
+  };
 }
 
 function citationExtrait(value?: string, concept?: string, budget = CITATION_BUDGET): string | undefined {
@@ -696,6 +730,7 @@ function buildDeputyList(
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       signatureWord: cleanText(r.signature_word),
       signatureWordContext: citationExtrait(r.signature_word_context, r.signature_word),
+      signatureWordSource: sourceCitation(r, citationExtrait(r.signature_word_context, r.signature_word)),
       circonscription: portrait?.circonscription,
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
@@ -814,6 +849,7 @@ function buildPeriodView(
       // toute la citation, mais seulement si elle contient réellement le
       // concept qu'elle doit illustrer.
       signatureWordContext: citationComplete(d.signature_word_context, d.signature_word),
+      signatureWordSource: sourceCitation(d, citationComplete(d.signature_word_context, d.signature_word)),
       deputies: buildDeputyList(
         item.key,
         period,
@@ -933,6 +969,7 @@ export async function loadAssemblee(
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
+  sourceCitation,
   fmtDateFr,
   fmtWords,
   computeRichnessLevels,
