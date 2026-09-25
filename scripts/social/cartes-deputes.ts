@@ -1106,6 +1106,8 @@ function ajusterVerso(): void {
   const blocs = Array.from(document.querySelectorAll<HTMLElement>(".bloc"));
   let taille = mot ? parseFloat(getComputedStyle(mot).fontSize) : 0;
   let rembourrage = blocs.length ? parseFloat(getComputedStyle(blocs[0]).paddingTop) : 0;
+  const metho = document.querySelector<HTMLElement>(".metho");
+  let tailleMetho = metho ? parseFloat(getComputedStyle(metho).fontSize) : 0;
 
   for (let etape = 0; etape < 40; etape++) {
     const bas = panneau.getBoundingClientRect().bottom;
@@ -1133,6 +1135,10 @@ function ajusterVerso(): void {
     }
     if (citation && citation.style.webkitLineClamp !== "1") { citation.style.webkitLineClamp = "1"; continue; }
     if (mot && taille > 34) { taille -= 2; mot.style.fontSize = `${taille}px`; continue; }
+    // Dernière concession (25-09, ligne d'ancienneté) : la note des sources,
+    // de 15 à 13 px au plus bas (~6 points imprimés, encore lisible). Elle
+    // suffit aux cartes à lettre et à ruban, qui débordaient de 11 à 32 px.
+    if (metho && tailleMetho > 13) { tailleMetho -= 0.5; metho.style.fontSize = `${tailleMetho}px`; continue; }
     return;
   }
 }
