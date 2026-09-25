@@ -35,6 +35,20 @@
 //   npm run carte:deputes -- --echantillon   → 5 cartes, une par parti
 //   npm run carte:deputes -- --limite 10     → les 10 premières de la série
 //   npm run carte:deputes -- --only tanguay  → une carte, par nom ou circo
+//   npm run carte:deputes -- --style web --png         → série pour l'écran
+//   npm run carte:deputes -- --style impression --png  → série pour l'imprimeur
+//
+// DEUX STYLES ARRÊTÉS (Jules, 25-09) : on choisit une destination, pas des
+// réglages. Chaque style écrit dans son dossier (social-out/cartes-deputes-<style>).
+//   · impression : trame de 8 px (~82 lignes par pouce, sans moiré avec la
+//     trame de l'imprimeur, décision du 24-09), fond perdu de 3 mm, échelle 2 ;
+//     identique à --impression.
+//   · web : trame de 6 px, où le visage se lit mieux à l'écran (retenue pour
+//     les cartes du podcast, essai à 8, 6, 5 et 4 px ; en dessous de 6, la
+//     trame ne cache plus que la photo source ne fait que 150 x 200 px), sans
+//     fond perdu, échelle 2 (2142 x 2992 px), trame rastérisée à cette échelle.
+// Sans --style, rien ne change. --cellule et --echelle l'emportent sur le style,
+// pour un essai.
 //   npm run carte:deputes -- --mention "Carte en développement"  → tampon sur chaque face
 //   npm run carte:deputes -- --png --echelle 2  → PNG deux fois plus grands, pour l'écran
 //   npm run carte:deputes                    → la planche des 128
@@ -773,15 +787,28 @@ const TRAME_VERSION = "1";
 // 150 x 200 px : une trame grosse cache ce manque de détail, et à 8 px elle
 // fait environ 82 lignes par pouce sur la carte, loin des 150 à 175 de la trame
 // de l'imprimeur, donc sans moiré. Fait partie de la clé du cache des trames.
-const CELLULE_TRAME = Math.max(2, Number(typeof parseArgs(process.argv.slice(2)).cellule === "string" ? parseArgs(process.argv.slice(2)).cellule : 8));
+const STYLES = {
+  impression: { cellule: 8, echelle: 2, impression: true },
+  web: { cellule: 6, echelle: 2, impression: false },
+} as const;
+type StyleCarte = keyof typeof STYLES;
+const ARGS_CARTES = parseArgs(process.argv.slice(2));
+const NOM_STYLE = typeof ARGS_CARTES.style === "string" ? ARGS_CARTES.style : null;
+if (NOM_STYLE !== null && !(NOM_STYLE in STYLES)) {
+  throw new Error(`--style ${NOM_STYLE} inconnu. Styles : ${Object.keys(STYLES).join(", ")}.`);
+}
+const STYLE = NOM_STYLE ? STYLES[NOM_STYLE as StyleCarte] : null;
+/** Fond perdu et échelle 2 de l'imprimeur : --impression, ou le style du même nom. */
+const MODE_IMPRESSION = !!ARGS_CARTES.impression || !!STYLE?.impression;
+const CELLULE_TRAME = Math.max(2, Number(typeof ARGS_CARTES.cellule === "string" ? ARGS_CARTES.cellule : STYLE?.cellule ?? 8));
 // DENSITÉ DE LA TRAME : le SVG des points est rastérisé à 1500 x 2000 px, que
 // la carte agrandit déjà de ~30 % à --echelle 2 : les points y devenaient
 // flous, et plus encore avec une --cellule fine. La trame est donc rastérisée
 // à la même échelle que la carte (density de sharp) : mêmes points, mêmes
 // positions, contours nets. 1 par défaut = rendu inchangé.
-const ARGS_TRAME = parseArgs(process.argv.slice(2));
-const DENSITE_TRAME = ARGS_TRAME.impression ? 2
-  : Math.max(1, Number(typeof ARGS_TRAME.echelle === "string" ? ARGS_TRAME.echelle : 1));
+const ECHELLE_RENDU = MODE_IMPRESSION ? 2
+  : Math.max(1, Number(typeof ARGS_CARTES.echelle === "string" ? ARGS_CARTES.echelle : STYLE?.echelle ?? 1));
+const DENSITE_TRAME = ECHELLE_RENDU;
 const CACHE_TRAMES = path.resolve(process.cwd(), "social-out/.cache-trames");
 const cacheBaseball = new Map<string, string | null>();
 async function baseballURI(deputy: DeputyRow): Promise<string | null> {
@@ -1899,7 +1926,8 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const periode = (typeof args.periode === "string" ? args.periode : "legislature") as PeriodKey;
   const mention = typeof args.mention === "string" ? args.mention : null;
-  const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out/cartes-deputes");
+  const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie
+    : NOM_STYLE ? `social-out/cartes-deputes-${NOM_STYLE}` : "social-out/cartes-deputes");
 
   const data = await loadAssemblee();
   if (!data) throw new Error("Aucune donnée d'Assemblée : public/data/agora/ est vide ou illisible.");
@@ -2307,12 +2335,12 @@ async function main() {
     // attend ses polices et ses images, et le processeur reste inoccupé pendant
     // ce temps. --parallele N règle le nombre d'onglets (4 par défaut).
     const parallele = Math.max(1, Number(typeof args.parallele === "string" ? args.parallele : 4));
-    const impression = !!args.impression;
+    const impression = MODE_IMPRESSION;
     const fond = impression ? FOND_PERDU : 0;
     // --echelle N : PNG N fois plus grands pour l'écran (vidéo 4K, zoom), sans
     // le fond perdu ni la réduction de --impression. Le texte et la trame
     // gagnent en netteté ; pas la photo, dont la source fait 150 x 200 px.
-    const echelle = impression ? 2 : Math.max(1, Number(typeof args.echelle === "string" ? args.echelle : 1));
+    const echelle = ECHELLE_RENDU;
     const onglets = await Promise.all(Array.from({ length: Math.min(parallele, pages.length) }, () =>
       browser.newPage({ viewport: { width: W + 2 * fond, height: H + 2 * fond }, deviceScaleFactor: echelle })));
     // Chaque page est écrite sur disque puis OUVERTE (goto), pas injectée
