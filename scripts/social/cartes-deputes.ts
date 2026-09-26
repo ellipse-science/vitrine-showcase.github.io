@@ -102,6 +102,15 @@ function ordinal(html: string): string {
   return html.replace(/(\d+)e\b/g, '$1<sup class="ord">e</sup>');
 }
 
+/** LIGNE DE STATISTIQUES du verso (Jules, 26-09) : les libellés EN HAUT,
+ *  séparés des chiffres par une fine ligne, des filets verticaux entre les
+ *  colonnes. Sert aux blocs Élection et Fiche. `v` est du HTML déjà échappé. */
+function grilleStats(cases: { l: string; v: string }[]): string {
+  return `<div class="stats" style="grid-template-columns:repeat(${cases.length},minmax(0,1fr))">${
+    cases.map((x, i) => `<span class="${i === 0 ? "c0" : ""}">${txt(x.l)}</span>`).join("")}${
+    cases.map((x, i) => `<b class="${i === 0 ? "c0" : ""}">${x.v}</b>`).join("")}</div>`;
+}
+
 const MONTANT = new Intl.NumberFormat("fr-CA", { maximumFractionDigits: 0 });
 const POURCENT = new Intl.NumberFormat("fr-CA", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
@@ -588,8 +597,8 @@ const SCRIPT_PLANCHER = `<script>(() => {
 })();</script>`;
 
 /** Pixels rendus au panneau du verso imprimé par le crédit remonté sur le rang
- *  des logos (le rang libéré fait 66 px ; 16 restent en marge). */
-const PANNEAU_BAS_IMPRESSION = 50;
+ *  des logos (le rang libéré fait 66 px ; 6 restent en marge). */
+const PANNEAU_BAS_IMPRESSION = 60;
 const VERSO_IMPRESSION_CSS = `
   .graduations{height:36px}
   .legende-parcours{margin-top:4px}
@@ -597,8 +606,18 @@ const VERSO_IMPRESSION_CSS = `
   .chef{font-size:30px}
   .vitaux{font-size:30px;margin-top:3px}
   .rubrique{font-size:32px}
-  .periode-fiche,.stat>span,.stats-vide{font-size:30px}
-  .stat b{font-size:48px;height:50px}
+  .stats>span,.stats-vide{font-size:30px}
+  /* Bloc Élection en plus (26-09) : l'interligne des titres (1,48 par défaut
+     d'Oswald) et les marges des lignes de statistiques rendent la place. */
+  .stats{margin-top:8px}
+  /* Écart FIXE entre les blocs, le même sur toutes les cartes (Jules, 26-09 :
+     les blocs partent du même point ; le vide varie en bas). */
+  .panneau{gap:8px}
+  .stats>span{padding-bottom:3px}
+  .bloc.election .vitaux{margin-top:4px}
+  .identite{margin-top:4px}
+  .chef{margin-top:5px}
+  .stats>b{font-size:44px;min-height:44px;padding:5px 8px 0}
   .graduations,.legende-parcours li,.legende-parcours .fa,.legende-parcours.dense li,.legende-parcours.dense .fa{font-size:30px}
   .paie span{font-size:30px}
   .legende li,.legende b{font-size:30px}
@@ -615,8 +634,6 @@ const VERSO_IMPRESSION_CSS = `
   .paie b.moy{margin:0 0 0 22px}
   .paie span{margin-top:0}
   .citation{display:block;-webkit-line-clamp:unset;overflow:visible}
-  .lignes-haut{margin-top:-6px;text-align:center}
-  .lignes-haut .vitaux{display:block}
   .legende{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
   /* Le crédit sur le rang des logos CAPP et Laval, réduits : un rang de moins
      sous le panneau, rendu au panneau (voir PANNEAU_BAS_IMPRESSION). */
@@ -687,6 +704,8 @@ type Carte = {
   libelleFonction?: string;
   /** « Élue pour la première fois en 2018 · 2e mandat » */
   carriere?: string;
+  /** La même, en champs, pour le bloc Élection du verso. */
+  carriereStats?: { premiere: string; mandats: number; genre?: "f" | "m" };
   /** Légendaires : autographe (URL du tracé blanc), s'il y en a un. */
   signature?: string | null;
   visAVis?: string;
@@ -1202,8 +1221,7 @@ function ajusterVerso(): void {
   const metho = document.querySelector<HTMLElement>(".metho");
   let tailleMetho = metho ? parseFloat(getComputedStyle(metho).fontSize) : 0;
   const imprime = !!document.body.dataset.plancher;
-  let ecart = parseFloat(getComputedStyle(panneau).rowGap) || 0;
-  const cellules = Array.from(document.querySelectorAll<HTMLElement>(".stat"));
+  const cellules = Array.from(document.querySelectorAll<HTMLElement>(".stats > b"));
   let cellule = cellules.length ? parseFloat(getComputedStyle(cellules[0]).paddingTop) : 0;
   const haut = document.querySelector<HTMLElement>(".haut");
 
@@ -1236,7 +1254,6 @@ function ajusterVerso(): void {
     // l'expression distinctive, jamais sous le plancher. Ce qui ne tient
     // toujours pas est signalé par mesurerDebordement et bloque les PNG.
     if (imprime) {
-      if (ecart > 6) { ecart -= 2; panneau.style.gap = `${ecart}px`; continue; }
       if (cellule > 6) {
         cellule -= 1;
         for (let j = 0; j < cellules.length; j++) {
@@ -1245,20 +1262,18 @@ function ajusterVerso(): void {
         }
         continue;
       }
-      if (haut && haut.style.minHeight !== "0px") { haut.style.minHeight = "0px"; continue; }
       if (mot && taille > 40) { taille -= 2; mot.style.fontSize = `${taille}px`; continue; }
       // Derniers blancs : sous l'en-tête, au-dessus du pied, entre les rangs
-      // de la frise, puis le rembourrage des panneaux jusqu'à 8 px.
+      // de la frise, puis le rembourrage des panneaux jusqu'à 6 px.
       if (!panneau.dataset.serre) {
         panneau.dataset.serre = "1";
-        if (haut) haut.style.paddingBottom = "4px";
         const pied = document.querySelector<HTMLElement>(".pied");
         if (pied) pied.style.paddingTop = "0px";
         const rangs = document.querySelectorAll<HTMLElement>(".legende-parcours li");
         for (let j = 0; j < rangs.length; j++) { rangs[j].style.paddingTop = "0px"; rangs[j].style.paddingBottom = "0px"; }
         continue;
       }
-      if (rembourrage > 8 && blocs.length) {
+      if (rembourrage > 6 && blocs.length) {
         rembourrage -= 2;
         for (let j = 0; j < blocs.length; j++) {
           blocs[j].style.paddingTop = `${rembourrage}px`;
@@ -1700,22 +1715,28 @@ function versoHTML(
   // viennent d'affiliationHistory : date d'élection, et bascule d'allégeance
   // quand il y en a une.
   const parcours = d.affiliationHistory ?? [];
-  // Carte à lettre : la mention du successeur prend la place du changement
-  // d'allégeance, que la ligne de parti (« Indépendant (élu CAQ) ») dit déjà —
-  // trois mentions ne tiendraient pas sur la ligne.
-  // Deux lignes au plus, chacune d'un seul tenant : l'élection et son résultat,
-  // puis, s'il y a lieu, le départ ou le changement d'allégeance. Réunies sur un
-  // même rang, elles passaient à la ligne (6 cartes sur 20 au 22-09).
-  const [vitaux, parcoursLigne] = [
-    c.mandat
-      ? c.scrutin
-        ? `${c.mandat} avec ${POURCENT.format(c.scrutin.pourcentage)}\u00a0% des voix (${MONTANT.format(c.scrutin.avance)} voix d'avance)`
-        : c.mandat
-      : "",
-    c.depart ? c.depart.successeur
-      : parcours.length > 1 && dateFr(parcours.at(-1)?.startDate)
-        ? `Changement d'allégeance le ${dateFr(parcours.at(-1)?.startDate)}` : "",
-  ];
+  // LE BLOC ÉLECTION (Jules, 26-09) : date du scrutin en titre, résultat et
+  // ancienneté en ligne de statistiques, puis, s'il y a lieu, le départ
+  // (carte à lettre) ou le changement d'allégeance. Sortis de l'en-tête, qui
+  // garde ainsi la même hauteur sur toutes les cartes.
+  const parcoursLigne = c.depart ? c.depart.successeur
+    : parcours.length > 1 && dateFr(parcours.at(-1)?.startDate)
+      ? `Changement d'allégeance le ${dateFr(parcours.at(-1)?.startDate)}` : "";
+  const casesElection: { l: string; v: string }[] = [];
+  if (c.scrutin) {
+    casesElection.push({ l: "Des voix", v: `${POURCENT.format(c.scrutin.pourcentage)}&nbsp;%` });
+    casesElection.push({ l: "Voix d'avance", v: MONTANT.format(c.scrutin.avance) });
+  }
+  if (c.carriereStats) {
+    casesElection.push({ l: "Mandat", v: ordinal(`${c.carriereStats.mandats}${c.carriereStats.mandats === 1 ? "er" : "e"}`).replace("1er", '1<sup class="ord">er</sup>') });
+    casesElection.push({ l: c.carriereStats.genre === "f" ? "Élue depuis" : "Élu depuis", v: String(c.carriereStats.premiere) });
+  }
+  const blocElection = c.mandat || casesElection.length || parcoursLigne ? `
+    <div class="bloc election">
+      <p class="rubrique">${txt(c.mandat || "Élection")}</p>
+      ${casesElection.length ? grilleStats(casesElection) : ""}
+      ${parcoursLigne ? `<p class="vitaux">${txt(parcoursLigne)}</p>` : ""}
+    </div>` : "";
 
   // LA PART DE SES INTERVENTIONS — panneau à part, et sous forme de BARRE
   // EMPILÉE plutôt que de ligne chiffrée : une deuxième liste de nombres se
@@ -1726,16 +1747,6 @@ function versoHTML(
   // croire à un total tronqué. Les segments sont des TRAMES de l'encre du
   // parti, du plein au clair : c'est ainsi qu'on distinguait des séries sur
   // une presse à deux encres, et ça préserve la bichromie.
-  // Élection, départ ou allégeance, ancienneté. À l'IMPRESSION, ces lignes
-  // quittent la colonne du nom (resserrée par le portrait) pour toute la
-  // largeur du panneau : à 30 px, « … des voix (8 209 voix d'avance) » y
-  // passait sur deux rangs.
-  const lignesVitaux = [
-    vitaux ? `<span class="vitaux">${txt(vitaux)}</span>` : "",
-    parcoursLigne ? `<span class="vitaux">${txt(parcoursLigne)}</span>` : "",
-    c.carriere ? `<span class="vitaux carriere">${txt(c.carriere)}</span>` : "",
-  ].join("");
-
   const pile = d.enjeuStack.filter((x) => x.widthPct > 0);
   const nommes = pile.filter((x) => !x.isReste && x.cle).slice(0, 3);
   const TRAMES = [1, .68, .42];
@@ -1758,23 +1769,22 @@ function versoHTML(
        </ul>`
     : "";
 
-  const losanges = `<p class="losanges">${"◆ ".repeat(21).trim()}</p>`;
 
   // LA FICHE, EN LIGNE DE STATISTIQUES (Jules, 26-09) : la LÉGISLATURE seule
   // (cartes de législature ; session et dernière séance appartiennent aux
   // éditions en ligne, décision du 22-09), donc plus de tableau à une rangée. Comme au dos d'une
-  // carte de baseball : le chiffre en gros, son libellé dessous, en entier
+  // carte de baseball : libellé en haut, chiffre en gros dessous, en entier
   // (« Richesse lexicale », pas « Richesse »).
   const rFiche = fiche.legislature;
   const periodeFiche = libelles.legislature;
   const statsFiche = rFiche
-    ? `<div class="stats">
-        <div class="stat"><b>${rFiche.interventions.toLocaleString("fr-CA")}</b><span>Interventions</span></div>
-        <div class="stat"><b>${txt(rFiche.wordsFormatted)}</b><span>Mots prononcés</span></div>
-        <div class="stat"><b class="points">${Array.from({ length: 5 }, (_, i) =>
-          `<i class="${i < rFiche.richnessLevel ? "plein" : ""}"></i>`).join("")}</b><span>Richesse lexicale</span></div>
-        <div class="stat ton" title="${txt(toneWording(rFiche.toneScore, maxAbs.legislature))}"><b><span class="piste"><i class="neutre"></i><i class="repere" style="left:${toneScalePct(rFiche.toneScore, maxAbs.legislature)}%;background:${rFiche.toneScore >= 0 ? TONE.positive : TONE.negative}"></i></span></b><span>Ton des interventions</span></div>
-      </div>`
+    ? grilleStats([
+        { l: "Interventions", v: rFiche.interventions.toLocaleString("fr-CA") },
+        { l: "Mots prononcés", v: txt(rFiche.wordsFormatted) },
+        { l: "Richesse lexicale", v: `<span class="points">${Array.from({ length: 5 }, (_, i) =>
+          `<i class="${i < rFiche.richnessLevel ? "plein" : ""}"></i>`).join("")}</span>` },
+        { l: "Ton des interventions", v: `<span class="ton" title="${txt(toneWording(rFiche.toneScore, maxAbs.legislature))}"><span class="piste"><i class="neutre"></i><i class="repere" style="left:${toneScalePct(rFiche.toneScore, maxAbs.legislature)}%;background:${rFiche.toneScore >= 0 ? TONE.positive : TONE.negative}"></i></span></span>` },
+      ])
     : `<p class="stats-vide">Aucune intervention</p>`;
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
@@ -1796,7 +1806,9 @@ function versoHTML(
      s'écrasait dès que le verso débordait, et son contenu centré sortait par
      le haut (nom rogné) et par le bas (ligne cachée sous la fiche). Le surplus
      va désormais au bas du panneau, que ajusterVerso sait résorber. */
-  .haut{flex:0 0 auto;display:flex;align-items:center;gap:24px;padding:2px 190px 16px 0;min-height:166px}
+  /* HAUTEUR FIXE (Jules, 26-09) : le haut est le même sur toutes les cartes ;
+     les blocs partent donc tous du même point, et le vide varie en bas. */
+  .haut{flex:0 0 auto;display:flex;align-items:center;gap:24px;padding:0 190px 0 0;height:176px}
   .numero{flex:0 0 auto;width:96px;height:96px;border-radius:50%;
           background:${COLORS.paper};color:${parti};
           display:flex;align-items:center;justify-content:center;
@@ -1836,13 +1848,11 @@ function versoHTML(
      signature, dernière boîte, qui prend l'espace restant et centre son
      contenu. Avec justify-content:space-between, l'écart variait d'une carte
      et d'une boîte à l'autre (Jules, 22-09). */
-  .bloc.signe{flex:1 0 auto;justify-content:center;text-align:center;padding:26px 38px 28px}
+  .bloc.signe{flex:0 0 auto;justify-content:center;text-align:center;padding:26px 38px 28px}
   /* Sans expression distinctive, c'est la boîte des parts qui devient la dernière :
      elle prend l'espace restant, pour garder l'écart constant. */
-  .panneau > div.bloc:last-of-type{flex:1 0 auto;justify-content:center}
 
-  .losanges{text-align:center;font-size:15px;letter-spacing:.5em;opacity:.42;margin:12px 0}
-  .rubrique{font-family:"Oswald",sans-serif;font-weight:600;font-size:27px;letter-spacing:.14em;
+  .rubrique{font-family:"Oswald",sans-serif;font-weight:600;font-size:27px;letter-spacing:.14em;line-height:1.1;
             text-transform:uppercase;text-align:center}
   /* LA BARRE EMPILÉE et sa légende. */
   .bloc.parts{flex:0 0 auto;padding:22px 38px 24px}
@@ -1888,16 +1898,15 @@ function versoHTML(
              text-transform:uppercase;opacity:.72;margin-top:4px}
   /* LA LIGNE DE STATISTIQUES — quatre cases égales entre deux filets, séparées
      par des filets verticaux fins ; chiffre en gros, libellé dessous. */
-  .periode-fiche{text-align:center;font-family:"Oswald",sans-serif;font-weight:500;font-size:22px;
-                 letter-spacing:.08em;text-transform:uppercase;opacity:.72;margin-top:4px}
-  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:12px;
-         border-top:2px solid currentColor;border-bottom:2px solid currentColor}
-  .stat{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:11px 8px 9px}
-  .stat+.stat{border-left:1px solid currentColor}
-  .stat b{display:flex;align-items:center;justify-content:center;height:46px;
-          font-family:"Oswald",sans-serif;font-weight:700;font-size:44px;line-height:1}
-  .stat>span{font-family:"Oswald",sans-serif;font-weight:500;font-size:19px;line-height:1.1;
-             letter-spacing:.06em;text-transform:uppercase;opacity:.72}
+  .stats{display:grid;margin-top:12px}
+  .stats>span{display:flex;align-items:flex-end;justify-content:center;text-align:center;
+              padding:0 8px 8px;border-bottom:1px solid currentColor;
+              font-family:"Oswald",sans-serif;font-weight:500;font-size:19px;line-height:1.1;
+              letter-spacing:.06em;text-transform:uppercase}
+  .stats>b{display:flex;align-items:center;justify-content:center;padding:10px 8px 2px;min-height:56px;
+           font-family:"Oswald",sans-serif;font-weight:700;font-size:44px;line-height:1}
+  .stats>:not(.c0){border-left:1px solid currentColor}
+  .bloc.election .vitaux{text-align:center;margin-top:10px;opacity:.85}
   .stats-vide{text-align:center;font-size:24px;font-style:italic;opacity:.66;margin-top:12px}
   .points{white-space:nowrap;gap:6px}
   .points i{display:inline-block;width:18px;height:18px;border-radius:50%;
@@ -1923,7 +1932,7 @@ function versoHTML(
         letter-spacing:.1em;text-transform:uppercase;opacity:.9}
   .pied>:first-child{justify-self:start}
   .pied>:last-child{justify-self:end}
-  .metho{padding-top:4px;font-size:15px;line-height:1.25;
+  .metho{margin-top:auto;padding-top:4px;font-size:15px;line-height:1.25;
          font-style:italic;opacity:.68;text-align:center}
   .pied .marque{width:168px;height:34px;background:${COLORS.paper};opacity:.92;
                 -webkit-mask-size:contain;mask-size:contain;
@@ -1986,21 +1995,15 @@ function versoHTML(
         <span class="identite"><span>${txt(identite)}${identite ? "&nbsp;&nbsp; · &nbsp;&nbsp;" : ""}<span class="parti-long">${txt(partiLong)}</span><span class="parti-court">${txt(partiCourt)}</span></span></span>
         ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${txt(MODE_IMPRESSION ? sigleParti(c.chef.titre) : c.chef.titre)}</span>`
           : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : ""}
-        ${MODE_IMPRESSION ? "" : lignesVitaux}
       </span>
     </div>
-    ${MODE_IMPRESSION && lignesVitaux.trim() ? `<div class="lignes-haut">${lignesVitaux}</div>` : ""}
+    ${blocElection}
 
     <div class="bloc fiche">
-      ${MODE_IMPRESSION
-        // À l'impression, lieu et période sur le rang du titre : la ligne de
-        // période à part coûtait 40 px, de quoi faire déborder les versos les
-        // plus chargés (Boutin, 26-09). Rien n'est retiré, « Fiche à
-        // l'Assemblée » n'étant qu'un intitulé.
-        ? `<p class="rubrique">${txt(c.salon)} &middot; ${txt(periodeFiche.type)} ${txt(periodeFiche.date)}</p>`
-        : `<p class="rubrique">Fiche à l'Assemblée &middot; ${txt(c.salon)}</p>
-      ${losanges}
-      <p class="periode-fiche">${txt(periodeFiche.type)} ${txt(periodeFiche.date)}</p>`}
+      ${/* Lieu et période sur le rang du titre, dans les deux styles (26-09) :
+            la ligne de période à part et les losanges coûtaient la place du
+            bloc Élection. « Fiche à l'Assemblée » n'était qu'un intitulé. */ ""}
+      <p class="rubrique">${txt(c.salon)} &middot; ${txt(periodeFiche.type)} ${txt(periodeFiche.date)}</p>
       ${statsFiche}
     </div>
 
@@ -2360,6 +2363,8 @@ async function main() {
   for (const c of cartes) {
     const id = ficheParCarte.get(c)?.assnat_id ?? "";
     c.carriere = ligneCarriere(carrieres.get(id), genres.get(id)) || undefined;
+    const car = carrieres.get(id);
+    if (car) c.carriereStats = { premiere: car.premiere_election, mandats: car.mandats, genre: genres.get(id) };
   }
   const partiDe = new Map([...ficheParCarte].map(([c, f]) => [f.assnat_id, c.cle]));
   const familleDe = new Map(fonctions.map((f) => [f.assnat_id, f.nom_famille ?? f.nom]));
