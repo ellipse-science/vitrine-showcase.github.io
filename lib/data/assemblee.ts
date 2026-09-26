@@ -353,6 +353,12 @@ function cleanText(value?: string): string | undefined {
 // marque la coupe. Un extrait assumé se lit ; une phrase tranchée net donne
 // l'impression d'un bogue.
 const CITATION_BUDGET = 95;
+// Le tiroir d'un parti a la place d'une citation plus longue. Jusqu'ici, le
+// raffineur la coupait lui-même à 220 signes ; il publie désormais la phrase
+// entière (jusqu'à 1000 signes, aws-refiners#573). Le tiroir garde donc la
+// phrase complète jusqu'à 220 signes, comme avant, et un extrait centré sur
+// le concept au-delà.
+const CITATION_BUDGET_TIROIR = 220;
 
 function sansDiacritiques(value: string): string {
   return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
@@ -845,11 +851,12 @@ function buildPeriodView(
       interventions: Number(d.n_interventions || 0),
       toneScore: Number(d.tone_score || 0),
       signatureWord: cleanText(d.signature_word),
-      // Le tiroir a la place d'afficher le contexte complet. On conserve donc
-      // toute la citation, mais seulement si elle contient réellement le
-      // concept qu'elle doit illustrer.
-      signatureWordContext: citationComplete(d.signature_word_context, d.signature_word),
-      signatureWordSource: sourceCitation(d, citationComplete(d.signature_word_context, d.signature_word)),
+      // Le tiroir a la place d'afficher un contexte plus long que la carte
+      // d'un député : la phrase entière jusqu'à CITATION_BUDGET_TIROIR signes,
+      // un extrait centré sur le concept au-delà, et rien si la phrase ne
+      // contient pas le concept qu'elle doit illustrer.
+      signatureWordContext: citationExtrait(d.signature_word_context, d.signature_word, CITATION_BUDGET_TIROIR),
+      signatureWordSource: sourceCitation(d, citationExtrait(d.signature_word_context, d.signature_word, CITATION_BUDGET_TIROIR)),
       deputies: buildDeputyList(
         item.key,
         period,
@@ -980,6 +987,7 @@ export const __test__ = {
   lookupPortrait,
   citationExtrait,
   citationComplete,
+  CITATION_BUDGET_TIROIR,
   buildAffiliationIndex,
   affiliationHistoryFor,
 };

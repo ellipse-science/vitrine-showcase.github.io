@@ -6,7 +6,7 @@ import { __test__ } from "@/lib/data/assemblee";
 const {
   sourceCitation, fmtDateFr, fmtWords, computeRichnessLevels, buildEnjeuStack, buildSubtitle,
   buildPeriodView, buildPortraitIndex, lookupPortrait, citationExtrait,
-  citationComplete, buildAffiliationIndex, affiliationHistoryFor,
+  citationComplete, CITATION_BUDGET_TIROIR, buildAffiliationIndex, affiliationHistoryFor,
 } = __test__;
 
 describe("sourceCitation", () => {
@@ -89,14 +89,13 @@ describe("citationExtrait", () => {
       const rows = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), file), "utf8"));
       for (const row of rows) {
         if (!row.signature_word || row.signature_word === "NA") continue;
-        const citation = file.endsWith("_deputes.json")
+        const deputes = file.endsWith("_deputes.json");
+        const citation = deputes
           ? citationExtrait(row.signature_word_context, row.signature_word)
-          : citationComplete(row.signature_word_context, row.signature_word);
+          : citationExtrait(row.signature_word_context, row.signature_word, CITATION_BUDGET_TIROIR);
         if (!citation) continue;
-        if (file.endsWith("_deputes.json")) {
-          expect(citation.length, `${file}: extrait trop long de ${row.deputy}`)
-            .toBeLessThanOrEqual(95);
-        }
+        expect(citation.length, `${file}: extrait trop long de ${row.deputy ?? row.party}`)
+          .toBeLessThanOrEqual(deputes ? 95 : CITATION_BUDGET_TIROIR);
         expect(
           citationComplete(citation, row.signature_word),
           `${file}: ${row.deputy ?? row.party} · ${row.signature_word}`,
@@ -306,6 +305,23 @@ describe("buildPeriodView", () => {
     const view = buildPeriodView(rows as never, "session");
 
     expect(view.rows.find((row) => row.key === "caq")?.signatureWordContext).toBe(contexte);
+  });
+
+  it("réduit à un extrait centré sur le concept une phrase entière trop longue pour le tiroir", () => {
+    // aws-refiners#573 publie la phrase entière, jusqu'à 1000 signes.
+    const contexte = `${"Mme la Présidente, je veux revenir sur ce que le gouvernement a dit hier à propos des régions. ".repeat(4)}Le troisième lien ne réglera pas la congestion, et tout le monde le sait ici.`;
+    const rows = [{
+      period_type: "session", period_start_date: "2026-01-01", period_end_date: "2026-06-10",
+      party: "plq", n_interventions: 50, word_count: 5000, lexical_richness: 0.6,
+      tone_score: 0.01, editorial_angle: "x", signature_word: "troisième lien",
+      signature_word_context: contexte,
+    }];
+
+    const citation = buildPeriodView(rows as never, "session").rows.find((row) => row.key === "plq")?.signatureWordContext;
+
+    expect(contexte.length).toBeGreaterThan(CITATION_BUDGET_TIROIR);
+    expect(citation?.length).toBeLessThanOrEqual(CITATION_BUDGET_TIROIR);
+    expect(citation).toContain("troisième lien");
   });
 
   it("sélectionne réellement la dernière journée de débats même si les lignes sont désordonnées", () => {
