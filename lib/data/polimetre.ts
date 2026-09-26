@@ -314,12 +314,39 @@ function rankMap(agg: Map<string, Agg>): Map<string, number> {
   return ranks;
 }
 
+// Plancher de la liste d'une période : le module ne descend jamais sous ce nombre
+// de promesses, même si davantage de résumés disent la couverture faible.
+const MIN_PROMISES = 15;
+
+// Le résumé IA dit explicitement que la promesse a été peu couverte. Le modèle
+// le formule dans sa PREMIÈRE phrase, qui porte sur la couverture (« a reçu une
+// couverture médiatique limitée », « La couverture … a été marginale ») ; s'en
+// tenir à cette phrase évite d'attraper une aide « limitée » décrite plus loin.
+const WEAK = /\b(?:limitée|marginale|minimale|faible|restreinte|modeste|discrète|sporadique|fragmentée|fragmentaire)\b/i;
+const LITTLE = /\bpeu (?:abordée|couverte|médiatisée|traitée|évoquée)\b|\bune seule mention\b/i;
+
+function isLowCoverage(summary: string | null): boolean {
+  if (summary == null) return false;
+  const first = summary.split(/(?<=[.!?])\s/)[0];
+  return (/couverture|couverte|attention|écho/i.test(first) && WEAK.test(first)) || LITTLE.test(summary);
+}
+
+// Retire les promesses dont le résumé dit la couverture faible, sans jamais
+// descendre sous MIN_PROMISES : les mieux classées parmi les retirées
+// reviennent, dans l'ordre de saillance, pour combler le plancher.
+function dropLowCoverage(views: PromiseView[]): PromiseView[] {
+  const low = views.filter((v) => isLowCoverage(v.summary));
+  const kept = views.length - low.length;
+  const readmit = new Set(low.slice(0, Math.max(0, MIN_PROMISES - kept)));
+  return views.filter((v) => !isLowCoverage(v.summary) || readmit.has(v));
+}
+
 function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): PromiseView[] {
   const current = aggregateWeeks(rows, new Set(currentWeeks));
   const currentRanks = rankMap(current);
   const prevRanks = rankMap(aggregateWeeks(rows, new Set(prevWeeks)));
 
-  return [...current.entries()]
+  const views = [...current.entries()]
     .map(([num, a]): PromiseView => {
       const currRank = currentRanks.get(num) ?? 0;
       const before = prevRanks.get(num);
@@ -351,6 +378,7 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
       };
     })
     .sort((x, y) => y.salienceIndex - x.salienceIndex);
+  return dropLowCoverage(views);
 }
 
 function shiftDays(date: string, delta: number): string {
@@ -410,7 +438,7 @@ function snapshotWindow(
 }
 
 // Exported for unit testing only — not part of the public API.
-export const __test__ = { realText, shortenPledge, buildView, snapshotWindow };
+export const __test__ = { realText, shortenPledge, buildView, snapshotWindow, isLowCoverage, MIN_PROMISES };
 
 export async function loadPolimetre(
   /** Édition passée (#434) : jour de publication de l'édition affichée. Le
