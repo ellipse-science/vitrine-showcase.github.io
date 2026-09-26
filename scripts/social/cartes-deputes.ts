@@ -494,10 +494,6 @@ function mesurerRetours(): string[] {
  *  parallèle sur un carton qu'un élu peut brandir est le meilleur moyen de se
  *  faire corriger en public. */
 const PERIODES: PeriodKey[] = ["last_pdq", "session", "legislature"];
-/** Lignes du tableau du verso : la LÉGISLATURE seule. Ce sont des cartes de
- *  législature ; la session et la dernière séance appartiennent aux éditions
- *  de session, en ligne (décision de Jules, 22-09). */
-const ORDRE_FICHE: PeriodKey[] = ["legislature"];
 
 // Ton — formules RECOPIÉES de `AssembleeVestiaire.tsx` (toneScalePct,
 // toneWording), volontairement à l'identique. Le chiffre d'affichage du
@@ -601,7 +597,8 @@ const VERSO_IMPRESSION_CSS = `
   .chef{font-size:30px}
   .vitaux{font-size:30px;margin-top:3px}
   .rubrique{font-size:32px}
-  th,.per-type,.per-date,.pivot .per-date,.secondaire td,.vide td,.secondaire.vide td{font-size:30px}
+  .periode-fiche,.stat>span,.stats-vide{font-size:30px}
+  .stat b{font-size:48px;height:50px}
   .graduations,.legende-parcours li,.legende-parcours .fa,.legende-parcours.dense li,.legende-parcours.dense .fa{font-size:30px}
   .paie span{font-size:30px}
   .legende li,.legende b{font-size:30px}
@@ -620,9 +617,6 @@ const VERSO_IMPRESSION_CSS = `
   .citation{display:block;-webkit-line-clamp:unset;overflow:visible}
   .lignes-haut{margin-top:-6px;text-align:center}
   .lignes-haut .vitaux{display:block}
-  thead th{letter-spacing:0;padding-left:8px;padding-right:8px}
-  tbody th,tbody td{padding-left:8px;padding-right:8px}
-  .ton .piste{width:100px}
   .legende{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
   /* Le crédit sur le rang des logos CAPP et Laval, réduits : un rang de moins
      sous le panneau, rendu au panneau (voir PANNEAU_BAS_IMPRESSION). */
@@ -734,10 +728,6 @@ async function etiquettesPeriodes(): Promise<Record<PeriodKey, Etiquette>> {
     out[cle] = { type: TYPES[cle], date: cle === "legislature" ? "2022-2026" : b ? plageFr(b.period_start_date, b.period_end_date) : "" };
   }
   return out;
-}
-
-function periodeHTML(e: Etiquette): string {
-  return `<span class="per-type">${txt(e.type)}</span><span class="per-date">${txt(e.date)}</span>`;
 }
 
 function dateFr(iso?: string): string | null {
@@ -1213,7 +1203,7 @@ function ajusterVerso(): void {
   let tailleMetho = metho ? parseFloat(getComputedStyle(metho).fontSize) : 0;
   const imprime = !!document.body.dataset.plancher;
   let ecart = parseFloat(getComputedStyle(panneau).rowGap) || 0;
-  const cellules = Array.from(document.querySelectorAll<HTMLElement>("tbody tr:not(.secondaire) th, tbody tr:not(.secondaire) td"));
+  const cellules = Array.from(document.querySelectorAll<HTMLElement>(".stat"));
   let cellule = cellules.length ? parseFloat(getComputedStyle(cellules[0]).paddingTop) : 0;
   const haut = document.querySelector<HTMLElement>(".haut");
 
@@ -1770,26 +1760,22 @@ function versoHTML(
 
   const losanges = `<p class="losanges">${"◆ ".repeat(21).trim()}</p>`;
 
-  const lignes = ORDRE_FICHE.map((cle) => {
-    const r = fiche[cle];
-    const libelle = libelles[cle];
-    if (!r) {
-      return `<tr class="vide${cle === "legislature" ? "" : " secondaire"}"><th>${periodeHTML(libelle)}</th><td colspan="4">aucune intervention</td></tr>`;
-    }
-    const pct = toneScalePct(r.toneScore, maxAbs[cle]);
-    const couleurTon = r.toneScore >= 0 ? TONE.positive : TONE.negative;
-    return `
-      <tr class="${cle === "legislature" ? "pivot" : "secondaire"}">
-        <th>${periodeHTML(libelle)}</th>
-        <td>${r.interventions.toLocaleString("fr-CA")}</td>
-        <td>${txt(r.wordsFormatted)}</td>
-        <td class="points">${Array.from({ length: 5 }, (_, i) =>
-          `<i class="${i < r.richnessLevel ? "plein" : ""}"></i>`).join("")}</td>
-        <td class="ton" title="${txt(toneWording(r.toneScore, maxAbs[cle]))}">
-          <span class="piste"><i class="neutre"></i><i class="repere" style="left:${pct}%;background:${couleurTon}"></i></span>
-        </td>
-      </tr>`;
-  }).join("");
+  // LA FICHE, EN LIGNE DE STATISTIQUES (Jules, 26-09) : la LÉGISLATURE seule
+  // (cartes de législature ; session et dernière séance appartiennent aux
+  // éditions en ligne, décision du 22-09), donc plus de tableau à une rangée. Comme au dos d'une
+  // carte de baseball : le chiffre en gros, son libellé dessous, en entier
+  // (« Richesse lexicale », pas « Richesse »).
+  const rFiche = fiche.legislature;
+  const periodeFiche = libelles.legislature;
+  const statsFiche = rFiche
+    ? `<div class="stats">
+        <div class="stat"><b>${rFiche.interventions.toLocaleString("fr-CA")}</b><span>Interventions</span></div>
+        <div class="stat"><b>${txt(rFiche.wordsFormatted)}</b><span>Mots prononcés</span></div>
+        <div class="stat"><b class="points">${Array.from({ length: 5 }, (_, i) =>
+          `<i class="${i < rFiche.richnessLevel ? "plein" : ""}"></i>`).join("")}</b><span>Richesse lexicale</span></div>
+        <div class="stat ton" title="${txt(toneWording(rFiche.toneScore, maxAbs.legislature))}"><b><span class="piste"><i class="neutre"></i><i class="repere" style="left:${toneScalePct(rFiche.toneScore, maxAbs.legislature)}%;background:${rFiche.toneScore >= 0 ? TONE.positive : TONE.negative}"></i></span></b><span>Ton des interventions</span></div>
+      </div>`
+    : `<p class="stats-vide">Aucune intervention</p>`;
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo+Narrow:ital,wght@0,400;0,600;0,700;1,400&display=block" rel="stylesheet">
@@ -1900,43 +1886,26 @@ function versoHTML(
   .paie b.moy{font-size:32px;margin-top:12px}
   .paie span{font-family:"Oswald",sans-serif;font-weight:500;font-size:16px;letter-spacing:.1em;
              text-transform:uppercase;opacity:.72;margin-top:4px}
-  /* LE TABLEAU — filets VERTICAUX fins entre colonnes, en-têtes minuscules sur
-     deux lignes, comme « games / played ». Aucune case. */
-  table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:10px}
-  thead th{font-family:"Oswald",sans-serif;font-weight:500;font-size:19px;line-height:1.08;
-           letter-spacing:.05em;text-transform:uppercase;opacity:.72;
-           padding:0 14px 9px;text-align:right;vertical-align:bottom;
-           border-bottom:2px solid currentColor}
-  thead th+th{border-left:1px solid currentColor}
-  thead th:first-child{text-align:left}
-  tbody th{text-align:left;font-weight:400;font-size:27px;line-height:1.12;
-           padding:15px 14px}
-  tbody td{padding:15px 14px;text-align:right;font-size:33px;font-weight:700;
-           font-family:"Oswald",sans-serif;border-left:1px solid currentColor}
-  tbody tr+tr th,tbody tr+tr td{border-top:1px solid rgba(0,0,0,.14)}
-  .per-type{display:block;font-family:"Oswald",sans-serif;font-weight:500;font-size:15px;
-            letter-spacing:.1em;text-transform:uppercase;opacity:.72}
-  .per-date{display:block;white-space:nowrap;font-size:22px;line-height:1.15;margin-top:1px}
-  .pivot .per-date{font-family:"Oswald",sans-serif;font-weight:600;font-size:26px;letter-spacing:.04em}
-  /* SESSION ET DERNIÈRE SÉANCE — lignes secondaires, plus petites : la
-     législature résume le mandat, les deux autres la complètent. */
-  .secondaire th,.secondaire td{padding-top:8px !important;padding-bottom:8px !important}
-  .secondaire td{font-size:25px}
-  .secondaire .points i{width:11px;height:11px}
-  .secondaire.vide td{font-size:19px}
-  .pivot th{font-family:"Oswald",sans-serif;font-weight:600;font-size:22px;letter-spacing:.08em;
-            text-transform:uppercase}
-  .pivot th,.pivot td{border-bottom:2px solid currentColor}
-  .vide td{font-size:22px;font-style:italic;font-weight:400;font-family:inherit;
-           text-align:left;opacity:.66;border-left:1px solid currentColor}
-  .points{white-space:nowrap}
-  .points i{display:inline-block;width:14px;height:14px;border-radius:50%;margin-left:5px;
+  /* LA LIGNE DE STATISTIQUES — quatre cases égales entre deux filets, séparées
+     par des filets verticaux fins ; chiffre en gros, libellé dessous. */
+  .periode-fiche{text-align:center;font-family:"Oswald",sans-serif;font-weight:500;font-size:22px;
+                 letter-spacing:.08em;text-transform:uppercase;opacity:.72;margin-top:4px}
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:12px;
+         border-top:2px solid currentColor;border-bottom:2px solid currentColor}
+  .stat{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:11px 8px 9px}
+  .stat+.stat{border-left:1px solid currentColor}
+  .stat b{display:flex;align-items:center;justify-content:center;height:46px;
+          font-family:"Oswald",sans-serif;font-weight:700;font-size:44px;line-height:1}
+  .stat>span{font-family:"Oswald",sans-serif;font-weight:500;font-size:19px;line-height:1.1;
+             letter-spacing:.06em;text-transform:uppercase;opacity:.72}
+  .stats-vide{text-align:center;font-size:24px;font-style:italic;opacity:.66;margin-top:12px}
+  .points{white-space:nowrap;gap:6px}
+  .points i{display:inline-block;width:18px;height:18px;border-radius:50%;
             border:2px solid currentColor;vertical-align:middle}
   .points i.plein{background:currentColor}
-  .ton .piste{position:relative;display:block;height:12px;background:${COLORS.deep};
-              margin-left:auto;width:132px}
+  .ton .piste{position:relative;display:block;height:14px;background:${COLORS.deep};width:150px}
   .ton .neutre{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:currentColor;opacity:.4}
-  .ton .repere{position:absolute;top:-4px;width:7px;height:20px;transform:translateX(-50%)}
+  .ton .repere{position:absolute;top:-6px;width:8px;height:26px;transform:translateX(-50%)}
 
   /* LE MOT — le point d'arrivée. */
   .mot{font-family:"Oswald",sans-serif;font-weight:700;font-size:64px;line-height:1.04;
@@ -2023,19 +1992,16 @@ function versoHTML(
     ${MODE_IMPRESSION && lignesVitaux.trim() ? `<div class="lignes-haut">${lignesVitaux}</div>` : ""}
 
     <div class="bloc fiche">
-      <p class="rubrique">Fiche à l'Assemblée &middot; ${txt(c.salon)}</p>
-      ${MODE_IMPRESSION ? "" : losanges}
-      <table>
-        <colgroup>${(MODE_IMPRESSION ? [25, 26, 17, 17, 15] : [30, 16, 19, 16, 19]).map((w) => `<col style="width:${w}%">`).join("")}</colgroup>
-        <thead><tr>
-          ${MODE_IMPRESSION
-            // Un mot ENTIER par colonne à l'impression (Jules, 25-09 : pas
-            // d'« Interv. ») ; les colonnes sont rééquilibrées en conséquence.
-            ? `<th>Période</th><th>Interventions</th><th>Mots</th><th>Richesse</th><th>Ton</th>`
-            : `<th>Période</th><th>Inter-<br>ventions</th><th>Mots<br>prononcés</th><th>Richesse<br>lexicale</th><th>Ton des<br>interventions</th>`}
-        </tr></thead>
-        <tbody>${lignes}</tbody>
-      </table>
+      ${MODE_IMPRESSION
+        // À l'impression, lieu et période sur le rang du titre : la ligne de
+        // période à part coûtait 40 px, de quoi faire déborder les versos les
+        // plus chargés (Boutin, 26-09). Rien n'est retiré, « Fiche à
+        // l'Assemblée » n'étant qu'un intitulé.
+        ? `<p class="rubrique">${txt(c.salon)} &middot; ${txt(periodeFiche.type)} ${txt(periodeFiche.date)}</p>`
+        : `<p class="rubrique">Fiche à l'Assemblée &middot; ${txt(c.salon)}</p>
+      ${losanges}
+      <p class="periode-fiche">${txt(periodeFiche.type)} ${txt(periodeFiche.date)}</p>`}
+      ${statsFiche}
     </div>
 
     ${c.parcours && c.remuneration ? `
