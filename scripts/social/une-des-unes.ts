@@ -27,8 +27,8 @@ import { MODULES } from "@/lib/modules";
 import { TRAIT, oqlf } from "./lib/post";
 import { RESPONSABLE, formats, type Matiere, type Reseau } from "./lib/reseaux";
 import { matchesCurrentUneArt } from "@/lib/shareUneArt";
-import {
-  COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
+import { CONTENT_TOP, CONTENT_BOTTOM, HEIGHT, COL,
+  COLORS, FORMAT, FIN_CSS, INTRO_CSS, LINKEDIN, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
   parseArgs, produce, publicationHour, chargerPartenaires, sceneFin, sceneIntro, loadLogos, txt, type Scene,
 } from "./lib/reel";
 
@@ -103,7 +103,8 @@ function centileMessage(centile: number): { c: number; big: number; before: stri
 }
 
 /** « 6/6 des médias québécois en parlent ». */
-const coverageLabel = (n: number) => (n > 1 ? "des grands médias québécois en parlent" : "des grands médias québécois en parle");
+/** « en parlent EN UNE » (Adrien, 17-09) : c'est la première page qu'on mesure, pas la couverture. */
+const coverageLabel = (n: number) => (n > 1 ? "des grands médias québécois en parlent en Une" : "des grands médias québécois en parle en Une");
 
 /** « Le Journal de Montréal » (lib/medias.ts) et « Journal de Montréal »
  *  (mediaToday) désignent le même média. */
@@ -114,42 +115,50 @@ const momentOf = (label: string) => label.replace(/^\d{1,2}h\s*/, "");
 
 // ── Mise en page ────────────────────────────────────────────────────────────
 // Repères : intérieur du cadre 30 → 1050 (x) et 30 → 1890 (y) ; marge de texte 76.
+/** Hauteur de la boîte .chart de la trajectoire — CSS et viewBox de la ligne. */
+const TRAJ_H = LINKEDIN ? 640 : 580;
+
 const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
 /* 1. Accroche — le reste est dans INTRO_CSS (lib/reel.ts) */
-#intro .ghost{position:absolute;left:46px;right:46px;bottom:0;height:520px;display:flex;align-items:flex-end;gap:18px}
+#intro .ghost{position:absolute;left:46px;right:46px;bottom:0;height:min(520px,var(--vis-h,520px));display:flex;align-items:flex-end;gap:18px}
 #intro .ghost div{flex:1;transform-origin:bottom}
 
 /* 2. Une n°1 */
-#une .art{position:absolute;left:30px;top:30px;width:1020px;height:860px;overflow:hidden}
+/* Instagram : le format de Jules, l'image dès le haut sous la barre des logos.
+   LinkedIn (Adrien, 17-09 : « libère le haut avec les logos clairement visibles,
+   descends l'image et le texte ») : l'image commence sous la ligne d'édition, à
+   280, et le texte prend le bas. */
+#une .art{position:absolute;left:30px;top:${LINKEDIN ? 380 : 30}px;width:1020px;height:${LINKEDIN ? 760 : 860}px;overflow:hidden}
 #une .art img{width:100%;height:100%;object-fit:cover}
 #une .art::after{content:"";position:absolute;inset:auto 0 0 0;height:200px;background:linear-gradient(transparent,var(--paper))}
-#une .noart{position:absolute;left:30px;top:30px;width:1020px;height:860px;display:flex;align-items:center;justify-content:center}
-#une .rank{position:absolute;top:282px;left:180px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
-#une .credit{position:absolute;top:742px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
+#une .noart{position:absolute;left:30px;top:${LINKEDIN ? 380 : 30}px;width:1020px;height:${LINKEDIN ? 760 : 860}px;display:flex;align-items:center;justify-content:center}
+#une .rank{position:absolute;top:${LINKEDIN ? 430 : 282}px;left:${COL}px;background:var(--ink);color:var(--paper);font-size:30px;padding:12px 20px}
+#une .credit{position:absolute;top:${LINKEDIN ? 1084 : 742}px;right:210px;display:flex;align-items:center;gap:14px;font-style:italic;font-size:28px;color:var(--softer);opacity:.85}
 #une .credit::before{content:"";width:48px;height:1px;background:var(--softer)}
-#une .body{position:absolute;left:180px;right:180px;top:830px}
+#une .body{position:absolute;left:${COL}px;right:${COL}px;top:${LINKEDIN ? 1190 : 830}px}
 #une .tag{display:inline-block;color:var(--paper);font-size:28px;padding:10px 18px}
 #une h2{font-size:82px;line-height:1.02;margin-top:24px}
 #une .stats{display:flex;gap:26px;margin-top:30px}
 #une .stat{flex:1;border-top:6px solid var(--ink);padding-top:16px}
 #une .stat:first-child{flex:1.4}
 #une .stat b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:60px;line-height:1.05;white-space:nowrap}
+#une .stat span{display:block;margin-top:${LINKEDIN ? 14 : 4}px;text-wrap:balance}
 #une .stat span{font-size:28px;color:var(--soft)}
 
 /* 3. Trajectoire */
 #trajectoire .head{flex:none}
-#trajectoire .une{display:flex;justify-content:center;gap:18px;align-items:flex-start;margin-top:14px}
+#trajectoire .une{display:flex;justify-content:center;gap:18px;align-items:flex-start;margin-top:${LINKEDIN ? 30 : 14}px}
 #trajectoire .une svg{flex:none;margin-top:6px}
 #trajectoire .une h3{font-size:44px;line-height:1.08;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#trajectoire .live{display:flex;justify-content:center;align-items:flex-end;gap:22px;margin-top:22px}
+#trajectoire .live{display:flex;justify-content:center;align-items:flex-end;gap:22px;margin-top:${LINKEDIN ? 36 : 22}px}
 #trajectoire .counter{font-family:"Playfair Display",serif;font-weight:900;font-size:132px;line-height:.85;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 #trajectoire .unit{font-size:28px;color:var(--softer);padding-bottom:16px}
-#trajectoire .bandeau{flex:none;display:flex;align-items:center;justify-content:space-between;gap:24px}
+#trajectoire .bandeau{flex:none;display:flex;align-items:center;${LINKEDIN ? "justify-content:center;gap:44px;margin-top:26px" : "justify-content:space-between;gap:24px"}}
 #trajectoire .chip{font-size:28px;padding:9px 16px}
 #trajectoire .when{display:flex;align-items:center;gap:14px;font-size:28px;color:var(--soft)}
-#trajectoire .chart{position:relative;flex:none;height:580px}
+#trajectoire .chart{position:relative;flex:none;height:${TRAJ_H}px}
 #trajectoire .grid{position:absolute;left:0;right:0;height:2px;background:var(--rule);opacity:.6}
 #trajectoire .bar{position:absolute;transform-origin:bottom}
 #trajectoire .bar.absent{background:repeating-linear-gradient(135deg,var(--rule) 0 12px,transparent 12px 24px)!important;outline:3px dashed var(--softer);outline-offset:-3px}
@@ -161,15 +170,15 @@ const CSS = `
 #trajectoire .xl.now b{color:var(--blue)}
 #trajectoire .xl.now span{margin-left:-80px;margin-right:0}
 #trajectoire .trace{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-#trajectoire .cap{flex:none;font-size:34px;line-height:1.12}
+#trajectoire .cap{flex:none;font-size:34px;line-height:1.12;text-wrap:balance}
 @keyframes draw{to{stroke-dashoffset:0}}
 
 /* 4. Centile */
-#centile .head{position:absolute;top:282px;left:180px;right:180px}
+#centile .head{position:absolute;top:${CONTENT_TOP + 8}px;left:${COL}px;right:${COL}px}
 #centile .lead{font-style:italic;font-size:42px;color:var(--soft);margin-top:14px}
-#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:1.02;letter-spacing:-.04em;margin-top:6px}
+#centile .big{font-family:"Playfair Display",serif;font-weight:900;font-size:170px;line-height:1.02;padding-top:16px;letter-spacing:-.04em;margin-top:6px}
 #centile .big small{font-size:100px;letter-spacing:0;margin-left:10px}
-#centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:42px;line-height:1.1;margin-top:16px}
+#centile .of{font-family:"Playfair Display",serif;font-weight:700;font-size:42px;line-height:1.1;margin-top:${LINKEDIN ? 30 : 16}px}
 #centile .scale{position:absolute;left:124px;width:270px}
 /* Chaque « feuille » : un filet plus épais que large, posé de travers, avec
    l'ombre de la feuille du dessous — c'est ce qui fait la pile. */
@@ -177,23 +186,28 @@ const CSS = `
   background-image:linear-gradient(to bottom,rgba(255,255,255,.6),rgba(255,255,255,0) 60%);
   box-shadow:0 1px 0 rgba(28,25,23,.08);transform-origin:left center}
 #centile .scale i.on{height:7px;margin-top:-1px;box-shadow:0 1px 0 rgba(28,25,23,.18)}
-#centile .tick{position:absolute;left:180px;white-space:nowrap;font-size:28px;letter-spacing:0;color:var(--softer)}
-#centile .mark{position:absolute;left:180px;right:180px;height:3px;background:var(--ink);transform-origin:left;box-shadow:0 0 0 3px var(--paper)}
+#centile .tick{position:absolute;left:124px;white-space:nowrap;font-size:28px;letter-spacing:0;color:var(--softer)}
+#centile .mark{position:absolute;left:${COL}px;right:${COL}px;height:3px;background:var(--ink);transform-origin:left;box-shadow:0 0 0 3px var(--paper)}
 #centile .mark::before{content:"";position:absolute;left:262px;top:-9px;width:21px;height:21px;border-radius:50%;background:var(--ink)}
-#centile .mlabel{position:absolute;right:180px;font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:40px}
-#centile .note{position:absolute;left:380px;right:180px}
+#centile .mlabel{position:absolute;right:${COL}px;font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:40px}
+#centile .note{position:absolute;left:430px;right:${COL}px}
 #centile .note b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:72px;line-height:1}
 #centile .note span{display:block;font-size:32px;line-height:1.25;margin-top:6px;color:var(--soft)}
-#centile .src{position:absolute;left:180px;right:180px;bottom:380px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
+#centile .src{position:absolute;left:${COL}px;right:${COL}px;bottom:${HEIGHT - CONTENT_BOTTOM + (LINKEDIN ? 130 : 0)}px;font-size:28px;font-style:italic;line-height:1.25;color:var(--softer)}
 
 /* 5. Couverture */
 
 #couverture .big{font-family:"Playfair Display",serif;font-weight:900;font-size:210px;line-height:1.02;color:var(--blue)}
-#couverture .lab{font-size:44px;line-height:1.1;margin-top:22px}
+/* Dans la colonne de 720 px, « des grands médias québécois en parlent » se
+   repliait en laissant « parlent » seul : le repli est décidé (deux lignes
+   équilibrées), plus subi. */
+#couverture .lab{font-size:44px;line-height:1.1;margin-top:${LINKEDIN ? 34 : 22}px;text-wrap:balance}
 #couverture .grandir{padding-top:80px}
 #couverture ul{flex:none;list-style:none;border-top:3px solid var(--ink)}
-#couverture li{height:98px;display:flex;justify-content:space-between;align-items:center;gap:30px;border-bottom:2px solid var(--rule)}
-#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:56px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#couverture li{height:${LINKEDIN ? 120 : 98}px;display:flex;justify-content:space-between;align-items:center;gap:30px;border-bottom:2px solid var(--rule)}
+/* 48 px, pas 56 : « Journal de Montréal » (516 px à 56 px) perdait ses cinq
+   dernières lettres dans les 466 px que lui laisse la colonne de #823. */
+#couverture li b{font-family:"Playfair Display",serif;font-weight:700;font-size:48px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #couverture li span{flex:none;font-size:28px;color:var(--blue)}
 #couverture li.off b{color:var(--rule)}
 #couverture li.off span{color:var(--rule)}
@@ -201,22 +215,38 @@ const CSS = `
 
 /* 6. Classement */
 #classement .head{flex:none}
-#classement h3{font-size:58px;line-height:1.02;margin-top:10px}
-#classement .leg{flex:none}
+#classement h3{font-size:58px;line-height:1.02;margin-top:${LINKEDIN ? 30 : 10}px}
+/* La liste des trois nouvelles vit au-dessus de y 1040 : là, la zone sûre de #823
+   laisse 110 px de chaque côté (la colonne de boutons n'existe qu'en dessous).
+   Elle s'élargit donc à 860 px, symétrique elle aussi — sinon « Affaires
+   internationales et défense » (41 caractères) ne tient sur une ligne à aucune
+   taille lisible dans les 638 px que laisse la colonne (20h du 17-09). */
+#classement .leg{flex:none;margin:0 ${LINKEDIN ? -70 : 0}px}
 /* Trois nouvelles : un titre sur une ligne, sinon la légende descend sur le graphique. */
-#classement .leg.trois .t{-webkit-line-clamp:1}
-#classement .item{display:flex;gap:20px;align-items:flex-start;padding:9px 0;border-top:2px solid var(--rule)}
+/* Un titre de Une ne se tronque pas : deux lignes même à trois nouvelles. */
+/* DEUX lignes partout : une seule coupait les trois titres (« Un an après sa
+   mort, Nooran Rezayi honor… »), mesuré le 2026-09-22 par le contrôle de
+   troncature. Le graphique cède la place qu'il faut. */
+#classement .leg.trois .t{-webkit-line-clamp:2}
+#classement .item{display:flex;gap:20px;align-items:flex-start;padding:${LINKEDIN ? 13 : 9}px 0;border-top:2px solid var(--rule)}
 #classement .badge{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper)}
 #classement .item .txt{min-width:0;text-align:left}
-#classement .item .k{font-size:28px;letter-spacing:.04em;display:flex;align-items:center;gap:12px}
+/* Sans interlettrage : avec .04em, « N°2 · Affaires internationales et défense »
+   faisait 793 px pour 778 de large ; à 28 px (le minimum) et 0, 747. */
+#classement .item .k{font-size:28px;letter-spacing:${LINKEDIN ? 0 : ".04em"};display:flex;align-items:center;gap:12px}
 #classement .item .k i{flex:none;display:block;width:46px;height:6px}
 #classement .item .t{font-size:28px;line-height:1.1;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#classement .chart{position:relative;flex:none;height:560px}
+/* ÉLASTIQUE, pas 510 px en dur : le graphique prend la place qui reste une fois
+   le titre et les trois nouvelles posés. C'est ce qui permet au même classement
+   de tenir sur Instagram (1540 px de plancher) comme sur TikTok (1440). */
+#classement .chart{position:relative;flex:1 1 auto;min-height:0}
 #classement .chart > svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
 #classement .end{position:absolute;display:flex;align-items:center;gap:12px;white-space:nowrap}
 #classement .end .badge{width:54px;height:54px}
 #classement .end b{font-family:"Playfair Display",serif;font-weight:900;font-size:42px}
-#classement .xl{position:absolute;top:480px;text-align:center;color:var(--soft)}
+/* En PROPORTION, pas en pixels : les heures étaient calées à 480 px dans un
+   graphique de 560, et restaient sur place dès qu'il changeait de hauteur. */
+#classement .xl{position:absolute;top:86%;text-align:center;color:var(--soft)}
 #classement .xl b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;margin-top:4px;color:var(--ink)}
 #classement .note{flex:none;font-size:28px;line-height:1.2;color:var(--softer)}
 
@@ -239,7 +269,7 @@ function visuelAccroche(top: UneEvent): string {
   return `<div class="ghost">${barres}</div>`;
 }
 
-function sceneUne(top: UneEvent, art: string | null): Scene {
+function sceneUne(top: UneEvent, art: string | null, rang = 1, id = "une"): Scene {
   const visual = art
     ? `<div class="art" data-deco ${anim("fadeIn", .6, .1)}><img id="art" src="${art}"></div>
        <div class="credit" ${anim("fadeIn", .8, 1.4)}>${txt(ART_CREDIT)}</div>`
@@ -248,10 +278,10 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
   const salColor = top.saillanceRank >= 4 ? bandOf(top.saillanceRank).bg : COLORS.ink;
   const corps = top.title.length > 62 ? 62 : top.title.length > 46 ? 72 : 82;
   return {
-    id: "une", duration: 4.6,
+    id, duration: 4.6,
     html: `
       ${visual}
-      <div class="rank mono" ${anim("pop", .5, .6)}>Une n°1</div>
+      <div class="rank mono" ${anim("pop", .5, .6)}>Une n°${rang}</div>
       <div class="body">
         <div class="tag mono" style="background:${top.issueColor};animation:wipe .6s .7s both">${txt(top.issueFr)}</div>
         <h2 class="disp" data-cle style="font-size:${corps}px;animation:fadeUp .8s .9s both">${txt(top.title)}</h2>
@@ -259,7 +289,15 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
           <div class="stat" ${anim("fadeUp", .5, 1.8)}><b style="color:${salColor}">${txt(top.saillanceLabel)}</b><span class="pf">${top.scoreQcSum24h != null ? `${frNum(top.scoreQcSum24h)} points de saillance sur 24 heures` : "Saillance sur 24 heures"}</span></div>
           <div class="stat" ${anim("fadeUp", .5, 2.1)}><b style="color:var(--blue)">${top.qcOutletCount}/${top.totalQcOutlets}</b><span class="pf">${coverageLabel(top.qcOutletCount)}</span></div>
         </div>
-      </div>`,
+      </div>
+      <script>document.fonts.ready.then(function(){
+        // Un titre qui prend une ligne de plus pousse les chiffres hors de la
+        // zone (« Le PQ frôle la majorité… », 20h du 2026-09-22 : 5 px) : il
+        // rétrécit par pas de 2 px, jusqu'à 56 px, tant que le bloc dépasse.
+        var s=document.getElementById("${id}"), b=s&&s.querySelector(".body"), h=b&&b.querySelector("h2"); if(!h) return;
+        var fs=parseFloat(getComputedStyle(h).fontSize), lim=${CONTENT_BOTTOM - 4};
+        while(b.offsetTop + b.offsetHeight > lim && fs > 56){ fs-=2; h.style.fontSize=fs+"px"; }
+      });<\/script>`,
   };
 }
 
@@ -270,12 +308,24 @@ function sceneUne(top: UneEvent, art: string | null): Scene {
 // journée il s'agit. Minutage : barre i de STEP0 + i·STEP, pendant GROW.
 const STEP0 = 1.2, STEP = 0.8, GROW = 0.6;
 
+/** LE TITRE DE LA TRAJECTOIRE TIENT EN DEUX LIGNES, quelle qu'en soit la
+ *  longueur. La boîte est cadrée à deux lignes pour laisser le compteur
+ *  respirer : à 50 px, « Un bébé trouvé dans un campement bouleverse la
+ *  campagne électorale » en demandait trois et se faisait couper (édition de
+ *  20h du 17-09). On réduit le corps plutôt que d'amputer la nouvelle ; un
+ *  titre qui ne tient pas même à 38 px est signalé « troncature » par le
+ *  contrôle du gabarit, et la vidéo n'est pas produite. */
+// Paliers MESURÉS dans la colonne de #823 (h3 de 652 px) : à 42 px, le titre du
+// bébé (66 caractères) prend trois lignes ; à 40 il en prend deux, 38 garde une
+// marge. 44 est le corps de base de Jules.
+const tailleTitre = (t: string) => (t.length > 58 ? 38 : t.length > 48 ? 41 : 44);
+
 function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null {
   const trend = top.salienceTrend;
   if (!trend || trend.points.length < 2) return null;
   const pts = trend.points;
   const max = Math.max(...pts.map((p) => p.cumul), 1);
-  const BASE = 410, H = 330; // ligne de base et hauteur utile (repère .chart)
+  const BASE = LINKEDIN ? 470 : 410, H = LINKEDIN ? 380 : 330; // ligne de base et hauteur utile (repère .chart, TRAJ_H px)
   const n = pts.length, gap = 22, bw = (CHART_W - 14 - gap * (n - 1)) / n;
   const left = (i: number) => 7 + i * (bw + gap);
   const y = (v: number) => BASE - (v / max) * H;
@@ -290,9 +340,21 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
     const h = (p.cumul / max) * H;
     const inside = h > 120;
     const valColor = inside && !p.isAbsent ? bandOf(p.rank).fg : p.isNow ? COLORS.red : COLORS.ink;
+    // L'étiquette s'écarte du passage de la ligne (vu le 2026-09-22 : « 0,0 »
+    // barré par la montée vers 16h, « 16,7 » par la flèche qui y arrive).
+    // Au-dessus d'une barre basse : de côté, loin du segment raide. Dans une
+    // barre haute : assez bas pour que la ligne en soit déjà sortie.
+    const pas = bw + gap;
+    const monte = i > 0 ? y(pts[i - 1].cumul) - y(p.cumul) : 0;        // > 0 : la ligne arrive d'en bas
+    const repart = i < n - 1 ? y(p.cumul) - y(pts[i + 1].cumul) : 0;  // > 0 : la ligne repart vers le haut
+    let valPos = `left:${left(i)}px`;
+    let valTop = y(p.cumul) + (inside ? 46 : -62);
+    if (inside) valTop = y(p.cumul) + Math.min(h - 56, Math.max(46, (52 * Math.max(monte, -repart, 0)) / pas));
+    else if (repart > 40 && monte > -40 && i > 0) valPos = `left:${left(i) - bw / 2 - 8}px;text-align:right`;
+    else if (monte < -40 && repart < 40 && i < n - 1) valPos = `left:${left(i) + bw / 2 + 8}px;text-align:left`;
     return `
       <div class="bar${p.isAbsent ? " absent" : ""}" style="left:${left(i)}px;width:${bw}px;height:${h}px;top:${y(p.cumul)}px;background:${bandOf(p.rank).bg};animation:growY ${GROW}s ${d}s both"></div>
-      <div class="val" style="left:${left(i)}px;width:${bw}px;top:${y(p.cumul) + (inside ? 46 : -62)}px;color:${valColor};animation:fadeIn .3s ${d + GROW}s both">${frNum(p.cumul)}</div>
+      <div class="val" style="${valPos};width:${bw}px;top:${valTop}px;color:${valColor};animation:fadeIn .3s ${d + GROW}s both">${frNum(p.cumul)}</div>
       ${p.isPeak ? `<div class="peak mono" style="left:${Math.max(0, Math.min(CHART_W - 190, left(i) + bw / 2 - 95))}px;width:190px;top:${y(p.cumul) - 58}px;animation:pop .5s ${d + GROW + .1}s both">Sommet</div>` : ""}
       <div class="xl${p.isNow ? " now" : ""}" style="left:${left(i)}px;width:${bw}px;top:${BASE + 16}px;animation:fadeIn .3s ${d}s both">
         <div style="display:flex;justify-content:center">${celestial(hours[i], p.isNow ? COLORS.blue : COLORS.soft, 52)}</div><b>${hours[i]}h</b>${i === 0 || p.isNow ? `<span>${esc(momentOf(p.timeLabel)).replace("après-midi", "après\u2011midi")}</span>` : ""}
@@ -311,7 +373,11 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
   const trace = STEP0 + (n - 1) * STEP + GROW + .15;
   const DRAWN = 1.1;
   const ligne = `
-    <svg class="trace" viewBox="0 0 ${CHART_W} 900" preserveAspectRatio="none">
+    <!-- viewBox = la boîte du graphique, en px : avec « 900 », les y de la ligne
+         (calculés en px comme les barres) étaient réduits de 580/900 — la ligne
+         flottait au-dessus des barres et son dernier point entrait dans le pavé
+         « Sommet » (relevé par l'agent design, 17-09). -->
+    <svg class="trace" viewBox="0 0 ${CHART_W} ${TRAJ_H}" preserveAspectRatio="none">
       <polyline points="${pts.map((p, i) => `${cx(i)},${y(p.cumul)}`).join(" ")}" pathLength="1" fill="none"
         stroke="${COLORS.ink}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"
         stroke-dasharray="1" stroke-dashoffset="1" style="animation:draw ${DRAWN}s ${trace}s linear forwards"/>
@@ -336,14 +402,18 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
       html: `
         <div class="zone-utile">
         <div class="head">
-          <div class="kick mono" ${anim("fadeIn", .5, .1)}>Saillance · 24 dernières heures</div>
-          <div class="une" ${anim("fadeUp", .5, .2)}>${enjeuGlyph(top.issueKey, top.issueColor, 50)}<h3 class="disp">${txt(top.title)}</h3></div>
+          ${LINKEDIN ? "" : `<div class="kick mono" ${anim("fadeIn", .5, .1)}>Saillance · 24 dernières heures</div>`}
+          <div class="une" ${anim("fadeUp", .5, .2)}>${enjeuGlyph(top.issueKey, top.issueColor, 50)}<h3 class="disp" style="font-size:${tailleTitre(top.title)}px">${txt(top.title)}</h3></div>
           <div class="live" ${anim("fadeIn", .4, .6)}><div class="counter" id="t-counter">0,0</div><div class="unit mono">points</div></div>
-        </div>
+        ${LINKEDIN ? "" : "</div>"}
+        <!-- LinkedIn : le bandeau (niveau + édition lue) reste DANS l'en-tête, collé au
+             compteur qu'il qualifie ; séparé par la colonne, il flottait entre le
+             compteur et le graphique (Adrien, 17-09 : « ça flotte dans le vide »). -->
         <div class="bandeau">
           <div class="chip mono" id="t-chip" ${anim("fadeIn", .3, STEP0)}></div>
           <div class="when mono" id="t-when" ${anim("fadeIn", .3, STEP0)}></div>
         </div>
+        ${LINKEDIN ? "</div>" : ""}
         <div class="chart" data-cle>${grid}${bars}${ligne}</div>
         <div class="cap disp" ${anim("fadeUp", .6, end + .3)}>${txt(trend.capLabel)}</div></div>`,
     },
@@ -354,7 +424,7 @@ function sceneTrajectoire(top: UneEvent): { scene: Scene; data: unknown } | null
 // graduation = 1 % des nouvelles de la dernière année, les plus saillantes en
 // haut. Les graduations se remplissent jusqu'à la nouvelle, puis un trait la
 // situe et deux annotations disent ce qu'il y a au-dessus et au-dessous.
-const SCALE_TOP = 742, SCALE_H = 500, FILL0 = 0.9, FILL = 2.2;
+const SCALE_TOP = LINKEDIN ? 820 : 742, SCALE_H = LINKEDIN ? 640 : 500, FILL0 = 0.9, FILL = 2.2;
 
 function sceneCentile(top: UneEvent): Scene | null {
   if (top.saillanceCentile == null) return null;
@@ -388,7 +458,7 @@ function sceneCentile(top: UneEvent): Scene | null {
     id: "centile", duration: 6,
     html: `
       <div class="head">
-        <div class="kick mono" ${anim("fadeIn", .5, .1)}>Par rapport à la dernière année</div>
+        ${LINKEDIN ? "" : `<div class="kick mono" ${anim("fadeIn", .5, .1)}>Par rapport à la dernière année</div>`}
         ${lead}
       </div>
       <div class="tick mono" style="top:${SCALE_TOP - 44}px;animation:fadeIn .4s .6s both">Plus saillantes ↑</div>
@@ -399,7 +469,7 @@ function sceneCentile(top: UneEvent): Scene | null {
       ${markY - SCALE_TOP >= 210
         ? `<div class="note" style="top:${markY - 200}px;animation:fadeUp .5s ${done + .5}s both"><b>${100 - c}&nbsp;%</b><span>des nouvelles de la dernière année ont été plus saillantes</span></div>`
         : ""}
-      <div class="note" style="top:${(markY + SCALE_TOP + SCALE_H) / 2 - 40}px;animation:fadeUp .5s ${done + .8}s both"><b style="color:${color}">${c}&nbsp;%</b><span>ont été moins saillantes</span></div>
+      <div class="note" style="top:${Math.max((markY + SCALE_TOP + SCALE_H) / 2 - 40, markY + 100)}px;animation:fadeUp .5s ${done + .8}s both"><b style="color:${color}">${c}&nbsp;%</b><span>ont été moins saillantes</span></div>
       <div class="src mono" ${anim("fadeIn", .5, done + 1)}>Nouvelles&nbsp;: les Unes des médias québécois suivis, sur une année de référence</div>`,
   };
 }
@@ -496,6 +566,12 @@ function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: 
   const debord = ends.length ? ends[ends.length - 1].top + 62 - (CHART_H - 70) : 0;
   if (debord > 0) for (const l of ends) l.top -= debord;
   for (const l of ends) l.top = Math.max(0, l.top);
+  // Les pastilles s'écartent pour ne pas se chevaucher : une pastille peut donc
+  // se retrouver à la hauteur d'une AUTRE courbe (relevé par l'agent design,
+  // 17-09). Un trait fin, à la couleur de la courbe, relie chaque point
+  // d'arrivée à sa pastille.
+  const liens = ends.map((l) =>
+    `<line x1="${x(n - 1)}" y1="${y(l.v)}" x2="${x(n - 1) + 16}" y2="${l.top + LH}" stroke="${l.e.issueColor}" stroke-width="2.5" stroke-linecap="round" style="animation:fadeIn .3s ${DRAW0 + DRAW}s both"/>`).join("");
   const endLabels = ends.map((l) =>
     `<div class="end" style="left:${x(n - 1) + 16}px;top:${l.top}px;animation:pop .4s ${DRAW0 + DRAW}s both">${badge(l.e, 32)}<b style="color:${l.e.issueColor}">${frNum(l.v)}</b></div>`).join("");
 
@@ -517,14 +593,14 @@ function sceneClassement(classement: UneEvent[], edition: EditionRef): { scene: 
     html: `
       <div class="zone-utile">
       <div class="head">
-        <div class="kick mono" ${anim("fadeIn", .5, .1)}>24 dernières heures</div>
+          ${LINKEDIN ? "" : `<div class="kick mono" ${anim("fadeIn", .5, .1)}>24 dernières heures</div>`}
         <h3 class="disp" ${anim("fadeUp", .6, .2)}>${txt(title)}</h3>
       </div>
       <div class="leg${stories.length > 2 ? " trois" : ""}">${legend}</div>
       <div class="chart" data-cle>
         <svg viewBox="0 0 ${CHART_W} ${CHART_H}" preserveAspectRatio="none">
           <line x1="0" x2="${CHART_W}" y1="${BASE}" y2="${BASE}" stroke="${COLORS.ink}" stroke-width="3"/>
-          ${lines}${dots}
+          ${lines}${liens}${dots}
         </svg>
         ${endLabels}${axis}
       </div>
@@ -657,11 +733,21 @@ async function main() {
   const top3 = data?.top3 ?? [];
   const classement = data?.classement ?? top3;
   if (!top3.length) throw new Error(`Aucune Une pour l'édition ${edition.key}.`);
-  const top = top3[0];
+  // --vedette N : le reel porte sur la n°N du classement plutôt que sur la n°1
+  // (demande d'Adrien, 2026-09-22 : « tu peux pas le faire avec la nouvelle sur
+  // le PQ majoritaire plutôt ? »). Elle garde son RANG à l'écran (« Une n°2 ») :
+  // jamais présentée comme la plus saillante. Le site n'illustre que la n°1,
+  // donc pas d'image pour elle.
+  const vedette = Math.max(1, Math.min(classement.length, Number(args.vedette ?? 1) || 1));
+  const top = vedette > 1 ? classement[vedette - 1] : top3[0];
   console.log(`La Une des Unes · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
   console.log(`  n°1 : ${top.title}`);
 
-  const art = args["sans-illustration"] ? null : await resolveArt(edition, current, top);
+  // Avec --vedette, la n°1 garde sa scène et son illustration avant la vedette :
+  // voir que la politique n'est PAS la n°1 dit quelque chose (Adrien, 2026-09-22).
+  // Seule la n°1 est illustrée par le site ; la vedette prend le bloc de couleur.
+  const n1 = top3[0] ?? classement[0];
+  const art = args["sans-illustration"] ? null : await resolveArt(edition, current, n1);
   const logo = await loadLogo();
   const traj = sceneTrajectoire(top);
   const clsmt = sceneClassement(classement.slice(0, 3), edition);
@@ -671,14 +757,15 @@ async function main() {
       visuel: visuelAccroche(top),
       edition: `Édition de ${pubHourLabel(edition)} · ${edition.dateLabel}`,
     }),
-    sceneUne(top, art), traj?.scene ?? null, sceneCentile(top),
+    ...(vedette > 1 ? [sceneUne(n1, art, 1), sceneUne(top, null, vedette, "une2")] : [sceneUne(top, art, 1)]),
+    traj?.scene ?? null, sceneCentile(top),
     sceneCouverture(top), clsmt?.scene ?? null,
     sceneFin({ pubHour: edition.pubHour, signature: "Ce qui domine l’actualité du Québec", logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ].filter((s): s is Scene => s !== null);
 
   const html = buildPage({
     title: `La Une des Unes · ${edition.key}`,
-    css: CSS + INTRO_CSS + FIN_CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
+    css: CSS.replace(/#une(?=[\s.{:])/g, ":is(#une,#une2)") + INTRO_CSS + FIN_CSS, scenes, script: script(traj?.data ?? null, clsmt?.draw0 ?? drawStart(0)),
     theme: { paper: MODULE.papier, accent: MODULE.accent },
     logos: await loadLogos(),
     footerLeft: "La Vitrine démocratique",
@@ -686,7 +773,7 @@ async function main() {
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
-  const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}`);
+  const base = path.join(outDir, `une-des-unes_${edition.navDateIso}_${pubHourLabel(edition)}${vedette > 1 ? `_n${vedette}` : ""}${FORMAT === "instagram" ? "" : `_${FORMAT}`}`);
   await fs.mkdir(outDir, { recursive: true });
   // Un fichier par réseau, plus le premier commentaire (le même partout).
   const textes = formats(matiere(edition, classement));

@@ -27,10 +27,11 @@ import { instantPublicationBloc } from "@/lib/data/headlineEvents";
 export const WIDTH = 1080;
 export const HEIGHT = 1920;
 export const FPS = 30;
-/** Étirement global de la timeline. 1,4 = le rythme validé le 2026-09-16
- *  (« un peu moins rapide » que la première version). Les gabarits décrivent
- *  leurs scènes au rythme de base ; seul ce facteur règle la vitesse. */
-export const SLOW = 1.4;
+/** Étirement global de la timeline. Les gabarits décrivent leurs scènes au
+ *  rythme de base ; seul ce facteur règle la vitesse. 1,4 le 2026-09-16 (« un
+ *  peu moins rapide » que la première version), RENVERSÉ le 2026-09-22 par
+ *  Adrien devant un reel de 61 s : « Il est ben trop long, faut l'accélérer. » */
+export const SLOW = 1.0;
 
 export const SITE_URL = "https://vitrinedemocratique.com";
 
@@ -52,17 +53,118 @@ export const SITE_URL = "https://vitrinedemocratique.com";
  *  pas un guide, qui donne la vraie forme (Jules Piral, 2026-09-17).
  *  RÈGLE : toute INFORMATION (texte, chiffre, graphique) tient dans cette zone ;
  *  seul le décor (`data-deco`) peut en sortir. L'aperçu les trace en rouge. */
-export const SAFE = { top: 150, bottom: HEIGHT - 380, left: 110, right: WIDTH - 110, buttonsTop: 1040, buttonsLeft: WIDTH - 180 };
+/** LES FORMATS DE SORTIE — un par plateforme, parce qu'une plateforme ne
+ *  couvre pas l'écran comme sa voisine. Le reel est le MÊME ; ce qui change,
+ *  c'est la place qu'on lui laisse.
+ *
+ *  ⚠️ CHAQUE ZONE PORTE SA PROVENANCE, et « non mesuré » se lit tel quel : c'est
+ *  la règle de la maison. Une zone mesurée vient d'un vrai téléphone, pas d'un
+ *  guide — Jules l'a montré le 17-09 en mesurant Instagram au simulateur
+ *  d'iPhone 17 : les marges « organiques » des guides (300/450/60/120) étaient
+ *  à la fois trop prudentes en haut et trop permissives sur les côtés.
+ *
+ *  Tant qu'une plateforme n'est pas mesurée, on prend la zone la PLUS
+ *  CONTRAIGNANTE plausible : un reel trop prudent reste lisible, un reel trop
+ *  permissif cache du texte. L'atelier affiche « à mesurer » pour ces
+ *  plateformes-là, et le jour où quelqu'un ouvre l'application avec un vrai
+ *  reel dessus, une capture suffit à remplacer l'estimation par une mesure.
+ *
+ *  Se choisit par `-- --format <plateforme>`. */
+export type FormatCle = "instagram" | "tiktok" | "facebook" | "linkedin" | "x" | "bluesky";
+
+export type FormatSpec = {
+  /** Hauteur couverte en bas (compte, légende, son, navigation). */
+  bas: number;
+  /** Largeur de la colonne de boutons à droite, et à partir de quelle hauteur. */
+  boutons: { largeur: number; depuis: number };
+  /** Hauteur des logos de la barre de marque. */
+  logos: number;
+  /** Air sous la ligne d'édition, avant le contenu. */
+  air: number;
+  /** D'où viennent ces chiffres. `null` quand personne ne les a mesurés. */
+  mesure: string | null;
+};
+
+export const FORMATS: Record<FormatCle, FormatSpec> = {
+  // MESURÉ. Le format de référence : on n'y touche pas.
+  instagram: {
+    bas: 380, boutons: { largeur: 180, depuis: 1040 }, logos: 62, air: 62,
+    mesure: "simulateur d'iPhone 17, Jules Piral, 2026-09-17",
+  },
+  // NON MESURÉ. L'interface de TikTok descend plus bas que celle d'Instagram
+  // (description sur plusieurs lignes, nom de la trame, barre d'onglets) et sa
+  // colonne de boutons est plus large. En attendant une mesure, on garde la
+  // marge la plus prudente des deux.
+  tiktok: {
+    bas: 480, boutons: { largeur: 200, depuis: 900 }, logos: 62, air: 62,
+    mesure: null,
+  },
+  // NON MESURÉ. Les Reels de Facebook reprennent l'interface d'Instagram ;
+  // à défaut de mesure, ils en reprennent la zone.
+  facebook: {
+    bas: 380, boutons: { largeur: 180, depuis: 1040 }, logos: 62, air: 62,
+    mesure: null,
+  },
+  // POSÉ le 2026-09-17 (Adrien : « c'est un format LinkedIn, on adapte le nôtre,
+  // on peut meubler le bas ») : dans un fil, le lecteur ne couvre presque rien.
+  linkedin: {
+    bas: 120, boutons: { largeur: 0, depuis: HEIGHT }, logos: 88, air: 150,
+    mesure: "posé avec Adrien le 2026-09-17 (vitrine#826)",
+  },
+  // NON MESURÉ. Même famille que LinkedIn : un média dans un fil, sans voile.
+  x: { bas: 120, boutons: { largeur: 0, depuis: HEIGHT }, logos: 88, air: 150, mesure: null },
+  bluesky: { bas: 120, boutons: { largeur: 0, depuis: HEIGHT }, logos: 88, air: 150, mesure: null },
+};
+
+export const FORMAT: FormatCle = (() => {
+  const i = process.argv.indexOf("--format");
+  const v = i >= 0 ? process.argv[i + 1] : process.argv.find((a) => a.startsWith("--format="))?.slice(9);
+  if (v === undefined) return "instagram";
+  // Une faute de frappe (« tik-tok ») ne retombe pas en silence sur Instagram :
+  // on produirait un reel qui n'est pas celui qu'on a demandé, sous un nom de
+  // fichier qui ne le dit pas.
+  if (!Object.hasOwn(FORMATS, v)) throw new Error(`Format « ${v} » inconnu. Formats : ${Object.keys(FORMATS).join(", ")}`);
+  return v as FormatCle;
+})();
+const SPEC = FORMATS[FORMAT];
+
+/** Vrai pour la famille « fil » (LinkedIn, X, Bluesky) : le lecteur ne couvre
+ *  presque rien, le plancher descend et le carré central n'est plus une
+ *  contrainte. Le nom reste LINKEDIN, qui est le format où cette famille est née. */
+export const LINKEDIN = SPEC.boutons.largeur === 0;
+/** Le haut et les côtés de la zone sûre : les mêmes pour toutes les
+ *  plateformes (mesurés au simulateur d'iPhone 17 le 2026-09-17). */
+export const SAFE_TOP = 150;
+export const SAFE_COTE = 110;
+
+export const SAFE = {
+  top: SAFE_TOP, bottom: HEIGHT - SPEC.bas, left: SAFE_COTE, right: WIDTH - SAFE_COTE,
+  buttonsTop: SPEC.boutons.depuis, buttonsLeft: WIDTH - SPEC.boutons.largeur,
+};
 
 /** BARRE DE MARQUE : logos de la Vitrine et du CAPP, sur TOUTES les scènes de
  *  tous les reels, en bas de la zone sûre (visible sur le téléphone). Le contenu
  *  des scènes s'arrête au-dessus (CONTENT_BOTTOM) : checkFrame le vérifie. */
 /** ⚠️ LA BARRE DE MARQUE PASSE EN HAUT (Jules Piral, 2026-09-17) : en plein écran
- *  sur iPhone, le bas du reel est pris par le voile d'Instagram, la légende et la
- *  barre de navigation — les logos y viraient au gris. En haut, sous la caméra,
- *  rien ne les couvre. L'édition se place sous les deux logos. */
-export const BRAND = { top: SAFE.top, height: 62 };
-export const CONTENT_TOP = BRAND.top + BRAND.height + 62;
+ *  sur iPhone, le bas du reel est pris par le voile de l'application, la légende
+ *  et la barre de navigation — les logos y viraient au gris. En haut, sous la
+ *  caméra, rien ne les couvre. L'édition se place sous les deux logos. */
+/** LA COLONNE UTILE. Jules l'avait posée à 180 px de chaque côté : la largeur
+ *  de la colonne de boutons d'Instagram, ce qui la rend symétrique. Une
+ *  plateforme dont les boutons sont plus larges (TikTok, 200 px) la pousse
+ *  d'autant — sinon le contenu passe SOUS les boutons (17 écarts mesurés le
+ *  2026-09-22). Jamais moins de 180 px : c'est la marge de respiration. */
+export const COL = Math.max(180, SPEC.boutons.largeur);
+
+export const BRAND = { top: SAFE.top, height: SPEC.logos };
+export const CONTENT_TOP = BRAND.top + BRAND.height + SPEC.air;
+
+/** Ce que le format décale vers le bas par rapport au gabarit d'origine (celui
+ *  d'Instagram, CONTENT_TOP = 274). Les scènes posent beaucoup de blocs en
+ *  position absolue, calés sur ce gabarit : descendre le seul en-tête le faisait
+ *  chevaucher le contenu resté en place (11 empilements mesurés le 2026-09-22).
+ *  Tout le bloc suit donc le même décalage. */
+export const DECALE = CONTENT_TOP - 274;
 export const CONTENT_BOTTOM = SAFE.bottom;
 
 export type Logos = { vitrine: string; capp: string };
@@ -240,15 +342,17 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
    (Jules Piral, 2026-09-17 : « tout est pogné en moton »). Le nom est long
    exprès : « colonne » et « pile » existent déjà dans des scènes, et une classe
    globale en position:absolute les empilait toutes au même endroit. */
-.zone-utile{position:absolute;left:180px;right:180px;top:${CONTENT_TOP}px;bottom:${HEIGHT - COEUR.bottom}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
+/* Instagram : la colonne s'arrête au bas du carré central (Jules). LinkedIn : au
+   plancher de la zone sûre — « prends l'espace en bas » (Adrien, 17-09). */
+.zone-utile{position:absolute;left:${COL}px;right:${COL}px;top:${CONTENT_TOP}px;bottom:${HEIGHT - (LINKEDIN ? CONTENT_BOTTOM : Math.min(COEUR.bottom, CONTENT_BOTTOM))}px;display:flex;flex-direction:column;justify-content:space-between;gap:26px}
 .zone-utile .grandir{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
 /* ⚠️ Le pied de page était à 70 px du bas : en plein écran sur iPhone, il tombait
    DERRIÈRE la barre de navigation d'Instagram (Jules Piral, 2026-09-17). Il remonte
    dans la zone sûre, juste au-dessus des logos, et ne garde que l'édition. */
 /* L'édition passe SOUS les logos : les deux logos et le texte ne tenaient pas sur
    une ligne dans la colonne centrée, et le CAPP se faisait rogner. */
-.edition{position:absolute;left:180px;right:180px;top:${BRAND.top + BRAND.height + 10}px;text-align:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:45}
-.brandbar{position:absolute;left:180px;right:180px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
+.edition{position:absolute;left:${COL}px;right:${COL}px;top:${BRAND.top + BRAND.height + (LINKEDIN ? 26 : 10)}px;text-align:center;font-size:28px;letter-spacing:.06em;color:var(--softer);z-index:45}
+.brandbar{position:absolute;left:${COL}px;right:${COL}px;display:flex;align-items:center;justify-content:center;gap:44px;z-index:45}
 .brandbar img{display:block}
 .progress{position:absolute;left:${SAFE.left}px;top:128px;height:8px;width:${SAFE.right - SAFE.left}px;background:var(--blue);transform-origin:left;z-index:60}
 @keyframes fadeUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:none}}
@@ -259,25 +363,52 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 @keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes pop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
 
-/* Le logo et son iridescence (logoAnime). */
-.logo-irise{position:relative;display:block}
-.logo-irise img{display:block;width:100%}
-.logo-irise .tache{position:absolute;left:36%;top:-10%;width:30%;height:120%;filter:blur(34px);opacity:.85;
+/* Le logo et son iridescence (logoAnime). Au repos, le tracé noir reste noir :
+   la couleur passe SUR les traits, puis vit AUTOUR (halo et aura, derrière). */
+.logo-irise{position:relative;display:block;isolation:isolate}
+.logo-irise img{position:relative;display:block;width:100%;z-index:1}
+.logo-irise .tache{position:absolute;left:22%;top:-10%;width:28%;height:120%;opacity:.8;z-index:0;
   background:
     radial-gradient(42% 42% at 32% 22%, #F0C3DD 0%, rgba(240,195,221,0) 70%),
     radial-gradient(42% 42% at 68% 34%, #C6E2F4 0%, rgba(198,226,244,0) 70%),
     radial-gradient(46% 46% at 46% 72%, #F4E3AE 0%, rgba(244,227,174,0) 70%),
     radial-gradient(38% 38% at 74% 76%, #C7E9D6 0%, rgba(199,233,214,0) 70%);
-  animation:respire 7s ease-in-out infinite alternate}
-.logo-irise .passe{position:absolute;inset:0;
-  -webkit-mask-image:var(--logo);mask-image:var(--logo);
-  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  filter:blur(34px);animation:respire 7s ease-in-out infinite alternate,teinte 14s linear infinite}
+.logo-irise .passe,.logo-irise .aura{position:absolute;top:0;bottom:0;left:20.8%;width:30.7%;
+  -webkit-mask-image:var(--logo),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='0,-5 100,-5 100,105 11.7,105 11.7,38 0,38'/%3E%3C/svg%3E");mask-image:var(--logo),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='0,-5 100,-5 100,105 11.7,105 11.7,38 0,38'/%3E%3C/svg%3E");
+  -webkit-mask-size:325.73% 100%,100% 100%;mask-size:325.73% 100%,100% 100%;
+  -webkit-mask-position:30.015% 0,0 0;mask-position:30.015% 0,0 0;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  background:linear-gradient(100deg,rgba(0,0,0,0) 36%,#E79FC6 44%,#8FCFEE 50%,#F3DE95 56%,#A9DFC4 62%,rgba(0,0,0,0) 70%);
-  background-size:260% 100%;background-position:135% 0;
-  animation:traverse 2.6s cubic-bezier(.4,0,.2,1) both}
+  -webkit-mask-composite:source-in;mask-composite:intersect}
+/* L'IRISATION VIT DANS LE VD, ET SEULEMENT LÀ (Adrien, 2026-09-22 : « elle est
+   censée apparaître juste dans le VD » ; la version pleine largeur « couvre tous
+   les logos »). Mesuré SUR LE RENDU (pas sur le PNG) : le VD va de 21,1 à 51,1 %
+   de la largeur, « DÉMOCRATIQUE » commence à 52 %, et le « E » de VITRINE
+   (21,3 → 23,3 %) est SOUS le coin du V — aucune coupe verticale ne les sépare.
+   D'où deux masques croisés : le logo lui-même, recalé sur une boîte 20,8 →
+   51,5 % (taille 100/30,7 = 325,73 %, position 30,015 %), et une fenêtre en L
+   qui retire le coin bas-gauche (x < 24,4 % du logo sous 38 % de sa hauteur),
+   où ne passe que le « E ». La vague, reflet blanc EN TÊTE, va de gauche à droite. Le calage
+   de background-position (99 % → 2 %) fait entrer la vague au premier instant
+   et sortir au dernier : pas de temps mort, pas d'éclair. */
+.logo-irise .passe{z-index:2;
+  background:linear-gradient(105deg,rgba(244,166,207,0) 34%,#F4A6CF 38%,#C3A5F2 43%,#86CFF3 48%,#97E3C1 53%,#F4DC8E 58%,#F4A6CF 62%,rgba(255,255,255,.95) 64.5%,rgba(255,255,255,0) 66.5%);
+  background-size:320% 100%;background-position:99% 0;
+  animation:traverse 2.4s cubic-bezier(.37,0,.63,1) both}
+/* Le faisceau : la même vague, NON découpée et floutée, DERRIÈRE les traits —
+   une lumière irisée qui passe sous le tracé noir. Fondue en haut et en bas. */
+/* Le halo tient dans la MÊME boîte que le VD : le masque radial coupe le flou
+   à ses bords, donc rien ne déborde sur « VITRINE » ni sur « DÉMOCRATIQUE »
+   (à 51 % de large, le « E » de VITRINE se teintait). */
+.logo-irise .halo{position:absolute;left:23.5%;width:28%;top:-26%;bottom:-26%;z-index:0;filter:blur(16px) saturate(1.15);opacity:.36;
+  -webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 30%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 30%,transparent 100%)}
+.logo-irise .halo .passe{left:0;width:100%;-webkit-mask-image:none;mask-image:none;-webkit-mask-composite:initial;mask-composite:initial}
+.logo-irise .aura{display:none}
 @keyframes respire{from{transform:translateX(-10px) scale(1)}to{transform:translateX(12px) scale(1.07)}}
-@keyframes traverse{from{background-position:135% 0}to{background-position:-35% 0}}
+@keyframes teinte{from{filter:blur(34px) hue-rotate(0deg)}to{filter:blur(34px) hue-rotate(360deg)}}
+@keyframes traverse{from{background-position:99% 0}to{background-position:2% 0}}
+@keyframes apparait{from{opacity:0}to{opacity:.6}}
+@keyframes derive{from{background-position:0% 0}to{background-position:-300% 0}}
 `;
 
 /** Assemble la page complète. `css` et `script` sont propres au gabarit ;
@@ -299,9 +430,30 @@ body{font-family:"Source Serif 4",serif;color:var(--ink);position:relative}
 export function logoAnime(logo: string, opts: { classe: string; taille: number; passe: number }): string {
   return `<div class="logo-irise ${opts.classe}" style="--logo:url('${logo}');width:${opts.taille}px">
     <div class="tache" data-deco></div>
+    <div class="halo" data-deco>
+      <div class="passe" style="animation-delay:${opts.passe}s"></div>
+      <div class="aura" style="animation-delay:${opts.passe + 1.5}s,0s"></div>
+    </div>
     <img src="${logo}" alt="La Vitrine démocratique">
     <div class="passe" style="animation-delay:${opts.passe}s"></div>
   </div>`;
+}
+
+/** L'ÉDITION TIENT SUR DEUX LIGNES VOULUES — l'heure, puis la date. En une
+ *  seule ligne, « Édition de 16h · Jeudi 17 septembre 2026 » fait 960 px de
+ *  mono espacé pour 884 px utiles : elle se repliait toute seule et laissait
+ *  « 2026 » orphelin sous le reste (vu par Adrien sur l'édition de 16h du
+ *  17-09). Deux lignes tiennent quelle que soit la date — « Mercredi
+ *  30 septembre » est le pire cas. */
+function edition(texte: string): string {
+  // Le segment « Édition de … » passe en premier où qu'il soit : Enjeux
+  // saillants écrit « du … au … · Édition de 20h », les autres modules
+  // l'inverse (relevé de Copilot, vitrine#826).
+  const segments = texte.split(" · ");
+  const i = Math.max(0, segments.findIndex((s) => s.startsWith("Édition de")));
+  const [heure] = segments.splice(i, 1);
+  const date = segments.join(" · ");
+  return `<b>${typo(esc(heure))}</b>${date ? `<span>${typo(esc(date))}</span>` : ""}`;
 }
 
 /** ACCROCHE, COMMUNE À TOUS LES REELS (demande d'Adrien, 2026-09-16 : « chaque
@@ -332,19 +484,55 @@ export function sceneIntro(opts: {
       <div class="module mono" style="animation:fadeIn .5s .35s both"><i style="background:${opts.accent};animation:grow .6s .35s both"></i>${typo(esc(opts.module))}</div>
       <h1 class="disp" data-cle>${lignes}</h1>
       <div class="band" data-deco style="animation:fadeIn .4s ${L0 + .3}s both">${opts.visuel}</div>
-      <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${typo(esc(opts.edition))}</div>`,
+      <script>document.fonts.ready.then(function(){
+        var s=document.getElementById("intro"); if(!s) return;
+        var h=s.querySelector("h1"), b=s.querySelector(".band"); if(!h||!b) return;
+        // Sous le titre RÉEL : son nombre de lignes dépend du texte du module et
+        // de la largeur de la colonne, donc d'une chose qu'aucune constante ne sait.
+        var y=Math.round(h.getBoundingClientRect().bottom - s.getBoundingClientRect().top + 44);
+        if (y > parseFloat(b.style.top || 0)) b.style.top = y + "px";
+        // La date suit le bandeau (48 px sous son haut), et le visuel du module
+        // prend ce qui reste dessous (--vis-h) : ni l'un ni l'autre ne monte sur
+        // la date, quel que soit le nombre de lignes du titre ou la plateforme.
+        var e=s.querySelector(".ed"); if(!e) return;
+        e.style.top=(b.offsetTop + 48) + "px"; e.style.bottom="auto";
+        // Une première ligne longue (« du mer. 16 sept au mar. 22 sept ») se
+        // resserre, puis rapetisse jusqu'à 26 px, plutôt que de laisser un mot
+        // orphelin sur une deuxième ligne.
+        // Vaut pour les DEUX lignes : depuis la reprise de Jules (#826), « Édition
+        // de … » passe en tête et la période des 12 enjeux descend en seconde.
+        e.querySelectorAll("b, span").forEach(function(l){
+          var fs=parseFloat(getComputedStyle(l).fontSize); l.style.whiteSpace="nowrap";
+          if(l.scrollWidth>l.clientWidth) l.style.letterSpacing=".04em";
+          while(l.scrollWidth>l.clientWidth && fs>26){ fs-=1; l.style.fontSize=fs+"px"; }
+          if(l.scrollWidth>l.clientWidth) l.style.whiteSpace="normal"; });
+        b.style.setProperty("--vis-h", Math.max(160, b.offsetTop + b.offsetHeight - (e.offsetTop + e.offsetHeight) - 36) + "px");
+      });<\/script>
+      <div class="ed mono" style="animation:fadeIn .5s ${L0 + opts.lignes.length * PAS + .2}s both">${edition(opts.edition)}</div>`,
   };
 }
 
 /** CSS de l'accroche — à concaténer au CSS du module. */
 export const INTRO_CSS = `
-#intro .logo{position:absolute;top:288px;left:270px;width:540px}
-#intro .module{position:absolute;top:474px;left:180px;right:180px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
+#intro .logo{position:absolute;top:${LINKEDIN ? 404 : 288}px;left:270px;width:540px}
+#intro .module{position:absolute;top:${LINKEDIN ? 588 : 474}px;left:${COL}px;right:${COL}px;display:flex;justify-content:center;align-items:center;gap:20px;font-size:28px;color:var(--soft)}
 #intro .module i{display:block;width:120px;height:10px;transform-origin:left}
-#intro h1{position:absolute;top:540px;left:180px;right:180px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
+#intro h1{position:absolute;top:${LINKEDIN ? 654 : 540}px;left:${COL}px;right:${COL}px;font-size:104px;line-height:1.02;font-family:"Playfair Display",serif;font-weight:900;letter-spacing:-.02em}
 #intro h1 span{display:block}
-#intro .band{position:absolute;left:180px;right:180px;bottom:30px;height:700px;background:var(--ink);overflow:hidden}
-#intro .ed{position:absolute;left:180px;right:180px;bottom:760px;color:var(--paper);font-size:30px}
+/* 🪤 Le bandeau faisait 700 px COLLÉS AU BAS : sur Instagram il plongeait de
+   350 px sous la légende et la navigation, et le visuel du module y
+   disparaissait à moitié (vu par Adrien le 2026-09-22). Il s'arrête
+   maintenant au plancher de la zone sûre, quelle que soit la plateforme. */
+#intro .band{position:absolute;left:${COL}px;right:${COL}px;top:${LINKEDIN ? 1030 : 920}px;bottom:${HEIGHT - CONTENT_BOTTOM}px;background:var(--ink);overflow:hidden}
+/* DANS le bandeau d'encre (haut à y 1190), pas au-dessus : à bottom:760 (#823)
+   la ligne tombait sur le papier, en couleur papier — invisible (20h du 17-09).
+   À 600, ses deux lignes finissent à y 1320, 50 px sous le haut du bandeau et
+   50 px au-dessus des barres fantômes. Ce n'est plus qu'un repli : le script de
+   l'accroche la pose 48 px sous le haut RÉEL du bandeau (2026-09-22 : en
+   LinkedIn, la barre de 16h montait sur « 2026 » et le radar sur la date). */
+#intro .ed{position:absolute;left:${COL}px;right:${COL}px;bottom:600px;color:var(--paper);font-size:30px}
+#intro .ed b{display:block;font-weight:400}
+#intro .ed span{display:block;margin-top:12px;opacity:.72}
 `;
 
 /** Scène de fin, commune à tous les reels : logo, signature, adresse et le
@@ -430,18 +618,18 @@ export function sceneFin(opts: { pubHour: number; signature: string; logo: strin
  *  Format strict (Jules Piral, 2026-09-16) : 120 px à droite sous le tiers, le
  *  contenu s'arrête au-dessus de la barre de logos Vitrine + CAPP. */
 export const FIN_CSS = `
-#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:300px 180px 0}
-#fin .kick{font-size:28px;color:var(--soft)}
+#fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding:${LINKEDIN ? 388 : 300}px 180px 0}
+#fin .kick{font-size:28px;color:var(--soft);text-wrap:balance}
 #fin .logo{width:600px;margin-top:14px}
 #fin .metho{font-size:28px;margin-top:26px;color:var(--soft)}
 #fin .url{font-size:58px;margin-top:8px;border-bottom:6px solid currentColor;padding-bottom:8px}
 #fin .six{font-size:34px;font-style:italic;margin-top:24px;color:var(--soft)}
 #fin .hours{display:flex;gap:10px;margin-top:14px}
 #fin .hours div{width:114px;padding:10px 0 8px;border:3px solid;font-size:28px;display:flex;flex-direction:column;align-items:center;gap:6px}
-#fin .foot{position:absolute;left:180px;right:180px;top:1010px;display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
+#fin .foot{position:absolute;left:${COL}px;right:${COL}px;top:${LINKEDIN ? 1098 : 1010}px;${LINKEDIN ? "bottom:250px;justify-content:center;" : ""}display:flex;flex-direction:column;align-items:center;padding:30px 34px 36px;background:var(--blue);transform-origin:top}
 #fin .part{font-size:28px;color:rgba(243,236,221,.8)}
-#fin .logos{margin-top:20px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:24px 40px}
-#fin .logos img{height:56px;width:auto;max-width:220px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
+#fin .logos{margin-top:${LINKEDIN ? 28 : 20}px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:${LINKEDIN ? "34px 52px" : "24px 40px"}}
+#fin .logos img{height:${LINKEDIN ? 70 : 56}px;width:auto;max-width:${LINKEDIN ? 260 : 220}px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 `;
 
 /** Couleurs d'un reel : le fond (papier du module) et l'accent (barre de
@@ -661,7 +849,7 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
     for (const o of ecarts) console.warn(`     · ${o}`);
     if (args.mp4) throw new Error("Vidéo non produite : corrigez ces écarts (voir l'aperçu, bouton « Zones Instagram »).");
   } else {
-    console.log("  gabarit → bords, zone Instagram, cœur, lisibilité et textes non empilés respectés");
+    console.log("  gabarit → bords, zone Instagram, cœur, lisibilité, aucun texte tronqué ni empilé");
   }
   if (typeof args.apercu === "string") {
     const previewAt = args.apercu.split(",").map(Number).filter(Number.isFinite);
@@ -701,7 +889,8 @@ export async function produce(opts: { html: string; scenes: Scene[]; title: stri
  *   1. CADRE : aucun élément visible ne franchit l'encadré (FRAME) ;
  *   2. ZONE SÛRE : aucune information (tout ce qui n'est pas `data-deco`) ne
  *      sort de SAFE, sinon l'interface Instagram la cache sur le téléphone ;
- *   3. LISIBILITÉ : aucun texte sous MIN_FONT ;
+ *   3. LISIBILITÉ : aucun texte sous MIN_FONT, et aucun texte COUPÉ par un
+ *      débordement masqué (overflow:hidden, text-overflow:ellipsis) ;
  *   4. CŒUR : l'élément marqué `data-cle` (LA statistique de la scène) tient dans
  *      le carré central, celui qu'on voit avant d'ouvrir le reel.
  *  La boîte de chaque élément est d'abord rognée par ses ancêtres en
@@ -781,15 +970,38 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
     if (box.bottom > safe.buttonsTop && box.right > safe.buttonsLeft + .5) z.push("boutons " + Math.round(box.right - safe.buttonsLeft) + " px");
     if (z.length) {
       flagged.safe.add(el);
-      if (!inherited(flagged.safe, el)) out.push("zone Instagram · scène " + sceneId + " : « " + label + " » (" + z.join(", ") + ")");
+      if (!inherited(flagged.safe, el)) {
+        const ou = (el.className && typeof el.className === "string" ? "." + el.className.trim().split(/\s+/).join(".") : el.tagName.toLowerCase());
+        out.push("zone " + sceneId + " · " + ou + " à " + at.toFixed(1) + " s : « " + label + " » (" + z.join(", ") + ")");
+      }
     }
     if (ownText) {
       const size = parseFloat(getComputedStyle(el).fontSize);
       if (size < minFont - .1) out.push("lisibilité · scène " + sceneId + " : « " + ownText.slice(0, 40) + " » en " + Math.round(size) + " px (minimum " + minFont + ")");
+      // TRONCATURE : le navigateur coupe en silence. « Journal de Montréal »
+      // demandait 516 px pour 511 disponibles (mesuré le 2026-09-22) et sortait
+      // en « Journal de Montr… » — sans qu'aucun contrôle ne le dise, parce que
+      // le texte coupé reste DANS le cadre, dans la zone sûre et assez grand.
+      // C'est le seul écart qui se voit mieux que tous les autres, et le seul
+      // qu'on ne mesurait pas.
+      const st = getComputedStyle(el);
+      const coupeH = el.scrollWidth - el.clientWidth;
+      const coupeV = el.scrollHeight - el.clientHeight;
+      const cache = st.overflowX !== "visible" || st.overflowY !== "visible" || st.textOverflow === "ellipsis";
+      // 🪤 SEUIL VERTICAL. scrollHeight dépasse clientHeight de quelques
+      // pixels dès qu'une police a des jambages, SANS qu'aucun caractère ne
+      // manque : « Économie » dans une pastille se signalait « coupé de 5 px ».
+      // Une vraie coupe verticale fait perdre une LIGNE — on exige donc la
+      // moitié d'une ligne. En largeur, un pixel suffit : l'ellipsis se voit.
+      const lh = parseFloat(st.lineHeight) || size * 1.2;
+      if (cache && (coupeH > 1 || coupeV > Math.max(6, lh * .5))) {
+        out.push("troncature · scène " + sceneId + " : « " + ownText.slice(0, 40) + " » coupé de " +
+          (coupeH > 1 ? Math.ceil(coupeH) + " px en largeur" : Math.ceil(coupeV) + " px en hauteur"));
+      }
     }
   }
   // LE CŒUR : l'essentiel de la scène tient dans le carré central.
-  for (const el of scene.querySelectorAll("[data-cle]")) {
+  for (const el of (coeur ? scene.querySelectorAll("[data-cle]") : [])) {
     const r = el.getBoundingClientRect();
     if (r.height < 1) continue;
     const d = [r.top < coeur.top - .5 ? "haut " + Math.round(coeur.top - r.top) + " px" : "",
@@ -833,6 +1045,42 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
       lines.push({ n, txt, r: { left: r.left, right: r.right, top: r.top + pad, bottom: r.bottom - pad } });
     }
   }
+  // RECOUVREMENT : un bloc opaque posé SUR du texte.
+  //
+  // 🪤 C'est le trou qui a laissé passer le bandeau d'accroche monté sur le
+  // titre (vu par Adrien le 2026-09-22, invisible pour tous les autres
+  // contrôles) : le bandeau est du décor, donc exempté des zones ; et le
+  // contrôle d'empilement ne compare que des textes ENTRE EUX. Un aplat de
+  // couleur posé par-dessus une ligne ne ressemblait à rien de surveillé.
+  //
+  // La méthode ne raisonne pas sur les boîtes : elle demande au navigateur ce
+  // qu'on VOIT à cet endroit. Si le point au milieu d'une ligne de texte rend
+  // un élément qui n'est ni cette ligne ni un de ses parents, c'est que
+  // quelque chose est passé devant.
+  for (const ligne of lines) {
+    const el = ligne.n.parentElement;
+    const x = (ligne.r.left + ligne.r.right) / 2;
+    let dessus = null;
+    for (const f of [.85, .5, .15]) {
+      const y = ligne.r.top + (ligne.r.bottom - ligne.r.top) * f;
+      if (x < 0 || y < 0 || x > 1080 || y > 1920) continue;
+      const q = document.elementFromPoint(x, y);
+      if (q && q !== el && !el.contains(q) && !q.contains(el)) { dessus = q; break; }
+    }
+    if (!dessus) continue;
+    // 🪤 Les scènes sont EMPILÉES dans la page : une scène pas encore jouée est
+    // transparente mais garde son fond, et elementFromPoint la rend quand même.
+    // On ne retient donc que ce qui est réellement visible à cet instant.
+    if (opacity(dessus) < .9) continue;
+    const st = getComputedStyle(dessus);
+    const fond = st.backgroundColor || "";
+    const opaque = fond && !/rgba\([^)]*,\s*0(\.\d+)?\)|transparent/.test(fond);
+    if (!opaque) continue;
+    const quoi = (dessus.className && typeof dessus.className === "string" && dessus.className.trim()) ? "." + dessus.className.trim().split(/\s+/).join(".") : dessus.tagName.toLowerCase();
+    out.push("recouvert · scène " + sceneId + " à " + at.toFixed(1) + " s : « " + ligne.txt.slice(0, 40) + " » est sous " + quoi);
+  }
+
+
   const seen = new Set();
   for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
     const a = lines[i], b = lines[j];
@@ -850,7 +1098,7 @@ const INSPECT = `({ sceneId, at, frame, safe, minFont, coeur }) => {
 
 async function inspectAt(page: Page, sceneId: string, at: number): Promise<string[]> {
   // Le contenu s'arrête au-dessus de la barre de marque.
-  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: COEUR });
+  const args = JSON.stringify({ sceneId, at, frame: FRAME, safe: { ...SAFE, top: CONTENT_TOP, bottom: CONTENT_BOTTOM }, minFont: MIN_FONT, coeur: LINKEDIN ? null : COEUR });
   return page.evaluate(`(${INSPECT})(${args})`) as Promise<string[]>;
 }
 
