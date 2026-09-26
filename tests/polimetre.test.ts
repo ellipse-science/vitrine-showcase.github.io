@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { __test__ } from "@/lib/data/polimetre";
 
-const { realText, shortenPledge, buildView, snapshotWindow } = __test__;
+const { realText, shortenPledge, buildView, snapshotWindow, isLowCoverage, MIN_PROMISES } = __test__;
 
 // Ligne minimale du datamart, restreinte aux colonnes RÉELLEMENT projetées par
 // scripts/tables.json — pledge_en, rank_current, rank_delta et n_mentions n'en
@@ -241,5 +241,65 @@ describe("snapshotWindow — fenêtres disjointes quelle que soit la cadence", (
     const previous = snapshotWindow(FRIDAYS, "2026-07-24", 4, 4);
     expect(previous).toEqual(["2026-06-26", "2026-06-19", "2026-06-12", "2026-06-05"]);
     expect(current.filter((w) => previous.includes(w))).toEqual([]);
+  });
+});
+
+describe("isLowCoverage — résumé qui dit la promesse peu couverte", () => {
+  it.each([
+    "La promesse du CAQ de rétablir les voies de l'A-25 a reçu une couverture médiatique limitée durant la semaine.",
+    "La couverture médiatique de la promesse du CAQ de déposer un projet de loi sur l'inflation a été marginale durant la semaine.",
+    "La promesse a reçu une attention médiatique limitée, se résumant à un article.",
+    "La promesse a été couverte de manière sporadique durant le mois.",
+    "Le projet a été lancé. La promesse n'a reçu qu'une seule mention dans les médias.",
+    "Angle économique. La promesse a été peu abordée par les médias.",
+  ])("retient : %s", (s) => {
+    expect(isLowCoverage(s)).toBe(true);
+  });
+
+  it.each([
+    "La couverture médiatique de la promesse d'atteindre l'équilibre budgétaire a été diluée dans un contexte électoral.",
+    "La promesse a été abordée sous l'angle de l'aide aux familles. Cette aide limitée à 600 $ a été critiquée.",
+    "NA",
+  ])("ne retient pas : %s", (s) => {
+    expect(isLowCoverage(s)).toBe(false);
+  });
+
+  it("ne retient pas un résumé absent", () => {
+    expect(isLowCoverage(null)).toBe(false);
+  });
+});
+
+describe("buildView — retrait des promesses peu couvertes, plancher de MIN_PROMISES", () => {
+  const WEEK = ["2026-07-24"];
+  const FAIBLE = "La promesse a reçu une couverture médiatique limitée durant la semaine.";
+  const FORTE = "La couverture s'est concentrée sur le budget.";
+  const rows = (n: number, faibles: number) =>
+    Array.from({ length: n }, (_, i) =>
+      row({ pledge_number: String(i + 1), salience_index: n - i, coverage_summary_week: i < faibles ? FAIBLE : FORTE }),
+    );
+
+  it("retire les promesses peu couvertes quand il en reste au moins MIN_PROMISES", () => {
+    const views = buildView(rows(MIN_PROMISES + 5, 5), WEEK, []);
+    expect(views).toHaveLength(MIN_PROMISES);
+    expect(views.every((v) => v.summary === FORTE)).toBe(true);
+  });
+
+  it("réadmet les mieux classées des retirées pour tenir le plancher", () => {
+    const views = buildView(rows(MIN_PROMISES + 5, 10), WEEK, []);
+    expect(views).toHaveLength(MIN_PROMISES);
+    // Les 5 premières retirées (rangs 1 à 5) reviennent ; les rangs 6 à 10 restent dehors.
+    expect(views.map((v) => v.pledgeNumber).slice(0, 5)).toEqual(["1", "2", "3", "4", "5"]);
+    expect(views.some((v) => v.pledgeNumber === "6")).toBe(false);
+  });
+
+  it("n'invente rien sous le plancher : une période maigre reste entière", () => {
+    const views = buildView(rows(8, 8), WEEK, []);
+    expect(views).toHaveLength(8);
+  });
+
+  it("garde l'ordre de saillance", () => {
+    const views = buildView(rows(MIN_PROMISES + 5, 10), WEEK, []);
+    const s = views.map((v) => v.salienceIndex);
+    expect(s).toEqual([...s].sort((a, b) => b - a));
   });
 });
