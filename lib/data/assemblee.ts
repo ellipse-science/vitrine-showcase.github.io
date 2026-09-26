@@ -101,6 +101,11 @@ type AgoraRow = IssueShares & {
   // en attente de son premier run réussi) — toujours optionnelles côté JSON.
   signature_word?: string;
   signature_word_context?: string;
+  /** Source de la citation (aws-refiners#573) : date de séance (AAAA-MM-JJ),
+   *  heure de l'intervention (HH:MM) et page du Journal des débats. */
+  signature_word_date?: string;
+  signature_word_time?: string;
+  signature_word_url?: string;
 };
 
 // Ligne brute de agora_decideurs_qc_deputes.json (agrégation par député, PR
@@ -122,6 +127,11 @@ type DeputyAgoraRow = IssueShares & {
   tone_score: number;
   signature_word?: string;
   signature_word_context?: string;
+  /** Source de la citation (aws-refiners#573) : date de séance (AAAA-MM-JJ),
+   *  heure de l'intervention (HH:MM) et page du Journal des débats. */
+  signature_word_date?: string;
+  signature_word_time?: string;
+  signature_word_url?: string;
 };
 
 // Projection datée du référentiel de mandats utilisé par pplmatchQC(). Elle est
@@ -150,6 +160,10 @@ export type EnjeuSegment = {
   isReste?: boolean;
 };
 
+/** D'où vient la citation de l'expression distinctive : la séance, l'heure de
+ *  l'intervention et sa page du Journal des débats. */
+export type SourceCitation = { date: string; heure?: string; url?: string };
+
 export type DeputyRow = {
   /** Graphie de l'Assemblée nationale quand le portrait est apparié
    *  (« Jean-François Roberge ») ; sinon la graphie brute du référentiel,
@@ -161,6 +175,7 @@ export type DeputyRow = {
   toneLeftPct: number;
   signatureWord?: string;
   signatureWordContext?: string;
+  signatureWordSource?: SourceCitation;
   // Champs de carte. circonscription et portrait manquent quand l'appariement
   // avec le référentiel de l'ANQ échoue (cf. PORTRAIT_ALIASES).
   circonscription?: string;
@@ -211,6 +226,7 @@ export type AssembleeRow = {
   // le publie pas ; le composant masque simplement cette info le cas échéant.
   signatureWord?: string;
   signatureWordContext?: string;
+  signatureWordSource?: SourceCitation;
   // Députés du parti pour la période (tableau d'enquête) — absent tant que
   // agora_decideurs_qc_deputes.json n'a pas encore été publié.
   deputies?: DeputyRow[];
@@ -337,6 +353,12 @@ function cleanText(value?: string): string | undefined {
 // marque la coupe. Un extrait assumé se lit ; une phrase tranchée net donne
 // l'impression d'un bogue.
 const CITATION_BUDGET = 95;
+// Le tiroir d'un parti a la place d'une citation plus longue. Jusqu'ici, le
+// raffineur la coupait lui-même à 220 signes ; il publie désormais la phrase
+// entière (jusqu'à 1000 signes, aws-refiners#573). Le tiroir garde donc la
+// phrase complète jusqu'à 220 signes, comme avant, et un extrait centré sur
+// le concept au-delà.
+const CITATION_BUDGET_TIROIR = 220;
 
 function sansDiacritiques(value: string): string {
   return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
@@ -392,6 +414,24 @@ function findConceptSpan(text: string, concept?: string): ConceptSpan | undefine
     if (found) return { start: textTokens[i].start, end: textTokens[cursor].end };
   }
   return undefined;
+}
+
+/** Source de la citation, seulement si la citation est AFFICHÉE : une source
+ *  sans citation désignerait une phrase que le lecteur ne voit pas. Date au
+ *  format AAAA-MM-JJ, heure HH:MM ; valeurs inattendues ignorées. */
+function sourceCitation(
+  r: { signature_word_date?: string; signature_word_time?: string; signature_word_url?: string },
+  citation: string | undefined,
+): SourceCitation | undefined {
+  const date = cleanText(r.signature_word_date);
+  if (!citation || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return undefined;
+  const heure = cleanText(r.signature_word_time);
+  const url = cleanText(r.signature_word_url);
+  return {
+    date,
+    heure: heure && /^\d{2}:\d{2}$/.test(heure) ? heure : undefined,
+    url: url && url.startsWith("https://www.assnat.qc.ca/") ? url : undefined,
+  };
 }
 
 function citationExtrait(value?: string, concept?: string, budget = CITATION_BUDGET): string | undefined {
@@ -696,6 +736,7 @@ function buildDeputyList(
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       signatureWord: cleanText(r.signature_word),
       signatureWordContext: citationExtrait(r.signature_word_context, r.signature_word),
+      signatureWordSource: sourceCitation(r, citationExtrait(r.signature_word_context, r.signature_word)),
       circonscription: portrait?.circonscription,
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
@@ -810,10 +851,12 @@ function buildPeriodView(
       interventions: Number(d.n_interventions || 0),
       toneScore: Number(d.tone_score || 0),
       signatureWord: cleanText(d.signature_word),
-      // Le tiroir a la place d'afficher le contexte complet. On conserve donc
-      // toute la citation, mais seulement si elle contient réellement le
-      // concept qu'elle doit illustrer.
-      signatureWordContext: citationComplete(d.signature_word_context, d.signature_word),
+      // Le tiroir a la place d'afficher un contexte plus long que la carte
+      // d'un député : la phrase entière jusqu'à CITATION_BUDGET_TIROIR signes,
+      // un extrait centré sur le concept au-delà, et rien si la phrase ne
+      // contient pas le concept qu'elle doit illustrer.
+      signatureWordContext: citationExtrait(d.signature_word_context, d.signature_word, CITATION_BUDGET_TIROIR),
+      signatureWordSource: sourceCitation(d, citationExtrait(d.signature_word_context, d.signature_word, CITATION_BUDGET_TIROIR)),
       deputies: buildDeputyList(
         item.key,
         period,
@@ -933,6 +976,7 @@ export async function loadAssemblee(
 
 // Exports réservés aux tests unitaires (pipeline interne ; pas l'API publique).
 export const __test__ = {
+  sourceCitation,
   fmtDateFr,
   fmtWords,
   computeRichnessLevels,
@@ -943,6 +987,7 @@ export const __test__ = {
   lookupPortrait,
   citationExtrait,
   citationComplete,
+  CITATION_BUDGET_TIROIR,
   buildAffiliationIndex,
   affiliationHistoryFor,
 };
