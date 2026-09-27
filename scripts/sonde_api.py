@@ -153,7 +153,7 @@ def comparer_selections() -> list:
 # Pages du site à sonder, et les six modules de l'accueil (ancres de
 # app/page.tsx). L'enveloppe <div id=…> est rendue même quand la section
 # répond null : un module absent se reconnaît à une enveloppe VIDE.
-SITE_PAGES = [p for p in os.environ.get("SITE_PAGES", "/ /edition/2026-09-26T23 /edition/2026-09-26T19").split() if p]
+SITE_PAGES = [p for p in os.environ.get("SITE_PAGES", "/ /edition/2026-09-26T23/ /edition/2026-09-26T19/").split() if p]
 MODULES = ["une-des-unes", "deux-solitudes", "enjeux-saillants", "partis-et-couverture", "polimetre-plus", "assemblee-nationale"]
 
 
