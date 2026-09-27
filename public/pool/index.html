@@ -240,6 +240,7 @@
   .billet input { width: 17px; height: 17px; flex: none; margin-top: 2px; accent-color: var(--cordovan); }
   .billet span { font-size: 14.5px; line-height: 1.45; }
   .billet b { font-weight: 600; }
+  .field-billet { grid-column: 1 / -1; max-width: 240px; }
   .billet em { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-softer); margin-top: 3px; }
 
   /* ── Envoi ───────────────────────────────────────── */
@@ -497,6 +498,11 @@
         <span><b>J'ai un billet pour la soirée du 5 octobre.</b>
           <em>Les prix se remettent dans la salle, le 5 octobre.</em></span>
       </label>
+      <div class="field field-billet">
+        <label for="f-nobillet">Numéro du billet</label>
+        <input type="text" id="f-nobillet" inputmode="numeric" placeholder="Ex. 57">
+        <p class="hint">Il est écrit sur le billet Zeffy&nbsp;: «&nbsp;Billet #&nbsp;57&nbsp;».</p>
+      </div>
     </div>
   </section>
 
@@ -635,11 +641,18 @@ const CHAMPS = {
 /* Les défis, l'heure, la participation et les 127 circonscriptions tiennent
    dans un seul champ : une ligne par élément, lisible à l'œil dans la
    feuille de calcul comme à la relecture. */
+/* Le numéro imprimé sur le billet Zeffy, « Billet # 57 », avec ou sans le
+   croisillon et les espaces. */
+function noBillet() {
+  return etat.$("f-nobillet").value.trim().replace(/^#\s*/, "").replace(/\s+/g, "");
+}
+
 function detailsPool() {
   const L = DEFIS.map(b => `${b.id}=${etat.defis[b.id] || ""}`);
   L.push(`heure=${etat.$("f-heure").value.replace(":", "h")}`);
   L.push(`participation=${etat.$("f-part").value}`);
   L.push(`billet=${etat.$("f-billet").checked ? "oui" : "non"}`);
+  L.push(`no_billet=${noBillet()}`);
   if (etat.mode === "detail") {
     L.push("circ=" + CIRCONSCRIPTIONS.map(c => etat.circ[c.nom] || "").join(","));
   }
@@ -1072,6 +1085,7 @@ function manques() {
   const sansDefi = DEFIS.filter(b => !etat.defis[b.id] && !(etat.mode === "detail" && b.grille)).length;
   if (sansDefi) m.push(`${sansDefi} défi(s) sans réponse`);
   if (!etat.$("f-billet").checked) m.push("cocher la case du billet");
+  if (!/^\d{1,6}$/.test(noBillet())) m.push("le numéro du billet");
   if (!etat.$("f-nom").value.trim()) m.push("le nom");
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(etat.$("f-mail").value.trim())) m.push("un courriel valide");
   return m;
@@ -1181,6 +1195,7 @@ etat.$("mode-vite").addEventListener("click", () => basculer("vite"));
 etat.$("mode-detail").addEventListener("click", () => basculer("detail"));
 ["f-nom","f-mail"].forEach(id => etat.$(id).addEventListener("input", majChecklist));
 etat.$("f-billet").addEventListener("change", majChecklist);
+etat.$("f-nobillet").addEventListener("input", majChecklist);
 rafraichir();
 rebours();
 setInterval(rebours, 30000);
