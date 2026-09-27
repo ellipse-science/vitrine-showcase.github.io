@@ -1,5 +1,11 @@
 [
   {
+    "pr": 882,
+    "date": "2026-09-27T18:03:55Z",
+    "note": "Le Pool de la Grande Soirée refuse désormais tout envoi après sa date limite, ses logos de partenaires mènent aux sites, et ses commandes ont été agrandies pour l'usage au doigt.",
+    "version": null
+  },
+  {
     "pr": 881,
     "date": "2026-09-27T17:19:47Z",
     "note": "Le Pool de la Grande Soirée affiche les logos de ses partenaires en pied de page, ceux de la soirée du 5 octobre et ceux des projets du CAPP. Un défilement du doigt ne déplace plus les glissières de sièges, et un bouton remet les six compteurs à zéro.",
