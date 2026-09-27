@@ -107,7 +107,9 @@
   .rang { display: flex; flex-wrap: wrap; align-items: center; gap: 22px 34px; }
   .rang-projets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 24px; justify-items: center; }
   @media (min-width: 560px) { .rang-projets { grid-template-columns: repeat(4, 1fr); } }
-  .rang img { max-height: 40px; max-width: 150px; width: auto; object-fit: contain; display: block; }
+  /* Hauteur explicite : un SVG sans largeur ni hauteur intrinsèques (le logo
+     d'AWS) se réduit à 0 × 0 quand on ne lui donne qu'un `max-height`. */
+  .rang img { height: 40px; width: auto; max-width: 150px; object-fit: contain; display: block; }
   .rang a { display: block; line-height: 0; opacity: .92; transition: opacity .15s; }
   .rang a:hover { opacity: 1; }
   .sans-logo { font-size: 13.5px; color: var(--ink-soft); margin: 12px 0 0; }
