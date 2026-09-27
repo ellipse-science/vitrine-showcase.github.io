@@ -198,7 +198,7 @@
   .picks button[aria-pressed="true"] { color: #fff; border-color: transparent; font-weight: 500; }
   .circ.done { opacity: .82; }
   .fill-hint { background: var(--paper-deep); border-left: 2px solid var(--brass); padding: 10px 14px; margin: 14px 0 0; font-size: 14px; color: var(--ink-soft); }
-  .avis { border: 1px solid var(--cordovan); background: var(--paper-deep); padding: 16px 18px; margin: 18px 0 0; }
+  .avis { border: 1px solid var(--cordovan); background: var(--paper-deep); padding: 16px 18px; margin: 18px 0 34px; }
   .avis .kicker { color: var(--cordovan); }
   .avis p { margin: 8px 0 0; font-size: 15px; color: var(--ink-soft); }
   .avis .liens { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 12px; }
@@ -400,8 +400,7 @@
 
   <div class="avis">
     <div class="kicker">Avertissement</div>
-    <p>Le pool s'adresse aux personnes qui ont un billet pour la soirée du 5 octobre. <b>Les prix se remettent dans la salle</b>, en main propre&nbsp;: rien n'est envoyé après coup.</p>
-    <p>Si tu ne peux plus venir, libère ton billet. Quelqu'un d'autre l'attend.</p>
+    <p>Le pool s'adresse aux personnes qui ont un billet pour la Grande soirée électorale transpartisane à l'Université Laval du 5 octobre. Les prix se remettent dans la salle, en main propre uniquement.</p>
     <div class="liens">
       <a href="https://www.facebook.com/events/1778049393383508/" target="_blank" rel="noopener">L'événement Facebook</a>
       <a href="https://www.zeffy.com/fr-CA/ticketing/soiree-electorale-transpartisane" target="_blank" rel="noopener">Réserver un billet</a>
@@ -434,12 +433,10 @@
       </button>
     </div>
 
-    <p class="fill-hint">En brun, la projection <b>Qc125</b> du 26 septembre&nbsp;: le nombre de sièges le plus probable, et entre crochets le pire et le meilleur scénario de leur modèle. C'est un repère, pas une consigne.</p>
-
     <div id="pane-vite"></div>
 
     <div id="pane-detail" hidden>
-      <p class="fill-hint">Deux repères sous chaque nom. <b>2022</b>, c'est le parti qui l'aurait emportée en 2022 sur la carte de 2026, un résultat recalculé et non le résultat réel de l'époque. <b>Qc125</b>, c'est la projection du 26 septembre&nbsp;: «&nbsp;solide&nbsp;», «&nbsp;probable&nbsp;» et «&nbsp;enclin&nbsp;» vont du plus sûr au moins sûr, et «&nbsp;pivot&nbsp;» veut dire que la course est trop serrée pour trancher. Les circonscriptions laissées vides restent «&nbsp;à placer&nbsp;».</p>
+      <p class="fill-hint"><b>2022</b>&nbsp;: le parti qui l'aurait emportée sur la carte de 2026, d'après un recalcul des résultats de l'époque. <b>Qc125</b>&nbsp;: la projection du 26 septembre. «&nbsp;Solide&nbsp;», «&nbsp;probable&nbsp;» et «&nbsp;enclin&nbsp;» vont du plus sûr au moins sûr&nbsp;; «&nbsp;pivot&nbsp;» veut dire que la course est trop serrée pour trancher. Les circonscriptions laissées vides restent «&nbsp;à placer&nbsp;».</p>
       <div id="circ-list"></div>
     </div>
   </section>
