@@ -1,0 +1,44 @@
+# Sonde du SITE en prod : ce que vitrinedemocratique.com sert VRAIMENT à un
+# visiteur, module par module. Lecture seule, aucun secret, aucun effet de bord.
+#
+# Pourquoi : un agent qui n'a pas accès au site (proxy) ne doit pas conclure
+# « les six modules sont là » à partir des fichiers du dépôt. Le 27 septembre,
+# l'accueil a été publié sans la Une des Unes ni Deux solitudes alors que les
+# fichiers et l'API étaient complets. Cette sonde répond depuis le dépôt.
+name: Sonde du site (modules en prod)
+
+on:
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: "Chemins à sonder, séparés par des espaces"
+        required: false
+        default: "/ /edition/2026-09-26T23/ /edition/2026-09-26T19/"
+
+permissions:
+  contents: read
+
+jobs:
+  sonde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Lire la prod
+        env:
+          PAGES: ${{ inputs.pages }}
+        run: |
+          UA="vitrine-sonde-site/1.0 (+https://github.com/ellipse-science/vitrine-showcase.github.io)"
+          SITE=https://vitrinedemocratique.com
+          echo "== build-id.json"
+          curl -sS -A "$UA" -H 'Cache-Control: no-cache' "$SITE/build-id.json"; echo
+          echo "== hero-selection.json (400 premiers caractères)"
+          curl -sS -A "$UA" -H 'Cache-Control: no-cache' "$SITE/data/hero-selection.json" | head -c 400; echo
+          for p in $PAGES; do
+            echo; echo "==== $p"
+            curl -sS -A "$UA" -H 'Cache-Control: no-cache' -o page.html -w 'HTTP %{http_code}, %{size_download} octets\n' "$SITE$p?sonde=$(date +%s)"
+            echo "-- data-section"; grep -o 'data-section="[^"]*"' page.html | sort | uniq -c
+            echo "-- ancres"; for id in une-des-unes deux-solitudes enjeux-saillants partis-et-couverture polimetre-plus assemblee-nationale; do
+              echo "$id : $(grep -o "id=\"$id\"" page.html | wc -l)"; done
+            echo "-- titres h2/h3"; grep -o '<h[23][^>]*>[^<]*' page.html | sed 's/<h[23][^>]*>//' | head -20
+            echo "-- build-id dans le HTML"; grep -o 'vitrine-[0-9a-f]\{7\}-[0-9]\{13\}' page.html | sort -u | head -3
+          done
