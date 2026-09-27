@@ -1,5 +1,11 @@
 [
   {
+    "pr": 875,
+    "date": "2026-09-27T01:50:16Z",
+    "note": "Le Pool de la Grande Soirée passe de six défis à trois. Les trois retirés ne demandaient rien de plus que l'addition des sièges déjà répartie plus haut dans la page.",
+    "version": null
+  },
+  {
     "pr": 874,
     "date": "2026-09-27T01:26:03Z",
     "note": "Le Pool de la Grande Soirée ferme maintenant le vendredi 2 octobre à 23h59. La page empêche désormais de répartir plus de 127 sièges, et deux de ses six défis ont été remplacés par des questions dont la réponse est moins évidente.",
