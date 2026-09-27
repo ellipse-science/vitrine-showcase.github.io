@@ -198,7 +198,7 @@
   .picks button[aria-pressed="true"] { color: #fff; border-color: transparent; font-weight: 500; }
   .circ.done { opacity: .82; }
   .fill-hint { background: var(--paper-deep); border-left: 2px solid var(--brass); padding: 10px 14px; margin: 14px 0 0; font-size: 14px; color: var(--ink-soft); }
-  .avis { border: 1px solid var(--cordovan); background: var(--paper-deep); padding: 16px 18px; margin: 18px 0 0; }
+  .avis { border: 1px solid var(--cordovan); background: var(--paper-deep); padding: 16px 18px; margin: 18px 0 34px; }
   .avis .kicker { color: var(--cordovan); }
   .avis p { margin: 8px 0 0; font-size: 15px; color: var(--ink-soft); }
   .avis .liens { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 12px; }
@@ -240,6 +240,7 @@
   .billet input { width: 17px; height: 17px; flex: none; margin-top: 2px; accent-color: var(--cordovan); }
   .billet span { font-size: 14.5px; line-height: 1.45; }
   .billet b { font-weight: 600; }
+  .field-billet { grid-column: 1 / -1; max-width: 240px; }
   .billet em { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-softer); margin-top: 3px; }
 
   /* ── Envoi ───────────────────────────────────────── */
@@ -375,7 +376,7 @@
           <span class="an">2026</span>
         </span>
         <p class="edition">Cinquième édition</p>
-        <p class="dek">Prédis combien de sièges chaque parti va remporter le 5 octobre, et celui qui tombe le plus proche gagne.</p>
+        <p class="dek">Combien de sièges chaque parti remportera-t-il le 5 octobre? Le pronostic le plus proche du résultat gagne.</p>
       </div>
     </div>
     <div class="dbl-rule"></div>
@@ -390,9 +391,9 @@
   <div class="box">
     <h3>Comment faire?</h3>
     <ol>
-      <li>Assigne un nombre de sièges à chaque parti. Un mode <b>«&nbsp;expert&nbsp;»</b> (facultatif) est disponible pour celles et ceux qui souhaiteraient y aller circonscription par circonscription!</li>
-      <li>Réponds aux <b>trois défis</b>. Chaque bonne réponse retranche 2 points de ton score. Une mauvaise réponse ne coûte rien.</li>
-      <li>Ton score est la <b>différence</b> entre ta prédiction et le résultat réel, additionnée sur tous les partis. <b>Le plus petit score gagne.</b></li>
+      <li>Assigner un nombre de sièges à chaque parti. Un mode <b>«&nbsp;expert&nbsp;»</b> (facultatif) est disponible pour celles et ceux qui souhaiteraient y aller circonscription par circonscription!</li>
+      <li>Répondre aux <b>trois défis</b>. Chaque bonne réponse retranche 2 points du score. Une mauvaise réponse ne coûte rien.</li>
+      <li>Le score est la <b>différence</b> entre le pronostic et le résultat réel, additionnée sur tous les partis. <b>Le plus petit score gagne.</b></li>
       <li>Deux prix sont remis pendant la soirée&nbsp;: <b>le Grand Devin</b>, au plus petit score, et <b>le Cartographe</b>, au plus grand nombre de circonscriptions devinées (mode expert seulement). Il faut être dans la salle pour les recevoir.</li>
     </ol>
     <p class="ps">Aucun argent n'est en jeu. Les prix sont fournis par les commanditaires de la soirée. Une seule participation par personne&nbsp;: c'est le dernier pool reçu qui compte.</p>
@@ -400,8 +401,7 @@
 
   <div class="avis">
     <div class="kicker">Avertissement</div>
-    <p>Le pool s'adresse aux personnes qui ont un billet pour la soirée du 5 octobre. <b>Les prix se remettent dans la salle</b>, en main propre&nbsp;: rien n'est envoyé après coup.</p>
-    <p>Si tu ne peux plus venir, libère ton billet. Quelqu'un d'autre l'attend.</p>
+    <p>Le pool s'adresse aux personnes qui ont un billet pour la Grande soirée électorale transpartisane à l'Université Laval du 5 octobre. Les prix se remettent dans la salle, en main propre uniquement.</p>
     <div class="liens">
       <a href="https://www.facebook.com/events/1778049393383508/" target="_blank" rel="noopener">L'événement Facebook</a>
       <a href="https://www.zeffy.com/fr-CA/ticketing/soiree-electorale-transpartisane" target="_blank" rel="noopener">Réserver un billet</a>
@@ -425,29 +425,26 @@
       <button type="button" class="mode-card" id="mode-vite" aria-pressed="true">
         <span class="tag">Une minute</span>
         <span class="t">Juste les totaux</span>
-        <span class="d">Assigne un nombre de sièges à chaque parti. L'hémicycle se remplit à mesure.</span>
+        <span class="d">Assigner un nombre de sièges à chaque parti. L'hémicycle se remplit à mesure.</span>
       </button>
       <button type="button" class="mode-card" id="mode-detail" aria-pressed="false">
         <span class="tag">Option expert &middot; facultative</span>
         <span class="t">Les 127, une par une</span>
-        <span class="d">Choisis le parti gagnant dans chaque circonscription. Le total se calcule tout seul. C'est le seul moyen de remporter le prix du Cartographe.</span>
+        <span class="d">Choisir le parti gagnant dans chaque circonscription. Le total se calcule tout seul. C'est le seul moyen de remporter le prix du Cartographe.</span>
       </button>
     </div>
-
-    <p class="fill-hint">En brun, la projection <b>Qc125</b> du 26 septembre&nbsp;: le nombre de sièges le plus probable, et entre crochets le pire et le meilleur scénario de leur modèle. C'est un repère, pas une consigne.</p>
 
     <div id="pane-vite"></div>
 
     <div id="pane-detail" hidden>
-      <p class="fill-hint">Deux repères sous chaque nom. <b>2022</b>, c'est le parti qui l'aurait emportée en 2022 sur la carte de 2026, un résultat recalculé et non le résultat réel de l'époque. <b>Qc125</b>, c'est la projection du 26 septembre&nbsp;: «&nbsp;solide&nbsp;», «&nbsp;probable&nbsp;» et «&nbsp;enclin&nbsp;» vont du plus sûr au moins sûr, et «&nbsp;pivot&nbsp;» veut dire que la course est trop serrée pour trancher. Les circonscriptions laissées vides restent «&nbsp;à placer&nbsp;».</p>
       <div id="circ-list"></div>
     </div>
   </section>
 
   <section id="defis">
     <div class="sec-head"><span class="sec-num">02</span><h2>Trois défis</h2></div>
-    <p class="sec-dek">Chaque bonne réponse retranche 2 points de ton score. Une mauvaise réponse ne coûte rien.</p>
-    <p class="sec-dek" id="note-grille" hidden>Deux défis ont disparu&nbsp;: en mode expert, ta grille des 127 circonscriptions y répond déjà.</p>
+    <p class="sec-dek">Chaque bonne réponse retranche 2 points du score. Une mauvaise réponse ne coûte rien.</p>
+    <p class="sec-dek" id="note-grille" hidden>Deux défis ont disparu&nbsp;: en mode expert, la grille des 127 circonscriptions y répond déjà.</p>
     <div class="bets" id="bets"></div>
   </section>
 
@@ -468,8 +465,8 @@
     </div>
   </section>
 
-  <section id="toi">
-    <div class="sec-head"><span class="sec-num">04</span><h2>Tes coordonnées</h2></div>
+  <section id="coordonnees">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Coordonnées</h2></div>
     <p class="sec-dek">Le nom sert à annoncer les gagnants le 5 octobre. Le courriel sert à envoyer le classement final.</p>
     <div class="fields">
       <div class="field">
@@ -481,9 +478,9 @@
         <input type="email" id="f-mail" autocomplete="email" placeholder="prenom@exemple.com">
       </div>
       <div class="field">
-        <label for="f-cat">Tu viens d'où?</label>
+        <label for="f-cat">Provenance</label>
         <select id="f-cat">
-          <option value="">Choisis&hellip;</option>
+          <option value="">Choisir&hellip;</option>
           <option>Étudiant.e</option>
           <option>Prof ou chercheur.e</option>
           <option>Journaliste</option>
@@ -501,15 +498,20 @@
         <span><b>J'ai un billet pour la soirée du 5 octobre.</b>
           <em>Les prix se remettent dans la salle, le 5 octobre.</em></span>
       </label>
+      <div class="field field-billet">
+        <label for="f-nobillet">Numéro du billet</label>
+        <input type="text" id="f-nobillet" inputmode="numeric" placeholder="Ex. 57">
+        <p class="hint">Il est écrit sur le billet Zeffy&nbsp;: «&nbsp;Billet #&nbsp;57&nbsp;».</p>
+      </div>
     </div>
   </section>
 
   <div class="send">
     <div class="dbl-rule"></div>
     <p class="checklist" id="checklist"></p>
-    <button type="button" class="cta" id="btn-send">Envoyer mon pool</button>
-    <p class="send-note" id="send-note">Tu peux renvoyer ton pool autant de fois que tu veux&nbsp;: c'est le dernier envoi qui compte.</p>
-    <textarea class="out" id="out" hidden readonly aria-label="Ton pool en texte"></textarea>
+    <button type="button" class="cta" id="btn-send">Envoyer le pool</button>
+    <p class="send-note" id="send-note">Le pool peut être renvoyé autant de fois qu'on veut&nbsp;: c'est le dernier envoi qui compte.</p>
+    <textarea class="out" id="out" hidden readonly aria-label="Le pool en texte"></textarea>
   </div>
 
   <section class="capp" id="projets">
@@ -530,7 +532,7 @@
         <span class="enseigne dg"><img id="img-dg" alt="Datagotchi"></span>
         <span class="corps">
           <span class="nom">Le Défi Datagotchi</span>
-          <span class="quoi">Réponds à un questionnaire sur ton style de vie. Le modèle prédit ensuite pour qui tu votes.</span>
+          <span class="quoi">Un questionnaire sur le style de vie, et le modèle prédit ensuite pour qui on vote.</span>
           <span class="url">quebec.datagotchi.com</span>
         </span>
       </a>
@@ -639,11 +641,18 @@ const CHAMPS = {
 /* Les défis, l'heure, la participation et les 127 circonscriptions tiennent
    dans un seul champ : une ligne par élément, lisible à l'œil dans la
    feuille de calcul comme à la relecture. */
+/* Le numéro imprimé sur le billet Zeffy, « Billet # 57 », avec ou sans le
+   croisillon et les espaces. */
+function noBillet() {
+  return etat.$("f-nobillet").value.trim().replace(/^#\s*/, "").replace(/\s+/g, "");
+}
+
 function detailsPool() {
   const L = DEFIS.map(b => `${b.id}=${etat.defis[b.id] || ""}`);
   L.push(`heure=${etat.$("f-heure").value.replace(":", "h")}`);
   L.push(`participation=${etat.$("f-part").value}`);
   L.push(`billet=${etat.$("f-billet").checked ? "oui" : "non"}`);
+  L.push(`no_billet=${noBillet()}`);
   if (etat.mode === "detail") {
     L.push("circ=" + CIRCONSCRIPTIONS.map(c => etat.circ[c.nom] || "").join(","));
   }
@@ -918,9 +927,9 @@ function rafraichir() {
   else {
     const rang = PARTIS.map(p => [p, etat.sieges[p.k]]).sort((a, b) => b[1] - a[1]);
     const [p1, n1] = rang[0], n2 = rang[1][1];
-    if (n1 === n2) v.innerHTML = `Selon toi, <b>personne</b> ne prend les devants : ${n1} sièges chacun.`;
-    else if (n1 >= MAJORITE) v.innerHTML = `Selon toi, le <b>${p1.k}</b> forme un gouvernement <span class="maj">majoritaire</span> avec ${n1} sièges.`;
-    else v.innerHTML = `Selon toi, le <b>${p1.k}</b> forme un gouvernement <span class="maj">minoritaire</span> avec ${n1} sièges.`;
+    if (n1 === n2) v.innerHTML = `Selon ce pool, <b>personne</b> ne prend les devants : ${n1} sièges chacun.`;
+    else if (n1 >= MAJORITE) v.innerHTML = `Selon ce pool, le <b>${p1.k}</b> forme un gouvernement <span class="maj">majoritaire</span> avec ${n1} sièges.`;
+    else v.innerHTML = `Selon ce pool, le <b>${p1.k}</b> forme un gouvernement <span class="maj">minoritaire</span> avec ${n1} sièges.`;
   }
   const t = etat.$("tally").innerHTML;
   etat.$("bar-tally").innerHTML = t;
@@ -1004,7 +1013,7 @@ function construireDetail() {
 function basculer(mode) {
   if (mode === "detail" && etat.mode === "vite") {
     const place = Object.values(etat.sieges).reduce((a, b) => a + b, 0);
-    if (place > 0 && !confirm("Passer au détail remet les compteurs à zéro : tu repars des 127 circonscriptions vides. On y va ?")) return;
+    if (place > 0 && !confirm("Passer au détail remet les compteurs à zéro : on repart des 127 circonscriptions vides. On y va?")) return;
     etat.circ = {};
     document.querySelectorAll(".circ").forEach(l => {
       l.classList.remove("done");
@@ -1075,8 +1084,9 @@ function manques() {
   if (place !== TOTAL) m.push(place < TOTAL ? `${TOTAL - place} siège(s) à placer` : `${place - TOTAL} siège(s) de trop`);
   const sansDefi = DEFIS.filter(b => !etat.defis[b.id] && !(etat.mode === "detail" && b.grille)).length;
   if (sansDefi) m.push(`${sansDefi} défi(s) sans réponse`);
-  if (!etat.$("f-billet").checked) m.push("cocher que tu as un billet");
-  if (!etat.$("f-nom").value.trim()) m.push("ton nom");
+  if (!etat.$("f-billet").checked) m.push("cocher la case du billet");
+  if (!/^\d{1,6}$/.test(noBillet())) m.push("le numéro du billet");
+  if (!etat.$("f-nom").value.trim()) m.push("le nom");
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(etat.$("f-mail").value.trim())) m.push("un courriel valide");
   return m;
 }
@@ -1149,12 +1159,12 @@ etat.$("btn-send").addEventListener("click", async () => {
     await fetch(ENVOI, { method: "POST", mode: "no-cors", body: fd });
     etat.$("btn-send").textContent = "✓ Pool envoyé, merci!";
     etat.$("btn-send").disabled = true;
-    etat.$("send-note").textContent = "C'est noté. Tu peux corriger et renvoyer ton pool jusqu'à la date limite\u00a0: c'est le dernier envoi qui compte.";
+    etat.$("send-note").textContent = "C'est noté. Le pool peut être corrigé et renvoyé jusqu'à la date limite\u00a0: c'est le dernier envoi qui compte.";
     toast("Pool envoyé");
   } catch {
     await copier(txt);
     const o = etat.$("out"); o.hidden = false; o.value = txt;
-    toast("Envoi impossible : ton pool est copié et affiché en bas");
+    toast("Envoi impossible : le pool est copié et affiché en bas");
   }
 });
 
@@ -1185,6 +1195,7 @@ etat.$("mode-vite").addEventListener("click", () => basculer("vite"));
 etat.$("mode-detail").addEventListener("click", () => basculer("detail"));
 ["f-nom","f-mail"].forEach(id => etat.$(id).addEventListener("input", majChecklist));
 etat.$("f-billet").addEventListener("change", majChecklist);
+etat.$("f-nobillet").addEventListener("input", majChecklist);
 rafraichir();
 rebours();
 setInterval(rebours, 30000);
