@@ -1,5 +1,11 @@
 [
   {
+    "pr": 883,
+    "date": "2026-09-27T18:19:28Z",
+    "note": "Le logo d'Amazon Web Services s'affiche désormais parmi les partenaires de la page du Pool de la Grande Soirée.",
+    "version": null
+  },
+  {
     "pr": 882,
     "date": "2026-09-27T18:03:55Z",
     "note": "Le Pool de la Grande Soirée refuse désormais tout envoi après sa date limite, ses logos de partenaires mènent aux sites, et ses commandes ont été agrandies pour l'usage au doigt.",
