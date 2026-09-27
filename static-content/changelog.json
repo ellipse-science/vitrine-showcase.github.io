@@ -1,5 +1,11 @@
 [
   {
+    "pr": 881,
+    "date": "2026-09-27T17:19:47Z",
+    "note": "Le Pool de la Grande Soirée affiche les logos de ses partenaires en pied de page, ceux de la soirée du 5 octobre et ceux des projets du CAPP. Un défilement du doigt ne déplace plus les glissières de sièges, et un bouton remet les six compteurs à zéro.",
+    "version": null
+  },
+  {
     "pr": 878,
     "date": "2026-09-27T02:43:27Z",
     "note": "L'avertissement de la page du Pool de la Grande Soirée précise que le pool s'adresse aux personnes qui ont un billet pour la soirée du 5 octobre à l'Université Laval, et que les prix se remettent dans la salle en main propre uniquement.",
