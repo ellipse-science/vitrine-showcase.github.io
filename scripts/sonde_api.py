@@ -153,7 +153,7 @@ def comparer_selections() -> list:
 # Pages du site à sonder, et les six modules de l'accueil (ancres de
 # app/page.tsx). L'enveloppe <div id=…> est rendue même quand la section
 # répond null : un module absent se reconnaît à une enveloppe VIDE.
-SITE_PAGES = [p for p in os.environ.get("SITE_PAGES", "/ /edition/2026-09-26T23/ /edition/2026-09-26T19/").split() if p]
+SITE_PAGES = [p for p in os.environ.get("SITE_PAGES", "/ /edition/2026-09-26T23 /edition/2026-09-26T19").split() if p]
 MODULES = ["une-des-unes", "deux-solitudes", "enjeux-saillants", "partis-et-couverture", "polimetre-plus", "assemblee-nationale"]
 
 
@@ -179,12 +179,12 @@ def sonder_modules_site() -> list:
         out += [f"Build en ligne : `{json.dumps(build, ensure_ascii=False)}`", ""]
     except Exception as exc:
         out += [f"build-id.json illisible : {exc}", ""]
-    out += ["| Page | HTTP | octets | " + " | ".join(MODULES) + " |", "|---|---|---|" + "---|" * len(MODULES)]
+    out += ["| Page | HTTP | octets | titre | " + " | ".join(MODULES) + " |", "|---|---|---|---|" + "---|" * len(MODULES)]
     for page in SITE_PAGES:
         try:
             status, html = get_html(f"{SITE}{page}?sonde={int(time.time())}")
         except Exception as exc:
-            out.append(f"| `{page}` | erreur {exc} | |" + " |" * len(MODULES))
+            out.append(f"| `{page}` | erreur {exc} | | |" + " |" * len(MODULES))
             continue
         cells = []
         for mod in MODULES:
@@ -194,7 +194,8 @@ def sonder_modules_site() -> list:
                 cells.append("VIDE")
             else:
                 cells.append("ok")
-        out.append(f"| `{page}` | {status} | {len(html)} | " + " | ".join(cells) + " |")
+        titre = re.search(r"<title>([^<]*)</title>", html)
+        out.append(f"| `{page}` | {status} | {len(html)} | {(titre.group(1) if titre else '—')[:60]} | " + " | ".join(cells) + " |")
     return out + [""]
 
 
