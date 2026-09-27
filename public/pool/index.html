@@ -251,9 +251,9 @@
   }
 
   /* ── Les projets du CAPP, chacun sous ses couleurs ─ */
-  .capp { margin-top: 64px; padding-top: 4px; border-top: 1px solid var(--ink); }
-  .capp h2 { font-size: clamp(21px, 4.6vw, 27px); font-weight: 700; margin: 14px 0 4px; }
-  .capp .lede { color: var(--ink-soft); font-size: 15px; margin: 0 0 20px; max-width: 46em; }
+  section.capp { margin-top: 64px; padding-top: 4px; border-top: 1px solid var(--ink); }
+  section.capp h2 { font-size: clamp(21px, 4.6vw, 27px); font-weight: 700; margin: 14px 0 4px; }
+  section.capp .lede { color: var(--ink-soft); font-size: 15px; margin: 0 0 20px; max-width: 46em; }
   .projets { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(248px, 1fr)); }
 
   .projet {
@@ -364,7 +364,7 @@
     <div class="dbl-rule"></div>
     <div class="clock">
       <span class="kicker">Date limite</span>
-      <b>dimanche 27 septembre, 23h59</b>
+      <b>vendredi 2 octobre, 23h59</b>
       <span class="kicker">il reste</span>
       <b id="countdown">&hellip;</b>
     </div>
@@ -473,8 +473,7 @@
     <div class="dbl-rule"></div>
     <p class="checklist" id="checklist"></p>
     <button type="button" class="cta" id="btn-send">Envoyer mon pool</button>
-    <button type="button" class="cta-2" id="btn-copy">Copier mon pool en texte</button>
-    <p class="send-note" id="send-note">Tu peux corriger et renvoyer ton pool jusqu'à la date limite.</p>
+    <p class="send-note" id="send-note">Tu peux renvoyer ton pool autant de fois que tu veux&nbsp;: c'est le dernier envoi qui compte.</p>
     <textarea class="out" id="out" hidden readonly aria-label="Ton pool en texte"></textarea>
   </div>
 
@@ -484,6 +483,14 @@
     <p class="lede">Tous accessibles en ligne, gratuitement.</p>
     <div class="projets">
 
+      <a class="projet" href="https://capp-ulaval.ca/" target="_blank" rel="noopener" style="--marque:#1C1917">
+        <span class="enseigne capp"><img id="img-capp" alt="CAPP"></span>
+        <span class="corps">
+          <span class="nom">Le CAPP</span>
+          <span class="quoi">Le centre de recherche qui abrite ces projets.</span>
+          <span class="url">capp-ulaval.ca</span>
+        </span>
+      </a>
       <a class="projet" href="https://quebec.datagotchi.com/" target="_blank" rel="noopener" style="--marque:#18DA38; --marque-texte:#17872B">
         <span class="enseigne dg"><img id="img-dg" alt="Datagotchi"></span>
         <span class="corps">
@@ -532,15 +539,6 @@
           <span class="nom">L'EIOM</span>
           <span class="quoi">L'École interdisciplinaire outils &amp; méthodes. Cinq jours de formation méthodologique chaque mois d'août à l'Université Laval.</span>
           <span class="url">eiom.ca</span>
-        </span>
-      </a>
-
-      <a class="projet" href="https://capp-ulaval.ca/" target="_blank" rel="noopener" style="--marque:#1C1917">
-        <span class="enseigne capp"><img id="img-capp" alt="CAPP"></span>
-        <span class="corps">
-          <span class="nom">Le CAPP</span>
-          <span class="quoi">Le centre de recherche qui abrite ces projets.</span>
-          <span class="url">capp-ulaval.ca</span>
         </span>
       </a>
 
@@ -627,7 +625,7 @@ const PARTIS = [
 /* Ordre d'affichage dans l'hémicycle : gauche → droite. */
 const ORDRE_HEMI = ["QS","PQ","PLQ","CAQ","PCQ","AUT"];
 const TOTAL = 127, MAJORITE = 64;
-const LIMITE = new Date("2026-09-27T23:59:00-04:00");
+const LIMITE = new Date("2026-10-02T23:59:00-04:00");
 
 /* Les noms de circonscriptions gardent leur tiret cadratin : c'est la graphie
    officielle d'Élections Québec (Rivière-du-Loup—Témiscouata—Les Basques).
@@ -772,15 +770,15 @@ const DEFIS = [
   { id:"frechette", q:"Christine Fréchette gagne-t-elle Trois-Rivières?",
     why:"Députée de Sanguinet depuis 2022, elle se présente cette fois à Trois-Rivières.",
     opts:["Oui","Non"] },
-  { id:"duhaime", q:"Éric Duhaime gagne-t-il Bellechasse?",
-    why:"Éric Duhaime n'a jamais été élu. Son parti était projeté à 16 % du vote.",
+  { id:"caq12", q:"La CAQ fera-t-elle élire au moins 12 députés?",
+    why:"Douze, c'est le seuil d'un groupe parlementaire reconnu\u00a0: temps de parole, budget de recherche, questions garanties. Le 19 septembre, Qc125 plaçait la CAQ entre 1 et 39 sièges.",
     opts:["Oui","Non"] },
   { id:"capitale", q:"Quel parti gagne le plus de sièges dans la Capitale-Nationale?",
     why:"Onze sièges, dans la région de Québec. En cas d'égalité au sommet, les deux réponses comptent.",
     opts:["PQ","CAQ","PLQ","PCQ","QS"], partis:true },
-  { id:"pcq", q:"Le PCQ fera-t-il élire au moins un député?",
-    why:"Le PCQ a obtenu 12,91 % du vote en 2022 sans faire élire personne.",
-    opts:["Oui","Non"] }
+  { id:"chefs", q:"Combien des cinq chefs seront élus dans leur circonscription?",
+    why:"Trois d'entre eux se présentent là où ils n'ont jamais été élus\u00a0: Christine Fréchette dans Trois-Rivières, Charles Milliard dans Orford, Éric Duhaime dans Bellechasse.",
+    opts:["Les cinq","Quatre","Trois ou moins"] }
 ];
 
 
@@ -903,6 +901,7 @@ function rafraichir() {
   bs.className = "bar-state" + (reste === 0 ? " ok" : reste < 0 ? " over" : "");
   bs.textContent = reste > 0 ? `${reste} à placer` : reste < 0 ? `${-reste} de trop` : "✓ 127 placés";
 
+  majPlafonds();
   peindreHemicycle();
   verifierCoherence();
   majChecklist();
@@ -937,10 +936,24 @@ function construireVite() {
   });
 }
 function poser(k, n) {
-  etat.sieges[k] = Math.max(0, Math.min(TOTAL, isNaN(n) ? 0 : n));
+  /* On ne peut pas placer plus de sièges qu'il n'en reste : le plafond d'un
+     parti, c'est 127 moins ce que les autres ont déjà. */
+  const autres = PARTIS.reduce((s, p) => p.k === k ? s : s + etat.sieges[p.k], 0);
+  etat.sieges[k] = Math.max(0, Math.min(TOTAL - autres, isNaN(n) ? 0 : n));
   etat.$("n-" + k).value = etat.sieges[k];
   etat.$("s-" + k).value = etat.sieges[k];
   rafraichir();
+}
+/* Les compteurs et les glissières portent le plafond du moment, pour que
+   l'interdit se voie au lieu d'être corrigé après coup. */
+function majPlafonds() {
+  const place = PARTIS.reduce((s, p) => s + etat.sieges[p.k], 0);
+  PARTIS.forEach(p => {
+    const num = etat.$("n-" + p.k), gli = etat.$("s-" + p.k);
+    if (!num || !gli) return;
+    const plafond = Math.max(0, etat.sieges[p.k] + (TOTAL - place));
+    num.max = plafond; gli.max = plafond;
+  });
 }
 
 /* ── Mode « circonscription par circonscription » ──── */
@@ -1047,10 +1060,10 @@ function verifierCoherence() {
   dire("oppo", etat.defis.oppo && etat.defis.oppo !== second[0] && second[1] !== rang[2][1]
     ? `Tes 127 sièges mettent le ${second[0]} deuxième, avec ${second[1]} sièges.` : "");
 
-  dire("pcq", etat.defis.pcq === "Oui" && etat.sieges.PCQ === 0
-      ? "Tu ne donnes aucun siège au PCQ dans ton tableau."
-    : etat.defis.pcq === "Non" && etat.sieges.PCQ > 0
-      ? `Tu donnes pourtant ${etat.sieges.PCQ} siège${etat.sieges.PCQ > 1 ? "s" : ""} au PCQ dans ton tableau.` : "");
+  dire("caq12", etat.defis.caq12 === "Oui" && etat.sieges.CAQ < 12
+      ? `Tu donnes pourtant ${etat.sieges.CAQ} siège${etat.sieges.CAQ > 1 ? "s" : ""} à la CAQ dans ton tableau.`
+    : etat.defis.caq12 === "Non" && etat.sieges.CAQ >= 12
+      ? `Tu donnes pourtant ${etat.sieges.CAQ} sièges à la CAQ dans ton tableau.` : "");
 }
 
 /* ── Contrôle avant envoi ─────────────────────────── */
@@ -1110,12 +1123,6 @@ async function copier(txt) {
   catch { return false; }
 }
 
-etat.$("btn-copy").addEventListener("click", async () => {
-  const txt = enTexte();
-  if (await copier(txt)) toast("Pool copié — colle-le dans Slack");
-  else { const o = etat.$("out"); o.hidden = false; o.value = txt; o.select(); toast("Copie manuelle : le texte est en bas"); }
-});
-
 etat.$("btn-send").addEventListener("click", async () => {
   const txt = enTexte();
   if (!ENVOI) {                          // ronde d'équipe : par le presse-papiers
@@ -1125,9 +1132,8 @@ etat.$("btn-send").addEventListener("click", async () => {
   }
   /* Envoi en arrière-plan. `no-cors` interdit de LIRE la réponse, donc on
      ne saura jamais si Google a bien reçu : c'est la contrepartie assumée
-     d'un envoi sans serveur. On copie donc aussi le pool en texte, pour
-     qu'une saisie ne puisse jamais se perdre en silence. */
-  await copier(txt);
+     d'un envoi sans serveur. Si la requête échoue, le pool est copié et
+     affiché en bas de la page, pour qu'une saisie ne se perde pas. */
   const fd = new FormData();
   fd.append(CHAMPS.nom,       etat.$("f-nom").value.trim());
   fd.append(CHAMPS.courriel,  etat.$("f-mail").value.trim());
@@ -1140,10 +1146,12 @@ etat.$("btn-send").addEventListener("click", async () => {
     await fetch(ENVOI, { method: "POST", mode: "no-cors", body: fd });
     etat.$("btn-send").textContent = "✓ Pool envoyé, merci!";
     etat.$("btn-send").disabled = true;
-    etat.$("send-note").textContent = "C'est noté. Ton pool est aussi copié dans ton presse-papiers, au cas où. Tu peux corriger et renvoyer jusqu'à la date limite.";
+    etat.$("send-note").textContent = "C'est noté. Tu peux corriger et renvoyer ton pool jusqu'à la date limite\u00a0: c'est le dernier envoi qui compte.";
     toast("Pool envoyé");
   } catch {
-    toast("Envoi impossible, ton pool est copié : colle-le dans le fil Slack");
+    await copier(txt);
+    const o = etat.$("out"); o.hidden = false; o.value = txt;
+    toast("Envoi impossible : ton pool est copié et affiché en bas");
   }
 });
 
