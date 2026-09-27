@@ -158,6 +158,7 @@
   .party-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .party-chip { width: 12px; height: 26px; flex: none; }
   .party-name { font-weight: 600; font-size: 16px; }
+  .party-proj { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: .12em; color: var(--brass); margin-top: 2px; }
   .party-sub { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-softer); font-weight: 400; }
   .stepper { display: flex; align-items: center; gap: 2px; }
   .stepper button {
@@ -184,6 +185,8 @@
   @media (min-width: 640px) { .circ { grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; } }
   .circ-name { font-size: 15px; line-height: 1.25; min-width: 0; }
   .circ-name .held { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-softer); display: block; margin-top: 1px; }
+  .circ-name .held .qc { display: inline; color: var(--brass); margin-left: 9px; }
+  .circ-name .held .qc::before { content: '·'; color: var(--rule); margin-right: 9px; }
   .picks { display: flex; gap: 3px; flex-wrap: wrap; }
   .picks button {
     cursor: pointer; border: .5px solid var(--rule); background: transparent;
@@ -195,6 +198,14 @@
   .picks button[aria-pressed="true"] { color: #fff; border-color: transparent; font-weight: 500; }
   .circ.done { opacity: .82; }
   .fill-hint { background: var(--paper-deep); border-left: 2px solid var(--brass); padding: 10px 14px; margin: 14px 0 0; font-size: 14px; color: var(--ink-soft); }
+  .avis { border: 1px solid var(--cordovan); background: var(--paper-deep); padding: 16px 18px; margin: 18px 0 0; }
+  .avis .kicker { color: var(--cordovan); }
+  .avis p { margin: 8px 0 0; font-size: 15px; color: var(--ink-soft); }
+  .avis .liens { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 12px; }
+  .avis .liens a { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: .14em;
+                   text-transform: uppercase; color: var(--cordovan); text-decoration: none;
+                   border-bottom: 1px solid var(--cordovan); padding-bottom: 2px; }
+  .avis .liens a:hover { color: var(--ink); border-color: var(--ink); }
 
   /* ── Défis ───────────────────────────────────────── */
   .bet { padding: 16px 0; border-bottom: .5px solid var(--rule-faint); }
@@ -387,6 +398,16 @@
     <p class="ps">Aucun argent n'est en jeu. Les prix sont fournis par les commanditaires de la soirée. Une seule participation par personne&nbsp;: c'est le dernier pool reçu qui compte.</p>
   </div>
 
+  <div class="avis">
+    <div class="kicker">Avertissement</div>
+    <p>Le pool s'adresse aux personnes qui ont un billet pour la soirée du 5 octobre. <b>Les prix se remettent dans la salle</b>, en main propre&nbsp;: rien n'est envoyé après coup.</p>
+    <p>Si tu ne peux plus venir, libère ton billet. Quelqu'un d'autre l'attend.</p>
+    <div class="liens">
+      <a href="https://www.facebook.com/events/1778049393383508/" target="_blank" rel="noopener">L'événement Facebook</a>
+      <a href="https://www.zeffy.com/fr-CA/ticketing/soiree-electorale-transpartisane" target="_blank" rel="noopener">Réserver un billet</a>
+    </div>
+  </div>
+
   <div class="hemi-wrap">
     <svg class="hemi" id="hemi" viewBox="0 0 560 336" role="img" aria-labelledby="hemi-t">
       <title id="hemi-t">Hémicycle de 127 sièges, coloré selon la prédiction en cours</title>
@@ -413,10 +434,12 @@
       </button>
     </div>
 
+    <p class="fill-hint">En brun, la projection <b>Qc125</b> du 26 septembre&nbsp;: le nombre de sièges le plus probable, et entre crochets le pire et le meilleur scénario de leur modèle. C'est un repère, pas une consigne.</p>
+
     <div id="pane-vite"></div>
 
     <div id="pane-detail" hidden>
-      <p class="fill-hint">Les circonscriptions laissées vides restent «&nbsp;à placer&nbsp;». L'étiquette grise indique le parti qui l'aurait emportée en 2022 <b>sur la carte de 2026</b>, un résultat recalculé et non le résultat réel de 2022.</p>
+      <p class="fill-hint">Deux repères sous chaque nom. <b>2022</b>, c'est le parti qui l'aurait emportée en 2022 sur la carte de 2026, un résultat recalculé et non le résultat réel de l'époque. <b>Qc125</b>, c'est la projection du 26 septembre&nbsp;: «&nbsp;solide&nbsp;», «&nbsp;probable&nbsp;» et «&nbsp;enclin&nbsp;» vont du plus sûr au moins sûr, et «&nbsp;pivot&nbsp;» veut dire que la course est trop serrée pour trancher. Les circonscriptions laissées vides restent «&nbsp;à placer&nbsp;».</p>
       <div id="circ-list"></div>
     </div>
   </section>
@@ -476,7 +499,7 @@
       <label class="billet">
         <input type="checkbox" id="f-billet">
         <span><b>J'ai un billet pour la soirée du 5 octobre.</b>
-          <em>Le pool est réservé aux personnes inscrites. Les prix se remettent dans la salle, ce soir-là.</em></span>
+          <em>Les prix se remettent dans la salle, le 5 octobre.</em></span>
       </label>
     </div>
   </section>
@@ -559,7 +582,7 @@
 
   <footer class="foot">
     <p class="kicker">Pool CLESSN &middot; depuis 2019</p>
-    <p>Projection et probabilités&nbsp;: <a href="https://qc125.com/" target="_blank" rel="noopener">Qc125</a>, 19 septembre 2026. Carte électorale de 2026 et résultats recalculés&nbsp;: Wikipédia. Participation de 2022&nbsp;: Élections Québec.</p>
+    <p>Projections de sièges et de circonscriptions&nbsp;: <a href="https://qc125.com/" target="_blank" rel="noopener">Qc125</a>, 26 septembre 2026. Carte électorale de 2026 et résultats recalculés&nbsp;: Wikipédia. Participation de 2022&nbsp;: Élections Québec.</p>
   </footer>
 </div>
 
@@ -628,11 +651,11 @@ function detailsPool() {
 }
 
 const PARTIS = [
-  { k:"PQ",  nom:"Parti québécois",             chef:"Paul St-Pierre Plamondon", c:"var(--pq)"  },
-  { k:"CAQ", nom:"Coalition avenir Québec",     chef:"Christine Fréchette",      c:"var(--caq)" },
-  { k:"PLQ", nom:"Parti libéral du Québec",     chef:"Charles Milliard",         c:"var(--plq)" },
-  { k:"PCQ", nom:"Parti conservateur du Québec",chef:"Éric Duhaime",             c:"var(--pcq)" },
-  { k:"QS",  nom:"Québec solidaire",            chef:"Ruba Ghazal",              c:"var(--qs)"  },
+  { k:"PQ",  nom:"Parti québécois",             chef:"Paul St-Pierre Plamondon", proj:"63 [40-77]", c:"var(--pq)"  },
+  { k:"CAQ", nom:"Coalition avenir Québec",     chef:"Christine Fréchette",      proj:"6 [0-29]", c:"var(--caq)" },
+  { k:"PLQ", nom:"Parti libéral du Québec",     chef:"Charles Milliard",         proj:"35 [29-40]", c:"var(--plq)" },
+  { k:"PCQ", nom:"Parti conservateur du Québec",chef:"Éric Duhaime",             proj:"14 [8-20]", c:"var(--pcq)" },
+  { k:"QS",  nom:"Québec solidaire",            chef:"Ruba Ghazal",              proj:"9 [3-12]", c:"var(--qs)"  },
   { k:"AUT", nom:"Autre ou indépendant",        chef:"",                         c:"var(--aut)" }
 ];
 /* Ordre d'affichage dans l'hémicycle : gauche → droite. */
@@ -644,133 +667,133 @@ const LIMITE = new Date("2026-10-02T23:59:00-04:00");
    officielle d'Élections Québec (Rivière-du-Loup—Témiscouata—Les Basques).
    garde-redaction: ok (noms propres officiels, pas un tiret de style) */
 const CIRCONSCRIPTIONS = [
-  {nom:"Côte-du-Sud",region:"Bas-Saint-Laurent",notionnel2022:"CAQ"},
-  {nom:"Matane-Matapédia-Mitis",region:"Bas-Saint-Laurent",notionnel2022:"PQ"},
-  {nom:"Rimouski",region:"Bas-Saint-Laurent",notionnel2022:"CAQ"},
-  {nom:"Rivière-du-Loup—Témiscouata—Les Basques",region:"Bas-Saint-Laurent",notionnel2022:"CAQ"},
-  {nom:"Chicoutimi",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ"},
-  {nom:"Dubuc",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ"},
-  {nom:"Jonquière",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ"},
-  {nom:"Lac-Saint-Jean",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ"},
-  {nom:"Roberval",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ"},
-  {nom:"Charlesbourg",region:"Capitale-Nationale",notionnel2022:"CAQ"},
-  {nom:"Charlevoix—Côte-de-Beaupré",region:"Capitale-Nationale",notionnel2022:"CAQ"},
-  {nom:"Chauveau",region:"Capitale-Nationale",notionnel2022:"CAQ"},
-  {nom:"Jean-Lesage",region:"Capitale-Nationale",notionnel2022:"QS"},
-  {nom:"Jean-Talon",region:"Capitale-Nationale",notionnel2022:"CAQ"},
-  {nom:"La Peltrie",region:"Capitale-Nationale",notionnel2022:"CAQ"},
-  {nom:"Louis-Hébert",region:"Capitale-Nationale",notionnel2022:"CAQ"},
-  {nom:"Montmorency",region:"Capitale-Nationale",notionnel2022:"CAQ"},
-  {nom:"Portneuf",region:"Capitale-Nationale",notionnel2022:"CAQ"},
-  {nom:"Taschereau",region:"Capitale-Nationale",notionnel2022:"QS"},
-  {nom:"Vanier-Les Rivières",region:"Capitale-Nationale",notionnel2022:"CAQ"},
-  {nom:"Champlain",region:"Mauricie",notionnel2022:"CAQ"},
-  {nom:"Laviolette—Saint-Maurice",region:"Mauricie",notionnel2022:"CAQ"},
-  {nom:"Maskinongé",region:"Mauricie",notionnel2022:"CAQ"},
-  {nom:"Trois-Rivières",region:"Mauricie",notionnel2022:"CAQ"},
-  {nom:"Daniel-Johnson",region:"Estrie",notionnel2022:"CAQ"},
-  {nom:"Mégantic",region:"Estrie",notionnel2022:"CAQ"},
-  {nom:"Orford",region:"Estrie",notionnel2022:"CAQ"},
-  {nom:"Richmond",region:"Estrie",notionnel2022:"CAQ"},
-  {nom:"Saint-François",region:"Estrie",notionnel2022:"CAQ"},
-  {nom:"Sherbrooke",region:"Estrie",notionnel2022:"QS"},
-  {nom:"Acadie",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Anjou—Louis-Riel",region:"Montréal",notionnel2022:"CAQ"},
-  {nom:"Bourassa-Sauvé",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Camille-Laurin",region:"Montréal",notionnel2022:"PQ"},
-  {nom:"D'Arcy-McGee",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Gouin",region:"Montréal",notionnel2022:"QS"},
-  {nom:"Hochelaga-Maisonneuve",region:"Montréal",notionnel2022:"QS"},
-  {nom:"Jacques-Cartier",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Jeanne-Mance—Viger",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"LaFontaine",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Laurier-Dorion",region:"Montréal",notionnel2022:"QS"},
-  {nom:"Marguerite-Bourgeoys",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Marquette",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Maurice-Richard",region:"Montréal",notionnel2022:"QS"},
-  {nom:"Mercier",region:"Montréal",notionnel2022:"QS"},
-  {nom:"Mont-Royal—Outremont",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Nelligan",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Notre-Dame-de-Grâce",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Pointe-aux-Trembles",region:"Montréal",notionnel2022:"CAQ"},
-  {nom:"Robert-Baldwin",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Rosemont",region:"Montréal",notionnel2022:"QS"},
-  {nom:"Saint-Henri—Sainte-Anne",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Saint-Laurent",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Sainte-Marie—Saint-Jacques",region:"Montréal",notionnel2022:"QS"},
-  {nom:"Verdun",region:"Montréal",notionnel2022:"QS"},
-  {nom:"Viau",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Westmount—Saint-Louis",region:"Montréal",notionnel2022:"PLQ"},
-  {nom:"Chapleau",region:"Outaouais",notionnel2022:"CAQ"},
-  {nom:"Gatineau",region:"Outaouais",notionnel2022:"CAQ"},
-  {nom:"Hull",region:"Outaouais",notionnel2022:"CAQ"},
-  {nom:"Papineau",region:"Outaouais",notionnel2022:"CAQ"},
-  {nom:"Pontiac",region:"Outaouais",notionnel2022:"PLQ"},
-  {nom:"Abitibi-Est",region:"Abitibi-Témiscamingue",notionnel2022:"CAQ"},
-  {nom:"Abitibi-Ouest",region:"Abitibi-Témiscamingue",notionnel2022:"CAQ"},
-  {nom:"Rouyn-Noranda—Témiscamingue",region:"Abitibi-Témiscamingue",notionnel2022:"CAQ"},
-  {nom:"Duplessis",region:"Côte-Nord et Nord du Québec",notionnel2022:"CAQ"},
-  {nom:"René-Lévesque",region:"Côte-Nord et Nord du Québec",notionnel2022:"CAQ"},
-  {nom:"Ungava",region:"Côte-Nord et Nord du Québec",notionnel2022:"CAQ"},
-  {nom:"Bonaventure",region:"Gaspésie–Îles-de-la-Madeleine",notionnel2022:"CAQ"},
-  {nom:"Gaspé",region:"Gaspésie–Îles-de-la-Madeleine",notionnel2022:"CAQ"},
-  {nom:"Îles-de-la-Madeleine",region:"Gaspésie–Îles-de-la-Madeleine",notionnel2022:"PQ"},
-  {nom:"Beauce-Nord",region:"Chaudière-Appalaches",notionnel2022:"CAQ"},
-  {nom:"Beauce-Sud",region:"Chaudière-Appalaches",notionnel2022:"CAQ"},
-  {nom:"Bellechasse",region:"Chaudière-Appalaches",notionnel2022:"CAQ"},
-  {nom:"Chutes-de-la-Chaudière",region:"Chaudière-Appalaches",notionnel2022:"CAQ"},
-  {nom:"Lotbinière-Frontenac",region:"Chaudière-Appalaches",notionnel2022:"CAQ"},
-  {nom:"Lévis",region:"Chaudière-Appalaches",notionnel2022:"CAQ"},
-  {nom:"Chomedey",region:"Laval",notionnel2022:"PLQ"},
-  {nom:"Fabre",region:"Laval",notionnel2022:"CAQ"},
-  {nom:"Laval-des-Rapides",region:"Laval",notionnel2022:"CAQ"},
-  {nom:"Mille-Îles",region:"Laval",notionnel2022:"CAQ"},
-  {nom:"Sainte-Rose",region:"Laval",notionnel2022:"CAQ"},
-  {nom:"Vimont-Auteuil",region:"Laval",notionnel2022:"CAQ"},
-  {nom:"Berthier",region:"Lanaudière",notionnel2022:"CAQ"},
-  {nom:"Joliette",region:"Lanaudière",notionnel2022:"CAQ"},
-  {nom:"L'Assomption",region:"Lanaudière",notionnel2022:"CAQ"},
-  {nom:"Masson",region:"Lanaudière",notionnel2022:"CAQ"},
-  {nom:"Repentigny",region:"Lanaudière",notionnel2022:"CAQ"},
-  {nom:"Rousseau",region:"Lanaudière",notionnel2022:"CAQ"},
-  {nom:"Terrebonne",region:"Lanaudière",notionnel2022:"CAQ"},
-  {nom:"Argenteuil",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Bellefeuille",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Bertrand",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Blainville",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Deux-Montagnes",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Groulx",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Labelle",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Les Plaines",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Mirabel",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Prévost",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Saint-Jérôme",region:"Laurentides",notionnel2022:"CAQ"},
-  {nom:"Beauharnois",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Borduas",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Brome-Missisquoi",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Chambly",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Châteauguay",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Granby",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Huntingdon",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Iberville",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"La Pinière",region:"Montérégie",notionnel2022:"PLQ"},
-  {nom:"La Prairie",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Marie-Victorin",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Montarville",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Pierre-Laporte",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Richelieu",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Saint-Hyacinthe",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Saint-Jean",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Sanguinet",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Soulanges",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Taillon",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Vachon",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Vaudreuil",region:"Montérégie",notionnel2022:"PLQ"},
-  {nom:"Verchères",region:"Montérégie",notionnel2022:"CAQ"},
-  {nom:"Arthabaska-L'Érable",region:"Centre-du-Québec",notionnel2022:"CAQ"},
-  {nom:"Drummond—Bois-Francs",region:"Centre-du-Québec",notionnel2022:"CAQ"},
-  {nom:"Marie-Lacoste-Gérin-Lajoie",region:"Centre-du-Québec",notionnel2022:"CAQ"},
-  {nom:"Nicolet—Bécancour",region:"Centre-du-Québec",notionnel2022:"CAQ"}
+  {nom:"Côte-du-Sud",region:"Bas-Saint-Laurent",notionnel2022:"CAQ",qc125:"Pivot PQ/PCQ"},
+  {nom:"Matane-Matapédia-Mitis",region:"Bas-Saint-Laurent",notionnel2022:"PQ",qc125:"PQ solide"},
+  {nom:"Rimouski",region:"Bas-Saint-Laurent",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Rivière-du-Loup—Témiscouata—Les Basques",region:"Bas-Saint-Laurent",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Chicoutimi",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Dubuc",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Jonquière",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Lac-Saint-Jean",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Roberval",region:"Saguenay–Lac-Saint-Jean",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Charlesbourg",region:"Capitale-Nationale",notionnel2022:"CAQ",qc125:"PCQ enclin"},
+  {nom:"Charlevoix—Côte-de-Beaupré",region:"Capitale-Nationale",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Chauveau",region:"Capitale-Nationale",notionnel2022:"CAQ",qc125:"PCQ solide"},
+  {nom:"Jean-Lesage",region:"Capitale-Nationale",notionnel2022:"QS",qc125:"QS enclin"},
+  {nom:"Jean-Talon",region:"Capitale-Nationale",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"La Peltrie",region:"Capitale-Nationale",notionnel2022:"CAQ",qc125:"PCQ solide"},
+  {nom:"Louis-Hébert",region:"Capitale-Nationale",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Montmorency",region:"Capitale-Nationale",notionnel2022:"CAQ",qc125:"PCQ probable"},
+  {nom:"Portneuf",region:"Capitale-Nationale",notionnel2022:"CAQ",qc125:"PCQ solide"},
+  {nom:"Taschereau",region:"Capitale-Nationale",notionnel2022:"QS",qc125:"QS enclin"},
+  {nom:"Vanier-Les Rivières",region:"Capitale-Nationale",notionnel2022:"CAQ",qc125:"PCQ enclin"},
+  {nom:"Champlain",region:"Mauricie",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Laviolette—Saint-Maurice",region:"Mauricie",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Maskinongé",region:"Mauricie",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Trois-Rivières",region:"Mauricie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Daniel-Johnson",region:"Estrie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Mégantic",region:"Estrie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ/PCQ"},
+  {nom:"Orford",region:"Estrie",notionnel2022:"CAQ",qc125:"PLQ enclin"},
+  {nom:"Richmond",region:"Estrie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Saint-François",region:"Estrie",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Sherbrooke",region:"Estrie",notionnel2022:"QS",qc125:"Pivot PQ/QS"},
+  {nom:"Acadie",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Anjou—Louis-Riel",region:"Montréal",notionnel2022:"CAQ",qc125:"PLQ probable"},
+  {nom:"Bourassa-Sauvé",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Camille-Laurin",region:"Montréal",notionnel2022:"PQ",qc125:"PQ solide"},
+  {nom:"D'Arcy-McGee",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Gouin",region:"Montréal",notionnel2022:"QS",qc125:"QS solide"},
+  {nom:"Hochelaga-Maisonneuve",region:"Montréal",notionnel2022:"QS",qc125:"Pivot PQ/QS"},
+  {nom:"Jacques-Cartier",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Jeanne-Mance—Viger",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"LaFontaine",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Laurier-Dorion",region:"Montréal",notionnel2022:"QS",qc125:"Pivot PLQ/QS"},
+  {nom:"Marguerite-Bourgeoys",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Marquette",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Maurice-Richard",region:"Montréal",notionnel2022:"QS",qc125:"PQ enclin"},
+  {nom:"Mercier",region:"Montréal",notionnel2022:"QS",qc125:"QS solide"},
+  {nom:"Mont-Royal—Outremont",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Nelligan",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Notre-Dame-de-Grâce",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Pointe-aux-Trembles",region:"Montréal",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Robert-Baldwin",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Rosemont",region:"Montréal",notionnel2022:"QS",qc125:"Pivot PQ/QS"},
+  {nom:"Saint-Henri—Sainte-Anne",region:"Montréal",notionnel2022:"PLQ",qc125:"Pivot PLQ/QS"},
+  {nom:"Saint-Laurent",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Sainte-Marie—Saint-Jacques",region:"Montréal",notionnel2022:"QS",qc125:"QS probable"},
+  {nom:"Verdun",region:"Montréal",notionnel2022:"QS",qc125:"PLQ enclin"},
+  {nom:"Viau",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Westmount—Saint-Louis",region:"Montréal",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Chapleau",region:"Outaouais",notionnel2022:"CAQ",qc125:"Pivot PLQ/CAQ"},
+  {nom:"Gatineau",region:"Outaouais",notionnel2022:"CAQ",qc125:"PLQ probable"},
+  {nom:"Hull",region:"Outaouais",notionnel2022:"CAQ",qc125:"PLQ solide"},
+  {nom:"Papineau",region:"Outaouais",notionnel2022:"CAQ",qc125:"Pivot PLQ/PQ/CAQ"},
+  {nom:"Pontiac",region:"Outaouais",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Abitibi-Est",region:"Abitibi-Témiscamingue",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Abitibi-Ouest",region:"Abitibi-Témiscamingue",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Rouyn-Noranda—Témiscamingue",region:"Abitibi-Témiscamingue",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Duplessis",region:"Côte-Nord et Nord du Québec",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"René-Lévesque",region:"Côte-Nord et Nord du Québec",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Ungava",region:"Côte-Nord et Nord du Québec",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Bonaventure",region:"Gaspésie–Îles-de-la-Madeleine",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Gaspé",region:"Gaspésie–Îles-de-la-Madeleine",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Îles-de-la-Madeleine",region:"Gaspésie–Îles-de-la-Madeleine",notionnel2022:"PQ",qc125:"PQ solide"},
+  {nom:"Beauce-Nord",region:"Chaudière-Appalaches",notionnel2022:"CAQ",qc125:"PCQ solide"},
+  {nom:"Beauce-Sud",region:"Chaudière-Appalaches",notionnel2022:"CAQ",qc125:"PCQ solide"},
+  {nom:"Bellechasse",region:"Chaudière-Appalaches",notionnel2022:"CAQ",qc125:"PCQ solide"},
+  {nom:"Chutes-de-la-Chaudière",region:"Chaudière-Appalaches",notionnel2022:"CAQ",qc125:"PCQ probable"},
+  {nom:"Lotbinière-Frontenac",region:"Chaudière-Appalaches",notionnel2022:"CAQ",qc125:"PCQ probable"},
+  {nom:"Lévis",region:"Chaudière-Appalaches",notionnel2022:"CAQ",qc125:"PCQ enclin"},
+  {nom:"Chomedey",region:"Laval",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Fabre",region:"Laval",notionnel2022:"CAQ",qc125:"PLQ probable"},
+  {nom:"Laval-des-Rapides",region:"Laval",notionnel2022:"CAQ",qc125:"PLQ enclin"},
+  {nom:"Mille-Îles",region:"Laval",notionnel2022:"CAQ",qc125:"PLQ solide"},
+  {nom:"Sainte-Rose",region:"Laval",notionnel2022:"CAQ",qc125:"PLQ enclin"},
+  {nom:"Vimont-Auteuil",region:"Laval",notionnel2022:"CAQ",qc125:"PLQ probable"},
+  {nom:"Berthier",region:"Lanaudière",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Joliette",region:"Lanaudière",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"L'Assomption",region:"Lanaudière",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Masson",region:"Lanaudière",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Repentigny",region:"Lanaudière",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Rousseau",region:"Lanaudière",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Terrebonne",region:"Lanaudière",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Argenteuil",region:"Laurentides",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Bellefeuille",region:"Laurentides",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Bertrand",region:"Laurentides",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Blainville",region:"Laurentides",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Deux-Montagnes",region:"Laurentides",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Groulx",region:"Laurentides",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Labelle",region:"Laurentides",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Les Plaines",region:"Laurentides",notionnel2022:"CAQ",qc125:"PQ enclin"},
+  {nom:"Mirabel",region:"Laurentides",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Prévost",region:"Laurentides",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Saint-Jérôme",region:"Laurentides",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Beauharnois",region:"Montérégie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Borduas",region:"Montérégie",notionnel2022:"CAQ",qc125:"CAQ enclin"},
+  {nom:"Brome-Missisquoi",region:"Montérégie",notionnel2022:"CAQ",qc125:"Pivot PLQ/PQ/CAQ"},
+  {nom:"Chambly",region:"Montérégie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Châteauguay",region:"Montérégie",notionnel2022:"CAQ",qc125:"PLQ probable"},
+  {nom:"Granby",region:"Montérégie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Huntingdon",region:"Montérégie",notionnel2022:"CAQ",qc125:"Pivot PLQ/PQ/CAQ"},
+  {nom:"Iberville",region:"Montérégie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"La Pinière",region:"Montérégie",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"La Prairie",region:"Montérégie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Marie-Victorin",region:"Montérégie",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Montarville",region:"Montérégie",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ"},
+  {nom:"Pierre-Laporte",region:"Montérégie",notionnel2022:"CAQ",qc125:"PLQ solide"},
+  {nom:"Richelieu",region:"Montérégie",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Saint-Hyacinthe",region:"Montérégie",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Saint-Jean",region:"Montérégie",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Sanguinet",region:"Montérégie",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Soulanges",region:"Montérégie",notionnel2022:"CAQ",qc125:"PLQ probable"},
+  {nom:"Taillon",region:"Montérégie",notionnel2022:"CAQ",qc125:"PQ solide"},
+  {nom:"Vachon",region:"Montérégie",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Vaudreuil",region:"Montérégie",notionnel2022:"PLQ",qc125:"PLQ solide"},
+  {nom:"Verchères",region:"Montérégie",notionnel2022:"CAQ",qc125:"PQ probable"},
+  {nom:"Arthabaska-L'Érable",region:"Centre-du-Québec",notionnel2022:"CAQ",qc125:"Pivot PQ/PCQ"},
+  {nom:"Drummond—Bois-Francs",region:"Centre-du-Québec",notionnel2022:"CAQ",qc125:"Pivot PQ/PCQ"},
+  {nom:"Marie-Lacoste-Gérin-Lajoie",region:"Centre-du-Québec",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ/PCQ"},
+  {nom:"Nicolet—Bécancour",region:"Centre-du-Québec",notionnel2022:"CAQ",qc125:"Pivot PQ/CAQ/PCQ"}
 ];
 
 const DEFIS = [
@@ -781,7 +804,7 @@ const DEFIS = [
     why:"Onze sièges, dans la région de Québec. En cas d'égalité au sommet, les deux réponses comptent.",
     opts:["PQ","CAQ","PLQ","PCQ","QS"], partis:true, grille:true },
   { id:"deuxieme", q:"Quel parti finira deuxième en votes?",
-    why:"En votes, peu importe les sièges. Le 19 septembre, Qc125 plaçait la CAQ à 23\u00a0%, le PLQ à 21\u00a0% et le PCQ à 16\u00a0%, derrière le PQ à 29\u00a0%.",
+    why:"En votes, peu importe les sièges. Le 26 septembre, Qc125 plaçait le PLQ à 22\u00a0%, la CAQ à 21\u00a0% et le PCQ à 16\u00a0%, derrière le PQ à 29\u00a0%.",
     opts:["PQ","CAQ","PLQ","PCQ","QS"], partis:true }
 ];
 
@@ -917,6 +940,7 @@ function construireVite() {
         <span class="party-chip" style="background:${p.c}"></span>
         <span class="party-name">${p.k}
           <span class="party-sub">${p.chef ? p.chef : p.nom}</span>
+          ${p.proj ? `<span class="party-proj">Qc125\u00a0: ${p.proj}</span>` : ""}
         </span>
       </div>
       <div class="stepper">
@@ -955,7 +979,7 @@ function construireDetail() {
     return `<div class="region-head"><h3>${reg}</h3><span class="mono" data-tot="${reg}">0 / ${dedans.length}</span></div>`
       + dedans.map(c => `
       <div class="circ" data-circ="${c.nom}">
-        <div class="circ-name">${c.nom}<span class="held">2022 notionnel\u00a0: ${c.notionnel2022}</span></div>
+        <div class="circ-name">${c.nom}<span class="held">2022\u00a0: ${c.notionnel2022}<span class="qc">Qc125\u00a0: ${c.qc125}</span></span></div>
         <div class="picks">${PARTIS.map(p =>
           `<button type="button" data-p="${p.k}" data-c="${c.nom}" style="--pc:${p.c}" aria-pressed="false">${p.k}</button>`).join("")}</div>
       </div>`).join("");
