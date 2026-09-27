@@ -224,6 +224,12 @@
   }
   .field input:focus, .field select:focus { outline: 1.5px solid var(--cordovan); outline-offset: -1px; }
   .field .hint { font-size: 12.5px; color: var(--ink-softer); margin-top: 4px; }
+  .billet { grid-column: 1 / -1; display: flex; gap: 10px; align-items: flex-start;
+            border-top: .5px solid var(--rule); padding-top: 14px; margin-top: 2px; }
+  .billet input { width: 17px; height: 17px; flex: none; margin-top: 2px; accent-color: var(--cordovan); }
+  .billet span { font-size: 14.5px; line-height: 1.45; }
+  .billet b { font-weight: 600; }
+  .billet em { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-softer); margin-top: 3px; }
 
   /* ── Envoi ───────────────────────────────────────── */
   .send { margin-top: 32px; }
@@ -376,7 +382,7 @@
       <li>Assigne un nombre de sièges à chaque parti. Un mode <b>«&nbsp;expert&nbsp;»</b> (facultatif) est disponible pour celles et ceux qui souhaiteraient y aller circonscription par circonscription!</li>
       <li>Réponds aux <b>trois défis</b>. Chaque bonne réponse retranche 2 points de ton score. Une mauvaise réponse ne coûte rien.</li>
       <li>Ton score est la <b>différence</b> entre ta prédiction et le résultat réel, additionnée sur tous les partis. <b>Le plus petit score gagne.</b></li>
-      <li>Deux prix sont remis pendant la soirée&nbsp;: <b>le Grand Devin</b>, au plus petit score, et <b>le Cartographe</b>, au plus grand nombre de circonscriptions devinées (mode expert seulement).</li>
+      <li>Deux prix sont remis pendant la soirée&nbsp;: <b>le Grand Devin</b>, au plus petit score, et <b>le Cartographe</b>, au plus grand nombre de circonscriptions devinées (mode expert seulement). Il faut être dans la salle pour les recevoir.</li>
     </ol>
     <p class="ps">Aucun argent n'est en jeu. Les prix sont fournis par les commanditaires de la soirée. Une seule participation par personne&nbsp;: c'est le dernier pool reçu qui compte.</p>
   </div>
@@ -467,6 +473,11 @@
         <input type="text" id="f-equipe" placeholder="Ex. CLESSN, AEESPUL, Le Fou&hellip;">
         <p class="hint">Un classement distinct est produit pour chaque équipe.</p>
       </div>
+      <label class="billet">
+        <input type="checkbox" id="f-billet">
+        <span><b>J'ai un billet pour la soirée du 5 octobre.</b>
+          <em>Le pool est réservé aux personnes inscrites. Les prix se remettent dans la salle, ce soir-là.</em></span>
+      </label>
     </div>
   </section>
 
@@ -609,6 +620,7 @@ function detailsPool() {
   const L = DEFIS.map(b => `${b.id}=${etat.defis[b.id] || ""}`);
   L.push(`heure=${etat.$("f-heure").value.replace(":", "h")}`);
   L.push(`participation=${etat.$("f-part").value}`);
+  L.push(`billet=${etat.$("f-billet").checked ? "oui" : "non"}`);
   if (etat.mode === "detail") {
     L.push("circ=" + CIRCONSCRIPTIONS.map(c => etat.circ[c.nom] || "").join(","));
   }
@@ -1039,6 +1051,7 @@ function manques() {
   if (place !== TOTAL) m.push(place < TOTAL ? `${TOTAL - place} siège(s) à placer` : `${place - TOTAL} siège(s) de trop`);
   const sansDefi = DEFIS.filter(b => !etat.defis[b.id] && !(etat.mode === "detail" && b.grille)).length;
   if (sansDefi) m.push(`${sansDefi} défi(s) sans réponse`);
+  if (!etat.$("f-billet").checked) m.push("cocher que tu as un billet");
   if (!etat.$("f-nom").value.trim()) m.push("ton nom");
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(etat.$("f-mail").value.trim())) m.push("un courriel valide");
   return m;
@@ -1147,6 +1160,7 @@ construireDefis();
 etat.$("mode-vite").addEventListener("click", () => basculer("vite"));
 etat.$("mode-detail").addEventListener("click", () => basculer("detail"));
 ["f-nom","f-mail"].forEach(id => etat.$(id).addEventListener("input", majChecklist));
+etat.$("f-billet").addEventListener("change", majChecklist);
 rafraichir();
 rebours();
 setInterval(rebours, 30000);
