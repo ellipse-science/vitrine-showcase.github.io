@@ -374,7 +374,7 @@
     <h3>Comment faire?</h3>
     <ol>
       <li>Assigne un nombre de sièges à chaque parti. Un mode <b>«&nbsp;expert&nbsp;»</b> (facultatif) est disponible pour celles et ceux qui souhaiteraient y aller circonscription par circonscription!</li>
-      <li>Réponds aux <b>six défis</b>. Chaque bonne réponse retranche 2 points de ton score. Une mauvaise réponse ne coûte rien.</li>
+      <li>Réponds aux <b>trois défis</b>. Chaque bonne réponse retranche 2 points de ton score. Une mauvaise réponse ne coûte rien.</li>
       <li>Ton score est la <b>différence</b> entre ta prédiction et le résultat réel, additionnée sur tous les partis. <b>Le plus petit score gagne.</b></li>
       <li>Deux prix sont remis pendant la soirée&nbsp;: <b>le Grand Devin</b>, au plus petit score, et <b>le Cartographe</b>, au plus grand nombre de circonscriptions devinées (mode expert seulement).</li>
     </ol>
@@ -416,8 +416,9 @@
   </section>
 
   <section id="defis">
-    <div class="sec-head"><span class="sec-num">02</span><h2>Six défis</h2></div>
+    <div class="sec-head"><span class="sec-num">02</span><h2>Trois défis</h2></div>
     <p class="sec-dek">Chaque bonne réponse retranche 2 points de ton score. Une mauvaise réponse ne coûte rien.</p>
+    <p class="sec-dek" id="note-grille" hidden>Deux défis ont disparu&nbsp;: en mode expert, ta grille des 127 circonscriptions y répond déjà.</p>
     <div class="bets" id="bets"></div>
   </section>
 
@@ -761,21 +762,12 @@ const CIRCONSCRIPTIONS = [
 ];
 
 const DEFIS = [
-  { id:"gouv", q:"Le gouvernement sera-t-il majoritaire ou minoritaire?",
-    why:"Le 19 septembre, Qc125 donnait le PQ premier dans 94 % des simulations, mais majoritaire dans seulement 20 %.",
-    opts:["Majoritaire","Minoritaire"] },
-  { id:"oppo", q:"Quel parti formera l'opposition officielle?",
-    why:"Le parti qui finit deuxième en sièges. La CAQ était projetée entre 1 et 39 sièges.",
-    opts:["PQ","CAQ","PLQ","PCQ","QS"], partis:true },
   { id:"frechette", q:"Christine Fréchette gagne-t-elle Trois-Rivières?",
     why:"Députée de Sanguinet depuis 2022, elle se présente cette fois à Trois-Rivières.",
-    opts:["Oui","Non"] },
-  { id:"caq12", q:"La CAQ fera-t-elle élire au moins 12 députés?",
-    why:"Douze, c'est le seuil d'un groupe parlementaire reconnu\u00a0: temps de parole, budget de recherche, questions garanties. Le 19 septembre, Qc125 plaçait la CAQ entre 1 et 39 sièges.",
-    opts:["Oui","Non"] },
+    opts:["Oui","Non"], grille:true },
   { id:"capitale", q:"Quel parti gagne le plus de sièges dans la Capitale-Nationale?",
     why:"Onze sièges, dans la région de Québec. En cas d'égalité au sommet, les deux réponses comptent.",
-    opts:["PQ","CAQ","PLQ","PCQ","QS"], partis:true },
+    opts:["PQ","CAQ","PLQ","PCQ","QS"], partis:true, grille:true },
   { id:"deuxieme", q:"Quel parti finira deuxième en votes?",
     why:"En votes, peu importe les sièges. Le 19 septembre, Qc125 plaçait la CAQ à 23\u00a0%, le PLQ à 21\u00a0% et le PCQ à 16\u00a0%, derrière le PQ à 29\u00a0%.",
     opts:["PQ","CAQ","PLQ","PCQ","QS"], partis:true }
@@ -901,9 +893,7 @@ function rafraichir() {
   bs.className = "bar-state" + (reste === 0 ? " ok" : reste < 0 ? " over" : "");
   bs.textContent = reste > 0 ? `${reste} à placer` : reste < 0 ? `${-reste} de trop` : "✓ 127 placés";
 
-  majPlafonds();
   peindreHemicycle();
-  verifierCoherence();
   majChecklist();
 }
 
@@ -943,17 +933,6 @@ function poser(k, n) {
   etat.$("n-" + k).value = etat.sieges[k];
   etat.$("s-" + k).value = etat.sieges[k];
   rafraichir();
-}
-/* Les compteurs et les glissières portent le plafond du moment, pour que
-   l'interdit se voie au lieu d'être corrigé après coup. */
-function majPlafonds() {
-  const place = PARTIS.reduce((s, p) => s + etat.sieges[p.k], 0);
-  PARTIS.forEach(p => {
-    const num = etat.$("n-" + p.k), gli = etat.$("s-" + p.k);
-    if (!num || !gli) return;
-    const plafond = Math.max(0, etat.sieges[p.k] + (TOTAL - place));
-    num.max = plafond; gli.max = plafond;
-  });
 }
 
 /* ── Mode « circonscription par circonscription » ──── */
@@ -1005,13 +984,28 @@ function basculer(mode) {
   etat.$("mode-detail").setAttribute("aria-pressed", mode === "detail");
   etat.$("pane-vite").hidden = mode !== "vite";
   etat.$("pane-detail").hidden = mode !== "detail";
+  majDefisSelonMode();
   rafraichir();
+}
+
+/* Deux des trois défis se lisent déjà dans la grille des 127 : en mode expert
+   on les retire au lieu de faire répéter la personne. Leur réponse se déduit
+   des circonscriptions cochées au moment du dépouillement. */
+function majDefisSelonMode() {
+  const expert = etat.mode === "detail";
+  let n = 0;
+  DEFIS.forEach(b => {
+    const el = document.getElementById("bet-" + b.id); if (!el) return;
+    el.hidden = expert && !!b.grille;
+    if (!el.hidden) el.querySelector(".bet-n").textContent = String(++n).padStart(2, "0");
+  });
+  const note = etat.$("note-grille"); if (note) note.hidden = !expert;
 }
 
 /* ── Défis ────────────────────────────────────────── */
 function construireDefis() {
   etat.$("bets").innerHTML = DEFIS.map((b, i) => `
-    <div class="bet">
+    <div class="bet" id="bet-${b.id}">
       <div class="bet-q">
         <span class="bet-n">${String(i + 1).padStart(2, "0")}</span>
         <p>${b.q}<span class="why">${b.why}</span></p>
@@ -1020,7 +1014,6 @@ function construireDefis() {
         const c = b.partis ? coul[o] : null;
         return `<button type="button" data-b="${b.id}" data-v="${o}"${c ? ` data-party style="--pc:${c}"` : ""} aria-pressed="false">${o}</button>`;
       }).join("")}</div>
-      <p class="discord" id="dis-${b.id}"></p>
     </div>`).join("");
 
   etat.$("bets").addEventListener("click", e => {
@@ -1032,7 +1025,6 @@ function construireDefis() {
       x.setAttribute("aria-pressed", on ? "true" : "false");
       if (x.hasAttribute("data-party")) x.style.background = on ? x.style.getPropertyValue("--pc") : "transparent";
     });
-    verifierCoherence();
     majChecklist();
   });
 }
@@ -1040,38 +1032,12 @@ function construireDefis() {
 /* Trois défis se déduisent des 127 sièges. Quand la réponse contredit la
    répartition, on le dit, sans rien bloquer : quelqu'un peut très bien
    vouloir répondre contre son propre tableau. */
-function verifierCoherence() {
-  const place = Object.values(etat.sieges).reduce((a, b) => a + b, 0);
-  const rang = PARTIS.map(p => [p.k, etat.sieges[p.k]]).sort((a, b) => b[1] - a[1]);
-  const dire = (id, txt) => {
-    const el = etat.$("dis-" + id); if (!el) return;
-    el.textContent = txt || ""; el.classList.toggle("on", !!txt);
-  };
-  if (place !== TOTAL) { DEFIS.forEach(b => dire(b.id, "")); return; }
-
-  const [tete, nTete] = rang[0];
-  dire("gouv", etat.defis.gouv === "Majoritaire" && nTete < MAJORITE
-      ? `Tes 127 sièges donnent ${nTete} au ${tete} : sous la barre de 64, donc minoritaire.`
-    : etat.defis.gouv === "Minoritaire" && nTete >= MAJORITE
-      ? `Tes 127 sièges donnent ${nTete} au ${tete} : au-dessus de 64, donc majoritaire.`
-    : "");
-
-  const second = rang[1];
-  dire("oppo", etat.defis.oppo && etat.defis.oppo !== second[0] && second[1] !== rang[2][1]
-    ? `Tes 127 sièges mettent le ${second[0]} deuxième, avec ${second[1]} sièges.` : "");
-
-  dire("caq12", etat.defis.caq12 === "Oui" && etat.sieges.CAQ < 12
-      ? `Tu donnes pourtant ${etat.sieges.CAQ} siège${etat.sieges.CAQ > 1 ? "s" : ""} à la CAQ dans ton tableau.`
-    : etat.defis.caq12 === "Non" && etat.sieges.CAQ >= 12
-      ? `Tu donnes pourtant ${etat.sieges.CAQ} sièges à la CAQ dans ton tableau.` : "");
-}
-
 /* ── Contrôle avant envoi ─────────────────────────── */
 function manques() {
   const m = [];
   const place = Object.values(etat.sieges).reduce((a, b) => a + b, 0);
   if (place !== TOTAL) m.push(place < TOTAL ? `${TOTAL - place} siège(s) à placer` : `${place - TOTAL} siège(s) de trop`);
-  const sansDefi = DEFIS.filter(b => !etat.defis[b.id]).length;
+  const sansDefi = DEFIS.filter(b => !etat.defis[b.id] && !(etat.mode === "detail" && b.grille)).length;
   if (sansDefi) m.push(`${sansDefi} défi(s) sans réponse`);
   if (!etat.$("f-nom").value.trim()) m.push("ton nom");
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(etat.$("f-mail").value.trim())) m.push("un courriel valide");
