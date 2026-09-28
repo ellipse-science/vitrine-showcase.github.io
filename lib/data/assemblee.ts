@@ -349,6 +349,13 @@ function cleanText(value?: string): string | undefined {
 // marque la coupe. Un extrait assumé se lit ; une phrase tranchée net donne
 // l'impression d'un bogue.
 const CITATION_BUDGET = 95;
+/** Budget de l'extrait, lu À L'APPEL : le site garde 95 signes ; les cartes
+ *  imprimées, qui ont la place de deux lignes, demandent plus par
+ *  VITRINE_CITATION_BUDGET (scripts/social/cartes-deputes.ts). */
+function citationBudget(): number {
+  const demande = Number(process.env.VITRINE_CITATION_BUDGET);
+  return Number.isFinite(demande) && demande >= CITATION_BUDGET ? demande : CITATION_BUDGET;
+}
 
 function sansDiacritiques(value: string): string {
   return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
@@ -406,7 +413,7 @@ function findConceptSpan(text: string, concept?: string): ConceptSpan | undefine
   return undefined;
 }
 
-function citationExtrait(value?: string, concept?: string, budget = CITATION_BUDGET): string | undefined {
+function citationExtrait(value?: string, concept?: string, budget = citationBudget()): string | undefined {
   const v = cleanText(value);
   if (!v) return undefined;
   // Le raffineur laisse parfois une virgule ou une espace orpheline en fin de
