@@ -105,9 +105,9 @@ function ordinal(html: string): string {
 /** LIGNE DE STATISTIQUES du verso (Jules, 26-09) : les libellés EN HAUT,
  *  séparés des chiffres par une fine ligne, des filets verticaux entre les
  *  colonnes. Sert aux blocs Élection et Fiche. `v` est du HTML déjà échappé. */
-function grilleStats(cases: { l: string; v: string }[]): string {
-  return `<div class="stats" style="grid-template-columns:repeat(${cases.length},minmax(0,1fr))">${
-    cases.map((x, i) => `<span class="${i === 0 ? "c0" : ""}">${txt(x.l)}</span>`).join("")}${
+function grilleStats(cases: { l: string; v: string }[], colonnes?: string): string {
+  return `<div class="stats" style="grid-template-columns:${colonnes ?? `repeat(${cases.length},minmax(0,1fr))`}">${
+    cases.map((x, i) => `<span class="${i === 0 ? "c0" : ""}">${txt(x.l).replace(/^&nbsp;/, "")}</span>`).join("")}${
     cases.map((x, i) => `<b class="${i === 0 ? "c0" : ""}">${x.v}</b>`).join("")}</div>`;
 }
 
@@ -465,7 +465,7 @@ function mesurerCoupes(): string[] {
 
 function mesurerRetours(): string[] {
   const coupees: string[] = [];
-  const els = document.querySelectorAll<HTMLElement>(".identite, .chef, .vitaux, .pied span, .credit span");
+  const els = document.querySelectorAll<HTMLElement>(".identite, .chef, .vitaux, .rubrique, .stats > span, .pied span, .credit span");
   for (let i = 0; i < els.length; i++) {
     const r = document.createRange();
     r.selectNodeContents(els[i]);
@@ -479,18 +479,17 @@ function mesurerRetours(): string[] {
     }
     if (max - min > 12) coupees.push((els[i].textContent || "").trim().slice(0, 60));
   }
-  // La rémunération est en nowrap : elle ne peut pas passer à la ligne, mais
-  // elle peut déborder sur le côté. Montant et légende n'ont pas la même
-  // hauteur : le test par rangées y verrait à tort deux lignes.
   // Un intitulé de fonction rapetissé par ajusterFonctions est signalé : la
   // règle d'abréviation (titreCourt) doit le résoudre, pas la taille du texte.
   const legendes = document.querySelectorAll<HTMLElement>(".legende-parcours .ft");
   for (let i = 0; i < legendes.length; i++) {
     if (legendes[i].style.fontSize) coupees.push(`rapetissé à ${legendes[i].style.fontSize} : ${(legendes[i].textContent || "").trim().slice(0, 60)}`);
   }
-  const remu = document.querySelectorAll<HTMLElement>(".paie");
-  for (let i = 0; i < remu.length; i++) {
-    if (remu[i].scrollWidth > remu[i].clientWidth + 1) coupees.push((remu[i].textContent || "").trim().slice(0, 60));
+  // Une ligne de statistiques plus large que son encadré (colonnes à la
+  // mesure du contenu) déborderait sur le côté sans passer à la ligne.
+  const grilles = document.querySelectorAll<HTMLElement>(".stats");
+  for (let i = 0; i < grilles.length; i++) {
+    if (grilles[i].scrollWidth > grilles[i].clientWidth + 1) coupees.push(`grille trop large : ${(grilles[i].textContent || "").trim().slice(0, 40)}`);
   }
   return coupees;
 }
@@ -619,7 +618,6 @@ const VERSO_IMPRESSION_CSS = `
   .chef{margin-top:5px}
   .stats>b{font-size:44px;min-height:44px;padding:5px 8px 0}
   .graduations,.legende-parcours li,.legende-parcours .fa,.legende-parcours.dense li,.legende-parcours.dense .fa{font-size:30px}
-  .paie span{font-size:30px}
   .legende li,.legende b{font-size:30px}
   .citation{font-size:30px}
   .pied{font-size:30px}
@@ -627,12 +625,7 @@ const VERSO_IMPRESSION_CSS = `
   /* RIEN N'EST TRONQUÉ NI RETIRÉ À L'IMPRESSION (Jules, 25-09) : la frise
      prend toute la largeur, ses intitulés passent à la ligne au besoin, et la
      rémunération (les deux montants) se lit sur un rang en dessous. */
-  .grille-parcours{grid-template-columns:minmax(0,1fr);gap:10px}
   .legende-parcours .ft{white-space:normal;line-height:1.1}
-  .paie{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:baseline;
-        column-gap:12px;border-left:0;border-top:1px solid currentColor;padding:10px 0 0}
-  .paie b.moy{margin:0 0 0 22px}
-  .paie span{margin-top:0}
   .citation{display:block;-webkit-line-clamp:unset;overflow:visible}
   .legende{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
   /* Le crédit sur le rang des logos CAPP et Laval, réduits : un rang de moins
@@ -1719,12 +1712,17 @@ function versoHTML(
   // ancienneté en ligne de statistiques, puis, s'il y a lieu, le départ
   // (carte à lettre) ou le changement d'allégeance. Sortis de l'en-tête, qui
   // garde ainsi la même hauteur sur toutes les cartes.
+  // Le changement d'allégeance nomme le parti d'ORIGINE (Jules, 28-09) : sans
+  // lui, « élue avec 41,8 % » se lirait comme un résultat du parti actuel.
+  const BANNIERE: Record<string, string> = { CAQ: "de la CAQ", PLQ: "du PLQ", PQ: "du PQ", QS: "de QS", PCQ: "du PCQ" };
+  const origine = BANNIERE[sigleParti(parcours[0]?.label ?? "")];
+  const elu = /^Élue/.test(c.mandat) ? "Élue" : "Élu";
   const parcoursLigne = c.depart ? c.depart.successeur
     : parcours.length > 1 && dateFr(parcours.at(-1)?.startDate)
-      ? `Changement d'allégeance le ${dateFr(parcours.at(-1)?.startDate)}` : "";
+      ? `${origine ? `${elu} sous la bannière ${origine} · changement` : "Changement"} d'allégeance le ${dateFr(parcours.at(-1)?.startDate)}` : "";
   const casesElection: { l: string; v: string }[] = [];
   if (c.scrutin) {
-    casesElection.push({ l: "Des voix", v: `${POURCENT.format(c.scrutin.pourcentage)}&nbsp;%` });
+    casesElection.push({ l: "% des voix", v: POURCENT.format(c.scrutin.pourcentage) });
     casesElection.push({ l: "Voix d'avance", v: MONTANT.format(c.scrutin.avance) });
   }
   if (c.carriereStats) {
@@ -1754,7 +1752,13 @@ function versoHTML(
     ? `<div class="empilee">${pile.map((x) => {
         const rang = nommes.indexOf(x);
         const trame = rang >= 0 ? TRAMES[rang] : .16;
-        return `<i style="width:${x.widthPct}%;background:${parti};opacity:${trame}"></i>`;
+        // Le pictogramme DANS le segment (Jules, 28-09). La trame passe par
+        // la couleur (mélange avec le papier) et non par l'opacité, qui
+        // aurait aussi délavé le pictogramme. Papier sur les trames foncées,
+        // encre du parti sur la claire ; rien sous 4 % de large.
+        const fond = `color-mix(in srgb, ${parti} ${Math.round(trame * 100)}%, ${COLORS.paper})`;
+        const picto = rang >= 0 && x.widthPct >= 4 ? enjeuGlyph(x.cle, rang < 2 ? COLORS.paper : parti, 26) : "";
+        return `<i style="width:${x.widthPct}%;background:${fond}">${picto}</i>`;
       }).join("")}</div>
        <ul class="legende">${nommes.map((x, i) => `
          <li>
@@ -1776,15 +1780,16 @@ function versoHTML(
   // carte de baseball : libellé en haut, chiffre en gros dessous, en entier
   // (« Richesse lexicale », pas « Richesse »).
   const rFiche = fiche.legislature;
-  const periodeFiche = libelles.legislature;
   const statsFiche = rFiche
     ? grilleStats([
+        // Quatre libellés sur UN rang (Jules, 28-09 : « Interventions » était
+        // le seul sur une ligne) ; colonnes à la mesure de leur contenu.
         { l: "Interventions", v: rFiche.interventions.toLocaleString("fr-CA") },
         { l: "Mots prononcés", v: txt(rFiche.wordsFormatted) },
         { l: "Richesse lexicale", v: `<span class="points">${Array.from({ length: 5 }, (_, i) =>
           `<i class="${i < rFiche.richnessLevel ? "plein" : ""}"></i>`).join("")}</span>` },
-        { l: "Ton des interventions", v: `<span class="ton" title="${txt(toneWording(rFiche.toneScore, maxAbs.legislature))}"><span class="piste"><i class="neutre"></i><i class="repere" style="left:${toneScalePct(rFiche.toneScore, maxAbs.legislature)}%;background:${rFiche.toneScore >= 0 ? TONE.positive : TONE.negative}"></i></span></span>` },
-      ])
+        { l: "Ton", v: `<span class="ton" title="${txt(toneWording(rFiche.toneScore, maxAbs.legislature))}"><span class="piste"><i class="neutre"></i><i class="repere" style="left:${toneScalePct(rFiche.toneScore, maxAbs.legislature)}%;background:${rFiche.toneScore >= 0 ? TONE.positive : TONE.negative}"></i></span></span>` },
+      ], "repeat(4,auto)")
     : `<p class="stats-vide">Aucune intervention</p>`;
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
@@ -1856,8 +1861,8 @@ function versoHTML(
             text-transform:uppercase;text-align:center}
   /* LA BARRE EMPILÉE et sa légende. */
   .bloc.parts{flex:0 0 auto;padding:22px 38px 24px}
-  .empilee{display:flex;height:34px;margin-top:16px;overflow:hidden;border-radius:3px}
-  .empilee i{display:block;height:100%}
+  .empilee{display:flex;height:40px;margin-top:16px;overflow:hidden;border-radius:3px}
+  .empilee i{display:flex;align-items:center;justify-content:center;height:100%}
   .legende{list-style:none;display:flex;flex-wrap:wrap;justify-content:space-between;
            gap:8px 26px;margin-top:14px}
   .legende li{display:flex;align-items:center;gap:9px;font-size:23px}
@@ -1873,7 +1878,7 @@ function versoHTML(
      (partielle, démission) est hachuré. À droite, la rémunération qui en
      découle, lue comme le total d'un contrat. */
   .bloc.parcours{flex:0 0 auto;padding:22px 38px 22px}
-  .grille-parcours{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:30px;align-items:center;margin-top:14px}
+  .grille-parcours{display:grid;grid-template-columns:minmax(0,1fr);margin-top:14px}
   .frise-piste{position:relative;height:30px;border:2px solid currentColor;border-radius:3px;overflow:hidden}
   .frise-piste i{position:absolute;top:0;bottom:0;background:${parti}}
   .frise-piste i.hors{background:repeating-linear-gradient(135deg,${parti} 0 2px,transparent 2px 9px);opacity:.35}
@@ -1890,12 +1895,7 @@ function versoHTML(
   /* Quatre ou cinq niveaux : la légende se resserre plutôt que d'en cacher. */
   .legende-parcours.dense li{padding:1px 0;font-size:19px}
   .legende-parcours.dense .fa{font-size:17px}
-  .paie{display:flex;flex-direction:column;align-items:flex-end;text-align:right;
-        border-left:1px solid currentColor;padding-left:28px;white-space:nowrap}
-  .paie b{font-family:"Oswald",sans-serif;font-weight:700;font-size:46px;line-height:1}
-  .paie b.moy{font-size:32px;margin-top:12px}
-  .paie span{font-family:"Oswald",sans-serif;font-weight:500;font-size:16px;letter-spacing:.1em;
-             text-transform:uppercase;opacity:.72;margin-top:4px}
+  .rubrique b{font-weight:700;letter-spacing:.04em}
   /* LA LIGNE DE STATISTIQUES — quatre cases égales entre deux filets, séparées
      par des filets verticaux fins ; chiffre en gros, libellé dessous. */
   .stats{display:grid;margin-top:12px}
@@ -1912,7 +1912,7 @@ function versoHTML(
   .points i{display:inline-block;width:18px;height:18px;border-radius:50%;
             border:2px solid currentColor;vertical-align:middle}
   .points i.plein{background:currentColor}
-  .ton .piste{position:relative;display:block;height:14px;background:${COLORS.deep};width:150px}
+  .ton .piste{position:relative;display:block;height:14px;background:${COLORS.deep};width:120px}
   .ton .neutre{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:currentColor;opacity:.4}
   .ton .repere{position:absolute;top:-6px;width:8px;height:26px;transform:translateX(-50%)}
 
@@ -2000,16 +2000,20 @@ function versoHTML(
     ${blocElection}
 
     <div class="bloc fiche">
-      ${/* Lieu et période sur le rang du titre, dans les deux styles (26-09) :
-            la ligne de période à part et les losanges coûtaient la place du
-            bloc Élection. « Fiche à l'Assemblée » n'était qu'un intitulé. */ ""}
-      <p class="rubrique">${txt(c.salon)} &middot; ${txt(periodeFiche.type)} ${txt(periodeFiche.date)}</p>
+      ${/* Sans la période (Jules, 28-09) : toute la carte porte sur la
+            législature, le recto le dit déjà. */ ""}
+      <p class="rubrique">Fiche à l'Assemblée &middot; ${txt(c.salon)}</p>
       ${statsFiche}
     </div>
 
     ${c.parcours && c.remuneration ? `
     <div class="bloc parcours">
-      <p class="rubrique">Parcours et rémunération</p>
+      ${/* Le montant PAR ANNÉE seul, dans le titre (Jules, 28-09) : il se
+            compare d'un élu à l'autre ; le total dépendait de la durée du
+            mandat. La frise dit d'où il vient. */ ""}
+      <p class="rubrique">Rémunération &middot; ${c.remunerationMoyenne
+        ? `<b>${MONTANT.format(c.remunerationMoyenne)}&nbsp;$</b> par année`
+        : `<b>${MONTANT.format(c.remuneration)}&nbsp;$</b> sur la législature`}</p>
       <div class="grille-parcours">
         <div class="frise">
           <div class="frise-piste">
@@ -2020,14 +2024,6 @@ function versoHTML(
           <ul class="legende-parcours${c.parcours.legende.length > 3 && !MODE_IMPRESSION ? " dense" : ""}">${c.parcours.legende.map((l) => `
             <li><span class="puce"><i style="opacity:${l.o}"></i></span><span class="ft">${ordinal(txt(l.titre))}</span><span class="fa">${l.annees}</span></li>`).join("")}
           </ul>
-        </div>
-        <div class="paie">
-          ${/* Le montant PAR ANNÉE en tête et en gros (Jules, 25-09) : il se
-                compare d'un élu à l'autre, le total dépend de la durée du mandat. */ ""}
-          ${c.remunerationMoyenne
-            ? `<b>${MONTANT.format(c.remunerationMoyenne)}&nbsp;$</b><span>par année</span>
-          <b class="moy">${MONTANT.format(c.remuneration)}&nbsp;$</b><span class="moy-l">sur la législature</span>`
-            : `<b>${MONTANT.format(c.remuneration)}&nbsp;$</b><span>sur la législature</span>`}
         </div>
       </div>
     </div>` : ""}
