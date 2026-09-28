@@ -640,16 +640,25 @@ const VERSO_IMPRESSION_CSS = `
   .graduations,.legende-parcours li,.legende-parcours .fa,.legende-parcours.dense li,.legende-parcours.dense .fa{font-size:30px}
   .legende li,.legende b{font-size:30px}
   .citation{font-size:30px}
-  .pied{font-size:30px}
   .metho-courte{font-size:30px;text-align:center}
   /* RIEN N'EST TRONQUÉ NI RETIRÉ À L'IMPRESSION (Jules, 25-09) : la frise
      prend toute la largeur, ses intitulés passent à la ligne au besoin, et la
      rémunération (les deux montants) se lit sur un rang en dessous. */
   .legende-parcours .ft{white-space:normal;line-height:1.1}
   .citation{display:block;-webkit-line-clamp:unset;overflow:visible}
-  .legende{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
-  .pied>span:nth-child(2){font-family:"Archivo Narrow",sans-serif;font-style:italic;font-weight:400;
-                          letter-spacing:0;text-transform:none;opacity:.75}
+  /* Les enjeux sur UN rang (Jules, 28-09) ; si trois libellés longs n'y
+     tiennent pas à 30 px, le dernier passe dessous plutôt que de rapetisser. */
+  .legende{justify-content:space-between;gap:4px 12px;margin-left:-10px;margin-right:-10px}
+  .legende li{gap:6px}
+  /* Rang des logos, sous le panneau : Vitrine à gauche, écusson du parti à
+     droite, centrés sur la hauteur des logos CAPP et Laval (56 px, à 4 px du
+     bord). */
+  .logos-bas{position:absolute;left:${MARGE + 4}px;right:${MARGE + 4}px;bottom:4px;height:56px;
+             display:flex;align-items:center;justify-content:space-between}
+  .logos-bas span{display:block;background:${COLORS.paper};opacity:.62;
+                  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+  .logos-bas .marque{width:270px;height:56px;-webkit-mask-position:left center;mask-position:left center}
+  .logos-bas .ecusson{width:50px;height:50px;-webkit-mask-position:right center;mask-position:right center}
   .panneau{height:${PANNEAU.bas - PANNEAU.y + PANNEAU_BAS_IMPRESSION}px}
 `;
 
@@ -1802,14 +1811,15 @@ function versoHTML(
       }).join("")}</div>
        <ul class="legende">${nommes.map((x, i) => `
          <li>
-           <span class="puce" style="background:${parti};opacity:${TRAMES[i]}"></span>
-           <span class="pg">${enjeuGlyph(x.cle, parti, 24)}</span>
+           ${/* Sans la puce de couleur : le pictogramme, repris dans la barre,
+                 fait le lien. Elle ne reste qu'à « Autres », qui n'en a pas. */ ""}
+           <span class="pg">${enjeuGlyph(x.cle, parti, 22)}</span>
            <span class="pl">${txt(MODE_IMPRESSION ? LIBELLE_ENJEU_ENTIER[x.label] ?? x.label : x.label)}</span>
-           <b>${Math.round(x.widthPct)}&nbsp;%</b>
+           <b>${Math.round(x.widthPct)}&#8239;%</b>
          </li>`).join("")}
          <li class="reste"><span class="puce" style="background:${parti};opacity:.16"></span>
-           <span class="pl">Autres enjeux</span>
-           <b>${Math.round(100 - nommes.reduce((t, x) => t + x.widthPct, 0))}&nbsp;%</b></li>
+           <span class="pl">Autres</span>
+           <b>${Math.round(100 - nommes.reduce((t, x) => t + x.widthPct, 0))}&#8239;%</b></li>
        </ul>`
     : "";
 
@@ -1886,11 +1896,9 @@ function versoHTML(
      séparés par le carton nu. Un panneau unique laissait un grand vide au
      milieu, le mot étant poussé en bas ; deux blocs remplissent la carte et
      donnent au mot son propre cadre. */
-  /* BLOCS COLLÉS (Jules, 28-09) : un filet de carton de 4 px entre eux, les
-     grands arrondis aux seules extrémités de la pile. */
-  .haut + .bloc{border-top-left-radius:40px;border-top-right-radius:40px}
-  .panneau > div:last-of-type{border-bottom-left-radius:40px;border-bottom-right-radius:40px}
-  .bloc{background:${COLORS.paper};color:${parti};border-radius:8px;
+  /* BLOCS RAPPROCHÉS (Jules, 28-09) : 4 px entre eux, chacun avec ses coins
+     arrondis (un essai à coins droits n'a pas été retenu). */
+  .bloc{background:${COLORS.paper};color:${parti};border-radius:40px;
         padding:26px 38px 24px;display:flex;flex-direction:column}
   .bloc.fiche{flex:0 0 auto}
   /* ÉCART CONSTANT entre les boîtes (gap du panneau) : c'est le mot
@@ -2109,26 +2117,26 @@ function versoHTML(
       Traitement automatisé, relu à la main&nbsp;: des erreurs restent possibles. Corrections et méthodologie complète sur le site.
     </p>`}
 
-    <p class="pied">
-      ${/* Une fleur de lys ici doublonnait avec l'écusson du parti : le logo
-            NOIR de la CAQ est une fleur de lys, celui du PCQ en porte une —
-            plus de la moitié des 128 cartes affichaient donc deux fois le même
-            dessin, ce qui se lit comme une erreur de montage. */ ""}
+    ${/* À l'IMPRESSION (Jules, 28-09) : ni adresse ni numéro de carte ; le logo
+          de la Vitrine et l'écusson du parti rejoignent le rang des logos
+          CAPP et Laval, sous le panneau (voir .logos-bas). */ ""}
+    ${MODE_IMPRESSION ? "" : `<p class="pied">
       ${logoVitrine
         ? `<span class="marque" style="-webkit-mask-image:url('${logoVitrine}');mask-image:url('${logoVitrine}')"></span>`
         : `<span>${fleur(COLORS.paper, 26)}</span>`}
-      ${/* À l'impression, sans l'adresse (Jules, 28-09) : la ligne de méthode
-            la donne déjà. Le numéro de la carte prend sa place. */ ""}
-      <span>${MODE_IMPRESSION ? `Carte ${c.numero}${c.variante} de ${c.total}` : "vitrinedemocratique.com"}</span>
+      <span>vitrinedemocratique.com</span>
       ${ecusson ? `<span class="ecusson" style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></span>` : `<span></span>`}
-    </p>
+    </p>`}
   </div>
 
   <span class="rond">${portrait ? `<span class="image"></span>` : fleur(parti, 100)}</span>
 
   ${/* Pas de crédit à l'impression (Jules, 28-09) ; les logos CAPP et Laval
         y reprennent la place et la taille qu'ils ont au recto. */ ""}
-  ${MODE_IMPRESSION ? "" : `<p class="credit">
+  ${MODE_IMPRESSION ? `<p class="logos-bas">
+    ${logoVitrine ? `<span class="marque" style="-webkit-mask-image:url('${logoVitrine}');mask-image:url('${logoVitrine}')"></span>` : `<span></span>`}
+    ${ecusson ? `<span class="ecusson" style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></span>` : `<span></span>`}
+  </p>` : `<p class="credit">
     <span>Portrait&nbsp;: Assemblée nationale du Québec &middot; usage non commercial autorisé</span>
     <span>${ordinal(txt(c.edition))} &middot; carte ${c.numero}${c.variante} de ${c.total}</span>
   </p>`}
