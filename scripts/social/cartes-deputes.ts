@@ -503,7 +503,7 @@ function mesurerRetours(): string[] {
   }
   // Une ligne de statistiques plus large que son encadré (colonnes à la
   // mesure du contenu) déborderait sur le côté sans passer à la ligne.
-  const grilles = document.querySelectorAll<HTMLElement>(".stats");
+  const grilles = document.querySelectorAll<HTMLElement>(".stats, .rubrique, .paie");
   for (let i = 0; i < grilles.length; i++) {
     if (grilles[i].scrollWidth > grilles[i].clientWidth + 1) coupees.push(`grille trop large : ${(grilles[i].textContent || "").trim().slice(0, 40)}`);
   }
@@ -611,23 +611,27 @@ const SCRIPT_PLANCHER = `<script>(() => {
   }
 })();</script>`;
 
-/** Pixels rendus au panneau du verso imprimé par le crédit remonté sur le rang
- *  des logos (le rang libéré fait 66 px ; 6 restent en marge). */
-const PANNEAU_BAS_IMPRESSION = 60;
+/** Pixels rendus au panneau du verso imprimé par le crédit, retiré : le rang
+ *  libéré fait 66 px. Les logos CAPP et Laval, à la place et à la taille du
+ *  recto, commencent 60 px au-dessus du bord : 10 px de marge. */
+const PANNEAU_BAS_IMPRESSION = 50;
 const VERSO_IMPRESSION_CSS = `
   .graduations{height:36px}
   .legende-parcours{margin-top:4px}
   .identite{font-size:32px}
   .chef{font-size:30px}
   .vitaux{font-size:30px;margin-top:3px}
-  .rubrique{font-size:32px}
+  /* HIÉRARCHIE titre / libellés (Jules, 28-09). Les libellés ne peuvent pas
+     descendre sous le plancher de 30 px : c'est le titre qui grossit, les
+     libellés qui s'allègent (graisse, espacement), et l'écart qui s'ouvre. */
+  .rubrique{font-size:36px;letter-spacing:.1em}
   .stats>span,.stats-vide{font-size:30px}
+  .stats>span{font-weight:400;letter-spacing:.03em}
+  .paie span{font-size:30px}
+  .paie b{font-size:40px}
   /* Bloc Élection en plus (26-09) : l'interligne des titres (1,48 par défaut
      d'Oswald) et les marges des lignes de statistiques rendent la place. */
-  .stats{margin-top:8px}
-  /* Écart FIXE entre les blocs, le même sur toutes les cartes (Jules, 26-09 :
-     les blocs partent du même point ; le vide varie en bas). */
-  .panneau{gap:8px}
+  .stats{margin-top:14px}
   .stats>span{padding-bottom:3px}
   .bloc.election .vitaux{margin-top:4px}
   .identite{margin-top:4px}
@@ -644,10 +648,8 @@ const VERSO_IMPRESSION_CSS = `
   .legende-parcours .ft{white-space:normal;line-height:1.1}
   .citation{display:block;-webkit-line-clamp:unset;overflow:visible}
   .legende{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
-  /* Le crédit sur le rang des logos CAPP et Laval, réduits : un rang de moins
-     sous le panneau, rendu au panneau (voir PANNEAU_BAS_IMPRESSION). */
-  .credit{top:auto;bottom:14px;align-items:center}
-  .marque-capp{transform:translateX(-50%) scale(.62);transform-origin:center bottom}
+  .pied>span:nth-child(2){font-family:"Archivo Narrow",sans-serif;font-style:italic;font-weight:400;
+                          letter-spacing:0;text-transform:none;opacity:.75}
   .panneau{height:${PANNEAU.bas - PANNEAU.y + PANNEAU_BAS_IMPRESSION}px}
 `;
 
@@ -1138,6 +1140,27 @@ async function ecussonURI(cle: Carte["cle"]): Promise<string | null> {
  *  responsable de l'Accès à l'information et de la Protection des
  *  renseignements personnels »), il rapetisse jusqu'à 15 px plutôt que d'être
  *  coupé. Pas de fonction imbriquée (cf. ajusterVerso). */
+/** Un titre de bloc trop long pour son encadré (« Fiche électorale · Élu à la
+ *  partielle du 13 mars 2023 ») resserre son interlettrage, puis sa taille,
+ *  sans passer sous le plancher. Pas de fonction imbriquée (cf. ajusterVerso). */
+function ajusterRubriques(): void {
+  const els = document.querySelectorAll<HTMLElement>(".rubrique");
+  const plancher = Number(document.body.dataset.plancher || 18);
+  for (let i = 0; i < els.length; i++) {
+    const cs = getComputedStyle(els[i]);
+    let taille = parseFloat(cs.fontSize);
+    let espace = parseFloat(cs.letterSpacing) || 0;
+    while (els[i].scrollWidth > els[i].clientWidth && espace > 0.5) {
+      espace = Math.max(0, espace - 0.5);
+      els[i].style.letterSpacing = `${espace}px`;
+    }
+    while (els[i].scrollWidth > els[i].clientWidth && taille > plancher) {
+      taille -= 1;
+      els[i].style.fontSize = `${taille}px`;
+    }
+  }
+}
+
 function ajusterFonctions(): void {
   const els = document.querySelectorAll<HTMLElement>(".legende-parcours .ft");
   for (let i = 0; i < els.length; i++) {
@@ -1748,7 +1771,7 @@ function versoHTML(
   }
   const blocElection = c.mandat || casesElection.length || parcoursLigne ? `
     <div class="bloc election">
-      <p class="rubrique">${txt(c.mandat || "Élection")}</p>
+      <p class="rubrique">Fiche électorale${c.mandat ? ` &middot; ${txt(c.mandat)}` : ""}</p>
       ${casesElection.length ? grilleStats(casesElection) : ""}
       ${parcoursLigne ? `<p class="vitaux">${txt(parcoursLigne)}</p>` : ""}
     </div>` : "";
@@ -1820,7 +1843,7 @@ function versoHTML(
      le pied, au lieu de s'accumuler en un seul creux. */
   .panneau{position:absolute;left:${PANNEAU.x}px;top:${PANNEAU.y}px;
            width:${PANNEAU.w}px;height:${PANNEAU.bas - PANNEAU.y}px;
-           overflow:hidden;display:flex;flex-direction:column;gap:16px}
+           overflow:hidden;display:flex;flex-direction:column;gap:4px}
 
   /* EN-TÊTE sur le carton : le grand portrait part du coin supérieur droit et
      le remplit. Le nom lui réserve sa largeur au lieu de passer dessous. */
@@ -1863,7 +1886,11 @@ function versoHTML(
      séparés par le carton nu. Un panneau unique laissait un grand vide au
      milieu, le mot étant poussé en bas ; deux blocs remplissent la carte et
      donnent au mot son propre cadre. */
-  .bloc{background:${COLORS.paper};color:${parti};border-radius:40px;
+  /* BLOCS COLLÉS (Jules, 28-09) : un filet de carton de 4 px entre eux, les
+     grands arrondis aux seules extrémités de la pile. */
+  .haut + .bloc{border-top-left-radius:40px;border-top-right-radius:40px}
+  .panneau > div:last-of-type{border-bottom-left-radius:40px;border-bottom-right-radius:40px}
+  .bloc{background:${COLORS.paper};color:${parti};border-radius:8px;
         padding:26px 38px 24px;display:flex;flex-direction:column}
   .bloc.fiche{flex:0 0 auto}
   /* ÉCART CONSTANT entre les boîtes (gap du panneau) : c'est le mot
@@ -1875,7 +1902,7 @@ function versoHTML(
      elle prend l'espace restant, pour garder l'écart constant. */
 
   .rubrique{font-family:"Oswald",sans-serif;font-weight:600;font-size:27px;letter-spacing:.14em;line-height:1.1;
-            text-transform:uppercase;text-align:center}
+            text-transform:uppercase;text-align:center;white-space:nowrap}
   /* LA BARRE EMPILÉE et sa légende. */
   .bloc.parts{flex:0 0 auto;padding:22px 38px 24px}
   .empilee{display:flex;height:40px;margin-top:16px;overflow:hidden;border-radius:3px}
@@ -1912,14 +1939,17 @@ function versoHTML(
   /* Quatre ou cinq niveaux : la légende se resserre plutôt que d'en cacher. */
   .legende-parcours.dense li{padding:1px 0;font-size:19px}
   .legende-parcours.dense .fa{font-size:17px}
-  .rubrique b{font-weight:700;letter-spacing:.04em}
+  .paie{display:flex;align-items:baseline;justify-content:center;gap:12px;margin-top:8px;padding-top:8px;
+        border-top:1px solid currentColor;font-family:"Oswald",sans-serif;white-space:nowrap}
+  .paie b{font-weight:700;font-size:36px;line-height:1}
+  .paie span{font-weight:500;font-size:19px;letter-spacing:.08em;text-transform:uppercase;opacity:.72}
   /* LA LIGNE DE STATISTIQUES — quatre cases égales entre deux filets, séparées
      par des filets verticaux fins ; chiffre en gros, libellé dessous. */
   .stats{display:grid;margin-top:12px}
   .stats>span{display:flex;align-items:flex-end;justify-content:center;text-align:center;
               padding:0 8px 8px;border-bottom:1px solid currentColor;
               font-family:"Oswald",sans-serif;font-weight:500;font-size:19px;line-height:1.1;
-              letter-spacing:.06em;text-transform:uppercase}
+              letter-spacing:.06em;text-transform:uppercase;opacity:.72}
   .stats>b{display:flex;align-items:center;justify-content:center;padding:10px 8px 2px;min-height:56px;
            font-family:"Oswald",sans-serif;font-weight:700;font-size:44px;line-height:1}
   .stats>:not(.c0){border-left:1px solid currentColor}
@@ -2017,20 +2047,13 @@ function versoHTML(
     ${blocElection}
 
     <div class="bloc fiche">
-      ${/* Sans la période (Jules, 28-09) : toute la carte porte sur la
-            législature, le recto le dit déjà. */ ""}
-      <p class="rubrique">Fiche à l'Assemblée &middot; ${txt(c.salon)}</p>
+      <p class="rubrique">Fiche à l'Assemblée</p>
       ${statsFiche}
     </div>
 
     ${c.parcours && c.remuneration ? `
     <div class="bloc parcours">
-      ${/* Le montant PAR ANNÉE seul, dans le titre (Jules, 28-09) : il se
-            compare d'un élu à l'autre ; le total dépendait de la durée du
-            mandat. La frise dit d'où il vient. */ ""}
-      <p class="rubrique">Rémunération &middot; ${c.remunerationMoyenne
-        ? `<b>${MONTANT.format(c.remunerationMoyenne)}&nbsp;$</b> par année`
-        : `<b>${MONTANT.format(c.remuneration)}&nbsp;$</b> sur la législature`}</p>
+      <p class="rubrique">Parcours et rémunération</p>
       <div class="grille-parcours">
         <div class="frise">
           <div class="frise-piste">
@@ -2043,6 +2066,12 @@ function versoHTML(
           </ul>
         </div>
       </div>
+      ${/* Le montant PAR ANNÉE seul (Jules, 28-09), sur un rang compact sous
+            la frise : il se compare d'un élu à l'autre ; le total dépendait
+            de la durée du mandat. */ ""}
+      <p class="paie">${c.remunerationMoyenne
+        ? `<b>${MONTANT.format(c.remunerationMoyenne)}&nbsp;$</b><span>par année</span>`
+        : `<b>${MONTANT.format(c.remuneration)}&nbsp;$</b><span>sur la législature</span>`}</p>
     </div>` : ""}
 
     ${barre ? `
@@ -2088,19 +2117,21 @@ function versoHTML(
       ${logoVitrine
         ? `<span class="marque" style="-webkit-mask-image:url('${logoVitrine}');mask-image:url('${logoVitrine}')"></span>`
         : `<span>${fleur(COLORS.paper, 26)}</span>`}
-      <span>vitrinedemocratique.com</span>
+      ${/* À l'impression, sans l'adresse (Jules, 28-09) : la ligne de méthode
+            la donne déjà. Le numéro de la carte prend sa place. */ ""}
+      <span>${MODE_IMPRESSION ? `Carte ${c.numero}${c.variante} de ${c.total}` : "vitrinedemocratique.com"}</span>
       ${ecusson ? `<span class="ecusson" style="-webkit-mask-image:url('${ecusson}');mask-image:url('${ecusson}')"></span>` : `<span></span>`}
     </p>
   </div>
 
   <span class="rond">${portrait ? `<span class="image"></span>` : fleur(parti, 100)}</span>
 
-  <p class="credit">
-    ${MODE_IMPRESSION
-      ? `<span>Portrait&nbsp;: Assemblée nationale</span><span>Carte ${c.numero}${c.variante} de ${c.total}</span>`
-      : `<span>Portrait&nbsp;: Assemblée nationale du Québec &middot; usage non commercial autorisé</span>
-    <span>${ordinal(txt(c.edition))} &middot; carte ${c.numero}${c.variante} de ${c.total}</span>`}
-  </p>
+  ${/* Pas de crédit à l'impression (Jules, 28-09) ; les logos CAPP et Laval
+        y reprennent la place et la taille qu'ils ont au recto. */ ""}
+  ${MODE_IMPRESSION ? "" : `<p class="credit">
+    <span>Portrait&nbsp;: Assemblée nationale du Québec &middot; usage non commercial autorisé</span>
+    <span>${ordinal(txt(c.edition))} &middot; carte ${c.numero}${c.variante} de ${c.total}</span>
+  </p>`}
   ${marquesInstitutions(logoCapp)}
   <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
   <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>
@@ -2655,6 +2686,7 @@ async function main() {
           await page.evaluate(() => document.fonts.ready);
           await page.evaluate(ajusterNom);
           await page.evaluate(ajusterIdentite);
+          await page.evaluate(ajusterRubriques);
           await page.evaluate(ajusterFonctions);
           await page.evaluate(ajusterVerso);
           const debord = await page.evaluate(mesurerDebordement);
