@@ -611,6 +611,19 @@ const SCRIPT_PLANCHER = `<script>(() => {
   }
 })();</script>`;
 
+/** RECTO IMPRIMÉ (28-09) : les petits textes au même plancher que le verso.
+ *  Relevé avant : « 43e législature » et la fonction au pied à 3,2 pt, la
+ *  circonscription à 4,1 pt, l'astérisque du sigle à 2,1 pt. Le pied remonte de
+ *  12 px pour rester au-dessus des logos. */
+const RECTO_IMPRESSION_CSS = `
+  .sous{font-size:${PLANCHER_IMPRESSION}px;letter-spacing:.06em;opacity:1}
+  .pied{font-size:${PLANCHER_IMPRESSION}px;letter-spacing:.03em;top:${PANNEAU.bas + 14}px}
+  .ord{font-size:.78em;vertical-align:.28em}
+  .code-fonction .renvoi{font-size:.5em}
+  .pastille .lettres{font-size:${PLANCHER_IMPRESSION}px}
+  .pastille .renvoi{font-size:.75em}
+`;
+
 /** Pixels rendus au panneau du verso imprimé par le crédit, retiré : le rang
  *  libéré fait 66 px. Les logos CAPP et Laval, à la place et à la taille du
  *  recto, commencent 60 px au-dessus du bord : 10 px de marge. */
@@ -627,8 +640,28 @@ const VERSO_IMPRESSION_CSS = `
   .rubrique{font-size:36px;letter-spacing:.1em}
   .stats>span,.stats-vide{font-size:30px}
   .stats>span{font-weight:400;letter-spacing:.03em}
-  .paie span{font-size:30px}
+  .paie span{font-size:30px;font-weight:400;letter-spacing:.03em}
   .paie b{font-size:38px}
+  /* ── LISIBILITÉ À L'IMPRESSION (relevé du 28-09 sur les 129 cartes) ──────
+     La face est réduite à 90,55 % (cadre à 3 mm de la coupe) : 1 px y fait
+     0,0537 mm. Un filet de 1 px mesurait 0,15 pt, sous le seuil de ce qu'une
+     presse reproduit (0,25 pt) : tous passent à 2 px (0,30 pt). Les textes
+     estompés (opacité de 0,62 à 0,72) tombaient à 2,3:1 de contraste sur les
+     cartes orange : ils sont à pleine encre, la hiérarchie tient à la graisse
+     et au corps. */
+  .stats>span{border-bottom-width:2px}
+  .stats>:not(.c0){border-left-width:2px}
+  .paie{border-top-width:2px}
+  .legende-parcours .puce{border-width:2px}
+  .graduations span::before{border-left-width:2px}
+  .frise-piste i.hors{opacity:.6}
+  .stats>span,.paie span,.graduations,.metho,.citation,.vitaux,.identite,.bloc.election .vitaux{opacity:1}
+  .legende .reste{opacity:.85}
+  /* La piste du ton était un ton sur ton (papier foncé sur papier, 1,08:1) :
+     invisible une fois imprimée. */
+  .ton .piste{background:color-mix(in srgb, currentColor 20%, transparent)}
+  .ton .neutre{opacity:.85}
+  .empilee{height:44px}
   /* Bloc Élection en plus (26-09) : l'interligne des titres (1,48 par défaut
      d'Oswald) et les marges des lignes de statistiques rendent la place. */
   .stats{margin-top:14px}
@@ -1436,6 +1469,7 @@ function carteLegendaireHTML(c: Carte, portrait: string | null, ecusson: string 
   .grain,.mouchete{position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none}
   .grain{opacity:.22}
   .mouchete{opacity:.18}
+  ${MODE_IMPRESSION ? RECTO_IMPRESSION_CSS : ""}
 </style></head><body>
   ${portrait ? `<div class="photo-pleine"></div>` : ""}
   <div class="fondu"></div>
@@ -1644,6 +1678,7 @@ function carteHTML(
   .grain,.mouchete{position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none}
   .grain{opacity:.22}
   .mouchete{opacity:.18}
+  ${MODE_IMPRESSION ? RECTO_IMPRESSION_CSS : ""}
 </style></head><body>
   <div class="panneau">
     <div class="photo">
@@ -1805,32 +1840,28 @@ function versoHTML(
   const pile = d.enjeuStack.filter((x) => x.widthPct > 0);
   const nommes = pile.filter((x) => !x.isReste && x.cle).slice(0, 3);
   const TRAMES = [1, .68, .42];
-  // Le tiret se pose dans le plus large des segments pâles, qui se suivent
-  // sans séparation et se lisent comme un seul.
-  const plusLargeAutre = pile.filter((x) => !nommes.includes(x)).sort((a, b) => b.widthPct - a.widthPct)[0];
+  const TAILLE_PICTO_BARRE = MODE_IMPRESSION ? 30 : 26;
   const barre = pile.length
-    ? `<div class="empilee">${pile.map((x) => {
-        const rang = nommes.indexOf(x);
-        const trame = rang >= 0 ? TRAMES[rang] : .16;
-        // Le pictogramme DANS le segment (Jules, 28-09). La trame passe par
-        // la couleur (mélange avec le papier) et non par l'opacité, qui
-        // aurait aussi délavé le pictogramme. Papier sur les trames foncées,
-        // encre du parti sur la claire ; rien sous 4 % de large.
-        const fond = `color-mix(in srgb, ${parti} ${Math.round(trame * 100)}%, ${COLORS.paper})`;
-        const picto = rang >= 0
-          ? x.widthPct >= 4 ? enjeuGlyph(x.cle, rang < 2 ? COLORS.paper : parti, 26) : ""
-          : x === plusLargeAutre && x.widthPct >= 4 ? tiret(parti, 26) : "";
+    ? `<div class="empilee">${nommes.map((x, rang) => {
+        // Le pictogramme DANS le segment (Jules, 28-09), centré. La trame
+        // passe par la couleur (mélange avec le papier) et non par l'opacité,
+        // qui aurait aussi délavé le pictogramme. Papier sur les trames
+        // foncées, encre du parti sur la claire ; rien sous 4 % de large.
+        const fond = `color-mix(in srgb, ${parti} ${Math.round(TRAMES[rang] * 100)}%, ${COLORS.paper})`;
+        const picto = x.widthPct >= 4 ? enjeuGlyph(x.cle, rang < 2 ? COLORS.paper : parti, TAILLE_PICTO_BARRE) : "";
         return `<i style="width:${x.widthPct}%;background:${fond}">${picto}</i>`;
-      }).join("")}</div>
+      }).join("")}${/* Tous les autres enjeux en UN segment pâle, pour que le
+        tiret soit centré sur toute la zone et non sur un de ses morceaux. */ ""}<i style="flex:1 1 0;background:color-mix(in srgb, ${parti} 16%, ${COLORS.paper})">${
+        100 - nommes.reduce((t, x) => t + x.widthPct, 0) >= 4 ? tiret(parti, TAILLE_PICTO_BARRE) : ""}</i></div>
        <ul class="legende">${nommes.map((x, i) => `
          <li>
            ${/* Sans la puce de couleur : le pictogramme, repris dans la barre,
                  fait le lien. Elle ne reste qu'à « Autres », qui n'en a pas. */ ""}
-           <span class="pg">${enjeuGlyph(x.cle, parti, 22)}</span>
+           <span class="pg">${enjeuGlyph(x.cle, parti, MODE_IMPRESSION ? 26 : 22)}</span>
            <span class="pl">${txt(MODE_IMPRESSION ? LIBELLE_ENJEU_ENTIER[x.label] ?? x.label : x.label)}</span>
            <b>${Math.round(x.widthPct)}&#8239;%</b>
          </li>`).join("")}
-         <li class="reste"><span class="pg">${tiret(parti, 22)}</span>
+         <li class="reste"><span class="pg">${tiret(parti, MODE_IMPRESSION ? 26 : 22)}</span>
            <span class="pl">Autres</span>
            <b>${Math.round(100 - nommes.reduce((t, x) => t + x.widthPct, 0))}&#8239;%</b></li>
        </ul>`
@@ -1963,7 +1994,8 @@ function versoHTML(
   .paie{display:flex;align-items:baseline;justify-content:center;gap:12px;margin-top:8px;padding-top:8px;
         border-top:1px solid currentColor;font-family:"Oswald",sans-serif;white-space:nowrap}
   .paie b{font-weight:700;font-size:36px;line-height:1}
-  .paie span{font-weight:500;font-size:19px;letter-spacing:.08em;text-transform:uppercase;opacity:.72}
+  /* Même style que les libellés des lignes de statistiques (.stats>span). */
+  .paie span{font-weight:500;font-size:19px;line-height:1.1;letter-spacing:.06em;text-transform:uppercase;opacity:.72}
   /* LA LIGNE DE STATISTIQUES — quatre cases égales entre deux filets, séparées
      par des filets verticaux fins ; chiffre en gros, libellé dessous. */
   .stats{display:grid;margin-top:12px}
@@ -2240,6 +2272,17 @@ async function fusionnerLignesParParti(data: NonNullable<Awaited<ReturnType<type
       d.signatureWord = modele.signatureWord;
       d.signatureWordContext = modele.signatureWordContext;
     }
+    // MÊME ÉLU, MÊME PARTI, DEUX GRAPHIES (28-09, données reconstruites) :
+    // « Eric Girard » et « Éric Girard », même identifiant et même siège de
+    // Lac-Saint-Jean, sortaient en deux lignes du même parti, donc en deux
+    // cartes. Dans une même liste de parti, une seule ligne par élu : celle
+    // qui porte le plus de mots.
+    for (const liste of [...vueP.rows.map((x) => x.deputies ?? []), vueP.independants ?? []]) {
+      const doubles = liste.filter((d) => cibles.includes(d));
+      if (doubles.length < 2) continue;
+      const garde = doubles.includes(modele) ? modele : doubles[0];
+      for (const d of doubles) if (d !== garde) liste.splice(liste.indexOf(d), 1);
+    }
     fusions++;
   }
   console.log(`  ${fusions} élu·période(s) réunis sur plusieurs lignes de parti`);
@@ -2252,6 +2295,10 @@ async function main() {
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie
     : NOM_STYLE ? `social-out/cartes-deputes-${NOM_STYLE}` : "social-out/cartes-deputes");
 
+  // CITATION SUR DEUX LIGNES à l'impression (28-09) : le raffineur publie
+  // désormais la phrase entière ; à 95 signes, l'extrait du site en coupait
+  // 83 sur 98. 150 signes tiennent sur deux lignes à 30 px.
+  if (MODE_IMPRESSION) process.env.VITRINE_CITATION_BUDGET ??= "150";
   const data = await loadAssemblee();
   if (!data) throw new Error("Aucune donnée d'Assemblée : public/data/agora/ est vide ou illisible.");
   await fusionnerLignesParParti(data);
