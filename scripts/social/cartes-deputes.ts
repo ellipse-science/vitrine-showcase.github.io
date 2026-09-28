@@ -566,6 +566,13 @@ const H = 1496;
 // réduite d'une échelle uniforme et centrée : 3 mm de papier sur les côtés,
 // 4,2 mm en haut et en bas, comme le liseré d'une vraie carte. Sortie à
 // l'échelle 2 (856 ppp), une image de 69,5 x 94,9 mm.
+/** LOGO DE LA VITRINE AU BAS DU VERSO IMPRIMÉ. Essai sur papier de Jules
+ *  (28-09) : le logo ne se voyait pas. C'est un dessin au trait de 6 px sur
+ *  1 788 de large ; à 9 mm, le trait tombait à 0,09 point, quand une presse
+ *  demande 0,25 point au moins, et le nom faisait 0,5 mm de haut. Décision de
+ *  Jules : le MONOGRAMME « VD » seul. Il est tiré du logo (aucun fichier du
+ *  monogramme n'existe), et son trait est épaissi sans être redessiné. */
+const LOGO_VERSO = { largeur: 57, hauteur: 60, rayon: 10 };
 const FOND_PERDU = 51;                          // 3 mm à 428 ppp
 const ECHELLE_IMPRESSION = (63.5 - 6) / 63.5;   // le cadre à 3 mm de la coupe
 
@@ -711,7 +718,11 @@ const VERSO_IMPRESSION_CSS = `
   .marque-capp i{opacity:.8}
   .logos-bas span{display:block;background:${COLORS.paper};opacity:.8;
                   -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-  .logos-bas .marque{width:270px;height:56px;-webkit-mask-position:left center;mask-position:left center}
+  /* Le logo de la Vitrine, au trait épaissi (logoVitrineImpression), sans
+     transparence : un trait fin pâlit déjà de lui-même. Plus haut que le
+     rang, il le dépasse en haut et en bas, centré sur lui. */
+  .logos-bas .marque{flex:0 0 auto;width:${LOGO_VERSO.largeur}px;height:${LOGO_VERSO.hauteur}px;opacity:1;
+                     -webkit-mask-position:left center;mask-position:left center}
   .logos-bas .ecusson{width:50px;height:50px;-webkit-mask-position:right center;mask-position:right center}
   .panneau{height:${PANNEAU.bas - PANNEAU.y + PANNEAU_BAS_IMPRESSION}px}
 `;
@@ -839,6 +850,40 @@ function dateFr(iso?: string): string | null {
  *  agrandi, et l'Université Laval à côté, séparés d'un filet. Mêmes couleur et
  *  opacité que le CAPP avait seul sur chaque gabarit (règles .marque-capp i). */
 let LOGO_ULAVAL: string | null = null;
+
+async function logoVitrineImpression(): Promise<string | null> {
+  const sharp = (await import("sharp")).default;
+  const source = path.resolve(process.cwd(), "public/images/brand/logo_vitrinedemocratique_bg-none_theme-black.png");
+  // Le monogramme occupe les colonnes 376 à 919 et les lignes 8 à 582 du logo.
+  const r = LOGO_VERSO.rayon, x0 = 376 - r, y0 = 0, l = 544 + 2 * r, h = 591;
+  const lu = await sharp(source).ensureAlpha().extractChannel("alpha")
+    .extract({ left: x0, top: y0, width: l, height: h }).raw().toBuffer().catch(() => null);
+  if (!lu) return null;
+  // Le « E » final de VITRINE (colonnes 380 à 419) et le bord du « D » de
+  // DÉMOCRATIQUE (colonne 929) entrent dans ce rectangle : on les efface.
+  for (let y = 270; y < 358; y++) {
+    for (let x = 0; x < l; x++) if (x + x0 < 422 || x + x0 > 923) lu[(y - y0) * l + x] = 0;
+  }
+  // Épaississement : chaque point prend la valeur la plus opaque dans un
+  // disque de rayon r (dilatation). Le tracé garde sa forme et ses bords lissés.
+  const disque: [number, number][] = [];
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r) disque.push([dx, dy]);
+  const epais = Buffer.alloc(l * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < l; x++) {
+      let m = 0;
+      for (const [dx, dy] of disque) {
+        const xx = x + dx, yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= l || yy >= h) continue;
+        const v = lu[yy * l + xx];
+        if (v > m) { m = v; if (m === 255) break; }
+      }
+      epais[(y * l + x) * 4 + 3] = m;
+    }
+  }
+  const png = await sharp(epais, { raw: { width: l, height: h, channels: 4 } }).trim().png().toBuffer();
+  return `data:image/png;base64,${png.toString("base64")}`;
+}
 function marquesInstitutions(logoCapp: string | null): string {
   const masque = (uri: string) => `-webkit-mask-image:url('${uri}');mask-image:url('${uri}')`;
   const parts = [
@@ -2971,6 +3016,7 @@ async function main() {
 
   const logos = await loadLogos();
   LOGO_ULAVAL = logos.ulaval;
+  const logoVerso = MODE_IMPRESSION ? await logoVitrineImpression() : null;
   // « Dernière mise à jour du module : vendredi 12 juin 2026 » → « vendredi 12
   // juin 2026 ». Le libellé du site porte son propre préambule, qui ne
   // s'insère pas dans la phrase du disclaimer.
@@ -2996,7 +3042,7 @@ async function main() {
     if (c.rarete === "legendaire") c.signature = await signatureURI(c.slug);
     const fiche = fiches.get(slugCirco(c.deputy)) ?? { [periode]: c.deputy };
     pages.push({ slug: c.slug, html: avecMention(carteHTML(c, portrait, ecusson, logos.capp), mention, "recto") });
-    pages.push({ slug: `${c.slug}-verso`, html: avecMention(versoHTML(c, fiche, maxAbs, libelles, portrait, ecusson, logos.vitrine, logos.capp, seance), mention, "verso") });
+    pages.push({ slug: `${c.slug}-verso`, html: avecMention(versoHTML(c, fiche, maxAbs, libelles, portrait, ecusson, MODE_IMPRESSION ? logoVerso ?? logos.vitrine : logos.vitrine, logos.capp, seance), mention, "verso") });
   }
 
   // LES DEUX CARTES DU PAQUET : avec la série entière, ou seules (--paquet).
