@@ -2252,7 +2252,7 @@ function pagesPaquet(
   const textures = `
   <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
   <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>`;
-  const polices = `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500&family=Oswald:wght@400;500;600;700&family=Archivo+Narrow:ital,wght@0,400;0,600;0,700;1,400&display=block" rel="stylesheet">`;
+  const polices = `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=Oswald:wght@400;500;600;700&family=Archivo+Narrow:ital,wght@0,400;0,600;0,700;1,400&display=block" rel="stylesheet">`;
   // Les quatre teintes de l'iridescence, et leur version soutenue pour le trait.
   const IRIS = "linear-gradient(100deg,#E79FC6 0%,#8FCFEE 34%,#F3DE95 67%,#A9DFC4 100%)";
   const commun = (fond: string, encre: string, logo: string) => `
@@ -2312,27 +2312,30 @@ function pagesPaquet(
   const lys = (n: number, couleur: string, taille: number) => Array.from({ length: n }, () => fleur(couleur, taille)).join("");
 
   // ── Dessus, recto : la couverture ──────────────────────────────────────
-  const couverture = page(`${cssVisible}
-  .centre{position:absolute;left:${MARGE}px;right:${MARGE}px;top:${MARGE}px;bottom:${H - PANNEAU.bas}px;
-          display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 50px}
-  .num{font-family:"Playfair Display",serif;font-weight:900;font-size:330px;line-height:1;letter-spacing:-.03em;margin-top:64px}
-  .num sup{font-size:.34em;vertical-align:1.45em;letter-spacing:0;line-height:0}
-  .mot{font-family:"Playfair Display",serif;font-weight:900;font-size:112px;line-height:1;letter-spacing:.02em;text-transform:uppercase;margin-top:48px}
-  .annees{margin-top:24px;font-family:"IBM Plex Mono",monospace;font-size:42px;letter-spacing:.22em;color:${COLORS.soft}}
-  .filet{width:300px;height:6px;border-radius:3px;background:${IRIS};margin:52px 0 40px}
-  .sur{font-family:"IBM Plex Mono",monospace;font-size:32px;line-height:1.35;letter-spacing:.12em;text-transform:uppercase;color:${COLORS.soft}}
-  .lys{display:flex;gap:10px;margin-top:30px}`,
+  // Le logo d'abord, comme au dos ; la législature et ses années en dessous,
+  // en italique fin. Ni fleurs de lys ni décompte de la série (Jules, 28-09).
+  const cssGrandsLogos = `
+  .centre{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .marque-capp{position:static;transform:none;gap:40px}
+  .marque-capp i{width:324px;height:100px}
+  .marque-capp i.sep{width:2.5px;height:66px}
+  .marque-capp i.ulaval{width:172px;height:82px}`;
+  const couverture = page(`${cssVisible}${cssGrandsLogos}
+  .iris{filter:blur(70px);opacity:1}
+  .filet{width:220px;height:5px;border-radius:3px;background:${IRIS};margin:96px 0 64px}
+  .legislature{font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:112px;line-height:1;letter-spacing:.005em}
+  .legislature sup{font-size:.5em;vertical-align:.78em;line-height:0;margin-right:.06em}
+  .annees{margin-top:40px;font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:38px;letter-spacing:.42em;
+          text-indent:.42em;color:${COLORS.soft}}
+  .marque-capp{margin-top:150px}`,
   `<div class="iris"></div><div class="cadre"></div>
   <div class="centre">
-    ${logoIrise(760)}
-    <p class="num">43<sup>e</sup></p>
-    <p class="mot">Législature</p>
-    <p class="annees">2022 – 2026</p>
+    ${logoIrise(880)}
     <span class="filet"></span>
-    <p class="sur">Les élus de l'Assemblée nationale<br>Série de ${total} cartes</p>
-    <p class="lys">${lys(4, COLORS.ink, 40)}</p>
-  </div>
-  ${marquesInstitutions(logos.capp)}${textures}`);
+    <p class="legislature">43<sup>e</sup> législature</p>
+    <p class="annees">2022 – 2026</p>
+    ${marquesInstitutions(logos.capp)}
+  </div>${textures}`);
 
   // ── Dessus, verso : la légende ─────────────────────────────────────────
   // Formes épicènes ou doublets (pas de point médian) : sur une carte, le
@@ -2379,8 +2382,8 @@ function pagesPaquet(
     <div class="bloc"><h3>Sources</h3>
       <p>Journal des débats de l'Assemblée nationale&nbsp;: les séances du Salon bleu, du 29&nbsp;novembre 2022 au 12&nbsp;juin 2026, soit 287&nbsp;jours et 594&nbsp;237&nbsp;phrases. Fiches des députés de l'Assemblée. Résultats d'Élections Québec.</p></div>
     <div class="bloc"><h3>Modèles et validation</h3>
-      <p>Chaque phrase est lue par 21&nbsp;modèles de thèmes, regroupés en 12&nbsp;enjeux, et par un modèle de ton. Ce sont des modèles légers (mDeBERTa), entraînés par notre équipe sur 99&nbsp;997&nbsp;phrases de presse et de débats.</p>
-      <p>Confrontés à 2&nbsp;273&nbsp;phrases annotées à la main, ils obtiennent un F1 moyen de 0,656 pour les thèmes et de 0,653 pour le ton, là où deux annotateurs humains s'accordent à 0,669.</p>
+      <p>Chaque phrase est lue par 21&nbsp;modèles de thèmes, regroupés en 12&nbsp;enjeux, et par un modèle de ton. Ce sont des modèles légers (mDeBERTa), entraînés par notre équipe sur des phrases de presse et de débats parlementaires.</p>
+      <p>Ils sont validés sur des phrases annotées à la main, hors du corpus d'entraînement. Le rapport de validation est public.</p>
       <p>Six phrases sur dix ne portent aucun enjeu identifiable&nbsp;: elles comptent dans les mots, pas dans les parts. La parole d'un élu qui préside la séance n'est pas comptée.</p></div>
     <div class="bloc"><h3>Expression distinctive</h3>
       <p>Un calcul retient les expressions d'un ou deux mots qu'un élu emploie souvent et que les autres emploient peu. Les mots de liaison sont retirés, d'où des formes comme «&nbsp;taxes impôts&nbsp;».</p>
@@ -2393,13 +2396,9 @@ function pagesPaquet(
   </div>${marquesInstitutions(logos.capp)}${textures}`);
 
   // ── Dessous, verso : le logo seul ──────────────────────────────────────
-  const dos = page(`${cssVisible}
+  const dos = page(`${cssVisible}${cssGrandsLogos}
   .iris{filter:blur(70px);opacity:1}
-  .centre{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:120px}
-  .marque-capp{position:static;transform:none;gap:40px}
-  .marque-capp i{width:324px;height:100px}
-  .marque-capp i.sep{width:2.5px;height:66px}
-  .marque-capp i.ulaval{width:172px;height:82px}`,
+  .centre{gap:120px}`,
   `<div class="iris"></div><div class="cadre"></div>
   <div class="centre">${logoIrise(880)}${marquesInstitutions(logos.capp)}</div>${textures}`);
 
