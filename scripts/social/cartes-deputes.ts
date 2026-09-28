@@ -1247,27 +1247,6 @@ function ajusterFonctions(): void {
   }
 }
 
-/** Ligne d'identité sur deux rangs → le parti passe au sigle. Même mesure que
- *  mesurerRetours (rangées distinctes, 12 px de tolérance). Pas de fonction
- *  imbriquée (cf. ajusterVerso). */
-function ajusterIdentite(): void {
-  const ligne = document.querySelector<HTMLElement>(".identite");
-  const long = document.querySelector<HTMLElement>(".parti-long");
-  const court = document.querySelector<HTMLElement>(".parti-court");
-  if (!ligne || !long || !court) return;
-  const r = document.createRange();
-  r.selectNodeContents(ligne);
-  const rects = r.getClientRects();
-  let min = Infinity;
-  let max = -Infinity;
-  for (let j = 0; j < rects.length; j++) {
-    if (rects[j].height === 0) continue;
-    if (rects[j].top < min) min = rects[j].top;
-    if (rects[j].top > max) max = rects[j].top;
-  }
-  if (max - min > 12) { long.style.display = "none"; court.style.display = "inline"; }
-}
-
 function ajusterNom(): void {
   const els = Array.from(document.querySelectorAll<HTMLElement>(".nom, .nom .ligne"));
   for (const el of els) {
@@ -1809,16 +1788,10 @@ function versoHTML(
     .replace(/[»"“”\s]+$/, "")
     .trim();
 
-  // La ligne d'identité du carton : « GOALIE   CHICAGO BLACK HAWKS ».
-  // Circonscription et parti seulement : l'enjeu dominant et son pictogramme
-  // en ont été retirés (Jules, 25-09). Le verso le donne déjà dans « Part de
-  // ses interventions », le recto par le pictogramme de la bulle.
-  // Le parti existe en deux formes : le nom complet, et le sigle que
-  // ajusterIdentite n'affiche QUE si la ligne passait sur deux rangs
-  // (« Charlevoix–Côte-de-Beaupré · Coalition avenir Québec »).
-  const identite = d.circonscription ?? "";
+  // Sous le nom : le PARTI seul, en toutes lettres (Jules, 28-09). La
+  // circonscription est au recto ; sans elle, le nom complet du parti tient
+  // toujours sur la ligne et le sigle de repli n'a plus lieu d'être.
   const partiLong = ligneParti(c);
-  const partiCourt = partiLong === (c.cle === "ind" ? c.parti : PARTY_FULL_NAMES[c.cle]) ? c.parti : partiLong;
 
   // Vitaux du carton — « Ht: 6'0"  Wt: 178  Born: 5-12-56 ». Les nôtres
   // viennent d'affiliationHistory : date d'élection, et bascule d'allégeance
@@ -1957,7 +1930,6 @@ function versoHTML(
   .chef{display:inline-block;margin-top:9px;background:${COLORS.paper};color:${parti};
         font-family:"Oswald",sans-serif;font-weight:600;font-size:21px;letter-spacing:.16em;
         text-transform:uppercase;padding:5px 14px}
-  .parti-court{display:none}
   .rond{position:absolute;right:-42px;top:-42px;width:232px;height:232px;border-radius:50%;
         border:8px solid ${COLORS.paper};background:${COLORS.paper};overflow:hidden}
   .rond .image{position:absolute;inset:0;background-image:url("${portrait ?? ""}");
@@ -2119,7 +2091,7 @@ function versoHTML(
       <span class="numero">${c.numero}${c.variante}</span>
       <span class="titre">
         <span class="nom">${txt(nomImprime(d.name))}</span>
-        <span class="identite"><span>${txt(identite)}${identite ? "&nbsp;&nbsp; · &nbsp;&nbsp;" : ""}<span class="parti-long">${txt(partiLong)}</span><span class="parti-court">${txt(partiCourt)}</span></span></span>
+        <span class="identite"><span class="parti-long">${txt(partiLong)}</span></span>
         ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${ordinal(txt(MODE_IMPRESSION ? sigleParti(c.chef.titre) : c.chef.titre))}</span>`
           : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : ""}
       </span>
@@ -2780,7 +2752,6 @@ async function main() {
           await page.goto(pathToFileURL(fichier).href, { waitUntil: "networkidle" });
           await page.evaluate(() => document.fonts.ready);
           await page.evaluate(ajusterNom);
-          await page.evaluate(ajusterIdentite);
           await page.evaluate(ajusterRubriques);
           await page.evaluate(ajusterLegende);
           await page.evaluate(ajusterFonctions);
