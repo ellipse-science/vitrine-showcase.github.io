@@ -628,7 +628,7 @@ const VERSO_IMPRESSION_CSS = `
   .stats>span,.stats-vide{font-size:30px}
   .stats>span{font-weight:400;letter-spacing:.03em}
   .paie span{font-size:30px}
-  .paie b{font-size:40px}
+  .paie b{font-size:38px}
   /* Bloc Élection en plus (26-09) : l'interligne des titres (1,48 par défaut
      d'Oswald) et les marges des lignes de statistiques rendent la place. */
   .stats{margin-top:14px}
@@ -655,7 +655,12 @@ const VERSO_IMPRESSION_CSS = `
      bord). */
   .logos-bas{position:absolute;left:${MARGE + 4}px;right:${MARGE + 4}px;bottom:4px;height:56px;
              display:flex;align-items:center;justify-content:space-between}
-  .logos-bas span{display:block;background:${COLORS.paper};opacity:.62;
+  /* LOGOS EN CRÈME (Jules, 28-09), à l'opacité des logos du recto des cartes
+     légendaires, lui aussi sur fond de couleur. Le gris du recto ordinaire
+     est illisible sur l'encre d'un parti (contraste de 1,2 à 2,1) ; une bande
+     de papier sous les logos a été essayée, puis écartée. */
+  .marque-capp i{opacity:.8}
+  .logos-bas span{display:block;background:${COLORS.paper};opacity:.8;
                   -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
   .logos-bas .marque{width:270px;height:56px;-webkit-mask-position:left center;mask-position:left center}
   .logos-bas .ecusson{width:50px;height:50px;-webkit-mask-position:right center;mask-position:right center}
@@ -1794,9 +1799,15 @@ function versoHTML(
   // croire à un total tronqué. Les segments sont des TRAMES de l'encre du
   // parti, du plein au clair : c'est ainsi qu'on distinguait des séries sur
   // une presse à deux encres, et ça préserve la bichromie.
+  // « Autres » a son pictogramme (Jules, 28-09) : un simple tiret.
+  const tiret = (couleur: string, taille: number) =>
+    `<svg width="${taille}" height="${taille}" viewBox="0 0 24 24" style="display:block"><path d="M5 12h14" stroke="${couleur}" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg>`;
   const pile = d.enjeuStack.filter((x) => x.widthPct > 0);
   const nommes = pile.filter((x) => !x.isReste && x.cle).slice(0, 3);
   const TRAMES = [1, .68, .42];
+  // Le tiret se pose dans le plus large des segments pâles, qui se suivent
+  // sans séparation et se lisent comme un seul.
+  const plusLargeAutre = pile.filter((x) => !nommes.includes(x)).sort((a, b) => b.widthPct - a.widthPct)[0];
   const barre = pile.length
     ? `<div class="empilee">${pile.map((x) => {
         const rang = nommes.indexOf(x);
@@ -1806,7 +1817,9 @@ function versoHTML(
         // aurait aussi délavé le pictogramme. Papier sur les trames foncées,
         // encre du parti sur la claire ; rien sous 4 % de large.
         const fond = `color-mix(in srgb, ${parti} ${Math.round(trame * 100)}%, ${COLORS.paper})`;
-        const picto = rang >= 0 && x.widthPct >= 4 ? enjeuGlyph(x.cle, rang < 2 ? COLORS.paper : parti, 26) : "";
+        const picto = rang >= 0
+          ? x.widthPct >= 4 ? enjeuGlyph(x.cle, rang < 2 ? COLORS.paper : parti, 26) : ""
+          : x === plusLargeAutre && x.widthPct >= 4 ? tiret(parti, 26) : "";
         return `<i style="width:${x.widthPct}%;background:${fond}">${picto}</i>`;
       }).join("")}</div>
        <ul class="legende">${nommes.map((x, i) => `
@@ -1817,7 +1830,7 @@ function versoHTML(
            <span class="pl">${txt(MODE_IMPRESSION ? LIBELLE_ENJEU_ENTIER[x.label] ?? x.label : x.label)}</span>
            <b>${Math.round(x.widthPct)}&#8239;%</b>
          </li>`).join("")}
-         <li class="reste"><span class="puce" style="background:${parti};opacity:.16"></span>
+         <li class="reste"><span class="pg">${tiret(parti, 22)}</span>
            <span class="pl">Autres</span>
            <b>${Math.round(100 - nommes.reduce((t, x) => t + x.widthPct, 0))}&#8239;%</b></li>
        </ul>`
@@ -2078,8 +2091,8 @@ function versoHTML(
             la frise : il se compare d'un élu à l'autre ; le total dépendait
             de la durée du mandat. */ ""}
       <p class="paie">${c.remunerationMoyenne
-        ? `<b>${MONTANT.format(c.remunerationMoyenne)}&nbsp;$</b><span>par année</span>`
-        : `<b>${MONTANT.format(c.remuneration)}&nbsp;$</b><span>sur la législature</span>`}</p>
+        ? `<span>Salaire moyen par année&nbsp;:</span><b>${MONTANT.format(c.remunerationMoyenne)}&nbsp;$</b>`
+        : `<span>Salaire sur la législature&nbsp;:</span><b>${MONTANT.format(c.remuneration)}&nbsp;$</b>`}</p>
     </div>` : ""}
 
     ${barre ? `
