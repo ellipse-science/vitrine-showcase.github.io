@@ -2294,8 +2294,10 @@ function pagesPaquet(
            text-transform:uppercase;text-align:center}
   .bloc p{font-size:30px;line-height:1.15;margin-top:7px}
   .bloc p b{font-family:"Oswald",sans-serif;font-weight:600;letter-spacing:.02em}
-  .guide .bloc p{font-size:33px;text-align:center}
-  .liste{list-style:none;display:grid;gap:6px 26px;margin-top:12px;font-size:33px;line-height:1.08}
+  .guide .bloc p{font-size:32px;text-align:center}
+  .guide .bloc{padding:16px 38px 18px}
+  .guide .entete{height:112px}
+  .liste{list-style:none;display:grid;gap:3px 26px;margin-top:9px;font-size:32px;line-height:1.06}
   .liste li{display:flex;align-items:center;gap:12px}
   .liste b{font-family:"Oswald",sans-serif;font-weight:700;flex:0 0 auto}
   .sigles b{min-width:80px}
