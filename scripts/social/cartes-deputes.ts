@@ -155,11 +155,13 @@ const CODES_FONCTION: [RegExp, string][] = [
 /** CE QUE LE CODE VEUT DIRE, sous le carré (Jules, 25-09 : « ça ne parle pas
  *  à tout le monde »). Accordé au genre de l'élu (donnees/genre-deputes.json) ;
  *  genre inconnu = forme masculine suivie de la féminine (« Député·e »). « CO »
- *  couvre les chefs de TOUS les groupes d'opposition, d'où « de parti ». */
+ *  couvre les chefs de TOUS les groupes d'opposition : « Chef parlementaire »
+ *  (Jules, 28-09), vrai pour chacun, là où « Chef de parti » ne l'était ni
+ *  d'un chef de l'opposition officielle par intérim ni d'une co-porte-parole. */
 const LIBELLES_FONCTION: Record<string, [string, string]> = {
   PM: ["Premier ministre", "Première ministre"],
   PAN: ["Président de l’Assemblée", "Présidente de l’Assemblée"],
-  CO: ["Chef de parti", "Cheffe de parti"],
+  CO: ["Chef parlementaire", "Cheffe parlementaire"],
   M: ["Ministre", "Ministre"],
   VP: ["Vice-président de l’Assemblée", "Vice-présidente de l’Assemblée"],
   LP: ["Leader parlementaire", "Leader parlementaire"],
@@ -184,6 +186,16 @@ function sigleParti(titre: string): string {
 function libelleFonction(code: string, genre: "f" | "m" | undefined): string {
   const [m, f] = LIBELLES_FONCTION[code] ?? [code, code];
   return genre === "f" ? f : genre === "m" || m === f ? m : `${m} / ${f}`;
+}
+
+/** RUBAN DES CHEFS PARLEMENTAIRES, tiré des fiches de l'Assemblée : le titre
+ *  de la fonction de chef encore OCCUPÉE à la dissolution. Un ancien chef
+ *  (Tanguay, Rizqy, Nadeau-Dubois) garde le sigle CO au recto, fonction la
+ *  mieux payée de sa législature, mais ne porte pas de ruban : un titre
+ *  qu'il n'a plus serait la faute la plus facile à relever. */
+function rubanChefParlementaire(tenues: { titre: string; fin: string }[]): string | null {
+  const actuelle = tenues.find((t) => /^Chef(?:fe)? d/.test(t.titre) && t.fin >= AXE_FIN);
+  return actuelle ? titreCourt(actuelle.titre) : null;
 }
 
 function codeFonction(tenues: { titre: string; pct: number }[], porteParole: boolean): string {
@@ -477,7 +489,11 @@ function mesurerRetours(): string[] {
       if (rects[j].top < min) min = rects[j].top;
       if (rects[j].top > max) max = rects[j].top;
     }
-    if (max - min > 12) coupees.push((els[i].textContent || "").trim().slice(0, 60));
+    // Tolérance à la mesure du texte : un exposant (« 3e groupe ») remonte de
+    // près d'une demi-ligne sans que la ligne soit coupée ; un vrai retour
+    // décale d'une ligne entière.
+    const tolerance = Math.max(12, 0.6 * parseFloat(getComputedStyle(els[i]).fontSize));
+    if (max - min > tolerance) coupees.push((els[i].textContent || "").trim().slice(0, 60));
   }
   // Un intitulé de fonction rapetissé par ajusterFonctions est signalé : la
   // règle d'abréviation (titreCourt) doit le résoudre, pas la taille du texte.
@@ -843,8 +859,9 @@ function slugCirco(deputy: DeputyRow): string {
  *  À TENIR À JOUR À LA MAIN, par circonscription (la clé du portrait). */
 type Titre = { titre: string; eclat?: boolean };
 const CHEFS: Record<string, Titre> = {
-  "camille-laurin": { titre: "Chef du Parti québécois" },
-  "mercier": { titre: "Co-porte-parole de Québec solidaire" },
+  // Les chefs des groupes d'opposition ne sont PLUS saisis ici (Jules, 28-09,
+  // « il faut uniformiser ») : leur ruban vient des fiches de l'Assemblée, pour
+  // la fonction occupée à la dissolution (voir rubanChefParlementaire).
   // Christine Fréchette dirige la CAQ ET le gouvernement (correction de Jules,
   // 22-09) : « Première ministre » l'emporte sur « cheffe de parti », qui en
   // découle. François Legault, lui, n'a plus de titre — sa carte est redevenue
@@ -1993,7 +2010,7 @@ function versoHTML(
       <span class="titre">
         <span class="nom">${txt(nomImprime(d.name))}</span>
         <span class="identite"><span>${txt(identite)}${identite ? "&nbsp;&nbsp; · &nbsp;&nbsp;" : ""}<span class="parti-long">${txt(partiLong)}</span><span class="parti-court">${txt(partiCourt)}</span></span></span>
-        ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${txt(MODE_IMPRESSION ? sigleParti(c.chef.titre) : c.chef.titre)}</span>`
+        ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${ordinal(txt(MODE_IMPRESSION ? sigleParti(c.chef.titre) : c.chef.titre))}</span>`
           : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : ""}
       </span>
     </div>
@@ -2465,6 +2482,8 @@ async function main() {
     const f = ficheParCarte.get(c);
     c.codeFonction = codeFonction(f?.fonctions_legislature ?? [], (f?.porte_parole_legislature?.length ?? 0) > 0);
     c.libelleFonction = libelleFonction(c.codeFonction, genres.get(f?.assnat_id ?? ""));
+    const ruban = rubanChefParlementaire(f?.fonctions_legislature ?? []);
+    if (ruban && !c.chef && !c.depart) c.chef = { titre: ruban };
   }
   const decompte = new Map<Rarete, number>();
   for (const c of cartes) decompte.set(c.rarete ?? "commune", (decompte.get(c.rarete ?? "commune") ?? 0) + 1);
