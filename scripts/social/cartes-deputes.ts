@@ -2299,6 +2299,9 @@ function pagesPaquet(
   .bloc p{font-size:30px;line-height:1.15;margin-top:7px}
   .bloc p b{font-family:"Oswald",sans-serif;font-weight:600;letter-spacing:.02em}
   .guide .bloc p{font-size:32px;text-align:center}
+  .metho .bloc p{text-align:justify}
+  /* L'adresse ne se coupe pas : justifiée, sa ligne s'étirait en blancs. */
+  .metho .bloc p.lien{text-align:center}
   .guide .bloc{padding:16px 38px 18px}
   .guide .entete{height:112px}
   .liste{list-style:none;display:grid;gap:3px 26px;margin-top:9px;font-size:32px;line-height:1.06}
@@ -2322,17 +2325,23 @@ function pagesPaquet(
   .marque-capp i.ulaval{width:172px;height:82px}`;
   const couverture = page(`${cssVisible}${cssGrandsLogos}
   .iris{filter:blur(70px);opacity:1}
-  .filet{width:220px;height:5px;border-radius:3px;background:${IRIS};margin:96px 0 64px}
-  .legislature{font-family:"Playfair Display",serif;font-style:italic;font-weight:400;font-size:112px;line-height:1;letter-spacing:.005em}
-  .legislature sup{font-size:.5em;vertical-align:.78em;line-height:0;margin-right:.06em}
-  .annees{margin-top:40px;font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:38px;letter-spacing:.42em;
-          text-indent:.42em;color:${COLORS.soft}}
-  .marque-capp{margin-top:150px}`,
+  .filet{width:220px;height:5px;border-radius:3px;background:${IRIS};margin:92px 0 60px}
+  /* Les caractères des cartes (Jules, 28-09) : Oswald, celui des titres du
+     verso, et IBM Plex Mono, celui du pied du recto. */
+  .sur{font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:32px;letter-spacing:.14em;text-indent:.14em;
+       text-transform:uppercase;color:${COLORS.soft}}
+  .legislature{margin-top:34px;font-family:"Oswald",sans-serif;font-weight:600;font-size:96px;line-height:1;
+               letter-spacing:.12em;text-indent:.12em;text-transform:uppercase}
+  .legislature .ord{font-size:.62em;vertical-align:.5em}
+  .annees{margin-top:34px;font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:38px;letter-spacing:.3em;
+          text-indent:.3em;color:${COLORS.soft}}
+  .marque-capp{margin-top:140px}`,
   `<div class="iris"></div><div class="cadre"></div>
   <div class="centre">
     ${logoIrise(880)}
     <span class="filet"></span>
-    <p class="legislature">43<sup>e</sup> législature</p>
+    <p class="sur">Les élus de l'Assemblée nationale</p>
+    <p class="legislature">${ordinal("43e")} législature</p>
     <p class="annees">2022 – 2026</p>
     ${marquesInstitutions(logos.capp)}
   </div>${textures}`);
@@ -2377,7 +2386,7 @@ function pagesPaquet(
 
   // ── Dessous, recto : la méthodologie ───────────────────────────────────
   const methodologie = page(cssDos, `
-  <div class="panneau">
+  <div class="panneau metho">
     <div class="entete"><b>Méthodologie</b><i></i></div>
     <div class="bloc"><h3>Sources</h3>
       <p>Journal des débats de l'Assemblée nationale&nbsp;: les séances du Salon bleu, du 29&nbsp;novembre 2022 au 12&nbsp;juin 2026, soit 287&nbsp;jours et 594&nbsp;237&nbsp;phrases. Fiches des députés de l'Assemblée. Résultats d'Élections Québec.</p></div>
@@ -2392,7 +2401,7 @@ function pagesPaquet(
       <p>Indemnité de base de chaque année, plus celle de la fonction la mieux payée, au jour près. C'est une estimation d'après les barèmes publics, et non le revenu de l'élu&nbsp;: allocations, remboursements et régime de retraite n'y sont pas.</p></div>
     <div class="bloc"><h3>Crédits</h3>
       <p>Portraits&nbsp;: Assemblée nationale du Québec. Analyse et conception&nbsp;: Vitrine démocratique, Centre d'analyse des politiques publiques, Université Laval.</p>
-      <p><b>Rapport de validation et corrections&nbsp;:</b> vitrinedemocratique.com/methodologie</p></div>
+      <p class="lien"><b>Rapport de validation et corrections&nbsp;:</b><br>vitrinedemocratique.com/methodologie</p></div>
   </div>${marquesInstitutions(logos.capp)}${textures}`);
 
   // ── Dessous, verso : le logo seul ──────────────────────────────────────
