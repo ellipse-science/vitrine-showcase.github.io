@@ -2410,11 +2410,13 @@ function pagesPaquet(
   `<div class="iris"></div><div class="cadre"></div>
   <div class="centre">${logoIrise(880)}${marquesInstitutions(logos.capp)}</div>${textures}`);
 
+  // Préfixes « 00- » et « zz- » : première et dernière page du PDF de
+  // l'imprimeur, qui range les cartes par nom de fichier.
   return [
-    { slug: "paquet-dessus", html: couverture },
-    { slug: "paquet-dessus-verso", html: legende },
-    { slug: "paquet-dessous", html: methodologie },
-    { slug: "paquet-dessous-verso", html: dos },
+    { slug: "00-paquet-dessus", html: couverture },
+    { slug: "00-paquet-dessus-verso", html: legende },
+    { slug: "zz-paquet-dessous", html: methodologie },
+    { slug: "zz-paquet-dessous-verso", html: dos },
   ];
 }
 
