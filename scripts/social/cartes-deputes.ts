@@ -247,7 +247,6 @@ function degradeMetalCSS(r: Rarete): string {
 /** Nombre de fleurs de lys sous la circonscription, au recto (22-09). */
 /** Série complète, pour les cartes du paquet (voir pagesPaquet). */
 let TOTAL_SERIE = 0;
-let CARTES_SERIE: Carte[] = [];
 let SANS_EXPRESSION_SERIE = 0;
 const RARETES_SERIE: Record<Rarete, number> = { commune: 0, "peu-commune": 0, rare: 0, legendaire: 0 };
 const FLEURS_PAR_RARETE: Record<Rarete, number> = { commune: 1, "peu-commune": 2, rare: 3, legendaire: 4 };
@@ -718,7 +717,7 @@ const VERSO_IMPRESSION_CSS = `
   .marque-capp i{opacity:.8}
   .logos-bas span{display:block;background:${COLORS.paper};opacity:.8;
                   -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-  /* Le logo de la Vitrine, au trait épaissi (logoVitrineImpression), sans
+  /* Le logo de la Vitrine, au trait épaissi (monogrammeVitrine), sans
      transparence : un trait fin pâlit déjà de lui-même. Plus haut que le
      rang, il le dépasse en haut et en bas, centré sur lui. */
   .logos-bas .marque{flex:0 0 auto;width:${LOGO_VERSO.largeur}px;height:${LOGO_VERSO.hauteur}px;opacity:1;
@@ -851,11 +850,11 @@ function dateFr(iso?: string): string | null {
  *  opacité que le CAPP avait seul sur chaque gabarit (règles .marque-capp i). */
 let LOGO_ULAVAL: string | null = null;
 
-async function logoVitrineImpression(): Promise<string | null> {
+async function monogrammeVitrine(rayon: number): Promise<string | null> {
   const sharp = (await import("sharp")).default;
   const source = path.resolve(process.cwd(), "public/images/brand/logo_vitrinedemocratique_bg-none_theme-black.png");
   // Le monogramme occupe les colonnes 376 à 919 et les lignes 8 à 582 du logo.
-  const r = LOGO_VERSO.rayon, x0 = 376 - r, y0 = 0, l = 544 + 2 * r, h = 591;
+  const r = rayon, x0 = 376 - r, y0 = 0, l = 544 + 2 * r, h = 591;
   const lu = await sharp(source).ensureAlpha().extractChannel("alpha")
     .extract({ left: x0, top: y0, width: l, height: h }).raw().toBuffer().catch(() => null);
   if (!lu) return null;
@@ -2279,75 +2278,18 @@ function rapporterDebordements(liste: string[]): void {
   for (const l of liste) console.warn(`     · ${l}`);
 }
 
-/** MOSAÏQUE DU DESSUS DU PAQUET (Jules, 28-09) : les élus de la série, dans
- *  l'ordre des numéros, sur 11 colonnes et 14 rangées. Des 154 cases, 15 vont
- *  au bloc du titre et 10 à celui du logo : il en reste 129, une par élu. Onze
- *  colonnes étant un nombre impair, un bloc centré a une largeur impaire.
- *  Le portrait est recadré serré sur le visage et rendu en TON CONTINU, encre
- *  sur papier : à 5 mm, une trame dessinée croiserait celle de l'imprimeur.
- *  Fond transparent : les joints et les blocs laissent voir la carte. */
-const MOSAIQUE = {
-  cols: 11, rangs: 14, caseL: 200, caseH: 226, joint: 8,
-  titre: { r: 3, c: 3, h: 3, l: 5 },
-  logo: { r: 9, c: 3, h: 2, l: 5 },
-};
-async function mosaiquePaquet(serie: Carte[]): Promise<string> {
-  const { cols, rangs, caseL, caseH, joint, titre, logo } = MOSAIQUE;
-  const cases: [number, number][] = [];
-  for (let r = 0; r < rangs; r++) {
-    for (let c = 0; c < cols; c++) {
-      if (![titre, logo].some((b) => r >= b.r && r < b.r + b.h && c >= b.c && c < b.c + b.l)) cases.push([r, c]);
-    }
-  }
-  if (cases.length !== serie.length) {
-    throw new Error(`Mosaïque du paquet : ${cases.length} cases pour ${serie.length} élus. La grille (MOSAIQUE) est à recomposer.`);
-  }
-  const sharp = (await import("sharp")).default;
-  const teinte = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-  const encre = teinte(COLORS.ink), papier = teinte(COLORS.paper);
-  const L = cols * caseL, Ht = rangs * caseH, pl = caseL - joint, ph = caseH - joint;
-  const toile = Buffer.alloc(L * Ht * 4);
-  for (let i = 0; i < serie.length; i++) {
-    const asset = serie[i].deputy.portrait?.match(/\/images\/deputes\/cartes\/web\/(.+)\.jpg$/)?.[1];
-    const octets = asset ? await fs.readFile(path.resolve(process.cwd(), "public/images/deputes", `${asset}.jpg`)).catch(() => null) : null;
-    if (!octets) throw new Error(`Mosaïque du paquet : portrait introuvable pour ${serie[i].deputy.name} (${serie[i].slug}).`);
-    const { width = 0, height = 0 } = await sharp(octets).metadata();
-    // Recadrage sur la tête : 90 % de la largeur, presque tout en haut.
-    const lw = Math.round(width * 0.9), lh = Math.min(height, Math.round(lw * ph / pl));
-    const { data, info } = await sharp(octets)
-      .extract({ left: Math.round((width - lw) / 2), top: Math.round((height - lh) * 0.08), width: lw, height: lh })
-      .resize(pl, ph, { kernel: "lanczos3" })
-      .greyscale().normalise({ lower: 1, upper: 99 }).sharpen({ sigma: 1.1 })
-      .raw().toBuffer({ resolveWithObject: true });
-    let moyenne = 0;
-    for (let k = 0; k < pl * ph; k++) moyenne += data[k * info.channels];
-    moyenne /= pl * ph;
-    const [r, c] = cases[i];
-    for (let y = 0; y < ph; y++) {
-      for (let x = 0; x < pl; x++) {
-        // Un peu de contraste autour du gris moyen, puis deux tons.
-        const g = Math.max(0, Math.min(255, moyenne + 1.1 * (data[(y * pl + x) * info.channels] - moyenne))) / 255;
-        const o = ((r * caseH + joint / 2 + y) * L + c * caseL + joint / 2 + x) * 4;
-        for (let k = 0; k < 3; k++) toile[o + k] = Math.round(encre[k] + (papier[k] - encre[k]) * g);
-        toile[o + 3] = 255;
-      }
-    }
-  }
-  const fichier = path.join(CACHE_TRAMES, "mosaique-paquet.png");
-  await fs.mkdir(CACHE_TRAMES, { recursive: true });
-  await sharp(toile, { raw: { width: L, height: Ht, channels: 4 } }).png().toFile(fichier);
-  return pathToFileURL(fichier).href;
-}
-
 /** LES DEUX CARTES DU PAQUET (Jules, 28-09). Le paquet est transparent.
- *  · DESSUS : au recto « L'alignement de l'Assemblée », la mosaïque des élus
- *    (mosaiquePaquet), avec le titre et le logo de la Vitrine dans deux
- *    encadrés ; au verso la LÉGENDE de ce qu'une carte ne dit pas d'elle-même
- *    (rareté, sigle, pictogramme).
+ *  · DESSUS : au recto le titre, « L'alignement de l'Assemblée » ; au verso
+ *    la LÉGENDE de ce qu'une carte ne dit pas d'elle-même (rareté, sigle,
+ *    pictogramme).
  *  · DESSOUS : au recto la MÉTHODOLOGIE ; au verso, visible de l'extérieur, le
  *    logo de la Vitrine, un code QR vers le site, le CAPP et l'Université Laval.
- *  AUCUNE COULEUR DE PARTI SEULE : l'encre, le papier, ou les cinq couleurs
- *  ensemble, à parts égales, dans l'ordre alphabétique des sigles.
+ *  PARTI PRIS SOBRE, retenu après une mosaïque des élus, des paquets de cire
+ *  d'époque et des objets du hockey, tous écartés : le papier et l'encre des
+ *  cartes, le caractère des noms (Playfair), et du hockey un seul rappel,
+ *  les rayures du chandail. Aucun élu n'est montré.
+ *  AUCUNE COULEUR DE PARTI SEULE : les cinq viennent ensemble, à parts
+ *  égales, dans l'ordre alphabétique des sigles.
  *  Classes préfixées « pq- » : les ajusteurs et les mesures de la série
  *  visent .nom, .ligne, .legende, .bloc… et ne doivent pas s'y accrocher.
  *  Même format et même grain que la série, pour passer par le même rendu
@@ -2357,7 +2299,7 @@ function pagesPaquet(
   total: number,
   raretes: Record<Rarete, number>,
   sansExpression: number,
-  mosaique: string,
+  monogramme: string | null,
   codeQR: string,
 ): { slug: string; html: string }[] {
   const ENCRE = COLORS.soft;
@@ -2381,16 +2323,23 @@ function pagesPaquet(
   .marque-capp i.sep{width:1.5px;height:36px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
   .marque-capp i.ulaval{width:96px;height:45px}
   .ord{text-transform:none;font-size:.78em;vertical-align:.28em;line-height:0}`;
-  // Faces visibles : papier et encre. Le grain seul, sans le moucheté, qui
-  // poserait des points clairs sur les portraits.
+  // Faces visibles : papier et encre, le grain seul. Les rayures débordent
+  // de la face de chaque côté : à l'impression, la face est réduite et
+  // centrée dans la page, et les rayures doivent courir jusque dans le fond
+  // perdu. À l'écran, le corps de la page les coupe au bord.
   const grain = textures.slice(0, textures.indexOf("<svg class=\"mouchete\""));
   const cssFace = `${commun(COLORS.paper, COLORS.ink, COLORS.ink)}
   .grain{opacity:.22}
-  .pq-filet{position:absolute;left:${MARGE}px;right:${MARGE}px;height:12px;background:${cinq}}
-  .pq-vitrine{display:block;background:${COLORS.ink};-webkit-mask-size:contain;mask-size:contain;
-              -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}`;
+  .pq-rayures{position:absolute;left:-160px;right:-160px}
+  .pq-rayures i{display:block;height:18px;margin-bottom:9px}
+  .pq-rayures.court{left:326px;right:326px}
+  .pq-rang{position:absolute;left:0;right:0;display:flex;justify-content:center}
+  .pq-masque{display:block;background:${COLORS.ink};-webkit-mask-size:contain;mask-size:contain;
+             -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}`;
+  const rayures = (y: number, court = false) =>
+    `<div class="pq-rayures${court ? " court" : ""}" style="top:${y}px">${CINQ.map((c) => `<i style="background:${c}"></i>`).join("")}</div>`;
   const logoVitrine = (largeur: number) => logos.vitrine
-    ? `<i class="pq-vitrine" style="width:${largeur}px;height:${Math.round(largeur * 591 / 1788)}px;${masque(logos.vitrine)}"></i>`
+    ? `<i class="pq-masque" style="width:${largeur}px;height:${Math.round(largeur * 591 / 1788)}px;${masque(logos.vitrine)}"></i>`
     : "";
   const cssDos = `${commun(ENCRE, COLORS.paper, COLORS.paper)}
   .marque-capp i{opacity:.8}
@@ -2420,31 +2369,25 @@ function pagesPaquet(
     `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">${polices}<style>${css}</style></head><body${MODE_IMPRESSION ? ` data-plancher="${PLANCHER_IMPRESSION}"` : ""}>${corps}</body></html>`;
   const lys = (n: number, couleur: string, taille: number) => Array.from({ length: n }, () => fleur(couleur, taille)).join("");
 
-  // ── Dessus, recto : la mosaïque ────────────────────────────────────────
-  // Trois rangées de portraits, le titre, trois rangées, le logo, trois
-  // rangées. Deux sortes de filets seulement, du même trait : le cadre, et
-  // les deux encadrés posés sur les cases libres de la mosaïque.
-  const CADRE = 36, TRAIT = 3, JEU = 13, LARGEUR_TITRE = 396;
-  const xM = CADRE + TRAIT + JEU, lM = W - 2 * xM, hM = H - 2 * xM;
-  const cL = lM / MOSAIQUE.cols, cH = hM / MOSAIQUE.rangs;
-  const encadre = (classe: string, b: { r: number; c: number; h: number; l: number }) =>
-    `.${classe}{position:absolute;left:${xM + b.c * cL + 5}px;top:${xM + b.r * cH + 5}px;width:${b.l * cL - 10}px;height:${b.h * cH - 10}px;
-       border:${TRAIT}px solid ${COLORS.ink};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}`;
+  // ── Dessus, recto : le titre ───────────────────────────────────────────
+  // Le monogramme, le titre sur deux lignes composées à la même largeur
+  // (data-l : le script règle la taille de chacune), les cinq rayures, la
+  // législature.
   const couverture = page(`${cssFace}
-  .pq-cadre{position:absolute;left:${CADRE}px;top:${CADRE}px;right:${CADRE}px;bottom:${CADRE}px;border:${TRAIT}px solid ${COLORS.ink}}
-  .pq-mos{position:absolute;left:${xM}px;top:${xM}px;width:${lM}px;height:${hM}px;background:url('${mosaique}') 0 0 / 100% 100% no-repeat}
-  ${encadre("pq-titre", MOSAIQUE.titre)}${encadre("pq-logo", MOSAIQUE.logo)}
-  .pq-titre p{font-family:"Playfair Display",serif;font-weight:900;text-transform:uppercase;letter-spacing:-.01em;line-height:1.06;white-space:nowrap}
-  .pq-titre p b{display:block;font-weight:900;font-size:50px}
-  .pq-titre span{display:block;margin-top:22px;font-family:"IBM Plex Mono",monospace;font-size:30px;line-height:1.22;
-                 letter-spacing:.03em;text-transform:uppercase;color:${COLORS.soft}}
-  .pq-titre .ord{font-size:.6em;vertical-align:.55em}`,
-  // Les deux lignes du titre sont composées à la même largeur, comme sur une
-  // affiche : la plus longue est donc un peu plus petite.
-  `<div class="pq-cadre"></div><div class="pq-mos"></div>
-  <div class="pq-titre"><p><b>L’alignement</b><b>de l’Assemblée</b></p><span>${ordinal("43e")} législature<br>2022 – 2026</span></div>
-  <div class="pq-logo">${logoVitrine(380)}</div>
-  <script>document.fonts.ready.then(() => { for (const l of document.querySelectorAll(".pq-titre p b")) { l.style.display = "inline-block"; const t = 50 * ${LARGEUR_TITRE} / l.getBoundingClientRect().width; l.style.display = "block"; l.style.fontSize = t.toFixed(2) + "px"; } });</script>
+  .pq-titre{position:absolute;left:0;top:0;overflow:visible}
+  .pq-titre text{font-family:"Playfair Display",serif;font-weight:900;text-transform:uppercase;letter-spacing:-.005em}
+  .pq-leg{position:absolute;left:0;right:0;text-align:center;text-transform:uppercase;font-family:"IBM Plex Mono",monospace;
+          font-size:34px;letter-spacing:.12em;text-indent:.12em}
+  .pq-leg .ord{font-size:.6em;vertical-align:.55em}`,
+  `${monogramme ? `<span class="pq-rang" style="top:290px"><i class="pq-masque" style="width:120px;height:126px;${masque(monogramme)}"></i></span>` : ""}
+  <svg class="pq-titre" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <text x="${W / 2}" y="660" data-l="800" text-anchor="middle" fill="${COLORS.ink}">L’alignement</text>
+    <text x="${W / 2}" y="802" data-l="800" text-anchor="middle" fill="${COLORS.ink}">de l’Assemblée</text>
+  </svg>
+  ${rayures(960)}
+  <p class="pq-leg" style="top:1190px">${ordinal("43e")} législature</p>
+  <p class="pq-leg" style="top:1246px">2022 – 2026</p>
+  <script>document.fonts.ready.then(() => { for (const t of document.querySelectorAll("text[data-l]")) { t.style.fontSize = "100px"; t.style.fontSize = (100 * Number(t.dataset.l) / t.getComputedTextLength()).toFixed(2) + "px"; } });</script>
   ${grain}`);
 
   // ── Dessus, verso : la légende ─────────────────────────────────────────
@@ -2507,20 +2450,19 @@ function pagesPaquet(
 
   // ── Dessous, verso : le logo, le code QR, les partenaires ──────────────
   // Le code QR mène au site (Jules, 28-09, qui lève « pas de code QR » pour
-  // cette face seulement). Encre sur papier, sans cadre : il lui faut quatre
-  // modules de papier libre de chaque côté, que l'écart entre les rangs donne.
-  const QR = 330, MODULES = 29;
+  // cette face seulement). Encre sur un carré de papier clair, au filet fin :
+  // le carré lui donne ses quatre modules de marge.
   const dos = page(`${cssFace}
-  .pq-centre{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-             gap:${Math.ceil(QR / MODULES * 4) + 24}px}
-  .pq-qr{display:block;width:${QR}px;height:${QR}px}
+  .pq-qr{position:absolute;left:${(W - 330) / 2}px;top:590px;width:330px;height:330px;padding:30px;background:#FAF4E6;border:3px solid ${COLORS.ink}}
   .pq-qr svg{display:block;width:100%;height:100%;shape-rendering:crispEdges}
-  .marque-capp{position:static;transform:none;gap:38px}
-  .marque-capp i{width:306px;height:95px}
-  .marque-capp i.sep{width:2.5px;height:62px}
-  .marque-capp i.ulaval{width:163px;height:77px}`,
-  `<span class="pq-filet" style="top:${MARGE + 50}px"></span><span class="pq-filet" style="bottom:${MARGE + 50}px"></span>
-  <div class="pq-centre">${logoVitrine(800)}<span class="pq-qr">${codeQR}</span>${marquesInstitutions(logos.capp)}</div>${grain}`);
+  .marque-capp{position:static;transform:none;gap:33px}
+  .marque-capp i{width:270px;height:84px}
+  .marque-capp i.sep{width:2px;height:54px}
+  .marque-capp i.ulaval{width:144px;height:68px}`,
+  `<span class="pq-rang" style="top:250px">${logoVitrine(700)}</span>
+  <div class="pq-qr">${codeQR}</div>
+  ${rayures(1040, true)}
+  <span class="pq-rang" style="top:1250px">${marquesInstitutions(logos.capp)}</span>${grain}`);
 
   // Préfixes « 00- » et « zz- » : première et dernière page du PDF de
   // l'imprimeur, qui range les cartes par nom de fichier.
@@ -2919,7 +2861,6 @@ async function main() {
   const decompte = new Map<Rarete, number>();
   for (const c of cartes) decompte.set(c.rarete ?? "commune", (decompte.get(c.rarete ?? "commune") ?? 0) + 1);
   TOTAL_SERIE = cartes.length;
-  CARTES_SERIE = [...cartes].sort((a, b) => a.numero - b.numero || a.variante.localeCompare(b.variante));
   SANS_EXPRESSION_SERIE = cartes.filter((c) => !(c.deputy.signatureWord ?? "").trim()).length;
   for (const r of Object.keys(RARETES_SERIE) as Rarete[]) RARETES_SERIE[r] = decompte.get(r) ?? 0;
   console.log(`  rareté : ${[...decompte].map(([r, n]) => `${LIBELLE_RARETE[r]} ${n}`).join(" · ")}`);
@@ -3016,7 +2957,7 @@ async function main() {
 
   const logos = await loadLogos();
   LOGO_ULAVAL = logos.ulaval;
-  const logoVerso = MODE_IMPRESSION ? await logoVitrineImpression() : null;
+  const logoVerso = MODE_IMPRESSION ? await monogrammeVitrine(LOGO_VERSO.rayon) : null;
   // « Dernière mise à jour du module : vendredi 12 juin 2026 » → « vendredi 12
   // juin 2026 ». Le libellé du site porte son propre préambule, qui ne
   // s'insère pas dans la phrase du disclaimer.
@@ -3049,7 +2990,7 @@ async function main() {
   // Les raretés sont celles de la série complète, calculées avant tout filtre.
   if (args.paquet || (!args.only && !args.echantillon && !(limite > 0))) {
     const codeQR = await fs.readFile(path.resolve(process.cwd(), "scripts/social/donnees/qr-vitrine.svg"), "utf8");
-    const paquet = pagesPaquet(logos, TOTAL_SERIE, RARETES_SERIE, SANS_EXPRESSION_SERIE, await mosaiquePaquet(CARTES_SERIE), codeQR);
+    const paquet = pagesPaquet(logos, TOTAL_SERIE, RARETES_SERIE, SANS_EXPRESSION_SERIE, await monogrammeVitrine(6), codeQR);
     if (args.paquet) pages.length = 0;
     pages.push(...paquet);
   }
