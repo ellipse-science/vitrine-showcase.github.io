@@ -2325,24 +2325,23 @@ function pagesPaquet(
   .marque-capp i.ulaval{width:172px;height:82px}`;
   const couverture = page(`${cssVisible}${cssGrandsLogos}
   .iris{filter:blur(70px);opacity:1}
-  .filet{width:220px;height:5px;border-radius:3px;background:${IRIS};margin:92px 0 60px}
-  /* Les caractères des cartes (Jules, 28-09) : Oswald, celui des titres du
-     verso, et IBM Plex Mono, celui du pied du recto. */
-  .sur{font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:32px;letter-spacing:.14em;text-indent:.14em;
-       text-transform:uppercase;color:${COLORS.soft}}
-  .legislature{margin-top:34px;font-family:"Oswald",sans-serif;font-weight:600;font-size:96px;line-height:1;
-               letter-spacing:.12em;text-indent:.12em;text-transform:uppercase}
-  .legislature .ord{font-size:.62em;vertical-align:.5em}
-  .annees{margin-top:34px;font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:38px;letter-spacing:.3em;
-          text-indent:.3em;color:${COLORS.soft}}
+  .filet{width:220px;height:5px;border-radius:3px;background:${IRIS};margin:100px 0 64px}
+  /* Trois lignes, UNE typographie (Jules, 28-09) : IBM Plex Mono, le
+     caractère du pied du recto, au même corps. « 43e législature » ne se
+     distingue que par son encre, plus soutenue. */
+  .ligne{font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:34px;line-height:1;letter-spacing:.16em;
+         text-indent:.16em;text-transform:uppercase;color:${COLORS.soft}}
+  .ligne + .ligne{margin-top:26px}
+  .ligne.forte{font-weight:500;color:${COLORS.ink}}
+  .ligne .ord{font-size:.72em;vertical-align:.34em}
   .marque-capp{margin-top:140px}`,
   `<div class="iris"></div><div class="cadre"></div>
   <div class="centre">
     ${logoIrise(880)}
     <span class="filet"></span>
-    <p class="sur">Les élus de l'Assemblée nationale</p>
-    <p class="legislature">${ordinal("43e")} législature</p>
-    <p class="annees">2022 – 2026</p>
+    <p class="ligne">Les élus de l'Assemblée nationale</p>
+    <p class="ligne forte">${ordinal("43e")} législature</p>
+    <p class="ligne">2022 – 2026</p>
     ${marquesInstitutions(logos.capp)}
   </div>${textures}`);
 
