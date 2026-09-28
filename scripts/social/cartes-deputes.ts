@@ -2480,6 +2480,31 @@ async function fusionnerLignesParParti(data: NonNullable<Awaited<ReturnType<type
   console.log(`  ${fusions} élu·période(s) réunis sur plusieurs lignes de parti`);
 }
 
+/** EXPRESSIONS RETIRÉES À LA RELECTURE (Jules, 28-09). La méthodologie dit
+ *  « traitement automatisé, relu à la main » : quand une expression ne décrit
+ *  pas un enjeu, elle est retirée de la carte, et la décision est consignée
+ *  dans donnees/expressions-retirees.json. Le retrait ne vaut que pour
+ *  l'expression nommée, pour ne pas masquer en silence celle d'un recalcul. */
+async function retirerExpressions(data: NonNullable<Awaited<ReturnType<typeof loadAssemblee>>>): Promise<void> {
+  const fichier = path.resolve(process.cwd(), "scripts/social/donnees/expressions-retirees.json");
+  const brut = await fs.readFile(fichier, "utf8").catch(() => null);
+  if (!brut) return;
+  const retraits = (JSON.parse(brut) as { retraits: { circonscription: string; elu: string; expression: string }[] }).retraits;
+  const faits = new Set<string>();
+  for (const p of Object.values(data.periods)) {
+    for (const d of [...(p?.rows.flatMap((r) => r.deputies ?? []) ?? []), ...(p?.independants ?? [])]) {
+      const r = retraits.find((x) => x.circonscription === slugCirco(d));
+      if (!r || (d.signatureWord ?? "").trim() !== r.expression) continue;
+      d.signatureWord = undefined;
+      d.signatureWordContext = undefined;
+      faits.add(r.circonscription);
+    }
+  }
+  console.log(`  ${faits.size} expression(s) retirée(s) à la relecture (donnees/expressions-retirees.json)`);
+  const sansObjet = retraits.filter((r) => !faits.has(r.circonscription));
+  if (sansObjet.length) console.warn(`  ⚠️ retrait sans objet, l'expression a changé : ${sansObjet.map((r) => `${r.elu} « ${r.expression} »`).join(", ")}`);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const periode = (typeof args.periode === "string" ? args.periode : "legislature") as PeriodKey;
@@ -2494,6 +2519,7 @@ async function main() {
   const data = await loadAssemblee();
   if (!data) throw new Error("Aucune donnée d'Assemblée : public/data/agora/ est vide ou illisible.");
   await fusionnerLignesParParti(data);
+  await retirerExpressions(data);
   // ENJEUX EN RÉVISION — retirés des cartes, leur part répartie entre les
   // autres. Les têtes INFER public_lands et defense, calibrées sur la presse,
   // se déclenchent sur les formules de procédure du Salon bleu (« Il n'y a pas
