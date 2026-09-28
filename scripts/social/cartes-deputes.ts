@@ -62,7 +62,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
 import { chromium } from "playwright";
-import { buildEnjeuStack, loadAssemblee, type DeputyRow, type IssueKey, type PeriodKey } from "@/lib/data/assemblee";
+import { buildEnjeuStack, ISSUE_META, loadAssemblee, type DeputyRow, type IssueKey, type PeriodKey } from "@/lib/data/assemblee";
 import { PARTY_COLORS, PARTY_FULL_NAMES, type PartyKey } from "@/lib/data/parties";
 import { COLORS, TONE, enjeuGlyph, fleur, loadLogos, parseArgs, txt, openInBrowser } from "./lib/reel";
 
@@ -241,6 +241,9 @@ function degradeMetalCSS(r: Rarete): string {
 }
 
 /** Nombre de fleurs de lys sous la circonscription, au recto (22-09). */
+/** Série complète, pour les cartes du paquet (voir pagesPaquet). */
+let TOTAL_SERIE = 0;
+const RARETES_SERIE: Record<Rarete, number> = { commune: 0, "peu-commune": 0, rare: 0, legendaire: 0 };
 const FLEURS_PAR_RARETE: Record<Rarete, number> = { commune: 1, "peu-commune": 2, rare: 3, legendaire: 4 };
 
 /** Cadre d'origine (tracé de Jules) : la vague en S réserve le coin supérieur
@@ -2225,6 +2228,177 @@ function rapporterDebordements(liste: string[]): void {
   for (const l of liste) console.warn(`     · ${l}`);
 }
 
+/** LES DEUX CARTES DU PAQUET (Jules, 28-09). Le paquet est transparent : la
+ *  carte du DESSUS montre son recto (la couverture), celle du DESSOUS son
+ *  verso (la méthodologie). Leurs faces intérieures expliquent comment lire
+ *  une carte. Même format, mêmes textures et même rang de logos que la série,
+ *  pour passer par le même rendu (fond perdu compris). */
+function pagesPaquet(
+  logos: { vitrine: string | null; capp: string | null },
+  total: number,
+  raretes: Record<Rarete, number>,
+): { slug: string; html: string }[] {
+  const ENCRE = COLORS.soft;
+  const masque = (uri: string) => `-webkit-mask-image:url('${uri}');mask-image:url('${uri}')`;
+  const textures = `
+  <svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
+  <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>`;
+  const polices = `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500&family=Oswald:wght@400;500;600;700&family=Archivo+Narrow:ital,wght@0,400;0,600;0,700;1,400&display=block" rel="stylesheet">`;
+  const commun = (fond: string, encre: string, logo: string) => `
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:${W}px;height:${H}px;background:${fond};color:${encre};position:relative;overflow:hidden;
+       font-family:"Archivo Narrow","Arial Narrow",sans-serif}
+  .grain,.mouchete{position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none}
+  .grain{opacity:.24}.mouchete{opacity:.2}
+  .marque-capp{position:absolute;left:50%;transform:translateX(-50%);bottom:4px;display:flex;align-items:center;gap:22px}
+  .marque-capp i{display:block;width:180px;height:56px;background:${logo};
+                 -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+                 -webkit-mask-position:center;mask-position:center}
+  .marque-capp i.sep{width:1.5px;height:36px;opacity:.45;-webkit-mask-image:none!important;mask-image:none!important}
+  .marque-capp i.ulaval{width:96px;height:45px}
+  .ord{text-transform:none;font-size:.78em;vertical-align:.28em;line-height:0}`;
+  const cssVerso = `${commun(ENCRE, COLORS.paper, COLORS.paper)}
+  .marque-capp i{opacity:.8}
+  .panneau{position:absolute;left:${MARGE}px;top:${MARGE}px;width:${W - 2 * MARGE}px;height:${H - MARGE - 70}px;
+           display:flex;flex-direction:column;gap:6px}
+  .entete{flex:0 0 auto;height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .entete b{font-family:"Oswald",sans-serif;font-weight:700;font-size:68px;line-height:1;letter-spacing:.05em;text-transform:uppercase}
+  .entete span{font-family:"Oswald",sans-serif;font-weight:500;font-size:32px;letter-spacing:.1em;text-transform:uppercase;margin-top:8px}
+  .bloc{flex:0 0 auto;background:${COLORS.paper};color:${ENCRE};border-radius:40px;padding:22px 38px 24px}
+  .bloc h3{font-family:"Oswald",sans-serif;font-weight:600;font-size:38px;line-height:1.1;letter-spacing:.1em;
+           text-transform:uppercase;text-align:center}
+  .bloc p{font-size:34px;line-height:1.17;margin-top:9px}
+  .aere .bloc p{font-size:37px}
+  .bloc p b{font-family:"Oswald",sans-serif;font-weight:600;letter-spacing:.02em}
+  .liste{list-style:none;display:grid;gap:5px 26px;margin-top:10px;font-size:32px;line-height:1.1}
+  .liste li{display:flex;align-items:center;gap:12px}
+  .liste b{font-family:"Oswald",sans-serif;font-weight:700;flex:0 0 auto}
+  .sigles b{min-width:78px}
+  .rarete .f{display:inline-flex;gap:5px;flex:0 0 150px}
+  .rarete i{font-style:normal;margin-left:auto;font-family:"Oswald",sans-serif;font-weight:600}
+  .logos-bas{position:absolute;left:${MARGE + 4}px;right:${MARGE + 4}px;bottom:4px;height:56px;display:flex;align-items:center}
+  .logos-bas span{display:block;width:270px;height:56px;background:${COLORS.paper};opacity:.8;
+                  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+                  -webkit-mask-position:left center;mask-position:left center}`;
+  const bas = `${logos.vitrine ? `<p class="logos-bas"><span style="${masque(logos.vitrine)}"></span></p>` : ""}${marquesInstitutions(logos.capp)}${textures}`;
+  const page = (css: string, corps: string) =>
+    `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">${polices}<style>${css}</style></head><body${MODE_IMPRESSION ? ` data-plancher="${PLANCHER_IMPRESSION}"` : ""}>${corps}</body></html>`;
+  const lys = (n: number, couleur: string, taille: number) => Array.from({ length: n }, () => fleur(couleur, taille)).join("");
+
+  // ── Dessus, recto : la couverture ──────────────────────────────────────
+  const couverture = page(`${commun(COLORS.paper, COLORS.ink, COLORS.softer)}
+  .cadre{position:absolute;left:${MARGE}px;right:${MARGE}px;top:${MARGE}px;bottom:${H - PANNEAU.bas}px;border:3px solid ${COLORS.ink}}
+  .cadre::after{content:"";position:absolute;inset:12px;border:1.5px solid ${COLORS.ink};opacity:.5}
+  .centre{position:absolute;left:${MARGE}px;right:${MARGE}px;top:${MARGE}px;bottom:${H - PANNEAU.bas}px;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 60px}
+  .vitrine{width:620px;height:128px;background:${COLORS.ink};-webkit-mask-size:contain;mask-size:contain;
+           -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}
+  .sur{margin-top:70px;font-family:"IBM Plex Mono",monospace;font-size:32px;letter-spacing:.14em;text-transform:uppercase;color:${COLORS.softer}}
+  .num{font-family:"Playfair Display",serif;font-weight:900;font-size:290px;line-height:1;letter-spacing:-.03em;margin-top:30px}
+  .num sup{font-size:.34em;vertical-align:1.45em;letter-spacing:0;line-height:0}
+  .mot{font-family:"Playfair Display",serif;font-weight:900;font-size:104px;line-height:1;letter-spacing:.02em;text-transform:uppercase;margin-top:44px}
+  .annees{margin-top:26px;font-family:"IBM Plex Mono",monospace;font-size:40px;letter-spacing:.2em;color:${COLORS.soft}}
+  .filet{width:240px;border-top:3px solid ${COLORS.ink};margin:54px 0 44px}
+  .serie{font-family:"IBM Plex Mono",monospace;font-size:34px;letter-spacing:.12em;text-transform:uppercase}
+  .lys{display:flex;gap:10px;margin-top:30px}
+  .pied{position:absolute;left:${MARGE + 4}px;right:${MARGE + 4}px;top:${PANNEAU.bas + 14}px;display:flex;justify-content:center;
+        font-family:"IBM Plex Mono",monospace;font-size:30px;letter-spacing:.03em;text-transform:uppercase;color:${COLORS.softer}}`,
+  `<div class="cadre"></div>
+  <div class="centre">
+    ${logos.vitrine ? `<span class="vitrine" style="${masque(logos.vitrine)}"></span>` : ""}
+    <p class="sur">Assemblée nationale du Québec</p>
+    <p class="num">43<sup>e</sup></p>
+    <p class="mot">Législature</p>
+    <p class="annees">2022 – 2026</p>
+    <span class="filet"></span>
+    <p class="serie">Série de ${total} cartes</p>
+    <p class="lys">${lys(4, COLORS.ink, 40)}</p>
+  </div>
+  <p class="pied"><span>vitrinedemocratique.com</span></p>
+  ${marquesInstitutions(logos.capp)}${textures}`);
+
+  // ── Dessus, verso : lire le recto ──────────────────────────────────────
+  // Formes épicènes ou doublets pour la légende (pas de point médian) : sur
+  // une carte, le libellé est accordé à l'élu.
+  const EPICENE: Record<string, string> = {
+    PM: "Premier ou première ministre", PAN: "Présidence de l’Assemblée", CO: "Chef ou cheffe parlementaire",
+    VP: "Vice-présidence de l’Assemblée", PCA: "Présidence de caucus", PC: "Présidence de commission",
+    AP: "Adjoint ou adjointe parlementaire", VC: "Vice-présidence de commission", PS: "Présidence de séance",
+    D: "Député ou députée",
+  };
+  const sigles = Object.entries(LIBELLES_FONCTION).map(([code, [m]]) =>
+    `<li><b>${code}</b><span>${txt(EPICENE[code] ?? m)}</span></li>`).join("");
+  const enjeux = ISSUE_META.map((m) =>
+    `<li>${enjeuGlyph(m.key, ENCRE, 34)}<span>${txt(LIBELLE_ENJEU_ENTIER[m.label] ?? m.label)}</span></li>`).join("");
+  const lireRecto = page(cssVerso, `
+  <div class="panneau">
+    <div class="entete"><b>Lire le recto</b><span>Ce que dit la face d'une carte</span></div>
+    <div class="bloc">
+      <h3>Les fleurs de lys&nbsp;: la rareté</h3>
+      <ul class="liste rarete" style="grid-template-columns:1fr">
+        <li><span class="f">${lys(4, ENCRE, 28)}</span><span><b>Légendaire</b>&ensp;les premiers ministres</span><i>${raretes.legendaire}</i></li>
+        <li><span class="f">${lys(3, ENCRE, 28)}</span><span><b>Rare</b>&ensp;les 10&nbsp;% d'élus qui ont le plus parlé</span><i>${raretes.rare}</i></li>
+        <li><span class="f">${lys(2, ENCRE, 28)}</span><span><b>Peu commune</b>&ensp;les 35&nbsp;% suivants</span><i>${raretes["peu-commune"]}</i></li>
+        <li><span class="f">${lys(1, ENCRE, 28)}</span><span><b>Commune</b>&ensp;tous les autres</span><i>${raretes.commune}</i></li>
+      </ul>
+    </div>
+    <div class="bloc">
+      <h3>Le sigle&nbsp;: la fonction</h3>
+      <p>La fonction la mieux rémunérée que l'élu a occupée pendant la législature.</p>
+      <ul class="liste sigles" style="grid-template-columns:1fr 1fr">${sigles}</ul>
+    </div>
+    <div class="bloc">
+      <h3>Le pictogramme&nbsp;: l'enjeu dominant</h3>
+      <p>L'enjeu dont l'élu a le plus parlé au Salon bleu.</p>
+      <ul class="liste" style="grid-template-columns:1fr 1fr 1fr">${enjeux}</ul>
+    </div>
+  </div>${bas}`);
+
+  // ── Dessous, recto : lire le verso ─────────────────────────────────────
+  const lireVerso = page(cssVerso, `
+  <div class="panneau aere">
+    <div class="entete"><b>Lire le verso</b><span>Ce que dit le dos d'une carte</span></div>
+    <div class="bloc"><h3>Fiche électorale</h3>
+      <p>L'élection qui a donné son siège à l'élu&nbsp;: sa part des voix et son avance sur le deuxième. Le mandat compte toutes ses élections depuis la première.</p></div>
+    <div class="bloc"><h3>Fiche à l'Assemblée</h3>
+      <p><b>Interventions</b> et <b>mots prononcés</b> au Salon bleu, comme député.</p>
+      <p><b>Richesse lexicale</b>&nbsp;: la variété de son vocabulaire, de un à cinq points, par rapport aux autres élus.</p>
+      <p><b>Ton</b>&nbsp;: plutôt critique à gauche du trait, plutôt favorable à droite, par rapport aux autres élus.</p></div>
+    <div class="bloc"><h3>Parcours et rémunération</h3>
+      <p>Les fonctions rémunérées occupées pendant la législature. Le salaire additionne l'indemnité de base et celle de la fonction la mieux payée, sans les allocations ni les remboursements.</p></div>
+    <div class="bloc"><h3>Part de ses interventions</h3>
+      <p>La répartition de ce qu'il a dit entre les douze enjeux. Les trois premiers sont nommés.</p></div>
+    <div class="bloc"><h3>Expression distinctive</h3>
+      <p>L'expression qui distingue le plus l'élu des autres, et non la plus fréquente, avec une phrase où il l'emploie.</p></div>
+  </div>${bas}`);
+
+  // ── Dessous, verso : la méthodologie ───────────────────────────────────
+  const methodologie = page(cssVerso, `
+  <div class="panneau aere">
+    <div class="entete"><b>Méthodologie</b><span>${ordinal("43e")} législature · 2022-2026</span></div>
+    <div class="bloc"><h3>Sources</h3>
+      <p>Journal des débats de l'Assemblée nationale&nbsp;: les séances du Salon bleu, du 29&nbsp;novembre 2022 au 12&nbsp;juin 2026, soit 287&nbsp;jours de séance et 594&nbsp;237 phrases.</p>
+      <p>Fiches des députés de l'Assemblée nationale, pour les fonctions et les indemnités. Résultats officiels d'Élections Québec.</p></div>
+    <div class="bloc"><h3>Traitement</h3>
+      <p>Chaque phrase est attribuée à l'élu qui la prononce, puis classée par enjeu et par ton par des modèles de classification automatique.</p>
+      <p>Ce qu'un élu dit en présidant une séance n'est pas compté.</p></div>
+    <div class="bloc"><h3>Limites</h3>
+      <p>Environ six phrases sur dix ne portent aucun enjeu identifiable&nbsp;: elles comptent dans les mots, pas dans la répartition par enjeu.</p>
+      <p>Le traitement est automatisé, puis relu à la main. Des erreurs restent possibles.</p></div>
+    <div class="bloc"><h3>Crédits</h3>
+      <p>Portraits&nbsp;: Assemblée nationale du Québec.</p>
+      <p>Une réalisation de la Vitrine démocratique, au Centre d'analyse des politiques publiques de l'Université Laval.</p>
+      <p><b>Méthodologie complète et corrections&nbsp;:</b> vitrinedemocratique.com/methodologie</p></div>
+  </div>${bas}`);
+
+  return [
+    { slug: "paquet-dessus", html: couverture },
+    { slug: "paquet-dessus-verso", html: lireRecto },
+    { slug: "paquet-dessous", html: lireVerso },
+    { slug: "paquet-dessous-verso", html: methodologie },
+  ];
+}
+
 /** UN ÉLU, UNE LIGNE (relevé du 23-09). Les données agora ont une ligne par
  *  élu ET PAR PARTI : un élu qui a changé d'allégeance en a plusieurs, et la
  *  carte n'en lisait qu'une, souvent la ligne « ind » de fin de mandat. Vincent
@@ -2585,6 +2759,8 @@ async function main() {
   }
   const decompte = new Map<Rarete, number>();
   for (const c of cartes) decompte.set(c.rarete ?? "commune", (decompte.get(c.rarete ?? "commune") ?? 0) + 1);
+  TOTAL_SERIE = cartes.length;
+  for (const r of Object.keys(RARETES_SERIE) as Rarete[]) RARETES_SERIE[r] = decompte.get(r) ?? 0;
   console.log(`  rareté : ${[...decompte].map(([r, n]) => `${LIBELLE_RARETE[r]} ${n}`).join(" · ")}`);
 
   // RÉSULTAT ÉLECTORAL. Le siège ET le nom de famille doivent concorder : à
@@ -2707,6 +2883,14 @@ async function main() {
     pages.push({ slug: `${c.slug}-verso`, html: avecMention(versoHTML(c, fiche, maxAbs, libelles, portrait, ecusson, logos.vitrine, logos.capp, seance), mention, "verso") });
   }
 
+  // LES DEUX CARTES DU PAQUET : avec la série entière, ou seules (--paquet).
+  // Les raretés sont celles de la série complète, calculées avant tout filtre.
+  if (args.paquet || (!args.only && !args.echantillon && !(limite > 0))) {
+    const paquet = pagesPaquet(logos, TOTAL_SERIE, RARETES_SERIE);
+    if (args.paquet) pages.length = 0;
+    pages.push(...paquet);
+  }
+
   await fs.mkdir(outDir, { recursive: true });
   // Page par page : mises bout à bout, les 258 pages (images en base64
   // comprises) dépassent la longueur maximale d'une chaîne.
@@ -2783,7 +2967,7 @@ async function main() {
     // VERROU DE RELECTURE, calqué sur celui des reels. Envoyer une carte à un
     // élu n'est pas rattrapable. Un échantillon ou une carte seule sort
     // directement : on la regarde justement pour décider.
-    const cible = args.echantillon || typeof args.only === "string";
+    const cible = args.echantillon || typeof args.only === "string" || !!args.paquet;
     if (args.png || impression) {
       if (!cible) {
         const vue = await fs.readFile(planche, "utf8").catch(() => "");
