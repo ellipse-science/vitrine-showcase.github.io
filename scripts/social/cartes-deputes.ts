@@ -503,6 +503,13 @@ function mesurerRetours(): string[] {
   }
   // Une ligne de statistiques plus large que son encadré (colonnes à la
   // mesure du contenu) déborderait sur le côté sans passer à la ligne.
+  // À l'impression, des enjeux restés sur deux rangs malgré ajusterLegende.
+  const enjeux = document.querySelectorAll<HTMLElement>(".legende li");
+  if (document.body.dataset.plancher && enjeux.length) {
+    let h = Infinity, b = -Infinity;
+    for (let i = 0; i < enjeux.length; i++) { const t = enjeux[i].getBoundingClientRect().top; if (t < h) h = t; if (t > b) b = t; }
+    if (b - h >= 4) coupees.push("enjeux sur deux rangs");
+  }
   const grilles = document.querySelectorAll<HTMLElement>(".stats, .rubrique, .paie");
   for (let i = 0; i < grilles.length; i++) {
     if (grilles[i].scrollWidth > grilles[i].clientWidth + 1) coupees.push(`grille trop large : ${(grilles[i].textContent || "").trim().slice(0, 40)}`);
@@ -1205,6 +1212,26 @@ function ajusterRubriques(): void {
       taille -= 1;
       els[i].style.fontSize = `${taille}px`;
     }
+  }
+}
+
+/** Les enjeux sur UN rang (Jules, 28-09). Quand trois libellés longs
+ *  (« Gouvernance », « Environnement »…) ne tiennent pas, la légende resserre
+ *  ses écarts, puis s'élargit dans le rembourrage de l'encadré ; le texte ne
+ *  rapetisse pas. Pas de fonction imbriquée (cf. ajusterVerso). */
+function ajusterLegende(): void {
+  const l = document.querySelector<HTMLElement>(".legende");
+  if (!l || !document.body.dataset.plancher) return;
+  const items = Array.from(l.querySelectorAll<HTMLElement>("li"));
+  let ecart = 12, interne = 6, marge = 10;
+  for (let etape = 0; etape < 30; etape++) {
+    let haut = Infinity, bas = -Infinity;
+    for (let i = 0; i < items.length; i++) { const t = items[i].getBoundingClientRect().top; if (t < haut) haut = t; if (t > bas) bas = t; }
+    if (bas - haut < 4) return;
+    if (ecart > 4) { ecart -= 2; l.style.columnGap = `${ecart}px`; continue; }
+    if (interne > 3) { interne -= 1; for (let i = 0; i < items.length; i++) items[i].style.gap = `${interne}px`; continue; }
+    if (marge < 24) { marge += 2; l.style.marginLeft = `-${marge}px`; l.style.marginRight = `-${marge}px`; continue; }
+    return;
   }
 }
 
@@ -2755,6 +2782,7 @@ async function main() {
           await page.evaluate(ajusterNom);
           await page.evaluate(ajusterIdentite);
           await page.evaluate(ajusterRubriques);
+          await page.evaluate(ajusterLegende);
           await page.evaluate(ajusterFonctions);
           await page.evaluate(ajusterVerso);
           const debord = await page.evaluate(mesurerDebordement);
