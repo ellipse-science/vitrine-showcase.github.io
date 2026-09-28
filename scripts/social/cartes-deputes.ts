@@ -66,8 +66,12 @@ import { buildEnjeuStack, ISSUE_META, loadAssemblee, type DeputyRow, type IssueK
 import { PARTY_COLORS, PARTY_FULL_NAMES, type PartyKey } from "@/lib/data/parties";
 import { COLORS, TONE, enjeuGlyph, fleur, loadLogos, parseArgs, txt, openInBrowser } from "./lib/reel";
 
-/** Enjeux écartés des cartes tant que leur classifieur est en révision. */
-const ENJEUX_EN_REVISION: readonly IssueKey[] = ["public_lands_and_agriculture", "international_affairs_and_defense"];
+/** Enjeux écartés des cartes tant que leur classifieur est en révision.
+ *  VIDE depuis le 28-09 : sur les données reconstruites avec les têtes
+ *  recalibrées, Terres publiques n'est plus l'enjeu dominant que de 2 élus sur
+ *  129 (59 avant), dont le ministre de l'Agriculture, et Affaires
+ *  internationales d'aucun (15 avant). Les douze enjeux paraissent. */
+const ENJEUX_EN_REVISION: readonly IssueKey[] = [];
 
 /** Encre des élus sans parti : un gris d'ardoise, lisible sous le papier et
  *  qu'aucun parti n'emploie. */
@@ -2157,7 +2161,7 @@ function versoHTML(
       Sources&nbsp;: transcriptions du Salon bleu jusqu'au ${txt(derniereSeance.replace(/^\p{L}+ (?=\d)/u, ""))}, fiches de l'Assemblée nationale, résultats d'Élections Québec.
       Richesse lexicale&nbsp;: variété du vocabulaire (indice MATTR), de un à cinq points par rapport aux autres élus. Le ton est lui aussi situé par rapport aux autres élus, pas dans l'absolu.
       ${c.parcours && c.remuneration ? `Frise&nbsp;: fonctions rémunérées au fil de la législature; quand plusieurs se chevauchent, seule la mieux payée est montrée, les indemnités ne se cumulant pas. Rémunération&nbsp;: indemnité de base et indemnité additionnelle la plus élevée, au jour près, sans allocations ni remboursements.` : ""}
-      ${barre ? `Parts&nbsp;: interventions classées automatiquement par enjeu. Terres publiques et Affaires internationales, dont le classement est en révision, sont retirées et le reste ramené à 100&nbsp;%.` : ""}
+      ${barre ? `Parts&nbsp;: interventions classées automatiquement par enjeu.` : ""}
       ${mot ? `Expression distinctive&nbsp;: celle qui distingue le plus l'élu des autres, pas la plus fréquente.` : ""}
       Recto&nbsp;: le sigle indique la fonction la mieux payée de la législature, le filet de couleur et sa bulle l'enjeu dominant, les fleurs de lys la rareté.
       Les premiers ministres sont légendaires; les autres élus sont classés selon les mots prononcés au Salon bleu sur la législature (10&nbsp;% rares, 35&nbsp;% peu communes).
@@ -2487,7 +2491,7 @@ async function main() {
   // autres. Les têtes INFER public_lands et defense, calibrées sur la presse,
   // se déclenchent sur les formules de procédure du Salon bleu (« Il n'y a pas
   // de consentement. ») : Terres sortait enjeu dominant de 58 élus sur 129.
-  // Le site n'est pas touché ; à retirer quand le raffineur sera recalibré.
+  // Le site n'est pas touché. Liste vidée le 28-09 (raffineur recalibré).
   for (const p of Object.values(data.periods)) {
     for (const d of [...(p?.rows.flatMap((r) => r.deputies ?? []) ?? []), ...(p?.independants ?? [])]) {
       d.enjeuStack = buildEnjeuStack(d.issueShares, ENJEUX_EN_REVISION);
