@@ -7,6 +7,7 @@
  *  toutes les PR et les déploiements (même leçon que `transforms.ts`).
  *  Ici : aucune dépendance, donc testable directement.
  */
+import { EXTERNE_MS } from './delai'
 export interface DeployHookEnv {
   DEPLOY_HOOK_PROD?: string
   DEPLOY_HOOK_DEV?: string
@@ -61,7 +62,7 @@ export async function triggerDeployHooks(env: DeployHookEnv): Promise<void> {
       continue
     }
     try {
-      const res = await fetch(url, { method: 'POST' })
+      const res = await fetch(url, { method: 'POST', signal: AbortSignal.timeout(EXTERNE_MS) })
       if (res.status === 304) {
         console.log(`hook ${name} : 304, un déploiement est déjà en file — rien à relancer`)
       } else if (res.status >= 300) {
@@ -84,6 +85,7 @@ async function lancerBuildsGithub(jeton: string): Promise<void> {
     try {
       const res = await fetch(`https://api.github.com/repos/${DEPOT}/actions/workflows/${workflow}/dispatches`, {
         method: 'POST',
+        signal: AbortSignal.timeout(EXTERNE_MS),
         headers: {
           authorization: `Bearer ${jeton}`,
           accept: 'application/vnd.github+json',

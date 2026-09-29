@@ -23,6 +23,7 @@
 // à 'true' (phase d'ombre = false : on écrit Postgres, aucun build déclenché).
 import { Client } from '@neondatabase/serverless'
 import { AthenaClient } from './athena'
+import { EXTERNE_MS, PG_CONNEXION_MS, PG_FERMETURE_MS, PG_REQUETE_MS, avecDelai } from './delai'
 import { hasColumnTypes, putTableSnapshot, rowsToObjects, type SnapshotEnv } from './snapshot'
 import type { SnapshotTableEntry } from './snapshot-logic'
 import { TABLES, type TableSpec } from './tables'
@@ -139,6 +140,13 @@ async function fetchTableRows(
   return rows
 }
 
+/** Une requête Postgres, bornée par PG_REQUETE_MS : le client Neon parle par
+ *  WebSocket, et une socket fermée sans erreur laissait la promesse pendante
+ *  à jamais — le « code had hung » des 27 et 29 septembre 2026 (cf. delai.ts). */
+function requete(pg: Client, sql: string, params?: unknown[]) {
+  return avecDelai(pg.query(sql, params), PG_REQUETE_MS, 'Postgres')
+}
+
 async function writeTable(
   pg: Client,
   spec: TableSpec,
@@ -146,7 +154,7 @@ async function writeTable(
 ): Promise<number> {
   const table = `vitrine.${quoteIdent(spec.name)}`
   const colList = spec.cols.map(quoteIdent).join(', ')
-  await pg.query('BEGIN')
+  await requete(pg, 'BEGIN')
   try {
     // GARDE ZÉRO-LIGNE. Une requête Athena qui renvoie 0 ligne sur une table
     // qui en avait est presque toujours une panne amont (partition manquante,
@@ -158,7 +166,7 @@ async function writeTable(
     // table suffit : le tout-ou-rien retient les hooks, la transaction est
     // annulée, et l'ancienne donnée continue d'être servie.
     if (rows.length === 0) {
-      const prev = await pg.query(
+      const prev = await requete(pg, 
         `SELECT row_count FROM vitrine.sync_state WHERE table_name = $1`,
         [spec.name],
       )
@@ -169,7 +177,7 @@ async function writeTable(
         )
       }
     }
-    await pg.query(`TRUNCATE ${table}`)
+    await requete(pg, `TRUNCATE ${table}`)
     for (let start = 0; start < rows.length; start += BATCH_ROWS) {
       const batch = rows.slice(start, start + BATCH_ROWS)
       const placeholders = batch
@@ -178,16 +186,16 @@ async function writeTable(
             `(${spec.cols.map((_, c) => `$${r * spec.cols.length + c + 1}`).join(', ')})`,
         )
         .join(', ')
-      await pg.query(
+      await requete(pg, 
         `INSERT INTO ${table} (${colList}) VALUES ${placeholders}`,
         batch.flat(),
       )
     }
     // Recomptage post-insertion : ne jamais se fier au compte du pilote
     // (leçon documentée de sync.ts, où le pilote HTTP rapportait 0 ligne).
-    const counted = await pg.query(`SELECT count(*)::int AS n FROM ${table}`)
+    const counted = await requete(pg, `SELECT count(*)::int AS n FROM ${table}`)
     const n = Number(counted.rows[0]?.n ?? 0)
-    await pg.query(
+    await requete(pg, 
       `INSERT INTO vitrine.sync_state (table_name, synced_at, row_count, source)
        VALUES ($1, now(), $2, 'cf-athena')
        ON CONFLICT (table_name) DO UPDATE SET
@@ -196,10 +204,10 @@ async function writeTable(
          source = EXCLUDED.source`,
       [spec.name, n],
     )
-    await pg.query('COMMIT')
+    await requete(pg, 'COMMIT')
     return n
   } catch (err) {
-    await pg.query('ROLLBACK').catch(() => {})
+    await requete(pg, 'ROLLBACK').catch(() => {})
     throw err
   }
 }
@@ -209,6 +217,7 @@ export async function notifySlack(env: SyncAthenaEnv, text: string): Promise<voi
   try {
     const res = await fetch(env.SLACK_WEBHOOK_URL, {
       method: 'POST',
+      signal: AbortSignal.timeout(EXTERNE_MS),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     })
@@ -294,7 +303,7 @@ export async function runAthenaSync(
   })
 
   const pg = new Client(env.DATABASE_URL)
-  await pg.connect()
+  await avecDelai(pg.connect(), PG_CONNEXION_MS, 'connexion Postgres')
 
   const synced: TableResult[] = []
   const failed: FailedTable[] = []
@@ -356,7 +365,7 @@ export async function runAthenaSync(
       }
     }
   } finally {
-    await pg.end().catch(() => {})
+    await avecDelai(pg.end(), PG_FERMETURE_MS, 'fermeture Postgres').catch(() => {})
   }
 
   // Ni Slack ni hooks ici : une TRANCHE ne connaît pas le sort de la passe.
