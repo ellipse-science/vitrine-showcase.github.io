@@ -11904,6 +11904,18 @@
 /* Filtres */
 .social-filtres { border-left: 0.5px solid var(--rule); padding-left: 22px; }
 .social-coches { margin-bottom: 18px; }
+.social-filtres-titre {
+  display: block; margin-bottom: 12px; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+  letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-softer);
+}
+/* Les chiffres : un résultat, séparé des filtres par un filet appuyé. */
+.social-chiffres { margin-top: 36px; padding-top: 32px; border-top: 1px solid var(--rule); }
+.social-chiffres-titre {
+  display: inline-block; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1.5px solid var(--cordovan);
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--cordovan);
+}
+.social-audience-nombre { margin-top: 10px; }
 /* « En chiffres » dans la colonne des filtres : empilés, filet entre les blocs. */
 .social-chiffres .social-tuiles { display: block; margin: 0; padding: 0; border: 0; }
 .social-chiffres .social-tuiles > div {
@@ -12277,11 +12289,16 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 .social-infobulle > .social-meta { display: block; margin-top: 2px; }
 .social-infobulle-tete { margin: 8px 0 6px; font-size: 13px; color: var(--ink-soft); }
 .social-infobulle ul { list-style: none; margin: 0; padding: 6px 0 0; border-top: 0.5px solid var(--rule-faint); }
-.social-infobulle li { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) auto 2.6rem; align-items: center; gap: 6px; padding: 2px 0; }
+/* Sigle, nom (tronqué), logos, valeur : colonnes auto, jamais de largeur
+   fixe pour les chiffres, qui ne débordent donc plus. */
+.social-infobulle li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 6px; padding: 2px 0; }
 .social-infobulle-sigle { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
-.social-infobulle-nom { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
-.social-infobulle-logos { display: inline-flex; gap: 3px; color: var(--ink-soft); }
-.social-infobulle-n { text-align: right; font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+.social-infobulle-nom { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
+.social-infobulle-logos { display: inline-flex; gap: 3px; margin-right: 2px; color: var(--ink-soft); }
+.social-infobulle-n {
+  text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;
+  font-family: "IBM Plex Mono", monospace; font-size: 12px;
+}
 .social-infobulle-pied {
   display: block; margin-top: 6px; text-align: right; font-family: "IBM Plex Mono", monospace;
   font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-softer);

@@ -306,9 +306,9 @@ export type MesureAudience = "abonnes" | "publications" | "parJour" | "jaime" | 
 /** Sous ce nombre de publications sur la période, un compte n'entre pas aux
  *  classements des moyennes : un seul billet très aimé les dominerait. */
 export const MIN_PUBLICATIONS_MOYENNE = 5;
-export const AUDIENCE_MAX = 50;
+export const AUDIENCE_MAX = 40;
 
-/** Les comptes classés selon la mesure (50 au plus) ; un compte à 0, ou sans
+/** Les comptes classés selon la mesure (40 au plus) ; un compte à 0, ou sans
  *  valeur, n'y figure pas. Filtres Plateforme, Parti, Type ; période d0..d1
  *  (hors abonnés). La somme sur les comptes recoupe les tuiles. */
 export function classementAudience(

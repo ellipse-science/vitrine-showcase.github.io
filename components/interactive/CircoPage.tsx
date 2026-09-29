@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { PartyKey } from "@/lib/data/parties";
 import {
   NOMS_PLATEFORMES,
+  nombreFr,
   PLATEFORMES,
   type CandidatPage,
   type FilItem,
@@ -18,7 +19,6 @@ import { MONTHS_FR } from "@/lib/dates";
 // les parties qui bougent (séries, fil filtrable, lecteur vidéo). Tout le reste
 // est rendu au build par la page serveur.
 
-const nombreFr = (n: number) => new Intl.NumberFormat("fr-CA").format(Math.round(n));
 const jourCourt = (iso: string) => `${Number(iso.slice(8, 10))} ${MONTHS_FR[Number(iso.slice(5, 7)) - 1]}`;
 
 type MesureSerie = "publications" | "jaime";

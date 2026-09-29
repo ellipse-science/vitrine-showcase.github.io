@@ -7,6 +7,7 @@ import {
   LOGOS_PLATEFORMES,
   NOMS_PLATEFORMES,
   NOMS_TYPES,
+  nombreFr,
   PLATEFORMES,
   TYPES,
   type AudienceJour,
@@ -65,6 +66,10 @@ const MESURES_AUDIENCE: { cle: MesureAudience; libelle: string; unite: string }[
   { cle: "commentaires", libelle: "Commentaires", unite: "commentaires" },
   { cle: "parPublication", libelle: "J’aime par publication", unite: "j’aime par publication" },
 ];
+
+/** Les grands chiffres en Playfair : l'espace fine y disparaît à l'œil
+ *  (« 8903 ») ; une espace insécable ordinaire y reste lisible. */
+const nombreGrand = (n: number, dec = 0) => nombreFr(n, dec).replace(/\u202f/g, "\u00a0");
 
 /** Vrai sous une largeur d'écran (côté client ; faux au rendu serveur). */
 function useEtroit(max = 640) {
@@ -134,7 +139,7 @@ function Audience({
   const format = (v: number) => (mesure === "parJour" || mesure === "parPublication" ? nombreFr(v, 1) : nombreFr(v));
   const colonnes = etroit ? [vus] : [vus.slice(0, 10), vus.slice(10, 20)].filter((c) => c.length > 0);
   if (activite.charge) return <p className="social-note">Chargement de l’activité des comptes…</p>;
-  if (classement.length === 0) return <p className="social-vide">Aucun compte dans cette sélection.</p>;
+  if (classement.length === 0) return <p className="social-vide">Aucun compte pour ces filtres.</p>;
   return (
     <div className="social-audience-bloc">
       <div className={`social-audience-colonnes${colonnes.length > 1 ? " deux" : ""}`}>
@@ -157,6 +162,11 @@ function Audience({
           </ol>
         ))}
       </div>
+      {pages === 1 && (
+        <p className="social-meta social-audience-nombre">
+          {classement.length}&nbsp;{classement.length > 1 ? "comptes" : "compte"}
+        </p>
+      )}
       {pages > 1 && (
         <nav className="social-pagination" aria-label="Pages du classement">
           <button type="button" onClick={() => setPage(p - 1)} disabled={p === 0} aria-label="Page précédente">
@@ -218,8 +228,6 @@ const NOMS_MESURES: Record<Mesure, string> = {
   parPublication: "j’aime par publication",
 };
 
-const nombreFr = (n: number, dec = 0) =>
-  n.toLocaleString("fr-CA", { maximumFractionDigits: dec, minimumFractionDigits: 0 }).replace(/\s/g, " ");
 const court = (n: number) =>
   n >= 1e6 ? `${nombreFr(n / 1e6, 1)} M` : n >= 1e4 ? `${nombreFr(n / 1e3, 0)} k` : nombreFr(n);
 const jourCourt = (iso: string) => {
@@ -1065,7 +1073,7 @@ export function cadreChemin(d: string): { x: number; y: number; w: number; h: nu
  *  et chaque candidat suivi avec les logos de ses comptes et ses publications
  *  de la période. Décorative pour les lecteurs d'écran (aria-hidden) : le
  *  libellé de la forme et la fiche portent la même information. */
-function Infobulle({
+export function Infobulle({
   data,
   circo,
   m,
@@ -1757,17 +1765,14 @@ export function SocialClient({ data }: { data: SocialData }) {
           </div>
 
           <aside className="social-filtres" aria-label="Filtres">
+            <span className="social-filtres-titre">Filtres</span>
             <Coches
               label="Plateforme"
               options={PLATEFORMES.map((p) => ({ cle: p, libelle: NOMS_PLATEFORMES[p] }))}
               actifs={plateformes}
               onChange={setPlateformes}
               couleur={(p) => COULEURS_PLATEFORMES[p]}
-              icone={(p) => (
-                <>
-                  <Logo p={p} taille={12} /> {NOMS_PLATEFORMES[p]}
-                </>
-              )}
+              icone={(p) => <Logo p={p} taille={15} />}
             />
             <Coches
               label="Parti"
@@ -1793,32 +1798,35 @@ export function SocialClient({ data }: { data: SocialData }) {
               actifs={types}
               onChange={setTypes}
             />
-            {/* Les chiffres de la période, sous les filtres (maquette). */}
-            <div className="social-coches social-chiffres">
-              <span className="social-coches-titre">En chiffres</span>
+            {/* Les chiffres de la période : un résultat, pas un contrôle ; un filet
+                plus appuyé les sépare des filtres. */}
+            <section className="social-chiffres" aria-label="En chiffres">
+              <h3 className="social-chiffres-titre">
+                En chiffres · {nombreFr(nbJours)}&nbsp;{nbJours > 1 ? "jours" : "jour"}
+              </h3>
               <dl className="social-tuiles">
                 <div>
                   <dt>Publications</dt>
-                  <dd>{nombreFr(t.publications)}</dd>
+                  <dd>{nombreGrand(t.publications)}</dd>
                 </div>
                 <div>
                   <dt>Par jour, en moyenne</dt>
-                  <dd>{nombreFr(t.publications / nbJours)}</dd>
+                  <dd>{nombreGrand(t.publications / nbJours)}</dd>
                 </div>
                 <div>
                   <dt>J’aime</dt>
-                  <dd>{nombreFr(t.jaime)}</dd>
+                  <dd>{nombreGrand(t.jaime)}</dd>
                 </div>
                 <div>
                   <dt>Commentaires</dt>
-                  <dd>{nombreFr(t.commentaires)}</dd>
+                  <dd>{nombreGrand(t.commentaires)}</dd>
                 </div>
                 <div>
                   <dt>J’aime par publication</dt>
-                  <dd>{nombreFr(valeur(t, "parPublication"), 1)}</dd>
+                  <dd>{nombreGrand(valeur(t, "parPublication"), 1)}</dd>
                 </div>
               </dl>
-            </div>
+            </section>
           </aside>
 
           <div className="social-bas">

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Carte, CartePublication, cadreChemin, commentaires, suggestions } from "@/components/interactive/SocialClient";
+import { Carte, CartePublication, Infobulle, cadreChemin, commentaires, suggestions } from "@/components/interactive/SocialClient";
 import {
   cleCirco,
   construireCarte,
@@ -12,7 +12,8 @@ import {
   urlCompte,
   type FondCarte,
 } from "@/lib/data/social";
-import { classementAudience, integration, meneur } from "@/lib/data/social-calc";
+import { classementAudience, integration, meneur, type MesureAudience } from "@/lib/data/social-calc";
+import { nombreFr } from "@/lib/data/social-meta";
 import fond from "@/lib/geo/circonscriptions-2026.json";
 
 // Carte des circonscriptions et vignettes du palmarès. Ce qui doit être
@@ -286,9 +287,9 @@ describe("audience : classements sur la période", () => {
     expect(classementAudience(items, jours, "parJour", f)).toEqual([{ item: items[1], valeur: 6 / 5 }]);
     expect(classementAudience(items, jours, "parJour", { ...f, d0: 0, d1: 5 })).toEqual([{ item: items[1], valeur: 10 / 6 }]);
   });
-  it("50 comptes au plus", () => {
+  it("40 comptes au plus", () => {
     const beaucoup = Array.from({ length: 80 }, (_, i) => ({ ...base, nom: `x${i}`, abonnes: i + 1 }));
-    expect(classementAudience(beaucoup, [], "abonnes", f)).toHaveLength(50);
+    expect(classementAudience(beaucoup, [], "abonnes", f)).toHaveLength(40);
   });
 });
 
@@ -331,5 +332,86 @@ describe("fil complet : contenu et compteurs", () => {
     const fil = construireFil(rows).get(cleCirco("Anjou-Louis-Riel"))!;
     expect(fil.map((p) => p.jour)).toEqual(["2026-09-28", "2026-09-27"]);
     expect(fil[0].jaime).toBe(12);
+  });
+});
+
+describe("audience : toutes les combinaisons de filtres", () => {
+  // Jeu synthétique reproductible : 150 comptes, 60 jours, des zéros et des
+  // comptes sans abonnés ; le résultat est comparé à un calcul naïf.
+  let graine = 7;
+  const hasard = () => ((graine = (graine * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+  const PF = ["facebook", "instagram", "tiktok"] as const;
+  const PA = ["plq", "caq", "qs", "pq", "pcq"] as const;
+  const TY = ["candidat", "parti"] as const;
+  const comptes = Array.from({ length: 150 }, (_, i) => ({
+    nom: `c${i}`,
+    plateforme: PF[i % 3],
+    party: PA[Math.floor(hasard() * 5)],
+    type: TY[hasard() < 0.85 ? 0 : 1],
+    abonnes: hasard() < 0.1 ? null : Math.floor(hasard() * 5000),
+  }));
+  const N = 60;
+  const jours: [number, number, number, number, number][] = [];
+  comptes.forEach((_, c) => {
+    for (let j = 0; j < N; j++) {
+      if (hasard() < 0.3) jours.push([c, j, 1 + Math.floor(hasard() * 3), Math.floor(hasard() * 200), Math.floor(hasard() * 20)]);
+    }
+  });
+  const periodes = { "7 j": [N - 7, N - 1], "30 j": [N - 30, N - 1], campagne: [N - 34, N - 1], tout: [0, N - 1] } as const;
+  const mesures: MesureAudience[] = ["abonnes", "publications", "parJour", "jaime", "commentaires", "parPublication"];
+  const sous = <T,>(l: readonly T[]) => Array.from({ length: 2 ** l.length - 1 }, (_, m) => l.filter((_, i) => (m + 1) & (1 << i)));
+  const naif = (mesure: MesureAudience, f: { plateformes: string[]; partis: string[]; types: string[]; d0: number; d1: number }) => {
+    const vals: number[] = [];
+    comptes.forEach((a, c) => {
+      if (!f.plateformes.includes(a.plateforme) || !f.partis.includes(a.party) || !f.types.includes(a.type)) return;
+      let p = 0, l = 0, k = 0;
+      for (const r of jours) if (r[0] === c && r[1] >= f.d0 && r[1] <= f.d1) { p += r[2]; l += r[3]; k += r[4]; }
+      const v =
+        mesure === "abonnes" ? a.abonnes
+        : mesure === "publications" ? p
+        : mesure === "jaime" ? l
+        : mesure === "commentaires" ? k
+        : p < 5 ? null
+        : mesure === "parPublication" ? l / p
+        : p / (f.d1 - f.d0 + 1);
+      if (v != null && v > 0) vals.push(v);
+    });
+    return vals.sort((a, b) => b - a);
+  };
+
+  it("affiche min(40, comptes éligibles), dans l'ordre, pour chaque combinaison", () => {
+    let combinaisons = 0;
+    for (const plateformes of sous(PF))
+      for (const partis of sous(PA))
+        for (const types of sous(TY))
+          for (const mesure of mesures)
+            for (const [d0, d1] of Object.values(periodes)) {
+              const f = { plateformes: [...plateformes], partis: [...partis], types: [...types], d0, d1 };
+              const attendu = naif(mesure, f);
+              const obtenu = classementAudience(comptes, jours, mesure, f as never).map((x) => x.valeur);
+              expect(obtenu.length).toBe(Math.min(40, attendu.length));
+              expect(obtenu).toEqual(attendu.slice(0, 40));
+              combinaisons++;
+            }
+    expect(combinaisons).toBe(7 * 31 * 3 * 6 * 4);
+  });
+});
+
+describe("infobulle : grands nombres et noms longs", () => {
+  it("espace fine insécable entre les milliers, nom long tronqué par la mise en page", () => {
+    expect(nombreFr(1432983)).toBe("1\u202f432\u202f983");
+    const data = construireSocial(comptes, jours, [], fond as FondCarte)!;
+    const circo = {
+      ...data.carte!.circos.find((c) => c.comptes.length > 0)!,
+      comptes: [{ nom: "Marie-Ève Laflamme-Beauchemin de la Rivière-du-Loup", party: "pcq" as const, plateforme: "facebook" as const,
+        url: null, abonnes: 10, publications7j: 3, jaime7j: 1432983, publicationsCampagne: 3, jaimeCampagne: 1432983 }],
+    };
+    const html = renderToStaticMarkup(
+      <Infobulle data={data} circo={circo} m={meneur(circo.comptes, "7j", ["facebook"], ["pcq"])} periode="7j"
+        plateformes={["facebook", "instagram", "tiktok"]} partis={data.partis} x={10} y={10} largeur={800} hauteur={600} />,
+    );
+    expect(html).toContain("1\u202f432\u202f983");
+    expect(html).toContain('class="social-infobulle-nom"');
+    expect(html).toContain("Marie-Ève Laflamme-Beauchemin de la Rivière-du-Loup");
   });
 });

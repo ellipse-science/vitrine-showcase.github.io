@@ -5,6 +5,13 @@
  */
 import type { PartyKey } from "./parties";
 
+/** Nombre en français, milliers séparés par une espace fine insécable
+ *  (U+202F) : « 1 432 983 », jamais coupé, jamais trop espacé. */
+export const nombreFr = (n: number, dec = 0) =>
+  n
+    .toLocaleString("fr-CA", { maximumFractionDigits: dec, minimumFractionDigits: 0 })
+    .replace(/[\s\u00a0\u202f]/g, "\u202f");
+
 export const PLATEFORMES = ["facebook", "instagram", "tiktok"] as const;
 export type Plateforme = (typeof PLATEFORMES)[number];
 
