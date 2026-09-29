@@ -1,4 +1,7 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { readDatasetText } from "./source";
+import geo from "@/lib/geo/circonscriptions-2026.json";
 import { lastUpdatedLabel } from "@/lib/dates";
 import { ELECTION_CALL_DATE } from "@/lib/election";
 import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS, PARTY_FULL_NAMES, type PartyKey } from "./parties";
@@ -6,6 +9,12 @@ import {
   PLATEFORMES,
   TYPES,
   type AudienceItem,
+  type Carte,
+  type Circo,
+  type CompteCirco,
+  type FilItem,
+  TYPES_MEDIA,
+  type TypeMedia,
   type CubeRow,
   type PalmaresItem,
   type Plateforme,
@@ -35,6 +44,7 @@ export const SOCIAL_DATASETS = {
   comptes: "public/data/agora/agora_social_comptes.json",
   publicationsJour: "public/data/agora/agora_social_publications_jour.json",
   palmares: "public/data/agora/agora_social_palmares.json",
+  fil: "public/data/agora/agora_social_fil.json",
 } as const;
 
 /** Début de la collecte : l'axe de la frise part de là. */
@@ -56,6 +66,12 @@ type CompteRow = {
   calcule_le: string | null;
   /** Candidatures officielles du parti du compte (127 pour les cinq partis). */
   candidatures_parti: number | null;
+  /** Activité du compte, calculée par le raffineur (absente avant #586). */
+  publications_7j?: number | null;
+  jaime_7j?: number | null;
+  publications_campagne?: number | null;
+  jaime_campagne?: number | null;
+  derniere_publication?: string | null;
 };
 type JourRow = {
   jour: string;
@@ -77,7 +93,12 @@ type PalmaresRow = {
   texte: string | null;
   jaime: number | null;
   commentaires: number | null;
+  post_id?: string | null;
+  /** Clé de la vignette sous /v1/art (`social/<plateforme>/<id>.jpg`), ou null. */
+  vignette?: string | null;
+  media_type?: string | null;
 };
+type FilRow = PalmaresRow & { circonscription: string | null; compte?: string | null };
 
 const partyKey = (p: string | null | undefined): PartyKey | null => {
   const k = String(p ?? "").toLowerCase();
@@ -113,6 +134,120 @@ async function lire<T>(fichier: string): Promise<T[] | null> {
   }
 }
 
+/** Fond de carte : donnée de référence statique (scripts/reference/carte_circonscriptions.mjs). */
+export type FondCarte = {
+  vue: number[];
+  encarts: Record<string, number[]>;
+  circonscriptions: { code: number; nom: string; region: string; d: string }[];
+};
+
+/** Clé de jointure des noms de circonscription : le raffineur écrit les
+ *  tirets et apostrophes typographiques (« Anjou–Louis-Riel »), la carte
+ *  d'Élections Québec des traits d'union simples (« Anjou-Louis-Riel »). */
+export const cleCirco = (nom: string) =>
+  nom.normalize("NFC").replace(/[\u2010-\u2015]/g, "-").replace(/[\u2018\u2019\u02bc]/g, "'").toLowerCase().trim();
+
+/** Adresse publique d'un compte, reconstruite de son pseudo. */
+export function urlCompte(p: Plateforme, pseudo: string | null | undefined): string | null {
+  const h = String(pseudo ?? "").replace(/^@/, "").trim();
+  if (!h || !/^[\w.\-]+$/.test(h)) return null;
+  if (p === "facebook") return `https://www.facebook.com/${h}`;
+  if (p === "instagram") return `https://www.instagram.com/${h}/`;
+  return `https://www.tiktok.com/@${h}`;
+}
+
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const CLE_VIGNETTE = /^social\/(facebook|instagram|tiktok)\/[A-Za-z0-9._-]{1,40}\.jpg$/;
+const DOSSIER_ART = path.join(process.cwd(), "public", "data", "generated-art");
+/** Une vignette n'est servie que si le build l'a rapatriée (scripts/fetch_social_vignettes.mjs). */
+const vignetteSurDisque = (cle: string) => existsSync(path.join(DOSSIER_ART, cle));
+const urlVignette = (cle: string | null | undefined, disponible: (cle: string) => boolean) =>
+  cle && CLE_VIGNETTE.test(cle) && disponible(cle) ? `${BASE_PATH}/data/generated-art/${cle}` : null;
+const typeMedia = (t: string | null | undefined): TypeMedia | null =>
+  (TYPES_MEDIA as readonly string[]).includes(String(t)) ? (t as TypeMedia) : null;
+
+/** Fil par circonscription, clé = cleCirco(nom). Pure, testée. */
+export function construireFil(
+  rows: FilRow[],
+  vignetteDisponible: (cle: string) => boolean = () => false,
+): Map<string, FilItem[]> {
+  const out = new Map<string, FilItem[]>();
+  for (const r of rows) {
+    const k = partyKey(r.parti);
+    const p = plateforme(r.plateforme);
+    if (!k || !p || !r.circonscription || !r.jour) continue;
+    const cle = cleCirco(r.circonscription);
+    if (!out.has(cle)) out.set(cle, []);
+    out.get(cle)!.push({
+      jour: r.jour,
+      nom: r.candidat ?? r.pseudo ?? PARTY_LABELS[k],
+      party: k,
+      plateforme: p,
+      url: r.url,
+      texte: tronque((r.texte ?? "").trim()),
+      jaime: nombre(r.jaime),
+      commentaires: nombre(r.commentaires),
+      vignette: urlVignette(r.vignette, vignetteDisponible),
+      media: typeMedia(r.media_type),
+    });
+  }
+  for (const l of out.values()) l.sort((a, b) => b.jour.localeCompare(a.jour) || b.jaime - a.jaime);
+  return out;
+}
+
+// Lu une fois par build : la route statique l'appelle pour chaque circonscription.
+let filMemo: Promise<Map<string, FilItem[]>> | null = null;
+export function loadSocialFil(): Promise<Map<string, FilItem[]>> {
+  filMemo ??= lire<FilRow>(SOCIAL_DATASETS.fil).then((rows) => construireFil(rows ?? [], vignetteSurDisque));
+  return filMemo;
+}
+
+/** Fiches des circonscriptions : les comptes de CANDIDAT suivis, rattachés au
+ *  tracé par le nom normalisé. Pure, testée. Null sans fond ou sans compte. */
+export function construireCarte(comptes: CompteRow[], fond: FondCarte | null): Carte | null {
+  if (!fond || fond.circonscriptions.length === 0) return null;
+  const parCirco = new Map<string, CompteCirco[]>();
+  for (const r of comptes) {
+    const k = partyKey(r.parti);
+    const p = plateforme(r.plateforme);
+    if (!k || !p || typeCompte(r.type) !== "candidat" || !r.circonscription) continue;
+    const cle = cleCirco(r.circonscription);
+    if (!parCirco.has(cle)) parCirco.set(cle, []);
+    parCirco.get(cle)!.push({
+      nom: r.candidat ?? r.pseudo ?? r.compte,
+      party: k,
+      plateforme: p,
+      url: urlCompte(p, r.pseudo),
+      abonnes: r.abonnes,
+      publications7j: nombre(r.publications_7j),
+      jaime7j: nombre(r.jaime_7j),
+      publicationsCampagne: nombre(r.publications_campagne),
+      jaimeCampagne: nombre(r.jaime_campagne),
+    });
+  }
+  if (parCirco.size === 0) return null;
+  const circos: Circo[] = fond.circonscriptions.map((c) => {
+    const liste = parCirco.get(cleCirco(c.nom)) ?? [];
+    // Le nom typographique du raffineur, à défaut celui de la carte.
+    const nom = comptes.find((r) => r.circonscription && cleCirco(r.circonscription) === cleCirco(c.nom))?.circonscription;
+    return {
+      code: c.code,
+      nom: nom ?? c.nom,
+      region: c.region,
+      d: c.d,
+      comptes: liste.sort(
+        (a, b) => PARTY_KEYS.indexOf(a.party) - PARTY_KEYS.indexOf(b.party) || PLATEFORMES.indexOf(a.plateforme) - PLATEFORMES.indexOf(b.plateforme),
+      ),
+    };
+  });
+  const quad = (v: number[] | undefined) => (v?.length === 4 ? (v as [number, number, number, number]) : null);
+  const vue = quad(fond.vue);
+  const montreal = quad(fond.encarts.montreal);
+  const quebec = quad(fond.encarts.quebec);
+  if (!vue || !montreal || !quebec) return null;
+  return { vue, encarts: { montreal, quebec }, circos };
+}
+
 const typeCompte = (t: string | null | undefined): TypeCompte => (t === "parti" ? "parti" : "candidat");
 const tronque = (t: string) => (t.length > TEXTE_MAX ? `${t.slice(0, TEXTE_MAX - 1).trimEnd()}…` : t);
 
@@ -121,6 +256,8 @@ export function construireSocial(
   comptes: CompteRow[],
   jours: JourRow[],
   palmares: PalmaresRow[],
+  fond: FondCarte | null = null,
+  vignetteDisponible: (cle: string) => boolean = () => false,
 ): SocialData | null {
   if (comptes.length === 0 || jours.length === 0) return null;
 
@@ -214,6 +351,8 @@ export function construireSocial(
       texte: tronque((r.texte ?? "").trim()),
       jaime: r.jaime,
       commentaires: nombre(r.commentaires),
+      vignette: urlVignette(r.vignette, vignetteDisponible),
+      media: typeMedia(r.media_type),
     }];
   });
 
@@ -233,6 +372,7 @@ export function construireSocial(
     campagne: campagne < 0 ? 0 : campagne,
     cube,
     palmares: tops,
+    carte: construireCarte(comptes, fond),
   };
 }
 
@@ -243,5 +383,5 @@ export async function loadSocial(): Promise<SocialData | null> {
     lire<PalmaresRow>(SOCIAL_DATASETS.palmares),
   ]);
   if (!comptes || !jours) return null;
-  return construireSocial(comptes, jours, palmares ?? []);
+  return construireSocial(comptes, jours, palmares ?? [], geo as FondCarte, vignetteSurDisque);
 }
