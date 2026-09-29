@@ -5,6 +5,7 @@ import { UneDesUnesSection } from "@/components/sections/UneDesUnesSection";
 import { DeuxSolitudesSection } from "@/components/sections/DeuxSolitudesSection";
 import { TreemapSection } from "@/components/sections/TreemapSection";
 import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection";
+import { SocialSection } from "@/components/sections/SocialSection";
 import { EditionNav } from "@/components/interactive/EditionNav";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
 import { PromoDatagotchi } from "@/components/interactive/PromoDatagotchi";
@@ -58,6 +59,13 @@ export default async function Home() {
       <div id="assemblee-nationale" data-section="Assemblée nationale">
         <AssembleeSection />
       </div>
+
+      {/* Module expérimental, dev seulement (tables du datamart DEV). */}
+      {!isProd && (
+        <div id="candidats-reseaux" data-section="Candidats sur les réseaux">
+          <SocialSection />
+        </div>
+      )}
 
       <div data-section="Pied de page">
         <RawMaquette chunk="bottom" />

@@ -11837,3 +11837,177 @@
 @media print {
   .dg-promo { display: none; }
 }
+
+/* ── Module « Les candidats sur les réseaux » (expérimental, dev seulement) ── */
+.social { margin: 18px 0 8px; }
+.social-tdb { display: grid; grid-template-columns: minmax(0, 1fr) 15rem; gap: 28px; }
+.social-coches-titre {
+  display: block; font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: 0.3em; text-transform: uppercase; color: var(--cordovan); margin-bottom: 6px;
+}
+.social-raccourcis { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.social-raccourcis .social-coches-titre { margin: 0 8px 0 0; }
+.social-raccourcis button, .social-coches button, .social-bascule button {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-soft); background: transparent;
+  border: 0.5px solid var(--rule); padding: 5px 9px; cursor: pointer; border-radius: 0;
+}
+.social-raccourcis button.actif, .social-bascule button.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.social-bascule { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+
+/* Frise : histogramme + fenêtre */
+.social-frise { position: relative; padding: 0 8px 20px; }
+.social-frise-zone { position: relative; height: 64px; touch-action: none; cursor: crosshair; border-bottom: 0.5px solid var(--rule); }
+.social-frise-zone svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.social-frise-zone rect.dans { fill: var(--ink-soft); }
+.social-frise-zone rect.hors { fill: var(--rule); }
+.social-frise-repere { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--brass); pointer-events: none; }
+.social-frise-fenetre {
+  position: absolute; top: 0; bottom: 0; cursor: grab;
+  background: color-mix(in srgb, var(--cordovan) 10%, transparent);
+  border-left: 2px solid var(--cordovan); border-right: 2px solid var(--cordovan);
+}
+.social-frise-fenetre:focus-visible, .social-frise-poignee:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.social-frise-poignee { position: absolute; top: 0; bottom: 0; width: 14px; cursor: ew-resize; }
+.social-frise-poignee.debut { left: -8px; }
+.social-frise-poignee.fin { right: -8px; }
+.social-frise-poignee::after { content: ""; position: absolute; top: 50%; left: 5px; width: 4px; height: 18px; margin-top: -9px; background: var(--cordovan); }
+.social-frise-mois { position: relative; height: 16px; }
+.social-frise-mois span {
+  position: absolute; top: 4px; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-softer); white-space: nowrap;
+}
+.social-frise-repere-libelle {
+  position: absolute; top: 0; right: 4px; font-family: "IBM Plex Mono", monospace; font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber-encre); white-space: nowrap;
+}
+
+/* Tuiles */
+.social-tuiles { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 18px 0 0; padding: 12px 0; border-top: 0.5px solid var(--rule); border-bottom: 0.5px solid var(--rule); }
+.social-tuiles div { display: flex; align-items: baseline; gap: 8px; }
+.social-tuiles dt {
+  order: 2; font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-softer);
+}
+.social-tuiles dd { order: 1; margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 22px; color: var(--ink); }
+
+/* Filtres */
+.social-filtres { border-left: 0.5px solid var(--rule); padding-left: 18px; }
+.social-coches { margin-bottom: 14px; }
+.social-coches > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.social-coches button.actif { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+
+/* Onglets, réglages, notes */
+.social-onglets { margin: 26px 0 8px; }
+.social-reglages { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 6px 0; }
+.social-sous-titre, .social-note {
+  font-family: "Source Serif 4", serif; font-size: 14px; color: var(--ink-softer); margin: 8px 0 14px;
+}
+.social-note { font-size: 13px; }
+
+/* Panneaux */
+.social-panneaux.multiples { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px 32px; }
+.social-panneaux .social-note { grid-column: 1 / -1; }
+.social-panneau-titre {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink); margin-bottom: 6px;
+}
+
+/* Présence */
+.social-presence { border-collapse: collapse; width: 100%; max-width: 560px; }
+.social-presence th {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-soft);
+  padding: 6px 8px; text-align: center;
+}
+.social-presence tbody th { text-align: left; }
+.social-presence td {
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px;
+  text-align: center; padding: 12px 6px; color: var(--ink);
+  border: 2px solid var(--paper);
+}
+.social-presence td.fonce { color: var(--paper); }
+
+/* Barres */
+.social-barres, .social-palmares, .social-legende { list-style: none; margin: 0; padding: 0; }
+.social-barres li {
+  display: grid; grid-template-columns: minmax(0, 4rem) 1fr 6rem;
+  align-items: center; gap: 10px; padding: 5px 0;
+  border-bottom: 0.5px solid var(--rule-faint);
+}
+.social-audience li { grid-template-columns: minmax(0, 15rem) 1fr 5.5rem; }
+.social-nom { font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink); }
+.social-barres .social-nom { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.1em; }
+.social-audience .social-nom { font-family: "Source Serif 4", serif; font-size: 15px; letter-spacing: 0; }
+.social-meta {
+  display: block; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-softer);
+}
+.social-palmares-tete .social-meta { display: inline; margin-left: 8px; }
+.social-piste { height: 10px; background: var(--rule-faint); }
+.social-piste i { display: block; height: 100%; }
+.social-valeur {
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 15px;
+  text-align: right; color: var(--ink);
+}
+
+/* Parts : treemap en tuiles */
+.social-treemap { position: relative; width: 100%; max-height: 360px; }
+.social-tuile { position: absolute; box-sizing: border-box; border: 2px solid var(--paper); overflow: hidden; }
+.social-tuile span {
+  position: absolute; left: 8px; right: 6px; top: 7px; color: var(--paper); white-space: nowrap;
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px; line-height: 1.15;
+}
+.social-tuile span b {
+  display: block; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Courbes */
+.social-graphe { padding: 8px 84px 28px 48px; }
+.social-trace { position: relative; height: 260px; }
+.social-panneaux.multiples .social-trace { height: 170px; }
+.social-trace svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.social-axe {
+  position: absolute; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  letter-spacing: 0.08em; color: var(--ink-softer); white-space: nowrap;
+}
+.social-axe-y { right: calc(100% + 8px); transform: translateY(-50%); }
+.social-axe-x { top: calc(100% + 8px); transform: translateX(-50%); }
+.social-etiquette {
+  position: absolute; left: calc(100% + 6px); transform: translateY(-50%);
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+}
+.social-point { position: absolute; left: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; }
+
+/* Palmarès */
+.social-palmares li { padding: 12px 0; border-bottom: 0.5px solid var(--rule); }
+.social-rang {
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 18px;
+  color: var(--cordovan); margin-right: 10px;
+}
+.social-texte {
+  font-family: "Source Serif 4", serif; font-size: 15px; line-height: 1.5;
+  color: var(--ink-soft); margin: 6px 0;
+}
+.social-palmares a { color: var(--cordovan); border-bottom: 0.5px solid var(--cordovan); text-decoration: none; }
+.social-vide { font-family: "Source Serif 4", serif; color: var(--ink-softer); padding: 12px 0; }
+
+@media (max-width: 900px) {
+  .social-tdb { grid-template-columns: 1fr; gap: 18px; }
+  .social-filtres { border-left: 0; padding-left: 0; order: -1; }
+}
+@media (max-width: 640px) {
+  .social-raccourcis button, .social-coches button, .social-bascule button { min-height: 40px; min-width: 40px; padding: 8px 10px; }
+  .social-frise { padding: 0 20px 20px; } /* la zone tactile des poignées reste dans l'écran */
+  .social-frise-zone { height: 72px; }
+  .social-frise-poignee { width: 40px; }
+  .social-frise-poignee.debut { left: -21px; }
+  .social-frise-poignee.fin { right: -21px; }
+  .social-frise-poignee::after { left: 18px; }
+  .social-trace { height: 200px; }
+  .social-graphe { padding: 8px 76px 28px 40px; }
+  .social-audience li { grid-template-columns: minmax(0, 1fr) 4.5rem; }
+  .social-audience .social-piste { grid-column: 1 / -1; order: 3; }
+  .social-tuiles dd { font-size: 19px; }
+}

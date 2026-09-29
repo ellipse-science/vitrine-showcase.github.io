@@ -596,6 +596,77 @@
       "api": false,
       "_note_api": "Lue dans le FICHIER, jamais demandée à l'API : la table n'est pas servie (absente de DATASETS) et le fichier est un dérivé filtré que l'API brute ne pourrait pas remplacer. La demander faisait tomber chaque instance du build sur le repli 404 → fichier, le chemin qui a fait mourir les builds prod du 2026-09-10 (lib/data/source.ts).",
       "used_by": "lib/data/headlineEvents.ts (liste d'articles du module 4)"
+    },
+    {
+      "name": "agora_social_comptes",
+      "athena": "agora_datamart-social_comptes",
+      "out": "public/data/agora/agora_social_comptes.json",
+      "cols": [
+        "compte",
+        "plateforme",
+        "pseudo",
+        "candidat",
+        "parti",
+        "circonscription",
+        "type",
+        "abonnes",
+        "releve",
+        "calcule_le",
+        "candidatures_parti"
+      ],
+      "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : publiée par le raffineur agora-social (aws-refiners) à partir de la collecte a-social-accounts d'aws-infra, remplacée à chaque passage.",
+      "enabled": true,
+      "env": "DEV",
+      "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
+      "api": false,
+      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
+    },
+    {
+      "name": "agora_social_publications_jour",
+      "athena": "agora_datamart-social_publications_jour",
+      "out": "public/data/agora/agora_social_publications_jour.json",
+      "cols": [
+        "jour",
+        "parti",
+        "plateforme",
+        "type",
+        "publications",
+        "jaime",
+        "commentaires",
+        "jaime_median"
+      ],
+      "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : publiée par le raffineur agora-social (aws-refiners) à partir de la collecte a-social-accounts d'aws-infra, remplacée à chaque passage.",
+      "enabled": true,
+      "env": "DEV",
+      "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
+      "api": false,
+      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
+    },
+    {
+      "name": "agora_social_palmares",
+      "athena": "agora_datamart-social_palmares",
+      "out": "public/data/agora/agora_social_palmares.json",
+      "cols": [
+        "jour",
+        "plateforme",
+        "parti",
+        "type",
+        "candidat",
+        "pseudo",
+        "url",
+        "texte",
+        "jaime",
+        "commentaires"
+      ],
+      "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : publiée par le raffineur agora-social (aws-refiners) à partir de la collecte a-social-accounts d'aws-infra, remplacée à chaque passage.",
+      "enabled": true,
+      "env": "DEV",
+      "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
+      "api": false,
+      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
     }
   ],
   "post_process": [
