@@ -11,15 +11,19 @@ import { PARTY_COLORS, PARTY_FULL_NAMES, PARTY_KEYS, PARTY_LABELS } from "@/lib/
 // des cinq partis, leurs comptes, une série par candidat, le fil des 20
 // dernières publications. Tout est lu AU BUILD ; le navigateur ne lit rien.
 //
-// DEV SEULEMENT, comme le module : en prod, aucune page n'est générée (et rien
-// n'entre au plan du site, app/sitemap.ts ne les liste pas).
+// DEV SEULEMENT, comme le module : en prod, aucune page de circonscription
+// n'est générée (et rien n'entre au plan du site, app/sitemap.ts ne les liste
+// pas). L'export statique refuse une liste vide : une seule page sentinelle,
+// `indisponible`, est alors écrite, et elle rend une 404.
 
 export const dynamicParams = false;
 const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
+const SENTINELLE = "indisponible";
+
 export async function generateStaticParams() {
-  if (isProd) return [];
-  return [...(await loadPagesCirco()).keys()].map((slug) => ({ slug }));
+  const slugs = isProd ? [] : [...(await loadPagesCirco()).keys()];
+  return (slugs.length ? slugs : [SENTINELLE]).map((slug) => ({ slug }));
 }
 
 type Params = { slug: string };
