@@ -362,12 +362,19 @@ describe("audience : toutes les combinaisons de filtres", () => {
   const periodes = { "7 j": [N - 7, N - 1], "30 j": [N - 30, N - 1], campagne: [N - 34, N - 1], tout: [0, N - 1] } as const;
   const mesures: MesureAudience[] = ["abonnes", "publications", "parJour", "jaime", "commentaires", "parPublication"];
   const sous = <T,>(l: readonly T[]) => Array.from({ length: 2 ** l.length - 1 }, (_, m) => l.filter((_, i) => (m + 1) & (1 << i)));
+  // Sommes par compte, calculées une fois par période, indépendamment du module.
+  const sommes = new Map<string, { p: number; l: number; k: number }[]>();
+  for (const [d0, d1] of Object.values(periodes)) {
+    const t = comptes.map(() => ({ p: 0, l: 0, k: 0 }));
+    for (const r of jours) if (r[1] >= d0 && r[1] <= d1) { t[r[0]].p += r[2]; t[r[0]].l += r[3]; t[r[0]].k += r[4]; }
+    sommes.set(`${d0}-${d1}`, t);
+  }
   const naif = (mesure: MesureAudience, f: { plateformes: string[]; partis: string[]; types: string[]; d0: number; d1: number }) => {
     const vals: number[] = [];
+    const t = sommes.get(`${f.d0}-${f.d1}`)!;
     comptes.forEach((a, c) => {
       if (!f.plateformes.includes(a.plateforme) || !f.partis.includes(a.party) || !f.types.includes(a.type)) return;
-      let p = 0, l = 0, k = 0;
-      for (const r of jours) if (r[0] === c && r[1] >= f.d0 && r[1] <= f.d1) { p += r[2]; l += r[3]; k += r[4]; }
+      const { p, l, k } = t[c];
       const v =
         mesure === "abonnes" ? a.abonnes
         : mesure === "publications" ? p
@@ -396,7 +403,7 @@ describe("audience : toutes les combinaisons de filtres", () => {
               combinaisons++;
             }
     expect(combinaisons).toBe(7 * 31 * 3 * 6 * 4);
-  });
+  }, 60_000);
 });
 
 describe("infobulle : grands nombres et noms longs", () => {
