@@ -23,10 +23,12 @@ const jourCourt = (iso: string) => `${Number(iso.slice(8, 10))} ${MONTHS_FR[Numb
 
 type MesureSerie = "publications" | "jaime";
 
-/** Une petite série par candidat : barres par jour depuis le 1er août, même
- *  échelle pour tous (comparables d'un coup d'œil), trait pointillé au
- *  déclenchement. Masquée tant que la table des séries n'est pas publiée. */
-export function SeriesCirco({
+/** Les candidats de la circonscription, une carte chacun : parti et nom, ses
+ *  comptes (logo, abonnés, lien vers le profil), son activité depuis le
+ *  déclenchement et sa série jour par jour. La bascule Publications / J'aime
+ *  agit sur toutes les séries, à la même échelle. Un parti sans compte suivi
+ *  garde sa carte. */
+export function CandidatsCirco({
   page,
   partiInfo,
 }: {
@@ -34,86 +36,134 @@ export function SeriesCirco({
   partiInfo: SocialData["partiInfo"];
 }) {
   const [mesure, setMesure] = useState<MesureSerie>("publications");
-  const avecSerie = page.candidats.filter((c): c is CandidatPage & { serie: NonNullable<CandidatPage["serie"]> } => !!c.serie);
-  if (avecSerie.length === 0 || page.jours.length === 0) return null;
-  const max = Math.max(1, ...avecSerie.flatMap((c) => c.serie.map((j) => j[mesure])));
+  const avecSerie = page.jours.length > 0 && page.candidats.some((c) => c.serie);
+  const max = Math.max(1, ...page.candidats.flatMap((c) => (c.serie ?? []).map((j) => j[mesure])));
   const n = page.jours.length;
   const iCampagne = page.jours.indexOf(page.campagne);
   const mois = page.jours.flatMap((j, i) => (j.endsWith("-01") ? [{ i, m: MONTHS_FR[Number(j.slice(5, 7)) - 1] }] : []));
+  const unite = mesure === "publications" ? "publications" : "j’aime";
   return (
     <section className="circo-section">
       <div className="circo-section-tete">
-        <h2 className="apropos-section-title">Jour après jour</h2>
-        <div className="social-bascule" role="group" aria-label="Mesure des séries">
-          {(
-            [
-              ["publications", "Publications"],
-              ["jaime", "J’aime"],
-            ] as const
-          ).map(([cle, libelle]) => (
-            <button
-              type="button"
-              key={cle}
-              aria-pressed={mesure === cle}
-              className={mesure === cle ? "active" : undefined}
-              onClick={() => setMesure(cle)}
-            >
-              {libelle}
-            </button>
-          ))}
-        </div>
+        <h2 className="apropos-section-title">Les candidats</h2>
+        {avecSerie && (
+          <div className="social-bascule" role="group" aria-label="Mesure des séries">
+            {(
+              [
+                ["publications", "Publications"],
+                ["jaime", "J’aime"],
+              ] as const
+            ).map(([cle, libelle]) => (
+              <button
+                type="button"
+                key={cle}
+                aria-pressed={mesure === cle}
+                className={mesure === cle ? "active" : undefined}
+                onClick={() => setMesure(cle)}
+              >
+                {libelle}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      <p className="social-sous-titre">
-        {mesure === "publications" ? "Publications" : "J’aime reçus"} par jour depuis le 1er&nbsp;août, même échelle pour
-        tous ; le pointillé marque le déclenchement des élections.
-      </p>
-      <div className="circo-series">
-        {avecSerie.map((c) => {
-          const total = c.serie.reduce((t, j) => t + j[mesure], 0);
+      {avecSerie && (
+        <p className="social-sous-titre">
+          {mesure === "publications" ? "Publications" : "J’aime reçus"} par jour depuis le 1er&nbsp;août, même échelle
+          pour tous ; le pointillé marque le déclenchement des élections.
+        </p>
+      )}
+      <ul className="circo-cartes">
+        {page.candidats.map((c) => {
+          const total = (c.serie ?? []).reduce((t, j) => t + j[mesure], 0);
           return (
-            <figure key={`${c.party}-${c.nom}`} className="circo-serie">
-              <figcaption>
-                <span className="circo-sigle" style={{ background: partiInfo[c.party].couleur }}>
+            <li key={`${c.party}-${c.nom}`} className="circo-carte">
+              <div className="social-fiche-tete">
+                <span className="social-fiche-parti" style={{ background: partiInfo[c.party].couleur }}>
                   {partiInfo[c.party].sigle}
                 </span>
-                <span>{c.nom}</span>
-                <span className="social-meta">{nombreFr(total)}</span>
-              </figcaption>
-              <svg
-                viewBox={`0 0 ${n} 40`}
-                preserveAspectRatio="none"
-                role="img"
-                aria-label={`${c.nom} : ${nombreFr(total)} ${mesure === "publications" ? "publications" : "j’aime"} depuis le 1er août`}
-              >
-                {c.serie.map((j, i) =>
-                  j[mesure] > 0 ? (
-                    <rect
-                      key={j.jour}
-                      x={i + 0.12}
-                      width={0.76}
-                      y={40 - (38 * j[mesure]) / max}
-                      height={(38 * j[mesure]) / max}
-                      fill={partiInfo[c.party].couleur}
-                    >
-                      <title>{`${jourCourt(j.jour)} : ${nombreFr(j[mesure])}`}</title>
-                    </rect>
-                  ) : null,
-                )}
-                {iCampagne >= 0 && (
-                  <line x1={iCampagne} x2={iCampagne} y1={0} y2={40} className="circo-declenchement" vectorEffect="non-scaling-stroke" />
-                )}
-              </svg>
-              <div className="circo-mois" aria-hidden="true">
-                {mois.map(({ i, m }) => (
-                  <span key={i} style={{ left: `${(100 * i) / n}%` }}>
-                    {m}
-                  </span>
-                ))}
+                <span className="social-nom">{c.nom}</span>
               </div>
-            </figure>
+              <ul className="circo-comptes">
+                {c.comptes.map((k) => {
+                  const contenu = (
+                    <>
+                      <Logo p={k.plateforme} taille={15} />
+                      <span className="visually-hidden">{NOMS_PLATEFORMES[k.plateforme]}</span>
+                      <span>{k.abonnes != null ? `${nombreFr(k.abonnes)}\u00a0abonnés` : "abonnés inconnus"}</span>
+                    </>
+                  );
+                  return (
+                    <li key={k.plateforme}>
+                      {k.url ? (
+                        <a href={k.url} target="_blank" rel="noopener noreferrer" title={`${NOMS_PLATEFORMES[k.plateforme]} de ${c.nom}`}>
+                          {contenu}
+                        </a>
+                      ) : (
+                        contenu
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="social-meta">
+                {c.publications > 0
+                  ? `${nombreFr(c.publications)}\u00a0publication${c.publications > 1 ? "s" : ""} · ${nombreFr(c.jaime)}\u00a0j’aime depuis le déclenchement`
+                  : "Aucune publication depuis le déclenchement"}
+              </p>
+              {c.serie && n > 0 && (
+                <figure className="circo-serie">
+                  <figcaption className="social-meta">
+                    {nombreFr(total)}&nbsp;{unite} depuis le 1er&nbsp;août
+                  </figcaption>
+                  <svg
+                    viewBox={`0 0 ${n} 40`}
+                    preserveAspectRatio="none"
+                    role="img"
+                    aria-label={`${c.nom}\u00a0: ${nombreFr(total)} ${unite} depuis le 1er août`}
+                  >
+                    {c.serie.map((j, i) =>
+                      j[mesure] > 0 ? (
+                        <rect
+                          key={j.jour}
+                          x={i + 0.12}
+                          width={0.76}
+                          y={40 - (38 * j[mesure]) / max}
+                          height={(38 * j[mesure]) / max}
+                          fill={partiInfo[c.party].couleur}
+                        >
+                          <title>{`${jourCourt(j.jour)}\u00a0: ${nombreFr(j[mesure])}`}</title>
+                        </rect>
+                      ) : null,
+                    )}
+                    {iCampagne >= 0 && (
+                      <line x1={iCampagne} x2={iCampagne} y1={0} y2={40} className="circo-declenchement" vectorEffect="non-scaling-stroke" />
+                    )}
+                  </svg>
+                  <div className="circo-mois" aria-hidden="true">
+                    {mois.map(({ i, m }) => (
+                      <span key={i} style={{ left: `${(100 * i) / n}%` }}>
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                </figure>
+              )}
+            </li>
           );
         })}
-      </div>
+        {page.sansCompte.map((k) => (
+          <li key={k} className="circo-carte vide">
+            <div className="social-fiche-tete">
+              <span className="social-fiche-parti" style={{ background: partiInfo[k].couleur }}>
+                {partiInfo[k].sigle}
+              </span>
+              <span className="social-nom">{partiInfo[k].nom}</span>
+            </div>
+            <p className="social-meta">Aucun compte suivi</p>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
