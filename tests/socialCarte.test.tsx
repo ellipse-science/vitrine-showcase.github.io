@@ -7,6 +7,7 @@ import {
   construireFil,
   construirePageCirco,
   construireSocial,
+  joindreCompteurs,
   slugCirco,
   urlCompte,
   type FondCarte,
@@ -314,5 +315,21 @@ describe("carte zoomable et cartes de publication", () => {
     expect(html).toContain("Publication partagée");
     expect(html).not.toContain("social-media-vide");
     expect(html).toContain("1\u00a0commentaire ·".replace(" ·", ""));
+  });
+});
+
+describe("fil complet : contenu et compteurs", () => {
+  it("les compteurs rejoignent le contenu par l'identifiant ; sans compteur, 0", () => {
+    const contenu = [
+      { id: "aaa111bbb222", circonscription: "Anjou–Louis-Riel", jour: "2026-09-28", plateforme: "facebook", parti: "QS",
+        candidat: "Alice", url: "https://www.facebook.com/p/1", texte: "Bonjour", nature: "texte" },
+      { id: "ccc333ddd444", circonscription: "Anjou–Louis-Riel", jour: "2026-09-27", plateforme: "tiktok", parti: "QS",
+        candidat: "Alice", url: null, texte: "", nature: "video" },
+    ];
+    const rows = joindreCompteurs(contenu, { aaa111bbb222: [12, 3] });
+    expect(rows.map((r) => [r.jaime, r.commentaires])).toEqual([[12, 3], [0, 0]]);
+    const fil = construireFil(rows).get(cleCirco("Anjou-Louis-Riel"))!;
+    expect(fil.map((p) => p.jour)).toEqual(["2026-09-28", "2026-09-27"]);
+    expect(fil[0].jaime).toBe(12);
   });
 });

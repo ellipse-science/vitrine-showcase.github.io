@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { readDatasetText } from "./source";
 import geo from "@/lib/geo/circonscriptions-2026.json";
@@ -53,9 +54,11 @@ export const SOCIAL_DATASETS = {
   palmares: "public/data/agora/agora_social_palmares.json",
   fil: "public/data/agora/agora_social_fil.json",
   comptesJour: "public/data/agora/agora_social_comptes_jour.json",
-  /** Fil complet (aws-refiners#590, ~60 Mo) : JAMAIS commité (.gitignore) ; lu
-   *  au build s'il est présent, sinon les pages s'en tiennent à 20 publications. */
-  filComplet: "public/data/agora/agora_social_fil_complet.json",
+  /** Fil complet depuis le déclenchement (aws-refiners#590) : un fichier par
+   *  circonscription (contenu, déterministe) et un fichier de compteurs, écrits
+   *  par fetch_data.R (post-traitements social_fil_*). */
+  filDossier: "public/data/agora/fil",
+  filCompteurs: "public/data/agora/fil-compteurs.json",
 } as const;
 /** Publications portées par le HTML d'une page ; le reste se charge à la demande. */
 export const FIL_PAGE = 20;
@@ -124,7 +127,7 @@ type CompteJourRow = {
   jaime: number | null;
   commentaires?: number | null;
 };
-type FilRow = PalmaresRow & { circonscription: string | null; compte?: string | null };
+type FilRow = PalmaresRow & { circonscription: string | null; compte?: string | null; id?: string | null };
 
 const partyKey = (p: string | null | undefined): PartyKey | null => {
   const k = String(p ?? "").toLowerCase();
@@ -469,12 +472,46 @@ export async function loadSocial(): Promise<SocialData | null> {
 let comptesJourMemo: Promise<CompteJourRow[] | null> | null = null;
 /** Séries par compte (table social_comptes_jour, aws-refiners#590) ; null
  *  tant que le raffineur ne l'a pas publiée : les pages masquent alors les séries. */
+/** Joint le contenu du fil complet à ses compteurs (par l'identifiant court du
+ *  raffineur). Pure, testée. Une publication sans compteur garde 0. */
+export function joindreCompteurs(
+  contenu: Omit<FilRow, "jaime" | "commentaires" | "type" | "pseudo">[],
+  compteurs: Record<string, [number, number]>,
+): FilRow[] {
+  return contenu.map((r) => {
+    const c = r.id ? compteurs[r.id] : undefined;
+    return { ...r, type: "candidat", pseudo: null, jaime: c?.[0] ?? 0, commentaires: c?.[1] ?? 0 };
+  });
+}
+
 let filCompletMemo: Promise<Map<string, FilItem[]> | null> | null = null;
-/** Fil complet par circonscription, ou null si le fichier n'est pas là. */
+/** Fil complet par circonscription (contenu + compteurs), ou null si le
+ *  dossier manque : les pages s'en tiennent alors à leurs 20 publications. La
+ *  circonscription est lue dans le contenu, pas dans le nom du fichier. */
 export function loadFilComplet(): Promise<Map<string, FilItem[]> | null> {
-  filCompletMemo ??= lire<FilRow>(SOCIAL_DATASETS.filComplet).then((rows) =>
-    rows && rows.length ? construireFil(rows, vignetteSurDisque, TEXTE_PAGE) : null,
-  );
+  filCompletMemo ??= (async () => {
+    let fichiers: string[];
+    try {
+      fichiers = (await readdir(path.join(process.cwd(), SOCIAL_DATASETS.filDossier))).filter((f) => f.endsWith(".json")).sort();
+    } catch {
+      return null;
+    }
+    if (fichiers.length === 0) return null;
+    let compteurs: Record<string, [number, number]> = {};
+    try {
+      compteurs = JSON.parse(await readDatasetText(SOCIAL_DATASETS.filCompteurs));
+    } catch {
+      // sans compteurs, les publications s'affichent à 0 j'aime
+    }
+    const contenu = (
+      await Promise.all(
+        fichiers.map((f) =>
+          lire<Omit<FilRow, "jaime" | "commentaires" | "type" | "pseudo">>(`${SOCIAL_DATASETS.filDossier}/${f}`),
+        ),
+      )
+    ).flatMap((r) => r ?? []);
+    return contenu.length ? construireFil(joindreCompteurs(contenu, compteurs), vignetteSurDisque, TEXTE_PAGE) : null;
+  })();
   return filCompletMemo;
 }
 
