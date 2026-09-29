@@ -12186,9 +12186,11 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 }
 .social-carte-legende i { width: 12px; height: 12px; border-radius: 2px; }
 .social-carte-vues { display: block; }
+/* La carte occupe toute la largeur ; le viewBox (« meet ») centre la province
+   dans son cadre, au fond de la page, sans cadre ni fond propre. */
 .social-carte-province {
-  height: min(78vh, 720px); max-height: none; touch-action: none; cursor: grab;
-  background: var(--paper-deep); border: 0.5px solid var(--rule);
+  display: block; width: 100%; height: min(78vh, 720px); max-height: none;
+  touch-action: none; cursor: grab; background: none; border: 0;
 }
 .social-carte-province:active { cursor: grabbing; }
 .social-zoom { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
@@ -12200,7 +12202,11 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 .social-zoom button:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
 .social-carte-legende-note { font-style: italic; letter-spacing: 0.04em !important; }
 /* Audience : deux colonnes de 10, pagination */
-.social-audience-colonnes.deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
+/* Deux colonnes nettement séparées : une gouttière de 56 px coupée d'un filet ;
+   chaque chiffre reste collé à sa barre (colonne de valeurs à largeur fixe). */
+.social-audience-colonnes.deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.social-audience-colonnes.deux > ol + ol { margin-left: 28px; padding-left: 28px; border-left: 0.5px solid var(--rule); }
+.social-audience-colonnes .social-valeur { text-align: right; }
 .social-audience-colonnes .social-audience li { grid-template-columns: minmax(0, 13rem) 1fr 4.8rem; }
 .social-audience .social-nom { display: flex; align-items: center; gap: 4px; min-width: 0; white-space: nowrap; }
 .social-nom-texte { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
