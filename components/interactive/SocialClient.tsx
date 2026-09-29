@@ -18,6 +18,7 @@ import {
   type TypeCompte,
 } from "@/lib/data/social-meta";
 import {
+  integration,
   lignes,
   meneur,
   palmares,
@@ -668,8 +669,69 @@ function IconeLecture() {
 /** La vignette, ou à sa place un emplacement de même taille : ▶ et logo pour
  *  une vidéo sans image, logo seul pour une publication sans média. Le texte
  *  reste ainsi aligné, et l'image comme l'emplacement mènent à la publication. */
+/** Le lecteur OFFICIEL de la plateforme, dans une fenêtre modale (<dialog> :
+ *  Échap ferme, le reste de la page est inerte, le focus revient au bouton).
+ *  L'iframe n'existe qu'une fois la fenêtre ouverte : aucune requête vers la
+ *  plateforme avant le clic. Le site n'héberge aucune vidéo. */
+function Lecteur({
+  p,
+  ouvert,
+  onClose,
+}: {
+  p: Pick<FilItem, "plateforme" | "url" | "nom">;
+  ouvert: boolean;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const lecteur = integration(p.plateforme, p.url);
+  useEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    if (ouvert && !d.open) d.showModal();
+    if (!ouvert && d.open) d.close();
+  }, [ouvert]);
+  const nom = NOMS_PLATEFORMES[p.plateforme];
+  return (
+    <dialog
+      ref={ref}
+      className="social-lecteur"
+      aria-label={`Vidéo de ${p.nom} sur ${nom}`}
+      onClose={onClose}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className={`social-lecteur-cadre ${lecteur?.format ?? "portrait"}`}>
+        <div className="social-lecteur-tete">
+          <Plateforme_ p={p.plateforme} taille={16} />
+          <span>{p.nom}</span>
+          <button type="button" className="social-lecteur-fermer" onClick={onClose} aria-label="Fermer la vidéo">
+            ×
+          </button>
+        </div>
+        {ouvert && lecteur && (
+          <iframe
+            src={lecteur.src}
+            title={`Vidéo de ${p.nom}, lecteur ${nom}`}
+            loading="lazy"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        )}
+        <p className="social-lecteur-pied">
+          Lecteur servi par {nom}, qui peut déposer ses propres témoins.{" "}
+          {p.url && (
+            <a href={p.url} target="_blank" rel="noopener noreferrer">
+              Voir sur {nom}
+            </a>
+          )}
+        </p>
+      </div>
+    </dialog>
+  );
+}
+
 function Media({ p }: { p: Pick<FilItem, "vignette" | "media" | "plateforme" | "url" | "nom"> }) {
   const video = p.media === "video";
+  const [ouvert, setOuvert] = useState(false);
   const corps = p.vignette ? (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element -- export statique, vignette déjà réduite */}
@@ -686,6 +748,22 @@ function Media({ p }: { p: Pick<FilItem, "vignette" | "media" | "plateforme" | "
   );
   const quoi = video ? "Vidéo" : p.vignette ? "Image" : "Publication";
   const libelle = `${quoi} de ${p.nom} sur ${NOMS_PLATEFORMES[p.plateforme]}`;
+  if (video && integration(p.plateforme, p.url)) {
+    return (
+      <>
+        <button
+          type="button"
+          className="social-media"
+          aria-label={`Lire la vidéo de ${p.nom} (${NOMS_PLATEFORMES[p.plateforme]})`}
+          title="Lire la vidéo"
+          onClick={() => setOuvert(true)}
+        >
+          {corps}
+        </button>
+        <Lecteur p={p} ouvert={ouvert} onClose={() => setOuvert(false)} />
+      </>
+    );
+  }
   return p.url ? (
     <a className="social-media" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={libelle} title={libelle}>
       {corps}
@@ -856,7 +934,19 @@ function Infobulle({
           })}
         </ul>
       )}
-      <span className="social-infobulle-pied">j’aime · clic pour la fiche</span>
+      {circo.derniere && (
+        <div className="social-infobulle-derniere">
+          <span className="social-meta">
+            Dernière publication · {jourCourt(circo.derniere.jour)}
+          </span>
+          <span>
+            <Logo p={circo.derniere.plateforme} taille={11} />{" "}
+            <b style={{ color: data.partiInfo[circo.derniere.party].couleur }}>{circo.derniere.nom}</b>{" "}
+            {circo.derniere.extrait}
+          </span>
+        </div>
+      )}
+      <span className="social-infobulle-pied">j’aime · cliquez pour la fiche et le fil</span>
     </div>
   );
 }
@@ -889,6 +979,17 @@ export function Carte({
   // l'infobulle ouverte au clavier, et inversement.
   type Survol = { code: number; x: number; y: number; par: "souris" | "clavier" };
   const [survol, setSurvol] = useState<Survol | null>(null);
+  // La fiche est sous la carte : un choix la fait venir à l'écran si elle n'y est pas.
+  const ficheRef = useRef<HTMLElement>(null);
+  const choisir = (code: number) => {
+    setChoix(code);
+    requestAnimationFrame(() => {
+      const f = ficheRef.current;
+      if (!f || f.getBoundingClientRect().top < window.innerHeight - 120) return;
+      const doux = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      f.scrollIntoView({ behavior: doux ? "smooth" : "auto", block: "start" });
+    });
+  };
   const vuesRef = useRef<HTMLDivElement>(null);
   const place = (code: number, x: number, y: number, par: Survol["par"]) => {
     const r = vuesRef.current?.getBoundingClientRect();
@@ -910,7 +1011,7 @@ export function Carte({
       el?.focus();
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      setChoix(code);
+      choisir(code);
     } else if (e.key === "Escape") {
       efface("clavier");
     }
@@ -934,7 +1035,7 @@ export function Carte({
           data-code={c.code}
           fill={couleur(c.code)}
           className={c.code === choix ? "choisie" : undefined}
-          onClick={() => setChoix(c.code)}
+          onClick={() => choisir(c.code)}
           onPointerMove={(e) => e.pointerType !== "touch" && place(c.code, e.clientX, e.clientY, "souris")}
           onPointerLeave={() => efface("souris")}
           // Carte principale : un seul arrêt de tabulation, les flèches font le reste.
@@ -965,7 +1066,7 @@ export function Carte({
         <Bascule label="Période de la carte" options={PERIODES_CARTE} valeur={periode} onChange={setPeriode} />
         <label className="social-carte-liste">
           <span>Circonscription</span>
-          <select value={choix ?? ""} onChange={(e) => setChoix(e.target.value ? Number(e.target.value) : null)}>
+          <select value={choix ?? ""} onChange={(e) => (e.target.value ? choisir(Number(e.target.value)) : setChoix(null))}>
             <option value="">Choisir…</option>
             {regions.map((r) => (
               <optgroup key={r} label={r}>
@@ -1049,7 +1150,7 @@ export function Carte({
         )}
       </div>
 
-      <section className="social-fiche" aria-live="polite">
+      <section className="social-fiche" aria-live="polite" ref={ficheRef}>
         {!circo ? (
           <p className="social-note">Choisissez une circonscription sur la carte ou dans la liste.</p>
         ) : (

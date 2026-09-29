@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Carte, CartePublication } from "@/components/interactive/SocialClient";
 import { cleCirco, construireCarte, construireFil, construireSocial, urlCompte, type FondCarte } from "@/lib/data/social";
-import { meneur } from "@/lib/data/social-calc";
+import { integration, meneur } from "@/lib/data/social-calc";
 import fond from "@/lib/geo/circonscriptions-2026.json";
 
 // Carte des circonscriptions et vignettes du palmarès. Ce qui doit être
@@ -142,6 +142,12 @@ describe("fil d'une circonscription", () => {
     expect(avec).toContain("<img");
     expect(avec).toContain("social-lecture");
     expect(avec).toContain('aria-label="Vidéo de Alice sur Facebook"');
+    // Vidéo intégrable : un bouton qui ouvre le lecteur, sans iframe avant le clic.
+    expect(avec).not.toContain("<iframe");
+    const tiktok = rendu({ ...fil[0], plateforme: "tiktok", url: "https://www.tiktok.com/@a/video/7555123456789012345" });
+    expect(tiktok).toContain('aria-label="Lire la vidéo de Alice (TikTok)"');
+    expect(tiktok).toContain("<dialog");
+    expect(tiktok).not.toContain("<iframe");
     const sans = rendu({ ...fil[0], vignette: null });
     expect(sans).toContain("social-media-vide video");
     expect(sans).toContain("social-lecture");
@@ -149,5 +155,44 @@ describe("fil d'une circonscription", () => {
     expect(texte).not.toContain("social-lecture");
     expect(texte).toContain("social-media-coin");
     expect(texte).toContain('href="https://www.facebook.com/p/1"');
+  });
+});
+
+describe("lecteur intégré", () => {
+  it("adresse du lecteur officiel de chaque plateforme", () => {
+    expect(integration("tiktok", "https://www.tiktok.com/@ericduhaime_pcq/video/7555123456789012345")?.src).toBe(
+      "https://www.tiktok.com/embed/v2/7555123456789012345",
+    );
+    expect(integration("instagram", "https://www.instagram.com/reel/DPabc12_-x/")?.src).toBe(
+      "https://www.instagram.com/reel/DPabc12_-x/embed",
+    );
+    const fb = integration("facebook", "https://www.facebook.com/reel/1103447469038415");
+    expect(fb).toEqual({
+      src: "https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1103447469038415&show_text=false",
+      format: "portrait",
+    });
+    expect(integration("facebook", "https://www.facebook.com/x/posts/pfbid0abc")?.src).toContain("/plugins/post.php?href=");
+  });
+
+  it("rien pour une adresse qui ne s'y prête pas", () => {
+    expect(integration("tiktok", "https://www.tiktok.com/@a")).toBeNull();
+    expect(integration("facebook", "https://evil.example/facebook.com/reel/1")).toBeNull();
+    expect(integration("instagram", null)).toBeNull();
+  });
+});
+
+describe("infobulle : dernière publication", () => {
+  it("la tête du fil de la circonscription, texte coupé", () => {
+    const long = "x".repeat(200);
+    const f = construireFil([
+      { circonscription: "Anjou-Louis-Riel", jour: "2026-09-28", plateforme: "tiktok", parti: "QS", type: "candidat",
+        candidat: "Alice", pseudo: "a", url: null, texte: long, jaime: 1, commentaires: 0 },
+    ]);
+    const carte = construireCarte(comptes, fond as FondCarte, f)!;
+    const d = carte.circos.find((c) => cleCirco(c.nom) === cleCirco("Anjou-Louis-Riel"))!.derniere!;
+    expect(d.jour).toBe("2026-09-28");
+    expect(d.plateforme).toBe("tiktok");
+    expect(d.extrait.length).toBeLessThanOrEqual(90);
+    expect(carte.circos.filter((c) => c.derniere).length).toBe(1);
   });
 });

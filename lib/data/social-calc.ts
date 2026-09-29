@@ -271,3 +271,28 @@ export function meneur(
     premier && second && premier[1].publications === second[1].publications && premier[1].jaime === second[1].jaime;
   return { party: premier && !egalite ? premier[0] : null, publications: total, jaime: totalJaime, parParti };
 }
+
+// ── Lecteur intégré des plateformes ───────────────────────────────────────────
+export type Integration = { src: string; format: "portrait" | "paysage" };
+
+/** Adresse du lecteur OFFICIEL d'une vidéo (aucune vidéo n'est hébergée par
+ *  le site), tirée de l'adresse de la publication ; null si elle ne s'y prête
+ *  pas : le lien « Voir la publication » reste alors la seule voie. */
+export function integration(p: Plateforme, url: string | null | undefined): Integration | null {
+  if (!url) return null;
+  if (p === "tiktok") {
+    const id = url.match(/\/video\/(\d{6,25})/)?.[1];
+    return id ? { src: `https://www.tiktok.com/embed/v2/${id}`, format: "portrait" } : null;
+  }
+  if (p === "instagram") {
+    const m = url.match(/instagram\.com\/(?:[\w.]+\/)?(p|reel|tv)\/([\w-]{5,40})/);
+    return m ? { src: `https://www.instagram.com/${m[1] === "reel" ? "reel" : "p"}/${m[2]}/embed`, format: "portrait" } : null;
+  }
+  if (!/^https:\/\/(www\.|m\.|web\.)?facebook\.com\//.test(url)) return null;
+  const href = encodeURIComponent(url);
+  const reel = /\/reel\//.test(url);
+  const video = reel || /\/videos?\/|\/watch\/?\?|\/share\/v\//.test(url);
+  return video
+    ? { src: `https://www.facebook.com/plugins/video.php?href=${href}&show_text=false`, format: reel ? "portrait" : "paysage" }
+    : { src: `https://www.facebook.com/plugins/post.php?href=${href}&show_text=true`, format: "portrait" };
+}

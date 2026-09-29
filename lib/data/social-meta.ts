@@ -110,6 +110,8 @@ export type Circo = {
   region: string;
   d: string;
   comptes: CompteCirco[];
+  /** Dernière publication de ses candidats (tête du fil), pour l'infobulle. */
+  derniere: { jour: string; nom: string; party: PartyKey; plateforme: Plateforme; extrait: string } | null;
 };
 /** Fond de carte et fiches ; null si la géométrie ou les comptes manquent. */
 export type Carte = {

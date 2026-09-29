@@ -204,7 +204,11 @@ export function loadSocialFil(): Promise<Map<string, FilItem[]>> {
 
 /** Fiches des circonscriptions : les comptes de CANDIDAT suivis, rattachés au
  *  tracé par le nom normalisé. Pure, testée. Null sans fond ou sans compte. */
-export function construireCarte(comptes: CompteRow[], fond: FondCarte | null): Carte | null {
+export function construireCarte(
+  comptes: CompteRow[],
+  fond: FondCarte | null,
+  fil: Map<string, FilItem[]> = new Map(),
+): Carte | null {
   if (!fond || fond.circonscriptions.length === 0) return null;
   const parCirco = new Map<string, CompteCirco[]>();
   for (const r of comptes) {
@@ -230,7 +234,12 @@ export function construireCarte(comptes: CompteRow[], fond: FondCarte | null): C
     const liste = parCirco.get(cleCirco(c.nom)) ?? [];
     // Le nom typographique du raffineur, à défaut celui de la carte.
     const nom = comptes.find((r) => r.circonscription && cleCirco(r.circonscription) === cleCirco(c.nom))?.circonscription;
+    const tete = fil.get(cleCirco(c.nom))?.[0];
+    const extrait = (t: string) => (t.length > 90 ? `${t.slice(0, 89).trimEnd()}…` : t);
     return {
+      derniere: tete
+        ? { jour: tete.jour, nom: tete.nom, party: tete.party, plateforme: tete.plateforme, extrait: extrait(tete.texte) }
+        : null,
       code: c.code,
       nom: nom ?? c.nom,
       region: c.region,
@@ -258,6 +267,7 @@ export function construireSocial(
   palmares: PalmaresRow[],
   fond: FondCarte | null = null,
   vignetteDisponible: (cle: string) => boolean = () => false,
+  fil: Map<string, FilItem[]> = new Map(),
 ): SocialData | null {
   if (comptes.length === 0 || jours.length === 0) return null;
 
@@ -372,7 +382,7 @@ export function construireSocial(
     campagne: campagne < 0 ? 0 : campagne,
     cube,
     palmares: tops,
-    carte: construireCarte(comptes, fond),
+    carte: construireCarte(comptes, fond, fil),
   };
 }
 
@@ -383,5 +393,7 @@ export async function loadSocial(): Promise<SocialData | null> {
     lire<PalmaresRow>(SOCIAL_DATASETS.palmares),
   ]);
   if (!comptes || !jours) return null;
-  return construireSocial(comptes, jours, palmares ?? [], geo as FondCarte, vignetteSurDisque);
+  // Seule la tête de chaque fil entre dans les props (infobulle) ; le fil
+  // complet reste dans son fichier statique par circonscription.
+  return construireSocial(comptes, jours, palmares ?? [], geo as FondCarte, vignetteSurDisque, await loadSocialFil());
 }
