@@ -11945,7 +11945,6 @@
 .social-barres li {
   display: grid; grid-template-columns: minmax(0, 4rem) 1fr 6rem;
   align-items: center; gap: 10px; padding: 5px 0;
-  border-bottom: 0.5px solid var(--rule-faint);
 }
 .social-audience li { grid-template-columns: minmax(0, 15rem) 1fr 5.5rem; }
 .social-nom { font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink); }
