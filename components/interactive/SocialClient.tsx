@@ -754,7 +754,9 @@ function Parts({ data, blocs, m, rangs }: { data: SocialData; blocs: Blocs; m: M
                 {tuiles.map((t) => {
                   const part = Math.round((100 * t.valeur) / total);
                   const nom = nomElement(data, t.item);
-                  const lisible = (t.x1 - t.x0) * ratio > 0.34 && t.y1 - t.y0 > 0.2;
+                  // La case décide, à sa taille réelle (requêtes de conteneur, CSS) :
+                  // logo (ou sigle) et pourcentage, le seul logo, ou rien.
+                  const logo = t.item.plateforme && !t.item.party ? t.item.plateforme : null;
                   const detail = `${nom}\u00a0: ${part}\u00a0% · ${formatMesure(m)(t.valeur)} ${NOMS_MESURES[m]}`;
                   return (
                     <div
@@ -771,12 +773,14 @@ function Parts({ data, blocs, m, rangs }: { data: SocialData; blocs: Blocs; m: M
                         background: couleurElement(data, t.item, b.panneau),
                       }}
                     >
-                      {lisible && (
-                        <span aria-hidden="true">
-                          <b>{t.item.plateforme && !t.item.party ? <Logo p={t.item.plateforme} taille={16} /> : nom}</b>
-                          {part}&nbsp;%
-                        </span>
-                      )}
+                      <span
+                        className="social-tuile-pastille"
+                        aria-hidden="true"
+                        style={{ background: b.panneau.party ? data.partiInfo[b.panneau.party].couleur : couleurElement(data, t.item) }}
+                      >
+                        {logo ? <Logo p={logo} taille={14} /> : <b>{nom}</b>}
+                        <em>{part}&nbsp;%</em>
+                      </span>
                     </div>
                   );
                 })}

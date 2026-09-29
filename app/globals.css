@@ -12054,14 +12054,22 @@
 /* Parts : treemap en tuiles */
 .social-treemap { position: relative; width: 100%; max-height: 360px; }
 .social-tuile { position: absolute; box-sizing: border-box; border: 2px solid var(--paper); overflow: hidden; }
-.social-tuile span {
-  position: absolute; left: 8px; right: 6px; top: 7px; color: var(--paper); white-space: nowrap;
-  font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px; line-height: 1.15;
+/* Étiquette de case : logo (ou sigle) puis pourcentage, sur une ligne, posés
+   sur une pastille de la couleur pleine du parti (lisible sur les textures). */
+.social-tuile-pastille {
+  position: absolute; left: 8px; top: 8px; display: inline-flex; align-items: center; gap: 6px;
+  max-width: calc(100% - 16px); padding: 3px 6px; border-radius: 2px; color: var(--paper); white-space: nowrap;
 }
-.social-tuile span b {
-  display: block; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 10px;
-  letter-spacing: 0.2em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis;
+.social-tuile-pastille .social-logo { display: block; flex: none; }
+.social-tuile-pastille b {
+  font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; overflow: hidden; text-overflow: ellipsis;
 }
+.social-tuile-pastille em { font-style: normal; font-family: "Playfair Display", serif; font-weight: 700; font-size: 15px; line-height: 1; }
+.social-tuile { container-type: size; }
+@container (max-width: 78px) { .social-tuile-pastille em { display: none; } }
+@container (max-width: 36px) { .social-tuile-pastille { display: none; } }
+@container (max-height: 30px) { .social-tuile-pastille { display: none; } }
 
 /* Courbes */
 .social-graphe { padding: 8px 84px 28px 48px; }
