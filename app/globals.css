@@ -11883,13 +11883,20 @@
 }
 
 /* Tuiles */
-.social-tuiles { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 18px 0 0; padding: 12px 0; border-top: 0.5px solid var(--rule); border-bottom: 0.5px solid var(--rule); }
+.social-tuiles { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 22px; margin: 18px 0 0; padding: 12px 0; border-top: 0.5px solid var(--rule); border-bottom: 0.5px solid var(--rule); }
 .social-tuiles div { display: flex; align-items: baseline; gap: 8px; }
 .social-tuiles dt {
   order: 2; font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: 0.18em;
   text-transform: uppercase; color: var(--ink-softer);
 }
 .social-tuiles dd { order: 1; margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 22px; color: var(--ink); }
+/* Grand écran : les cinq chiffres sur une ligne, calés à droite ; un libellé
+   long passe sur deux lignes plutôt que la dernière tuile à la ligne. */
+@media (min-width: 901px) {
+  .social-tuiles { flex-wrap: nowrap; }
+  .social-tuiles div { align-items: center; }
+  .social-tuiles dt { max-width: 7.5rem; line-height: 1.35; letter-spacing: 0.14em; }
+}
 
 /* Filtres */
 .social-filtres { border-left: 0.5px solid var(--rule); padding-left: 18px; }
@@ -12146,4 +12153,5 @@
   .social-audience li { grid-template-columns: minmax(0, 1fr) 4.5rem; }
   .social-audience .social-piste { grid-column: 1 / -1; order: 3; }
   .social-tuiles dd { font-size: 19px; }
+  .social-tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
 }
