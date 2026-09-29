@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Carte, CartePublication } from "@/components/interactive/SocialClient";
+import { Carte, CartePublication, suggestions } from "@/components/interactive/SocialClient";
 import { cleCirco, construireCarte, construireFil, construireSocial, urlCompte, type FondCarte } from "@/lib/data/social";
 import { integration, meneur } from "@/lib/data/social-calc";
 import fond from "@/lib/geo/circonscriptions-2026.json";
@@ -194,5 +194,22 @@ describe("infobulle : dernière publication", () => {
     expect(d.plateforme).toBe("tiktok");
     expect(d.extrait.length).toBeLessThanOrEqual(90);
     expect(carte.circos.filter((c) => c.derniere).length).toBe(1);
+  });
+});
+
+describe("recherche sur la carte", () => {
+  const data = construireSocial(comptes, jours, [], fond as FondCarte)!;
+  it("insensible aux accents, circonscription et candidat (sa circonscription en sous-titre)", () => {
+    const circo = suggestions(data, "anjou louis");
+    expect(circo[0]).toMatchObject({ nom: "Anjou–Louis-Riel" });
+    const cand = suggestions(data, "BRUNO");
+    expect(cand).toHaveLength(1);
+    expect(cand[0].sous).toBe("Anjou–Louis-Riel · CAQ");
+    expect(suggestions(data, "rimouski")[0].nom).toBe("Rimouski");
+    expect(suggestions(data, "trois-rivieres")[0].nom).toBe("Trois-Rivières");
+  });
+  it("8 suggestions au plus, rien sous deux lettres", () => {
+    expect(suggestions(data, "sa").length).toBeLessThanOrEqual(8);
+    expect(suggestions(data, "s")).toEqual([]);
   });
 });
