@@ -12,6 +12,10 @@ export const nombreFr = (n: number, dec = 0) =>
     .toLocaleString("fr-CA", { maximumFractionDigits: dec, minimumFractionDigits: 0 })
     .replace(/[\s\u00a0\u202f]/g, "\u202f");
 
+/** Les grands chiffres en Playfair : l'espace fine y est sans largeur
+ *  (« 1432983 ») ; une espace insécable ordinaire y reste lisible. */
+export const nombreGrand = (n: number, dec = 0) => nombreFr(n, dec).replace(/\u202f/g, "\u00a0");
+
 export const PLATEFORMES = ["facebook", "instagram", "tiktok"] as const;
 export type Plateforme = (typeof PLATEFORMES)[number];
 

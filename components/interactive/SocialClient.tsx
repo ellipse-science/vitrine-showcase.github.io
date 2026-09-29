@@ -8,6 +8,7 @@ import {
   NOMS_PLATEFORMES,
   NOMS_TYPES,
   nombreFr,
+  nombreGrand,
   PLATEFORMES,
   TYPES,
   type AudienceJour,
@@ -93,9 +94,6 @@ const AXES: Record<Mesure, string> = {
  *  le treemap voisin en tire sa hauteur, pour finir avec la dernière barre. */
 const RANGEE = { normale: 44, compacte: 36, marge: 7 };
 
-/** Les grands chiffres en Playfair : l'espace fine y disparaît à l'œil
- *  (« 8903 ») ; une espace insécable ordinaire y reste lisible. */
-const nombreGrand = (n: number, dec = 0) => nombreFr(n, dec).replace(/\u202f/g, "\u00a0");
 
 /** Vrai sous une largeur d'écran (côté client ; faux au rendu serveur). */
 function useEtroit(max = 640) {
@@ -162,7 +160,8 @@ function Audience({
   const p = Math.min(page, pages - 1);
   const vus = classement.slice(p * parPage, (p + 1) * parPage);
   const max = classement[0]?.valeur ?? 1;
-  const format = (v: number) => (mesure === "parJour" || mesure === "parPublication" ? nombreFr(v, 1) : nombreFr(v));
+  // Valeurs en Playfair : séparateur de milliers visible (nombreGrand).
+  const format = (v: number) => (mesure === "parJour" || mesure === "parPublication" ? nombreGrand(v, 1) : nombreGrand(v));
   const colonnes = etroit ? [vus] : [vus.slice(0, 10), vus.slice(10, 20)].filter((c) => c.length > 0);
   if (activite.charge) return <p className="social-note">Chargement de l’activité des comptes…</p>;
   if (classement.length === 0) return <p className="social-vide">Aucun compte pour ces filtres.</p>;
@@ -1025,13 +1024,18 @@ export const commentaires = (n: number) => `${nombreFr(n)}\u00a0commentaire${n >
 
 /** Pastille des publications sans image ni vidéo : leur nature en icône. */
 function IconeNature({ nature }: { nature: FilItem["nature"] }) {
+  // Photo, carrousel, partage : leur icône ; le « document » est réservé au texte.
   return (
     <svg className="social-nature" viewBox="0 0 24 24" aria-hidden="true">
       {nature === "partage" ? (
-        // flèche de partage
         <path d="M14 5l7 7-7 7v-4c-5 0-8.5 1.5-11 5 1-5 4-10 11-11V5z" />
+      ) : nature === "photo" ? (
+        <path d="M4 5h16v14H4V5zm2 2v8.5l3.5-4 3 3.3 2.2-2.3L18 15.8V7H6zm9 1.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" />
+      ) : nature === "carrousel" ? (
+        <path d="M7 4h13v13H7V4zm2 2v9h9V6H9zM3 8h2v11h11v2H3V8z" />
+      ) : nature === "video" ? (
+        <path d="M8 5v14l11-7z" />
       ) : (
-        // page de texte
         <path d="M6 3h9l4 4v14H6V3zm2 6h8v1.6H8V9zm0 3.5h8v1.6H8v-1.6zm0 3.5h5v1.6H8V16z" />
       )}
     </svg>
@@ -1054,7 +1058,11 @@ export function CartePublication({
     !p.texte && compacte
       ? p.nature === "partage"
         ? "Publication partagée (événement, lien ou autre publication)"
-        : "Publication sans texte"
+        : p.nature === "photo"
+          ? "Photo sans texte"
+          : p.nature === "carrousel"
+            ? "Carrousel sans texte"
+            : "Publication sans texte"
       : null;
   return (
     <li className={`social-publication${compacte ? " compacte" : ""}`}>

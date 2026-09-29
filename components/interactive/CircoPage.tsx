@@ -5,6 +5,7 @@ import type { PartyKey } from "@/lib/data/parties";
 import {
   NOMS_PLATEFORMES,
   nombreFr,
+  nombreGrand,
   PLATEFORMES,
   type CandidatPage,
   type FilItem,
@@ -21,7 +22,6 @@ import { MONTHS_FR } from "@/lib/dates";
 
 const jourCourt = (iso: string) => `${Number(iso.slice(8, 10))} ${MONTHS_FR[Number(iso.slice(5, 7)) - 1]}`;
 
-type MesureSerie = "publications" | "jaime";
 
 const COULEURS_PF: Record<Plateforme, string> = { facebook: "#2E4663", instagram: "#A07A3D", tiktok: "#433F38" };
 const rang = (n: number) => (n === 1 ? "1er" : `${n}e`);
@@ -34,10 +34,11 @@ function ilYa(jour: string, fin: string) {
   return n <= 0 ? "aujourd’hui" : n === 1 ? "hier" : `il y a ${nombreFr(n)}\u00a0jours`;
 }
 
-/** Les candidats de la circonscription, une carte chacun : abonnés, chiffres
- *  depuis le déclenchement, rang dans la circonscription, part des
- *  plateformes, dernière publication, la plus aimée, et la série jour par
- *  jour. La bascule Publications / J'aime agit sur les séries et le rang. */
+/** Les candidats de la circonscription, une carte chacun, classés par
+ *  j'aime depuis le déclenchement (sans compte ou sans publication : à la fin,
+ *  dans l'ordre des partis). Chaque carte : pastille de rang, abonnés,
+ *  publications, j'aime et commentaires, part des plateformes, dernière
+ *  publication, la plus aimée, et les j'aime par jour depuis le 1er août. */
 export function CandidatsCirco({
   page,
   partiInfo,
@@ -45,52 +46,47 @@ export function CandidatsCirco({
   page: PageCirco;
   partiInfo: SocialData["partiInfo"];
 }) {
-  const [mesure, setMesure] = useState<MesureSerie>("publications");
   const avecSerie = page.jours.length > 0 && page.candidats.some((c) => c.serie);
-  const max = Math.max(1, ...page.candidats.flatMap((c) => (c.serie ?? []).map((j) => j[mesure])));
+  const max = Math.max(1, ...page.candidats.flatMap((c) => (c.serie ?? []).map((j) => j.jaime)));
   const n = page.jours.length;
   const fin = page.jours[n - 1] ?? "";
   const iCampagne = page.jours.indexOf(page.campagne);
   const mois = page.jours.flatMap((j, i) => (j.endsWith("-01") ? [{ i, m: MONTHS_FR[Number(j.slice(5, 7)) - 1] }] : []));
-  const unite = mesure === "publications" ? "publications" : "j’aime";
-  // Rang dans la circonscription, pour la mesure de la bascule (ex æquo au même rang).
-  const valeurs = page.candidats.map((c) => c[mesure]);
-  const rangDe = (v: number) => 1 + valeurs.filter((x) => x > v).length;
+  const actif = (c: CandidatPage) => c.comptes.length > 0 && c.publications > 0;
+  const tries = [
+    ...page.candidats.filter(actif).sort((a, b) => b.jaime - a.jaime),
+    ...page.candidats.filter((c) => !actif(c)),
+  ];
+  const nbActifs = tries.filter(actif).length;
+  const rangDe = (c: CandidatPage) => 1 + tries.filter((x) => actif(x) && x.jaime > c.jaime).length;
   return (
     <section className="circo-section">
       <div className="circo-section-tete">
         <h2 className="apropos-section-title">Les candidats</h2>
-        <div className="social-bascule" role="group" aria-label="Mesure des séries et du rang">
-          {(
-            [
-              ["publications", "Publications"],
-              ["jaime", "J’aime"],
-            ] as const
-          ).map(([cle, libelle]) => (
-            <button
-              type="button"
-              key={cle}
-              aria-pressed={mesure === cle}
-              className={mesure === cle ? "active" : undefined}
-              onClick={() => setMesure(cle)}
-            >
-              {libelle}
-            </button>
-          ))}
-        </div>
       </div>
       <p className="social-sous-titre">
-        Depuis le déclenchement, jours complets.
+        Classés par j’aime depuis le déclenchement, jours complets.
         {avecSerie
-          ? ` En bas de chaque carte, ${mesure === "publications" ? "les publications" : "les j’aime reçus"} par jour depuis le 1er\u00a0août, à la même échelle pour tous. Le pointillé marque le déclenchement.`
+          ? " En bas de chaque carte, les j’aime par jour depuis le 1er\u00a0août, à la même échelle pour tous. Le pointillé marque le déclenchement des élections."
           : ""}
       </p>
       <ul className="circo-cartes">
-        {page.candidats.map((c) => {
-          const total = (c.serie ?? []).reduce((t, j) => t + j[mesure], 0);
+        {tries.map((c) => {
+          const total = (c.serie ?? []).reduce((t, j) => t + j.jaime, 0);
           const totalPf = PLATEFORMES.reduce((t, p) => t + c.parPlateforme[p], 0);
+          const r = rangDe(c);
           return (
             <li key={`${c.party}-${c.nom}`} className="circo-carte" style={{ borderLeftColor: partiInfo[c.party].couleur }}>
+              {actif(c) && (
+                <span
+                  className={`circo-pastille${r === 1 ? " premier" : r <= 3 ? " podium" : ""}`}
+                  title={`${rang(r)} sur ${nbActifs} en j’aime depuis le déclenchement`}
+                  aria-label={`${rang(r)} sur ${nbActifs} en j’aime depuis le déclenchement`}
+                >
+                  <b>{r}</b>
+                  <sup>{r === 1 ? "er" : "e"}</sup>
+                </span>
+              )}
               <div className="social-fiche-tete">
                 <span className="social-fiche-parti" style={{ background: partiInfo[c.party].couleur }}>
                   {partiInfo[c.party].sigle}
@@ -102,7 +98,7 @@ export function CandidatsCirco({
               ) : (
                 <>
                   <div className="circo-abonnes">
-                    <span className="circo-grand">{nombreFr(c.abonnes)}</span>
+                    <span className="circo-grand">{nombreGrand(c.abonnes)}</span>
                     <span className="social-meta">abonnés</span>
                   </div>
                   <ul className="circo-comptes">
@@ -132,24 +128,28 @@ export function CandidatsCirco({
                   ) : (
                     <>
                       <dl className="circo-chiffres">
-                        <div><dd>{nombreFr(c.publications)}</dd><dt>Publications</dt></div>
-                        <div><dd>{nombreFr(c.parJour, 1)}</dd><dt>Par jour</dt></div>
-                        <div><dd>{nombreFr(c.jaime)}</dd><dt>J’aime</dt></div>
-                        <div><dd>{nombreFr(c.commentaires)}</dd><dt>Commentaires</dt></div>
-                        <div><dd>{nombreFr(c.parPublication, 1)}</dd><dt>J’aime par publication</dt></div>
+                        <div><dd>{nombreGrand(c.publications)}</dd><dt>Publications</dt></div>
+                        <div><dd>{nombreGrand(c.jaime)}</dd><dt>J’aime</dt></div>
+                        <div><dd>{nombreGrand(c.commentaires)}</dd><dt>Commentaires</dt></div>
                       </dl>
-                      <p className="circo-rang">
-                        {rang(rangDe(c[mesure]))} sur {page.candidats.length} en {unite}
-                      </p>
                       {totalPf > 0 && (
-                        <div className="circo-plateformes" role="img" aria-label={PLATEFORMES.filter((p) => c.parPlateforme[p]).map((p) => `${NOMS_PLATEFORMES[p]} ${Math.round((100 * c.parPlateforme[p]) / totalPf)}\u00a0%`).join(", ")}>
-                          {PLATEFORMES.filter((p) => c.parPlateforme[p]).map((p) => (
-                            <i
-                              key={p}
-                              style={{ width: `${(100 * c.parPlateforme[p]) / totalPf}%`, background: COULEURS_PF[p] }}
-                              title={`${NOMS_PLATEFORMES[p]}\u00a0: ${Math.round((100 * c.parPlateforme[p]) / totalPf)}\u00a0% des publications`}
-                            />
-                          ))}
+                        <div
+                          className="circo-plateformes"
+                          role="img"
+                          aria-label={PLATEFORMES.filter((p) => c.parPlateforme[p]).map((p) => `${NOMS_PLATEFORMES[p]} ${Math.round((100 * c.parPlateforme[p]) / totalPf)}\u00a0%`).join(", ")}
+                        >
+                          {PLATEFORMES.filter((p) => c.parPlateforme[p]).map((p) => {
+                            const part = (100 * c.parPlateforme[p]) / totalPf;
+                            return (
+                              <i
+                                key={p}
+                                style={{ width: `${part}%`, background: COULEURS_PF[p] }}
+                                title={`${NOMS_PLATEFORMES[p]}\u00a0: ${Math.round(part)}\u00a0% des publications`}
+                              >
+                                {part >= 18 && <Logo p={p} taille={10} />}
+                              </i>
+                            );
+                          })}
                         </div>
                       )}
                     </>
@@ -188,25 +188,20 @@ export function CandidatsCirco({
               {c.serie && n > 0 && c.comptes.length > 0 && (
                 <figure className="circo-serie">
                   <figcaption className="social-meta">
-                    {nombreFr(total)}&nbsp;{unite} depuis le 1er&nbsp;août
+                    {nombreFr(total)}&nbsp;j’aime depuis le 1er&nbsp;août
                   </figcaption>
-                  <svg
-                    viewBox={`0 0 ${n} 40`}
-                    preserveAspectRatio="none"
-                    role="img"
-                    aria-label={`${c.nom}\u00a0: ${nombreFr(total)} ${unite} depuis le 1er août`}
-                  >
+                  <svg viewBox={`0 0 ${n} 40`} preserveAspectRatio="none" role="img" aria-label={`${c.nom}\u00a0: ${nombreFr(total)} j’aime depuis le 1er août`}>
                     {c.serie.map((j, i) =>
-                      j[mesure] > 0 ? (
+                      j.jaime > 0 ? (
                         <rect
                           key={j.jour}
                           x={i + 0.12}
                           width={0.76}
-                          y={40 - (38 * j[mesure]) / max}
-                          height={(38 * j[mesure]) / max}
+                          y={40 - (38 * j.jaime) / max}
+                          height={(38 * j.jaime) / max}
                           fill={partiInfo[c.party].couleur}
                         >
-                          <title>{`${jourCourt(j.jour)}\u00a0: ${nombreFr(j[mesure])}`}</title>
+                          <title>{`${jourCourt(j.jour)}\u00a0: ${nombreFr(j.jaime)}\u00a0j’aime`}</title>
                         </rect>
                       ) : null,
                     )}

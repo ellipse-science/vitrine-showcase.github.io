@@ -14,7 +14,8 @@ import {
   type FondCarte,
 } from "@/lib/data/social";
 import { classementAudience, integration, meneur, type MesureAudience } from "@/lib/data/social-calc";
-import { nombreFr } from "@/lib/data/social-meta";
+import { nombreFr, nombreGrand } from "@/lib/data/social-meta";
+import { CandidatsCirco } from "@/components/interactive/CircoPage";
 import fond from "@/lib/geo/circonscriptions-2026.json";
 
 // Carte des circonscriptions et vignettes du palmarès. Ce qui doit être
@@ -470,5 +471,52 @@ describe("mesures communes : abonnés et par jour", () => {
     const f = { d0: 0, d1: data.jours.length - 1, plateformes: ["facebook" as const, "instagram" as const, "tiktok" as const], partis: data.partis, types: ["candidat" as const, "parti" as const] };
     expect(totaux(lignesAbonnes(data, f)).publications).toBe(1200 + 300 + 900 + 99);
     expect(totaux(lignesAbonnes(data, { ...f, partis: ["qs"] })).publications).toBe(1500);
+  });
+});
+
+describe("cartes candidat : tri, pastille, chiffres", () => {
+  const f = fond as FondCarte;
+  const officiels = ["PLQ", "CAQ", "QS", "PQ", "PCQ"].map((p) => ({ circonscription: "Anjou–Louis-Riel", parti: p, candidat: `${p} Anjou` }));
+  const cj = [
+    { compte: "facebook:qs", jour: "2026-09-01", publications: 3, jaime: 30, commentaires: 2 },
+    { compte: "facebook:caq", jour: "2026-09-02", publications: 1, jaime: 900, commentaires: 0 },
+  ];
+  const page = construirePageCirco(f.circonscriptions.find((c) => c.nom === "Anjou-Louis-Riel")!, comptes, [], cj, "2026-09-28", officiels);
+  const partiInfo = construireSocial(comptes, jours, [], null)!.partiInfo;
+  const html = renderToStaticMarkup(<CandidatsCirco page={page} partiInfo={partiInfo} />);
+  const texte = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+
+  it("classées par j'aime, sans compte à la fin dans l'ordre des partis", () => {
+    const ordre = [...html.matchAll(/class="social-nom">([^<]+)</g)].map((m) => m[1]);
+    expect(ordre).toEqual(["CAQ Anjou", "QS Anjou", "PLQ Anjou", "PQ Anjou", "PCQ Anjou"]);
+  });
+  it("pastille de rang en j'aime, seulement pour les candidats avec des données", () => {
+    expect(html).toContain('aria-label="1er sur 2 en j’aime depuis le déclenchement"');
+    expect(html).toContain('aria-label="2e sur 2 en j’aime depuis le déclenchement"');
+    expect(html.match(/class="circo-pastille/g)).toHaveLength(2);
+    expect(html).toContain("circo-pastille premier");
+  });
+  it("trois chiffres (publications, j'aime, commentaires), plus de bascule ni de moyennes", () => {
+    expect(texte).toContain("Publications");
+    expect(texte).not.toContain("Par jour");
+    expect(texte).not.toContain("J’aime par publication");
+    expect(html).not.toContain('aria-label="Mesure des séries');
+    expect(texte).toContain("j’aime depuis le 1er");
+  });
+  it("grands chiffres : séparateur de milliers visible (espace insécable)", () => {
+    expect(nombreGrand(1432983)).toBe("1\u00a0432\u00a0983");
+  });
+});
+
+describe("publications sans vignette : l'icône de leur nature", () => {
+  const partiInfo = construireSocial(comptes, jours, [], null)!.partiInfo;
+  const base = { jour: "2026-09-28", nom: "Charles Page", party: "pq" as const, plateforme: "instagram" as const,
+    url: "https://www.instagram.com/p/abc/", texte: "", jaime: 5, commentaires: 0, vignette: null, media: "image" as const };
+  it("carrousel et photo : leur icône et leur libellé, pas le document", () => {
+    const carrousel = renderToStaticMarkup(<CartePublication partiInfo={partiInfo} p={{ ...base, nature: "carrousel" }} />);
+    expect(carrousel).toContain("Carrousel sans texte");
+    expect(carrousel).toContain("M7 4h13v13H7V4z");
+    const photo = renderToStaticMarkup(<CartePublication partiInfo={partiInfo} p={{ ...base, nature: "photo" }} />);
+    expect(photo).toContain("Photo sans texte");
   });
 });
