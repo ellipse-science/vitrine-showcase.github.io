@@ -9,6 +9,7 @@ import {
   NOMS_TYPES,
   PLATEFORMES,
   TYPES,
+  type AudienceJour,
   type Circo,
   type CompteCirco,
   type FilItem,
@@ -18,8 +19,11 @@ import {
   type TypeCompte,
 } from "@/lib/data/social-meta";
 import {
+  AUDIENCE_MAX,
+  classementAudience,
   integration,
   lignes,
+  MIN_PUBLICATIONS_MOYENNE,
   meneur,
   palmares,
   palmaresApproche,
@@ -36,6 +40,7 @@ import {
   type Filtres,
   type Mesure,
   type Panneau,
+  type MesureAudience,
   type PeriodeCarte,
 } from "@/lib/data/social-calc";
 import { MONTHS_FR } from "@/lib/dates";
@@ -51,6 +56,142 @@ const VUES: { cle: Vue; libelle: string }[] = [
   { cle: "palmares", libelle: "Palmarès" },
   { cle: "carte", libelle: "Carte" },
 ];
+// Les libellés des tuiles du haut, et leur définition.
+const MESURES_AUDIENCE: { cle: MesureAudience; libelle: string; unite: string }[] = [
+  { cle: "abonnes", libelle: "Abonnés", unite: "abonnés" },
+  { cle: "publications", libelle: "Publications", unite: "publications" },
+  { cle: "parJour", libelle: "Par jour, en moyenne", unite: "publications par jour, en moyenne" },
+  { cle: "jaime", libelle: "J’aime", unite: "j’aime" },
+  { cle: "commentaires", libelle: "Commentaires", unite: "commentaires" },
+  { cle: "parPublication", libelle: "J’aime par publication", unite: "j’aime par publication" },
+];
+
+/** Vrai sous une largeur d'écran (côté client ; faux au rendu serveur). */
+function useEtroit(max = 640) {
+  const [etroit, setEtroit] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${max}px)`);
+    const maj = () => setEtroit(mq.matches);
+    maj();
+    mq.addEventListener("change", maj);
+    return () => mq.removeEventListener("change", maj);
+  }, [max]);
+  return etroit;
+}
+
+/** L'activité par compte et par jour : dans les props (tests), sinon le
+ *  fichier statique du site, chargé une fois, seulement si l'on en a besoin. */
+let audienceJourLu: Promise<AudienceJour[]> | null = null;
+function useAudienceJour(data: SocialData, besoin: boolean): { jours: AudienceJour[]; charge: boolean } {
+  const [jours, setJours] = useState<AudienceJour[] | null>(data.audienceJour.length ? data.audienceJour : null);
+  useEffect(() => {
+    if (!besoin || jours || !data.audienceJourDispo) return;
+    let vivant = true;
+    audienceJourLu ??= fetch(`${BASE_PATH}/reseaux/audience-jour.json`)
+      .then((r) => (r.ok ? r.json() : []))
+      .catch(() => []);
+    audienceJourLu.then((j) => vivant && setJours(Array.isArray(j) ? j : []));
+    return () => {
+      vivant = false;
+    };
+  }, [besoin, jours, data.audienceJourDispo]);
+  return { jours: jours ?? [], charge: besoin && !jours && !!data.audienceJourDispo };
+}
+
+/** Audience : 20 comptes par page en deux colonnes de 10 (10 sur mobile),
+ *  jusqu'à 50 ; une même échelle d'une page à l'autre (le premier du classement). */
+function Audience({
+  data,
+  mesure,
+  plateformes,
+  partis,
+  types,
+  d0,
+  d1,
+}: {
+  data: SocialData;
+  mesure: MesureAudience;
+  plateformes: Plateforme[];
+  partis: PartyKey[];
+  types: TypeCompte[];
+  d0: number;
+  d1: number;
+}) {
+  const etroit = useEtroit();
+  const parPage = etroit ? 10 : 20;
+  const [page, setPage] = useState(0);
+  const activite = useAudienceJour(data, mesure !== "abonnes");
+  const classement = useMemo(
+    () => classementAudience(data.audience, activite.jours, mesure, { plateformes, partis, types, d0, d1 }),
+    [data, activite.jours, mesure, plateformes, partis, types, d0, d1],
+  );
+  // Un filtre, une mesure, la période ou la taille des pages change : retour à la page 1.
+  useEffect(() => setPage(0), [mesure, plateformes, partis, types, d0, d1, parPage]);
+  const pages = Math.max(1, Math.ceil(classement.length / parPage));
+  const p = Math.min(page, pages - 1);
+  const vus = classement.slice(p * parPage, (p + 1) * parPage);
+  const max = classement[0]?.valeur ?? 1;
+  const format = (v: number) => (mesure === "parJour" || mesure === "parPublication" ? nombreFr(v, 1) : nombreFr(v));
+  const colonnes = etroit ? [vus] : [vus.slice(0, 10), vus.slice(10, 20)].filter((c) => c.length > 0);
+  if (activite.charge) return <p className="social-note">Chargement de l’activité des comptes…</p>;
+  if (classement.length === 0) return <p className="social-vide">Aucun compte dans cette sélection.</p>;
+  return (
+    <div className="social-audience-bloc">
+      <div className={`social-audience-colonnes${colonnes.length > 1 ? " deux" : ""}`}>
+        {colonnes.map((col, n) => (
+          <ol key={n} className="social-barres social-audience" start={p * parPage + n * 10 + 1}>
+            {col.map(({ item: a, valeur: v }, i) => (
+              <li key={`${a.plateforme}-${a.nom}-${a.party}`}>
+                <span className="social-nom" title={`${a.nom} · ${data.partiInfo[a.party].sigle}`}>
+                  <span className="social-rang-petit">{p * parPage + n * 10 + i + 1}</span>
+                  <Plateforme_ p={a.plateforme} />
+                  <span className="social-nom-texte">{a.nom}</span>
+                  <span className="social-meta">{data.partiInfo[a.party].sigle}</span>
+                </span>
+                <span className="social-piste">
+                  <i style={{ width: `${(100 * v) / max}%`, background: data.partiInfo[a.party].couleur }} />
+                </span>
+                <span className="social-valeur">{format(v)}</span>
+              </li>
+            ))}
+          </ol>
+        ))}
+      </div>
+      {pages > 1 && (
+        <nav className="social-pagination" aria-label="Pages du classement">
+          <button type="button" onClick={() => setPage(p - 1)} disabled={p === 0} aria-label="Page précédente">
+            ‹
+          </button>
+          {Array.from({ length: pages }, (_, n) => {
+            const de = n * parPage + 1;
+            const a = Math.min((n + 1) * parPage, classement.length);
+            return (
+              <button
+                type="button"
+                key={n}
+                className={n === p ? "actif" : undefined}
+                aria-current={n === p ? "page" : undefined}
+                onClick={() => setPage(n)}
+              >
+                {de}–{a}
+              </button>
+            );
+          })}
+          <button type="button" onClick={() => setPage(p + 1)} disabled={p === pages - 1} aria-label="Page suivante">
+            ›
+          </button>
+          <span className="social-meta">
+            Comptes {p * parPage + 1} à {Math.min((p + 1) * parPage, classement.length)} sur {classement.length}
+          </span>
+        </nav>
+      )}
+      {(mesure === "parPublication" || mesure === "parJour") && (
+        <p className="social-note">Comptes ayant au moins {MIN_PUBLICATIONS_MOYENNE}&nbsp;publications sur la période.</p>
+      )}
+    </div>
+  );
+}
+
 const PERIODES_CARTE: { cle: PeriodeCarte; libelle: string }[] = [
   { cle: "7j", libelle: "7 derniers jours" },
   { cle: "campagne", libelle: "Depuis le déclenchement" },
@@ -271,7 +412,7 @@ function Bascule<T extends string>({
 }
 
 /** Logo d'une plateforme (Simple Icons), dans la couleur du texte. */
-function Logo({ p, taille = 14 }: { p: Plateforme; taille?: number }) {
+export function Logo({ p, taille = 14 }: { p: Plateforme; taille?: number }) {
   return (
     <svg viewBox="0 0 24 24" width={taille} height={taille} aria-hidden="true" className="social-logo">
       <path d={LOGOS_PLATEFORMES[p]} fill="currentColor" />
@@ -280,7 +421,7 @@ function Logo({ p, taille = 14 }: { p: Plateforme; taille?: number }) {
 }
 
 /** Plateforme nommée par son logo ; le nom reste pour les lecteurs d'écran. */
-function Plateforme_({ p, taille = 13 }: { p: Plateforme; taille?: number }) {
+export function Plateforme_({ p, taille = 13 }: { p: Plateforme; taille?: number }) {
   return (
     <span className="social-plateforme" title={NOMS_PLATEFORMES[p]}>
       <Logo p={p} taille={taille} />
@@ -775,22 +916,70 @@ function Media({ p }: { p: Pick<FilItem, "vignette" | "media" | "plateforme" | "
   );
 }
 
-export function CartePublication({ data, p, rang }: { data: SocialData; p: FilItem; rang?: number }) {
+/** « 1 commentaire », « 0 commentaire », « 2 commentaires » ; j'aime est invariable. */
+export const commentaires = (n: number) => `${nombreFr(n)}\u00a0commentaire${n > 1 ? "s" : ""}`;
+
+/** Pastille des publications sans image ni vidéo : leur nature en icône. */
+function IconeNature({ nature }: { nature: FilItem["nature"] }) {
   return (
-    <li className="social-publication">
-      <Media p={p} />
+    <svg className="social-nature" viewBox="0 0 24 24" aria-hidden="true">
+      {nature === "partage" ? (
+        // flèche de partage
+        <path d="M14 5l7 7-7 7v-4c-5 0-8.5 1.5-11 5 1-5 4-10 11-11V5z" />
+      ) : (
+        // page de texte
+        <path d="M6 3h9l4 4v14H6V3zm2 6h8v1.6H8V9zm0 3.5h8v1.6H8v-1.6zm0 3.5h5v1.6H8V16z" />
+      )}
+    </svg>
+  );
+}
+
+export function CartePublication({
+  partiInfo,
+  p,
+  rang,
+}: {
+  partiInfo: SocialData["partiInfo"];
+  p: FilItem;
+  rang?: number;
+}) {
+  // Sans image ni vidéo : une carte compacte, une pastille plutôt qu'un grand
+  // emplacement vide ; sans texte non plus, un libellé dit ce que c'est.
+  const compacte = !p.vignette && p.media !== "video";
+  const libelle =
+    !p.texte && compacte
+      ? p.nature === "partage"
+        ? "Publication partagée (événement, lien ou autre publication)"
+        : "Publication sans texte"
+      : null;
+  return (
+    <li className={`social-publication${compacte ? " compacte" : ""}`}>
+      {compacte ? (
+        <span className="social-media social-media-pastille" title={libelle ?? undefined}>
+          <IconeNature nature={p.nature} />
+        </span>
+      ) : (
+        <Media p={p} />
+      )}
       <div className="social-palmares-tete">
         {rang != null && <span className="social-rang">{rang}</span>}
-        <span className="social-nom" style={{ color: data.partiInfo[p.party].couleur }}>
+        <span className="social-nom" style={{ color: partiInfo[p.party].couleur }}>
           {p.nom}
         </span>
         <span className="social-meta">
-          <Plateforme_ p={p.plateforme} /> {data.partiInfo[p.party].sigle} · {jourCourt(p.jour)}
+          <Plateforme_ p={p.plateforme} /> {partiInfo[p.party].sigle} · {jourCourt(p.jour)}
         </span>
       </div>
-      {p.texte && <p className="social-texte">{p.texte}</p>}
+      {libelle && <p className="social-texte social-libelle">{libelle}</p>}
+      {p.texte && (
+        <p className={`social-texte${p.origine === "description" || p.origine === "autocollant" ? " repli" : ""}`}>
+          {p.origine === "description" && <span className="social-repli">Description automatique de Meta&nbsp;: </span>}
+          {p.origine === "autocollant" && <span className="social-repli">Texte à l’image&nbsp;: </span>}
+          {p.texte}
+        </p>
+      )}
       <div className="social-meta">
-        {nombreFr(p.jaime)}&nbsp;j’aime · {nombreFr(p.commentaires)}&nbsp;commentaires
+        {nombreFr(p.jaime)}&nbsp;j’aime · {commentaires(p.commentaires)}
         {p.url && (
           <>
             {" · "}
@@ -839,48 +1028,38 @@ function useFil(code: number | null): { fil: FilItem[] | null; charge: boolean }
 const MOIS_BREF = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 const jourBref = (iso: string) => `${Number(iso.slice(8, 10))} ${MOIS_BREF[Number(iso.slice(5, 7)) - 1]}`;
 
-/** Le fil d'une circonscription : son fichier statique, chargé à l'ouverture
- *  de la fiche (app/reseaux/fil/[fichier]/route.ts), filtré par plateforme et
- *  par parti comme le reste du module. */
-function Fil({
-  data,
-  code,
-  plateformes,
-  partis,
-}: {
-  data: SocialData;
-  code: number;
-  plateformes: Plateforme[];
-  partis: PartyKey[];
-}) {
-  const etat = useFil(code);
-  if (etat.charge) return <p className="social-note">Chargement du fil…</p>;
-  if (!etat.fil) return <p className="social-note">Le fil de cette circonscription est indisponible.</p>;
-  const fil = etat.fil.filter((p) => plateformes.includes(p.plateforme) && partis.includes(p.party));
-  return (
-    <div className="social-fil">
-      <h4>Fil des candidats</h4>
-      {fil.length === 0 ? (
-        <p className="social-note">Aucune publication récente dans cette sélection.</p>
-      ) : (
-        <ol className="social-palmares">
-          {fil.map((p, i) => (
-            <CartePublication key={`${p.url ?? ""}-${i}`} data={data} p={p} />
-          ))}
-        </ol>
-      )}
-    </div>
-  );
-}
-
 // ── Carte des circonscriptions ────────────────────────────────────────────────
-// Les tracés sont écrits UNE fois dans <defs> et repris par <use> dans la carte
-// et ses deux encarts : trois vues pour le poids d'une. Au clavier, la liste
-// des circonscriptions remplace les 127 formes (autant d'arrêts de tabulation).
-const ENCARTS = [
-  { cle: "montreal", titre: "Grand Montréal" },
-  { cle: "quebec", titre: "Québec" },
-] as const;
+// Une seule carte, zoomable (molette, glisser, pincement, boutons, recherche) ;
+// les encarts Montréal et Québec n'ont plus lieu d'être. Au clavier, une
+// tabulation mène à la carte, les flèches passent d'une forme à l'autre.
+type Vue2D = { k: number; tx: number; ty: number };
+
+/** Cadre d'un tracé précalculé (M absolu puis l relatifs, cf.
+ *  scripts/reference/carte_circonscriptions.mjs), sans le dessiner. */
+export function cadreChemin(d: string): { x: number; y: number; w: number; h: number } {
+  let [x0, y0, x1, y1] = [Infinity, Infinity, -Infinity, -Infinity];
+  let x = 0;
+  let y = 0;
+  for (const sous of d.split(/(?=M)/)) {
+    const [tete, corps = ""] = sous.slice(1).split("l");
+    const [mx, my] = tete.match(/-?\d+/g)!.map(Number);
+    [x, y] = [mx, my];
+    const pts = [[x, y]];
+    const n = (corps.replace(/z/g, "").match(/-?\d+/g) ?? []).map(Number);
+    for (let i = 0; i + 1 < n.length; i += 2) {
+      x += n[i];
+      y += n[i + 1];
+      pts.push([x, y]);
+    }
+    for (const [px, py] of pts) {
+      x0 = Math.min(x0, px);
+      x1 = Math.max(x1, px);
+      y0 = Math.min(y0, py);
+      y1 = Math.max(y1, py);
+    }
+  }
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
 
 /** Au survol ou au focus d'une circonscription : nom, région, parti en tête,
  *  et chaque candidat suivi avec les logos de ses comptes et ses publications
@@ -899,11 +1078,9 @@ function Infobulle({
   hauteur,
   epinglee = false,
   onFermer,
-  onFiche,
 }: {
   epinglee?: boolean;
   onFermer?: () => void;
-  onFiche?: () => void;
   data: SocialData;
   circo: Circo;
   m: ReturnType<typeof meneur>;
@@ -1022,9 +1199,9 @@ function Infobulle({
         )}
       </div>
       {epinglee ? (
-        <button type="button" className="social-infobulle-fiche" onClick={onFiche}>
-          Voir la fiche complète
-        </button>
+        <a className="social-infobulle-fiche" href={`${BASE_PATH}/reseaux/circonscriptions/${circo.slug}/`}>
+          Voir la page de la circonscription →
+        </a>
       ) : (
         <span className="social-infobulle-pied">j’aime · cliquez pour épingler et faire défiler le fil</span>
       )}
@@ -1152,84 +1329,172 @@ export function Carte({
   partis: PartyKey[];
 }) {
   const carte = data.carte!;
+  const [W, H] = [carte.vue[2], carte.vue[3]];
   const [periode, setPeriode] = useState<PeriodeCarte>("campagne");
   const [choix, setChoix] = useState<number | null>(null);
   const meneurs = useMemo(
     () => new Map(carte.circos.map((c) => [c.code, meneur(c.comptes, periode, plateformes, partis)])),
     [carte, periode, plateformes, partis],
   );
-  const circo = carte.circos.find((c) => c.code === choix) ?? null;
-  // Ordre du clavier et de la liste : par région, puis par nom.
+  // Opacité : 0,25 + 0,7 × √(j'aime / maximum), comme la démo.
+  const maxJaime = useMemo(() => Math.max(1, ...[...meneurs.values()].map((m) => m.jaime)), [meneurs]);
+  const cadres = useMemo(() => new Map(carte.circos.map((c) => [c.code, cadreChemin(c.d)])), [carte]);
+  // Ordre du clavier : par région, puis par nom.
   const ordre = useMemo(
     () => [...carte.circos].sort((a, b) => a.region.localeCompare(b.region, "fr") || a.nom.localeCompare(b.nom, "fr")),
     [carte],
   );
-  const regions = useMemo(() => [...new Set(ordre.map((c) => c.region))], [ordre]);
   const [actif, setActif] = useState<number>(ordre[0]?.code ?? 0);
-  // Souris ou clavier : quitter une forme avec la souris n'efface pas
-  // l'infobulle ouverte au clavier, et inversement.
-  type Survol = { code: number; x: number; y: number; par: "souris" | "clavier" };
-  const [survol, setSurvol] = useState<Survol | null>(null);
-  // La fiche est sous la carte : un choix la fait venir à l'écran si elle n'y est pas.
-  const ficheRef = useRef<HTMLElement>(null);
-  const choisir = (code: number) => {
-    setChoix(code);
-    requestAnimationFrame(() => {
-      const f = ficheRef.current;
-      if (!f || f.getBoundingClientRect().top < window.innerHeight - 120) return;
-      const doux = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      f.scrollIntoView({ behavior: doux ? "smooth" : "auto", block: "start" });
+
+  // ── Zoom : une transformation (k, tx, ty) dans les unités de la carte ──────
+  const [vue, setVue] = useState<Vue2D>({ k: 1, tx: 0, ty: 0 });
+  const svgRef = useRef<SVGSVGElement>(null);
+  const vuesRef = useRef<HTMLDivElement>(null);
+  const anim = useRef<number | null>(null);
+  const borne = (v: Vue2D): Vue2D => {
+    const k = Math.min(40, Math.max(1, v.k));
+    return { k, tx: Math.min(0, Math.max(W - W * k, v.tx)), ty: Math.min(0, Math.max(H - H * k, v.ty)) };
+  };
+  const versCarte = (cx: number, cy: number) => {
+    const m = svgRef.current?.getScreenCTM();
+    if (!m) return null;
+    const p = new DOMPoint(cx, cy).matrixTransform(m.inverse());
+    return { x: p.x, y: p.y };
+  };
+  const zoomAutour = (facteur: number, cx?: number, cy?: number) => {
+    setVue((v) => {
+      const r = svgRef.current?.getBoundingClientRect();
+      const p = cx != null && cy != null ? versCarte(cx, cy) : r ? versCarte(r.left + r.width / 2, r.top + r.height / 2) : null;
+      if (!p) return v;
+      const k = Math.min(40, Math.max(1, v.k * facteur));
+      return borne({ k, tx: p.x - ((p.x - v.tx) * k) / v.k, ty: p.y - ((p.y - v.ty) * k) / v.k });
     });
   };
-  const vuesRef = useRef<HTMLDivElement>(null);
-  const place = (code: number, x: number, y: number, par: Survol["par"]) => {
+  const sansAnimation = () =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const animerVers = (cible: Vue2D, fin?: () => void) => {
+    if (anim.current) cancelAnimationFrame(anim.current);
+    const but = borne(cible);
+    if (sansAnimation()) {
+      setVue(but);
+      requestAnimationFrame(() => fin?.());
+      return;
+    }
+    const depart = vue;
+    const t0 = performance.now();
+    const pas = (t: number) => {
+      const u = Math.min(1, (t - t0) / 800);
+      const e = u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2;
+      // l'échelle en géométrique, la translation suit pour garder un cadrage cohérent
+      const k = depart.k * (but.k / depart.k) ** e;
+      setVue({ k, tx: depart.tx + (but.tx - depart.tx) * e, ty: depart.ty + (but.ty - depart.ty) * e });
+      if (u < 1) anim.current = requestAnimationFrame(pas);
+      else {
+        anim.current = null;
+        fin?.();
+      }
+    };
+    anim.current = requestAnimationFrame(pas);
+  };
+  const cadrer = (code: number): Vue2D => {
+    const b = cadres.get(code)!;
+    const k = Math.min(40, Math.max(1, Math.min((W * 0.55) / Math.max(b.w, 1), (H * 0.55) / Math.max(b.h, 1))));
+    return { k, tx: W / 2 - (b.x + b.w / 2) * k, ty: H / 2 - (b.y + b.h / 2) * k };
+  };
+
+  // ── Glisser, pincer, molette ───────────────────────────────────────────────
+  const pointeurs = useRef(new Map<number, { x: number; y: number }>());
+  const deplace = useRef(0);
+  const pinceDebut = useRef<{ d: number; k: number } | null>(null);
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    // Molette : un écouteur non passif, pour que la page ne défile pas en zoomant.
+    const molette = (e: WheelEvent) => {
+      e.preventDefault();
+      zoomAutour(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
+    };
+    svg.addEventListener("wheel", molette, { passive: false });
+    return () => svg.removeEventListener("wheel", molette);
+  });
+  const surDown = (e: PointerEvent<SVGSVGElement>) => {
+    pointeurs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    deplace.current = 0;
+    if (pointeurs.current.size === 2) {
+      const [a, b] = [...pointeurs.current.values()];
+      pinceDebut.current = { d: Math.hypot(a.x - b.x, a.y - b.y), k: vue.k };
+    }
+  };
+  const surMove = (e: PointerEvent<SVGSVGElement>) => {
+    const avant = pointeurs.current.get(e.pointerId);
+    if (!avant) return;
+    const apres = { x: e.clientX, y: e.clientY };
+    pointeurs.current.set(e.pointerId, apres);
+    deplace.current += Math.hypot(apres.x - avant.x, apres.y - avant.y);
+    if (deplace.current > 4 && pointeurs.current.size === 1) e.currentTarget.setPointerCapture?.(e.pointerId);
+    const m = svgRef.current?.getScreenCTM();
+    if (!m) return;
+    if (pointeurs.current.size === 2 && pinceDebut.current) {
+      const [a, b] = [...pointeurs.current.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const cible = (pinceDebut.current.k * d) / Math.max(pinceDebut.current.d, 1);
+      zoomAutour(cible / vue.k, (a.x + b.x) / 2, (a.y + b.y) / 2);
+    } else if (pointeurs.current.size === 1 && deplace.current > 4) {
+      setVue((v) => borne({ k: v.k, tx: v.tx + (apres.x - avant.x) / m.a, ty: v.ty + (apres.y - avant.y) / m.d }));
+    }
+  };
+  const surUp = (e: PointerEvent<SVGSVGElement>) => {
+    pointeurs.current.delete(e.pointerId);
+    if (pointeurs.current.size < 2) pinceDebut.current = null;
+  };
+
+  // ── Infobulle : survol, focus, épingle ─────────────────────────────────────
+  type Survol = { code: number; x: number; y: number; par: "souris" | "clavier" };
+  const [survol, setSurvol] = useState<Survol | null>(null);
+  const [epingle, setEpingle] = useState<{ code: number; x: number; y: number } | null>(null);
+  const relatif = (x: number, y: number) => {
     const r = vuesRef.current?.getBoundingClientRect();
-    if (r) setSurvol({ code, x: x - r.left, y: y - r.top, par });
+    return r ? { x: x - r.left, y: y - r.top } : null;
+  };
+  const place = (code: number, x: number, y: number, par: Survol["par"]) => {
+    const p = relatif(x, y);
+    if (p) setSurvol({ code, ...p, par });
   };
   const efface = (par: Survol["par"]) => setSurvol((s) => (s?.par === par ? null : s));
-  // Un clic (ou un toucher, ou Entrée) ÉPINGLE l'infobulle : elle ne suit
-  // plus la souris et son fil défile. La fiche en dessous suit la même
-  // circonscription sans faire défiler la page ; « Voir la fiche complète » y mène.
-  const [epingle, setEpingle] = useState<{ code: number; x: number; y: number } | null>(null);
-  const epingler = (code: number, x: number, y: number) => {
-    const r = vuesRef.current?.getBoundingClientRect();
-    if (!r) return;
-    setEpingle({ code, x: x - r.left, y: y - r.top });
+  const centreForme = (code: number) => {
+    const el = svgRef.current?.querySelector(`use[data-code="${code}"]`);
+    const b = el?.getBoundingClientRect();
+    return b ? { x: b.left + b.width / 2, y: b.top + b.height / 2 } : null;
+  };
+  const epingler = (code: number, x?: number, y?: number) => {
+    const c = x != null && y != null ? { x, y } : centreForme(code);
+    const p = c && relatif(c.x, c.y);
+    if (!p) return;
+    setEpingle({ code, ...p });
     setSurvol(null);
     setChoix(code);
   };
-  const epinglerElement = (code: number, el: globalThis.Element | null | undefined) => {
-    if (!el) return;
-    const b = el.getBoundingClientRect();
-    epingler(code, b.left + b.width / 2, b.top + b.height / 2);
-  };
-  // La forme la plus lisible d'une circonscription : dans un encart si elle y
-  // est entière et petite, sinon sur la carte principale.
-  const formeDe = (code: number) => {
-    const v = vuesRef.current;
-    if (!v) return null;
-    for (const svg of v.querySelectorAll(".social-carte-encarts svg")) {
-      const cadre = svg.getBoundingClientRect();
-      const u = svg.querySelector(`use[data-code="${code}"]`);
-      if (!u) continue;
-      const b = u.getBoundingClientRect();
-      const cx = b.left + b.width / 2;
-      const cy = b.top + b.height / 2;
-      if (b.width < cadre.width * 0.6 && cx > cadre.left && cx < cadre.right && cy > cadre.top && cy < cadre.bottom) return u;
-    }
-    return v.querySelector(`.social-carte-province use[data-code="${code}"]`);
-  };
-  const trouver = (code: number) => {
-    vuesRef.current?.scrollIntoView({ block: "nearest" });
-    requestAnimationFrame(() => epinglerElement(code, formeDe(code)));
-  };
+  // Zoom ou déplacement : l'infobulle épinglée suit sa circonscription.
   useEffect(() => {
     if (!epingle) return;
-    const touche = (e: globalThis.KeyboardEvent) => e.key === "Escape" && setEpingle(null);
+    const c = centreForme(epingle.code);
+    const p = c && relatif(c.x, c.y);
+    if (p && (Math.abs(p.x - epingle.x) > 1 || Math.abs(p.y - epingle.y) > 1)) setEpingle({ code: epingle.code, ...p });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vue]);
+  useEffect(() => {
+    if (!epingle) return;
+    const touche = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setEpingle(null);
+        setChoix(null);
+      }
+    };
     const dehors = (e: globalThis.PointerEvent) => {
       const t = e.target as globalThis.Element | null;
-      if (t?.closest(".social-infobulle, .social-carte use, .social-recherche")) return;
+      if (t?.closest(".social-infobulle, .social-carte-province, .social-recherche, .social-zoom")) return;
       setEpingle(null);
+      setChoix(null);
     };
     document.addEventListener("keydown", touche);
     document.addEventListener("pointerdown", dehors);
@@ -1238,10 +1503,14 @@ export function Carte({
       document.removeEventListener("pointerdown", dehors);
     };
   }, [epingle]);
-  const auFocus = (code: number, el: SVGElement) => {
-    const b = el.getBoundingClientRect();
-    place(code, b.left + b.width / 2, b.top + b.height / 2, "clavier");
+  // Recherche : la vue glisse vers la circonscription, puis l'infobulle s'épingle.
+  const trouver = (code: number) => {
+    setChoix(code);
+    setEpingle(null);
+    vuesRef.current?.scrollIntoView({ block: "nearest" });
+    animerVers(cadrer(code), () => epingler(code));
   };
+
   const clavier = (e: KeyboardEvent<SVGUseElement>, code: number) => {
     const i = ordre.findIndex((c) => c.code === code);
     const pas = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
@@ -1249,81 +1518,33 @@ export function Carte({
       e.preventDefault();
       const suivant = ordre[(i + pas + ordre.length) % ordre.length].code;
       setActif(suivant);
-      const el = vuesRef.current?.querySelector<SVGUseElement>(`.social-carte-province use[data-code="${suivant}"]`);
-      el?.focus();
+      svgRef.current?.querySelector<SVGUseElement>(`use[data-code="${suivant}"]`)?.focus();
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      epinglerElement(code, e.currentTarget);
+      epingler(code);
     } else if (e.key === "Escape") {
       efface("clavier");
     }
   };
-  const couleur = (code: number) => {
-    const k = meneurs.get(code)?.party;
-    return k ? data.partiInfo[k].couleur : "var(--social-carte-vide)";
+  const remplissage = (code: number) => {
+    const m = meneurs.get(code);
+    if (!m?.party) return { fill: "var(--social-carte-vide)", fillOpacity: 1 };
+    return { fill: data.partiInfo[m.party].couleur, fillOpacity: 0.25 + 0.7 * Math.sqrt(m.jaime / maxJaime) };
   };
   const titre = (code: number, nom: string) => {
     const m = meneurs.get(code);
     return m?.party
-      ? `${nom}\u00a0: ${data.partiInfo[m.party].sigle} en tête, ${nombreFr(m.parParti[m.party]!.jaime)}\u00a0j’aime`
-      : `${nom}\u00a0: ${m && m.jaime > 0 ? "égalité" : "aucun j’aime"}`;
+      ? `${nom} : ${data.partiInfo[m.party].sigle} en tête, ${nombreFr(m.parParti[m.party]!.jaime)} j’aime`
+      : `${nom} : ${m && m.jaime > 0 ? "égalité" : "aucun j’aime"}`;
   };
-  const formes = (encart: boolean) => (
-    <g>
-      {(encart ? carte.circos : ordre).map((c) => (
-        <use
-          key={c.code}
-          href={`#sc-circo-${c.code}`}
-          data-code={c.code}
-          fill={couleur(c.code)}
-          className={c.code === choix ? "choisie" : undefined}
-          onClick={(e) => epingler(c.code, e.clientX, e.clientY)}
-          onPointerMove={(e) => e.pointerType !== "touch" && !epingle && place(c.code, e.clientX, e.clientY, "souris")}
-          onPointerLeave={() => efface("souris")}
-          // Carte principale : un seul arrêt de tabulation, les flèches font le reste.
-          {...(encart
-            ? {}
-            : {
-                tabIndex: c.code === actif ? 0 : -1,
-                role: "button",
-                "aria-label": `${titre(c.code, c.nom)}. Entrée pour épingler son infobulle et son fil.`,
-                onFocus: (e: FocusEvent<SVGUseElement>) => {
-                  setActif(c.code);
-                  if (!epingle) auFocus(c.code, e.currentTarget);
-                },
-                onBlur: () => efface("clavier"),
-                onKeyDown: (e: KeyboardEvent<SVGUseElement>) => clavier(e, c.code),
-              })}
-        />
-      ))}
-      {circo && <use href={`#sc-circo-${circo.code}`} className="social-carte-contour" />}
-    </g>
-  );
-  const pub = (c: CompteCirco) => (periode === "7j" ? c.publications7j : c.publicationsCampagne);
-  const jaime = (c: CompteCirco) => (periode === "7j" ? c.jaime7j : c.jaimeCampagne);
+  const circo = carte.circos.find((c) => c.code === choix) ?? null;
+  const bulle = epingle ?? survol;
 
   return (
     <div className="social-carte">
       <Recherche data={data} onChoisir={trouver} />
       <div className="social-carte-outils">
         <Bascule label="Période de la carte" options={PERIODES_CARTE} valeur={periode} onChange={setPeriode} />
-        <label className="social-carte-liste">
-          <span>Circonscription</span>
-          <select value={choix ?? ""} onChange={(e) => (e.target.value ? trouver(Number(e.target.value)) : setChoix(null))}>
-            <option value="">Choisir…</option>
-            {regions.map((r) => (
-              <optgroup key={r} label={r}>
-                {ordre
-                  .filter((c) => c.region === r)
-                  .map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.nom}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
       </div>
       <ul className="social-carte-legende" aria-label="Parti qui reçoit le plus de j’aime">
         {data.partis
@@ -1338,125 +1559,97 @@ export function Carte({
           <i style={{ background: "var(--social-carte-vide)" }} />
           Aucun j’aime
         </li>
+        <li className="social-carte-legende-note">plus la couleur est soutenue, plus il y a de j’aime</li>
       </ul>
 
       <div className="social-carte-vues" ref={vuesRef}>
         <svg
+          ref={svgRef}
           className="social-carte-province"
           viewBox={carte.vue.join(" ")}
           role="img"
-          aria-label="Carte des circonscriptions, colorées selon le parti dont les candidats y reçoivent le plus de j’aime. Les flèches passent d’une circonscription à l’autre, par région, et Entrée épingle son infobulle."
+          aria-label="Carte des circonscriptions, colorées selon le parti dont les candidats y reçoivent le plus de j’aime. La molette, le glisser ou le pincement zooment. Les flèches passent d’une circonscription à l’autre, par région, et Entrée épingle son infobulle."
+          onPointerDown={surDown}
+          onPointerMove={surMove}
+          onPointerUp={surUp}
+          onPointerCancel={surUp}
         >
           <defs>
             {carte.circos.map((c) => (
               <path key={c.code} id={`sc-circo-${c.code}`} d={c.d} vectorEffect="non-scaling-stroke" />
             ))}
           </defs>
-          {formes(false)}
-          {ENCARTS.map((e) => {
-            const [x, y, w, h] = carte.encarts[e.cle];
-            return (
-              <rect
-                key={e.cle}
-                className="social-carte-cadre"
-                x={x}
-                y={y}
-                width={w}
-                height={h}
-                vectorEffect="non-scaling-stroke"
+          <g transform={`translate(${vue.tx} ${vue.ty}) scale(${vue.k})`}>
+            {ordre.map((c) => (
+              <use
+                key={c.code}
+                href={`#sc-circo-${c.code}`}
+                data-code={c.code}
+                {...remplissage(c.code)}
+                className={c.code === choix ? "choisie" : undefined}
+                onClick={(e) => deplace.current <= 4 && epingler(c.code, e.clientX, e.clientY)}
+                onPointerMove={(e) =>
+                  e.pointerType !== "touch" &&
+                  !epingle &&
+                  pointeurs.current.size === 0 &&
+                  place(c.code, e.clientX, e.clientY, "souris")
+                }
+                onPointerLeave={() => efface("souris")}
+                // Un seul arrêt de tabulation, les flèches font le reste.
+                tabIndex={c.code === actif ? 0 : -1}
+                role="button"
+                aria-label={`${titre(c.code, c.nom)}. Entrée pour épingler son infobulle.`}
+                onFocus={(e: FocusEvent<SVGUseElement>) => {
+                  setActif(c.code);
+                  if (epingle) return;
+                  const b = e.currentTarget.getBoundingClientRect();
+                  place(c.code, b.left + b.width / 2, b.top + b.height / 2, "clavier");
+                }}
+                onBlur={() => efface("clavier")}
+                onKeyDown={(e: KeyboardEvent<SVGUseElement>) => clavier(e, c.code)}
               />
-            );
-          })}
+            ))}
+            {circo && <use href={`#sc-circo-${circo.code}`} className="social-carte-contour" />}
+          </g>
         </svg>
-        <div className="social-carte-encarts">
-          {ENCARTS.map((e) => (
-            <figure key={e.cle}>
-              <svg viewBox={carte.encarts[e.cle].join(" ")} aria-hidden="true">
-                {formes(true)}
-              </svg>
-              <figcaption>{e.titre}</figcaption>
-            </figure>
-          ))}
+        <div className="social-zoom" role="group" aria-label="Zoom de la carte">
+          <button type="button" onClick={() => zoomAutour(1.8)} aria-label="Zoomer" title="Zoomer">
+            +
+          </button>
+          <button type="button" onClick={() => zoomAutour(1 / 1.8)} aria-label="Dézoomer" title="Dézoomer">
+            −
+          </button>
+          <button
+            type="button"
+            onClick={() => animerVers({ k: 1, tx: 0, ty: 0 })}
+            aria-label="Vue d’ensemble"
+            title="Vue d’ensemble"
+          >
+            ⟲
+          </button>
         </div>
-        {(() => {
-          const b = epingle ?? survol;
-          if (!b) return null;
-          return (
-            <Infobulle
-              key={epingle ? `e${b.code}` : "survol"}
-              data={data}
-              circo={carte.circos.find((c) => c.code === b.code)!}
-              m={meneurs.get(b.code)!}
-              periode={periode}
-              plateformes={plateformes}
-              partis={partis}
-              x={b.x}
-              y={b.y}
-              largeur={vuesRef.current?.clientWidth ?? 0}
-              hauteur={vuesRef.current?.clientHeight ?? 0}
-              epinglee={!!epingle}
-              onFermer={() => setEpingle(null)}
-              onFiche={() => {
-                setEpingle(null);
-                choisir(b.code);
-              }}
-            />
-          );
-        })()}
+        {bulle && (
+          <Infobulle
+            key={epingle ? `e${bulle.code}` : "survol"}
+            data={data}
+            circo={carte.circos.find((c) => c.code === bulle.code)!}
+            m={meneurs.get(bulle.code)!}
+            periode={periode}
+            plateformes={plateformes}
+            partis={partis}
+            x={bulle.x}
+            y={bulle.y}
+            largeur={vuesRef.current?.clientWidth ?? 0}
+            hauteur={vuesRef.current?.clientHeight ?? 0}
+            epinglee={!!epingle}
+            onFermer={() => {
+              setEpingle(null);
+              setChoix(null);
+            }}
+          />
+        )}
       </div>
 
-      <section className="social-fiche" aria-live="polite" ref={ficheRef}>
-        {!circo ? (
-          <p className="social-note">Choisissez une circonscription sur la carte ou dans la liste.</p>
-        ) : (
-          <>
-            <h3>{circo.nom}</h3>
-            <ul>
-              {data.partis.map((k) => {
-                const comptes = circo.comptes.filter((c) => c.party === k);
-                const nom = comptes[0]?.nom;
-                const p = comptes.reduce((s, c) => s + pub(c), 0);
-                const j = comptes.reduce((s, c) => s + jaime(c), 0);
-                return (
-                  <li key={k}>
-                    <div className="social-fiche-tete">
-                      <span className="social-fiche-parti" style={{ background: data.partiInfo[k].couleur }}>
-                        {data.partiInfo[k].sigle}
-                      </span>
-                      <span className="social-nom">{nom ?? "Aucun compte suivi"}</span>
-                    </div>
-                    {comptes.length > 0 && (
-                      <>
-                        <div className="social-fiche-comptes">
-                          {comptes.map((c) => {
-                            const contenu = (
-                              <>
-                                <Plateforme_ p={c.plateforme} taille={16} />
-                                {c.abonnes != null ? `${nombreFr(c.abonnes)} abonnés` : "abonnés inconnus"}
-                              </>
-                            );
-                            return c.url ? (
-                              <a key={c.plateforme} href={c.url} target="_blank" rel="noopener noreferrer">
-                                {contenu}
-                              </a>
-                            ) : (
-                              <span key={c.plateforme}>{contenu}</span>
-                            );
-                          })}
-                        </div>
-                        <div className="social-meta">
-                          {nombreFr(p)}&nbsp;{p > 1 ? "publications" : "publication"} · {nombreFr(j)}&nbsp;j’aime
-                        </div>
-                      </>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-            <Fil data={data} code={circo.code} plateformes={plateformes} partis={partis} />
-          </>
-        )}
-      </section>
       <p className="social-note">
         Comptes de candidats seulement ; la période choisie en haut ne s’applique pas à la carte. Comprend des données
         ouvertes octroyées sous la{" "}
@@ -1508,16 +1701,17 @@ export function SocialClient({ data }: { data: SocialData }) {
     { libelle: "Tout", a: 0 },
   ];
 
-  const audience = data.audience
-    .filter((a) => plateformes.includes(a.plateforme) && partis.includes(a.party) && types.includes(a.type))
-    .slice(0, 20);
+  const [mesureAud, setMesureAud] = useState<MesureAudience>("abonnes");
+  const uniteAud = MESURES_AUDIENCE.find((x) => x.cle === mesureAud)!.unite;
   const tops = vue === "palmares" ? palmares(data, f) : [];
 
   const sousTitre =
     vue === "presence"
       ? "Part des candidatures de chaque parti dont au moins un compte est suivi. Dernier relevé : la période ne s’applique pas."
       : vue === "audience"
-        ? "Les 20 comptes les plus suivis, en abonnés. Dernier relevé : la période ne s’applique pas."
+        ? mesureAud === "abonnes"
+          ? `Les ${AUDIENCE_MAX} comptes les plus suivis, en abonnés. Dernier relevé\u00a0: la période ne s’applique pas.`
+          : `Les ${AUDIENCE_MAX} comptes en tête sur la période, en ${uniteAud}.`
         : vue === "palmares"
           ? "Les 10 publications les plus aimées de la période."
           : vue === "carte"
@@ -1601,6 +1795,17 @@ export function SocialClient({ data }: { data: SocialData }) {
               onChange={setPartis}
               couleur={(p) => data.partiInfo[p].couleur}
             />
+            {vue === "audience" && (
+              <div className="social-coches">
+                <span className="social-coches-titre">Mesure</span>
+                <Bascule
+                  label="Mesure de l’audience"
+                  options={data.audienceJour.length || data.audienceJourDispo ? MESURES_AUDIENCE : MESURES_AUDIENCE.slice(0, 1)}
+                  valeur={mesureAud}
+                  onChange={setMesureAud}
+                />
+              </div>
+            )}
             <Coches
               label="Type de compte"
               options={TYPES.map((c) => ({ cle: c, libelle: NOMS_TYPES[c] }))}
@@ -1680,27 +1885,15 @@ export function SocialClient({ data }: { data: SocialData }) {
           )}
 
           {vue === "audience" && (
-            <ol className="social-barres social-audience">
-              {audience.length === 0 && <li className="social-vide">Aucun compte dans cette sélection.</li>}
-              {audience.map((a) => (
-                <li key={`${a.plateforme}-${a.nom}-${a.abonnes}`}>
-                  <span className="social-nom">
-                    <Plateforme_ p={a.plateforme} />
-                    {a.nom}
-                    <span className="social-meta">{data.partiInfo[a.party].sigle}</span>
-                  </span>
-                  <span className="social-piste">
-                    <i
-                      style={{
-                        width: `${(100 * a.abonnes) / audience[0].abonnes}%`,
-                        background: data.partiInfo[a.party].couleur,
-                      }}
-                    />
-                  </span>
-                  <span className="social-valeur">{nombreFr(a.abonnes)}</span>
-                </li>
-              ))}
-            </ol>
+            <Audience
+              data={data}
+              mesure={mesureAud}
+              plateformes={plateformes}
+              partis={partis}
+              types={types}
+              d0={d0}
+              d1={d1}
+            />
           )}
 
           {graphique && formeEff === "barres" && <Barres data={data} rows={rows} pans={pans} m={m} />}
@@ -1743,7 +1936,7 @@ export function SocialClient({ data }: { data: SocialData }) {
               <ol className="social-palmares">
                 {tops.length === 0 && <li className="social-vide">Aucune publication dans cette sélection.</li>}
                 {tops.map((p, i) => (
-                  <CartePublication key={`${p.url ?? ""}-${i}`} data={data} p={p} rang={i + 1} />
+                  <CartePublication key={`${p.url ?? ""}-${i}`} partiInfo={data.partiInfo} p={p} rang={i + 1} />
                 ))}
               </ol>
               {palmaresApproche(data, f) && (

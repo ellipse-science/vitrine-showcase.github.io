@@ -9,12 +9,19 @@ import {
   PLATEFORMES,
   TYPES,
   type AudienceItem,
+  type AudienceJour,
   type Carte,
   type Circo,
   type CompteCirco,
   type FilItem,
   TYPES_MEDIA,
   type TypeMedia,
+  NATURES,
+  type Nature,
+  type OrigineTexte,
+  type PageCirco,
+  type CandidatPage,
+  type SerieJour,
   type CubeRow,
   type PalmaresItem,
   type Plateforme,
@@ -45,7 +52,10 @@ export const SOCIAL_DATASETS = {
   publicationsJour: "public/data/agora/agora_social_publications_jour.json",
   palmares: "public/data/agora/agora_social_palmares.json",
   fil: "public/data/agora/agora_social_fil.json",
+  comptesJour: "public/data/agora/agora_social_comptes_jour.json",
 } as const;
+/** Début des séries par candidat des pages de circonscription. */
+export const SERIES_DEBUT = "2026-08-01";
 
 /** Début de la collecte : l'axe de la frise part de là. */
 export const DEBUT_COLLECTE = "2026-04-01";
@@ -97,6 +107,15 @@ type PalmaresRow = {
   /** Clé de la vignette sous /v1/art (`social/<plateforme>/<id>.jpg`), ou null. */
   vignette?: string | null;
   media_type?: string | null;
+  nature?: string | null;
+  texte_origine?: string | null;
+};
+type CompteJourRow = {
+  compte: string;
+  jour: string;
+  publications: number | null;
+  jaime: number | null;
+  commentaires?: number | null;
 };
 type FilRow = PalmaresRow & { circonscription: string | null; compte?: string | null };
 
@@ -165,6 +184,20 @@ const urlVignette = (cle: string | null | undefined, disponible: (cle: string) =
   cle && CLE_VIGNETTE.test(cle) && disponible(cle) ? `${BASE_PATH}/data/generated-art/${cle}` : null;
 const typeMedia = (t: string | null | undefined): TypeMedia | null =>
   (TYPES_MEDIA as readonly string[]).includes(String(t)) ? (t as TypeMedia) : null;
+const nature = (t: string | null | undefined): Nature | null =>
+  (NATURES as readonly string[]).includes(String(t)) ? (t as Nature) : null;
+const origine = (t: string | null | undefined): OrigineTexte | null =>
+  t === "publication" || t === "description" || t === "autocollant" ? t : null;
+
+/** Adresse d'une circonscription, comme la démo : sans accents, minuscules,
+ *  tout le reste en tirets (« Anjou–Louis-Riel » → « anjou-louis-riel »). */
+export const slugCirco = (nom: string) =>
+  nom
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 /** Fil par circonscription, clé = cleCirco(nom). Pure, testée. */
 export function construireFil(
@@ -189,6 +222,8 @@ export function construireFil(
       commentaires: nombre(r.commentaires),
       vignette: urlVignette(r.vignette, vignetteDisponible),
       media: typeMedia(r.media_type),
+      nature: nature(r.nature),
+      origine: origine(r.texte_origine),
     });
   }
   for (const l of out.values()) l.sort((a, b) => b.jour.localeCompare(a.jour) || b.jaime - a.jaime);
@@ -241,6 +276,7 @@ export function construireCarte(
         ? { jour: tete.jour, nom: tete.nom, party: tete.party, plateforme: tete.plateforme, extrait: extrait(tete.texte) }
         : null,
       code: c.code,
+      slug: slugCirco(c.nom),
       nom: nom ?? c.nom,
       region: c.region,
       d: c.d,
@@ -268,6 +304,7 @@ export function construireSocial(
   fond: FondCarte | null = null,
   vignetteDisponible: (cle: string) => boolean = () => false,
   fil: Map<string, FilItem[]> = new Map(),
+  comptesJour: CompteJourRow[] | null = null,
 ): SocialData | null {
   if (comptes.length === 0 || jours.length === 0) return null;
 
@@ -301,12 +338,12 @@ export function construireSocial(
     ]),
   ) as SocialData["presence"];
 
-  // Audience : tous les comptes, du plus suivi au moins suivi (filtrés au client).
-  const audience: AudienceItem[] = comptes
+  // Audience : tous les comptes et leurs mesures ; classés et filtrés au client.
+  const audience: (AudienceItem & { compte: string })[] = comptes
     .flatMap((r) => {
       const k = partyKey(r.parti);
       const p = plateforme(r.plateforme);
-      if (!k || !p || r.abonnes == null) return [];
+      if (!k || !p) return [];
       const type = typeCompte(r.type);
       return [{
         nom: type === "parti" ? PARTY_FULL_NAMES[k] : (r.candidat ?? r.pseudo ?? r.compte),
@@ -314,9 +351,10 @@ export function construireSocial(
         plateforme: p,
         type,
         abonnes: r.abonnes,
+        compte: r.compte,
       }];
     })
-    .sort((a, b) => b.abonnes - a.abonnes);
+    .sort((a, b) => (b.abonnes ?? 0) - (a.abonnes ?? 0));
 
   // Axe : du début de la collecte au dernier jour COMPLET (le jour du dernier
   // relevé n'est collecté qu'en partie : l'afficher dessinerait une chute).
@@ -363,6 +401,8 @@ export function construireSocial(
       commentaires: nombre(r.commentaires),
       vignette: urlVignette(r.vignette, vignetteDisponible),
       media: typeMedia(r.media_type),
+      nature: nature(r.nature),
+      origine: origine(r.texte_origine),
     }];
   });
 
@@ -377,12 +417,22 @@ export function construireSocial(
     partis,
     partiInfo,
     presence: presenceParParti,
-    audience,
+    audience: audience.map(({ compte: _c, ...a }) => a),
     jours: axe,
     campagne: campagne < 0 ? 0 : campagne,
     cube,
     palmares: tops,
     carte: construireCarte(comptes, fond, fil),
+    audienceJour: (() => {
+      const iCompte = new Map(audience.map((a, i) => [a.compte, i]));
+      return (comptesJour ?? []).flatMap((r) => {
+        const c = iCompte.get(r.compte);
+        const j = index.get(r.jour);
+        return c === undefined || j === undefined
+          ? []
+          : [[c, j, nombre(r.publications), nombre(r.jaime), nombre(r.commentaires)] as AudienceJour];
+      });
+    })(),
   };
 }
 
@@ -395,5 +445,107 @@ export async function loadSocial(): Promise<SocialData | null> {
   if (!comptes || !jours) return null;
   // Seule la tête de chaque fil entre dans les props (infobulle) ; le fil
   // complet reste dans son fichier statique par circonscription.
-  return construireSocial(comptes, jours, palmares ?? [], geo as FondCarte, vignetteSurDisque, await loadSocialFil());
+  return construireSocial(
+    comptes,
+    jours,
+    palmares ?? [],
+    geo as FondCarte,
+    vignetteSurDisque,
+    await loadSocialFil(),
+    await loadComptesJour(),
+  );
+}
+
+// ── Pages de circonscription (une par circonscription, générées au build) ────
+let comptesJourMemo: Promise<CompteJourRow[] | null> | null = null;
+/** Séries par compte (table social_comptes_jour, aws-refiners#590) ; null
+ *  tant que le raffineur ne l'a pas publiée : les pages masquent alors les séries. */
+export function loadComptesJour(): Promise<CompteJourRow[] | null> {
+  comptesJourMemo ??= lire<CompteJourRow>(SOCIAL_DATASETS.comptesJour);
+  return comptesJourMemo;
+}
+
+/** Une page de circonscription. Pure, testée. */
+export function construirePageCirco(
+  circo: { nom: string; region: string },
+  comptes: CompteRow[],
+  fil: FilItem[],
+  comptesJour: CompteJourRow[] | null,
+  fin: string,
+): PageCirco {
+  const siens = comptes.filter(
+    (r) => typeCompte(r.type) === "candidat" && r.circonscription && cleCirco(r.circonscription) === cleCirco(circo.nom),
+  );
+  const nomTypo = siens[0]?.circonscription ?? circo.nom;
+  const parCompte = new Map<string, Map<string, SerieJour>>();
+  for (const r of comptesJour ?? []) {
+    if (!parCompte.has(r.compte)) parCompte.set(r.compte, new Map());
+    parCompte.get(r.compte)!.set(r.jour, { jour: r.jour, publications: nombre(r.publications), jaime: nombre(r.jaime) });
+  }
+  const jours = fin >= SERIES_DEBUT ? joursEntre(SERIES_DEBUT, fin) : [];
+  const candidats: CandidatPage[] = [];
+  for (const k of PARTY_KEYS) {
+    const leurs = siens.filter((r) => partyKey(r.parti) === k);
+    const noms = [...new Set(leurs.map((r) => r.candidat ?? r.pseudo ?? r.compte))];
+    for (const nom of noms) {
+      const cs = leurs.filter((r) => (r.candidat ?? r.pseudo ?? r.compte) === nom);
+      const serie = comptesJour
+        ? jours.map((j) => {
+            let publications = 0;
+            let jaime = 0;
+            for (const c of cs) {
+              const x = parCompte.get(c.compte)?.get(j);
+              publications += x?.publications ?? 0;
+              jaime += x?.jaime ?? 0;
+            }
+            return { jour: j, publications, jaime };
+          })
+        : null;
+      candidats.push({
+        nom,
+        party: k,
+        comptes: cs.flatMap((c) => {
+          const p = plateforme(c.plateforme);
+          return p ? [{ plateforme: p, url: urlCompte(p, c.pseudo), abonnes: c.abonnes }] : [];
+        }),
+        publications: cs.reduce((t, c) => t + nombre(c.publications_campagne), 0),
+        jaime: cs.reduce((t, c) => t + nombre(c.jaime_campagne), 0),
+        serie,
+      });
+    }
+  }
+  return {
+    slug: slugCirco(circo.nom),
+    nom: nomTypo,
+    region: circo.region,
+    candidats,
+    sansCompte: PARTY_KEYS.filter((k) => !candidats.some((c) => c.party === k)),
+    fil,
+    jours,
+    campagne: ELECTION_CALL_DATE ?? "",
+  };
+
+}
+
+let pagesMemo: Promise<Map<string, PageCirco>> | null = null;
+/** Toutes les pages, une lecture par build. Vide si le module n'a pas de données. */
+export function loadPagesCirco(): Promise<Map<string, PageCirco>> {
+  pagesMemo ??= (async () => {
+    const [comptes, jours, fils, comptesJour] = await Promise.all([
+      lire<CompteRow>(SOCIAL_DATASETS.comptes),
+      lire<JourRow>(SOCIAL_DATASETS.publicationsJour),
+      loadSocialFil(),
+      loadComptesJour(),
+    ]);
+    const out = new Map<string, PageCirco>();
+    if (!comptes || comptes.length === 0 || !jours) return out;
+    const dernier = jours.reduce((m, r) => (r.jour > m ? r.jour : m), "");
+    const fin = jourMoins(dernier, 1);
+    for (const c of (geo as FondCarte).circonscriptions) {
+      const page = construirePageCirco(c, comptes, fils.get(cleCirco(c.nom)) ?? [], comptesJour, fin);
+      out.set(page.slug, page);
+    }
+    return out;
+  })();
+  return pagesMemo;
 }

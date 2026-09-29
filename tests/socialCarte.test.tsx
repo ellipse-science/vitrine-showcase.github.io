@@ -1,8 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Carte, CartePublication, suggestions } from "@/components/interactive/SocialClient";
-import { cleCirco, construireCarte, construireFil, construireSocial, urlCompte, type FondCarte } from "@/lib/data/social";
-import { integration, meneur } from "@/lib/data/social-calc";
+import { Carte, CartePublication, cadreChemin, commentaires, suggestions } from "@/components/interactive/SocialClient";
+import {
+  cleCirco,
+  construireCarte,
+  construireFil,
+  construirePageCirco,
+  construireSocial,
+  slugCirco,
+  urlCompte,
+  type FondCarte,
+} from "@/lib/data/social";
+import { classementAudience, integration, meneur } from "@/lib/data/social-calc";
 import fond from "@/lib/geo/circonscriptions-2026.json";
 
 // Carte des circonscriptions et vignettes du palmarès. Ce qui doit être
@@ -88,7 +97,8 @@ describe("fiches et parti en tête", () => {
       <Carte data={data} plateformes={["facebook", "instagram", "tiktok"]} partis={data.partis} />,
     );
     expect(html).toContain('id="sc-circo-');
-    expect(html).toContain("<option");
+    expect(html).toContain('role="combobox"');
+    expect(html).not.toContain("<select");
     expect(html).toContain("Anjou–Louis-Riel");
     expect(html).toContain("dgeq.org");
     expect(html).not.toMatch(/undefined|NaN/);
@@ -137,7 +147,7 @@ describe("fil d'une circonscription", () => {
 
   it("vidéo avec vignette : ▶ en surimpression ; sans image : emplacement ▶ + logo ; texte : logo seul", () => {
     const rendu = (p: (typeof fil)[number]) =>
-      renderToStaticMarkup(<CartePublication data={construireSocial(comptes, jours, [], null)!} p={p} />);
+      renderToStaticMarkup(<CartePublication partiInfo={construireSocial(comptes, jours, [], null)!.partiInfo} p={p} />);
     const avec = rendu(fil[0]);
     expect(avec).toContain("<img");
     expect(avec).toContain("social-lecture");
@@ -151,9 +161,10 @@ describe("fil d'une circonscription", () => {
     const sans = rendu({ ...fil[0], vignette: null });
     expect(sans).toContain("social-media-vide video");
     expect(sans).toContain("social-lecture");
+    // Publication texte sans image : carte compacte, une pastille à la place du média.
     const texte = rendu(fil[1]);
     expect(texte).not.toContain("social-lecture");
-    expect(texte).toContain("social-media-coin");
+    expect(texte).toContain("social-media-pastille");
     expect(texte).toContain('href="https://www.facebook.com/p/1"');
   });
 });
@@ -211,5 +222,97 @@ describe("recherche sur la carte", () => {
   it("8 suggestions au plus, rien sous deux lettres", () => {
     expect(suggestions(data, "sa").length).toBeLessThanOrEqual(8);
     expect(suggestions(data, "s")).toEqual([]);
+  });
+});
+
+describe("pages de circonscription", () => {
+  it("slug stable, comme la démo", () => {
+    expect(slugCirco("Anjou–Louis-Riel")).toBe("anjou-louis-riel");
+    expect(slugCirco("Arthabaska-L’Érable")).toBe("arthabaska-l-erable");
+    expect(slugCirco("Maurice-Richard")).toBe("maurice-richard");
+  });
+
+  it("candidats, comptes, activité depuis le déclenchement ; séries masquées sans la table", () => {
+    const page = construirePageCirco({ nom: "Anjou-Louis-Riel", region: "Montréal" }, comptes, [], null, "2026-09-28");
+    expect(page.nom).toBe("Anjou–Louis-Riel");
+    expect(page.candidats.map((c) => `${c.party}:${c.nom}`)).toEqual(["caq:Bruno", "qs:Alice"]);
+    const alice = page.candidats.find((c) => c.nom === "Alice")!;
+    expect(alice.comptes.map((c) => c.plateforme)).toEqual(["facebook", "instagram"]);
+    expect(alice.publications).toBe(12);
+    expect(alice.serie).toBeNull();
+    expect(page.sansCompte).toEqual(["plq", "pq", "pcq"]);
+  });
+
+  it("avec la table : une série par candidat, ses comptes additionnés, jours sans activité à 0", () => {
+    const page = construirePageCirco({ nom: "Anjou-Louis-Riel", region: "Montréal" }, comptes, [], [
+      { compte: "facebook:qs", jour: "2026-08-02", publications: 2, jaime: 10 },
+      { compte: "instagram:qs", jour: "2026-08-02", publications: 1, jaime: 5 },
+    ], "2026-08-03");
+    const alice = page.candidats.find((c) => c.nom === "Alice")!;
+    expect(alice.serie).toEqual([
+      { jour: "2026-08-01", publications: 0, jaime: 0 },
+      { jour: "2026-08-02", publications: 3, jaime: 15 },
+      { jour: "2026-08-03", publications: 0, jaime: 0 },
+    ]);
+  });
+});
+
+describe("audience : classements sur la période", () => {
+  const base = { party: "qs" as const, plateforme: "facebook" as const, type: "candidat" as const };
+  const items = [
+    { ...base, nom: "A", abonnes: 100 },
+    { ...base, nom: "B", abonnes: null },
+    { ...base, nom: "C", abonnes: 50 },
+  ];
+  // [compte, jour, publications, j'aime, commentaires]
+  const jours: [number, number, number, number, number][] = [
+    [0, 0, 2, 900, 3],
+    [1, 1, 6, 300, 1],
+    [1, 5, 4, 200, 0],
+    [2, 5, 1, 1, 0],
+  ];
+  const f = { plateformes: ["facebook" as const], partis: ["qs" as const], types: ["candidat" as const], d0: 0, d1: 4 };
+  it("abonnés au dernier relevé ; sans valeur ou à 0, absent", () => {
+    expect(classementAudience(items, jours, "abonnes", f).map((x) => x.item.nom)).toEqual(["A", "C"]);
+  });
+  it("les autres mesures suivent la période, comme les tuiles", () => {
+    expect(classementAudience(items, jours, "jaime", f).map((x) => [x.item.nom, x.valeur])).toEqual([["A", 900], ["B", 300]]);
+    expect(classementAudience(items, jours, "jaime", { ...f, d0: 5, d1: 5 }).map((x) => x.valeur)).toEqual([200, 1]);
+    expect(classementAudience(items, jours, "commentaires", f).map((x) => x.valeur)).toEqual([3, 1]);
+  });
+  it("moyennes : 5 publications au moins sur la période", () => {
+    expect(classementAudience(items, jours, "parPublication", f)).toEqual([{ item: items[1], valeur: 50 }]);
+    expect(classementAudience(items, jours, "parJour", f)).toEqual([{ item: items[1], valeur: 6 / 5 }]);
+    expect(classementAudience(items, jours, "parJour", { ...f, d0: 0, d1: 5 })).toEqual([{ item: items[1], valeur: 10 / 6 }]);
+  });
+  it("50 comptes au plus", () => {
+    const beaucoup = Array.from({ length: 80 }, (_, i) => ({ ...base, nom: `x${i}`, abonnes: i + 1 }));
+    expect(classementAudience(beaucoup, [], "abonnes", f)).toHaveLength(50);
+  });
+});
+
+describe("carte zoomable et cartes de publication", () => {
+  it("cadre d'un tracé précalculé, pour le zoom vers une circonscription", () => {
+    expect(cadreChemin("M10 20l5 0 0 5-5 0z")).toEqual({ x: 10, y: 20, w: 5, h: 5 });
+    expect(cadreChemin("M0 0l2 2zM10 10l-1 3z")).toEqual({ x: 0, y: 0, w: 10, h: 13 });
+  });
+  it("accord : 0 et 1 commentaire, 2 commentaires", () => {
+    expect(commentaires(1)).toBe("1\u00a0commentaire");
+    expect(commentaires(0)).toBe("0\u00a0commentaire");
+    expect(commentaires(2)).toBe("2\u00a0commentaires");
+  });
+  it("partage sans texte ni image : carte compacte et libellé, pas d'emplacement vide", () => {
+    const partiInfo = construireSocial(comptes, jours, [], null)!.partiInfo;
+    const html = renderToStaticMarkup(
+      <CartePublication
+        partiInfo={partiInfo}
+        p={{ jour: "2026-09-28", nom: "Sonia", party: "pq", plateforme: "facebook", url: "https://www.facebook.com/x/posts/1",
+          texte: "", jaime: 4, commentaires: 1, vignette: null, media: "texte", nature: "partage", origine: null }}
+      />,
+    );
+    expect(html).toContain("compacte");
+    expect(html).toContain("Publication partagée");
+    expect(html).not.toContain("social-media-vide");
+    expect(html).toContain("1\u00a0commentaire ·".replace(" ·", ""));
   });
 });

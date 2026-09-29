@@ -10,6 +10,8 @@ import type { PartyKey } from "./parties";
 import {
   PLATEFORMES,
   TYPES,
+  type AudienceItem,
+  type AudienceJour,
   type CompteCirco,
   type CubeRow,
   type PalmaresItem,
@@ -295,4 +297,54 @@ export function integration(p: Plateforme, url: string | null | undefined): Inte
   return video
     ? { src: `https://www.facebook.com/plugins/video.php?href=${href}&show_text=false`, format: reel ? "portrait" : "paysage" }
     : { src: `https://www.facebook.com/plugins/post.php?href=${href}&show_text=true`, format: "portrait" };
+}
+
+// ── Audience : classements ────────────────────────────────────────────────────
+/** Abonnés (dernier relevé), puis les cinq statistiques des tuiles du haut,
+ *  sur la période choisie, avec leur définition. */
+export type MesureAudience = "abonnes" | "publications" | "parJour" | "jaime" | "commentaires" | "parPublication";
+/** Sous ce nombre de publications sur la période, un compte n'entre pas aux
+ *  classements des moyennes : un seul billet très aimé les dominerait. */
+export const MIN_PUBLICATIONS_MOYENNE = 5;
+export const AUDIENCE_MAX = 50;
+
+/** Les comptes classés selon la mesure (50 au plus) ; un compte à 0, ou sans
+ *  valeur, n'y figure pas. Filtres Plateforme, Parti, Type ; période d0..d1
+ *  (hors abonnés). La somme sur les comptes recoupe les tuiles. */
+export function classementAudience(
+  items: readonly AudienceItem[],
+  jours: readonly AudienceJour[],
+  mesure: MesureAudience,
+  f: Pick<Filtres, "plateformes" | "partis" | "types" | "d0" | "d1">,
+): { item: AudienceItem; valeur: number }[] {
+  const somme = items.map(() => ({ publications: 0, jaime: 0, commentaires: 0 }));
+  if (mesure !== "abonnes") {
+    for (const [c, j, p, l, k] of jours) {
+      if (j < f.d0 || j > f.d1 || !somme[c]) continue;
+      somme[c].publications += p;
+      somme[c].jaime += l;
+      somme[c].commentaires += k;
+    }
+  }
+  const nbJours = f.d1 - f.d0 + 1;
+  const valeurDe = (a: AudienceItem, i: number): number | null => {
+    const s = somme[i];
+    if (mesure === "abonnes") return a.abonnes;
+    if (mesure === "parPublication")
+      return s.publications >= MIN_PUBLICATIONS_MOYENNE ? s.jaime / s.publications : null;
+    if (mesure === "parJour") return s.publications >= MIN_PUBLICATIONS_MOYENNE ? s.publications / nbJours : null;
+    return s[mesure];
+  };
+  return items
+    .map((item, i) => ({ item, valeur: valeurDe(item, i) }))
+    .filter(
+      (x): x is { item: AudienceItem; valeur: number } =>
+        x.valeur != null &&
+        x.valeur > 0 &&
+        f.plateformes.includes(x.item.plateforme) &&
+        f.partis.includes(x.item.party) &&
+        f.types.includes(x.item.type),
+    )
+    .sort((a, b) => b.valeur - a.valeur)
+    .slice(0, AUDIENCE_MAX);
 }
