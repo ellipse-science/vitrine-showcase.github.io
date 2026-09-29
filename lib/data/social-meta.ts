@@ -178,6 +178,8 @@ export type Circo = {
 /** Fond de carte et fiches ; null si la géométrie ou les comptes manquent. */
 export type Carte = {
   vue: [number, number, number, number];
+  /** Cadrage initial : le Québec méridional (la province entière au dézoom). */
+  sud: [number, number, number, number];
   encarts: Record<"montreal" | "quebec", [number, number, number, number]>;
   circos: Circo[];
 };

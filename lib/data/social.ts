@@ -168,6 +168,7 @@ async function lire<T>(fichier: string): Promise<T[] | null> {
 /** Fond de carte : donnée de référence statique (scripts/reference/carte_circonscriptions.mjs). */
 export type FondCarte = {
   vue: number[];
+  sud?: number[];
   encarts: Record<string, number[]>;
   circonscriptions: { code: number; nom: string; region: string; d: string }[];
 };
@@ -304,10 +305,11 @@ export function construireCarte(
   });
   const quad = (v: number[] | undefined) => (v?.length === 4 ? (v as [number, number, number, number]) : null);
   const vue = quad(fond.vue);
+  const sud = quad(fond.sud) ?? vue;
   const montreal = quad(fond.encarts.montreal);
   const quebec = quad(fond.encarts.quebec);
-  if (!vue || !montreal || !quebec) return null;
-  return { vue, encarts: { montreal, quebec }, circos };
+  if (!vue || !sud || !montreal || !quebec) return null;
+  return { vue, sud, encarts: { montreal, quebec }, circos };
 }
 
 /** Les « caractères mathématiques gras » (U+1D400–1D7FF) que certains

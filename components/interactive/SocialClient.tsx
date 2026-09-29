@@ -1137,6 +1137,10 @@ const jourBref = (iso: string) => `${Number(iso.slice(8, 10))} ${MOIS_BREF[Numbe
 // les encarts Montréal et Québec n'ont plus lieu d'être. Au clavier, une
 // tabulation mène à la carte, les flèches passent d'une forme à l'autre.
 type Vue2D = { k: number; tx: number; ty: number };
+const ENCARTS = [
+  { cle: "montreal", titre: "Montréal" },
+  { cle: "quebec", titre: "Québec" },
+] as const;
 
 /** Cadre d'un tracé précalculé (M absolu puis l relatifs, cf.
  *  scripts/reference/carte_circonscriptions.mjs), sans le dessiner. */
@@ -1435,6 +1439,10 @@ export function Carte({
 }) {
   const carte = data.carte!;
   const [W, H] = [carte.vue[2], carte.vue[3]];
+  // Le viewBox est le Québec méridional : la vue identité le montre, ⟲ y
+  // revient ; le dézoom descend jusqu'à la province entière.
+  const [sx, sy, sw, sh] = carte.sud;
+  const kMin = Math.min(sw / W, sh / H);
   // La carte porte sur les 7 derniers jours, indépendamment de la frise.
   const periode: PeriodeCarte = "7j";
   const [choix, setChoix] = useState<number | null>(null);
@@ -1458,8 +1466,14 @@ export function Carte({
   const vuesRef = useRef<HTMLDivElement>(null);
   const anim = useRef<number | null>(null);
   const borne = (v: Vue2D): Vue2D => {
-    const k = Math.min(40, Math.max(1, v.k));
-    return { k, tx: Math.min(0, Math.max(W - W * k, v.tx)), ty: Math.min(0, Math.max(H - H * k, v.ty)) };
+    const k = Math.min(40, Math.max(kMin, v.k));
+    // La province reste à l'écran, avec une marge de 10 % du cadre.
+    const lim = (t: number, debut: number, taille: number, etendue: number) => {
+      const a = debut + taille - etendue * k - 0.1 * taille;
+      const b = debut + 0.1 * taille;
+      return etendue * k >= taille ? Math.min(b, Math.max(a, t)) : Math.min(Math.max(a, b), Math.max(Math.min(a, b), t));
+    };
+    return { k, tx: lim(v.tx, sx, sw, W), ty: lim(v.ty, sy, sh, H) };
   };
   const versCarte = (cx: number, cy: number) => {
     const m = svgRef.current?.getScreenCTM();
@@ -1472,7 +1486,7 @@ export function Carte({
       const r = svgRef.current?.getBoundingClientRect();
       const p = cx != null && cy != null ? versCarte(cx, cy) : r ? versCarte(r.left + r.width / 2, r.top + r.height / 2) : null;
       if (!p) return v;
-      const k = Math.min(40, Math.max(1, v.k * facteur));
+      const k = Math.min(40, Math.max(kMin, v.k * facteur));
       return borne({ k, tx: p.x - ((p.x - v.tx) * k) / v.k, ty: p.y - ((p.y - v.ty) * k) / v.k });
     });
   };
@@ -1504,8 +1518,8 @@ export function Carte({
   };
   const cadrer = (code: number): Vue2D => {
     const b = cadres.get(code)!;
-    const k = Math.min(40, Math.max(1, Math.min((W * 0.55) / Math.max(b.w, 1), (H * 0.55) / Math.max(b.h, 1))));
-    return { k, tx: W / 2 - (b.x + b.w / 2) * k, ty: H / 2 - (b.y + b.h / 2) * k };
+    const k = Math.min(40, Math.max(kMin, Math.min((sw * 0.55) / Math.max(b.w, 1), (sh * 0.55) / Math.max(b.h, 1))));
+    return { k, tx: sx + sw / 2 - (b.x + b.w / 2) * k, ty: sy + sh / 2 - (b.y + b.h / 2) * k };
   };
 
   // ── Glisser, pincer, molette ───────────────────────────────────────────────
@@ -1598,7 +1612,7 @@ export function Carte({
     };
     const dehors = (e: globalThis.PointerEvent) => {
       const t = e.target as globalThis.Element | null;
-      if (t?.closest(".social-infobulle, .social-carte-province, .social-recherche, .social-zoom")) return;
+      if (t?.closest(".social-infobulle, .social-carte-province, .social-carte-encarts, .social-recherche, .social-zoom")) return;
       setEpingle(null);
       setChoix(null);
     };
@@ -1666,10 +1680,12 @@ export function Carte({
       </ul>
 
       <div className="social-carte-vues" ref={vuesRef}>
+        <div className="social-carte-principale">
         <svg
           ref={svgRef}
           className="social-carte-province"
-          viewBox={carte.vue.join(" ")}
+          viewBox={carte.sud.join(" ")}
+          style={{ aspectRatio: `${sw} / ${sh}` }}
           role="img"
           aria-label="Carte des circonscriptions, colorées selon le parti dont les candidats y reçoivent le plus de j’aime. La molette, le glisser ou le pincement zooment. Les flèches passent d’une circonscription à l’autre, par région, et Entrée épingle son infobulle."
           onPointerDown={surDown}
@@ -1713,6 +1729,11 @@ export function Carte({
               />
             ))}
             {circo && <use href={`#sc-circo-${circo.code}`} className="social-carte-contour" />}
+            {/* Zones des encarts, en pointillé fin. */}
+            {ENCARTS.map((e) => {
+              const [x, y, w, h] = carte.encarts[e.cle];
+              return <rect key={e.cle} className="social-carte-cadre" x={x} y={y} width={w} height={h} vectorEffect="non-scaling-stroke" />;
+            })}
           </g>
         </svg>
         <div className="social-zoom" role="group" aria-label="Zoom de la carte">
@@ -1725,11 +1746,36 @@ export function Carte({
           <button
             type="button"
             onClick={() => animerVers({ k: 1, tx: 0, ty: 0 })}
-            aria-label="Vue d’ensemble"
-            title="Vue d’ensemble"
+            aria-label="Revenir au cadrage initial"
+            title="Revenir au cadrage initial"
           >
             ⟲
           </button>
+        </div>
+        </div>
+        {/* Encarts fixes (pas de zoom) : mêmes formes, mêmes couleurs, mêmes
+            gestes que la carte principale ; décoratifs pour les lecteurs
+            d'écran, qui passent par la carte principale et la recherche. */}
+        <div className="social-carte-encarts" aria-hidden="true">
+          {ENCARTS.map((e) => (
+            <figure key={e.cle}>
+              <svg viewBox={carte.encarts[e.cle].join(" ")}>
+                {carte.circos.map((c) => (
+                  <use
+                    key={c.code}
+                    href={`#sc-circo-${c.code}`}
+                    data-code={c.code}
+                    {...remplissage(c.code)}
+                    onClick={(ev) => epingler(c.code, ev.clientX, ev.clientY)}
+                    onPointerMove={(ev) => ev.pointerType !== "touch" && !epingle && place(c.code, ev.clientX, ev.clientY, "souris")}
+                    onPointerLeave={() => efface("souris")}
+                  />
+                ))}
+                {circo && <use href={`#sc-circo-${circo.code}`} className="social-carte-contour" />}
+              </svg>
+              <figcaption>{e.titre}</figcaption>
+            </figure>
+          ))}
         </div>
         {bulle && (
           <Infobulle
