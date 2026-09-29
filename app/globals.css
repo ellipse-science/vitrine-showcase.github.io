@@ -11912,12 +11912,37 @@
   font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.2em;
   text-transform: uppercase; color: var(--cordovan);
 }
-.social-mesures { display: flex; flex-wrap: wrap; gap: 4px; }
+/* Sélecteur de mesure sous les onglets : les icônes de la démo, le nom de la
+   mesure active à droite ; sur mobile, une ligne qui défile. */
+.social-mesure { display: flex; align-items: center; gap: 14px; margin: 0 0 8px; }
+.social-mesure .social-bascule { flex-wrap: nowrap; }
+.social-mesure-nom {
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-soft); white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .social-mesure { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
+  .social-mesure .social-bascule button { flex: none; }
+}
 .social-bascule button:disabled { opacity: 0.35; cursor: not-allowed; }
 /* Partis : barres et parts côte à côte (55 / 45), les barres seules pour une moyenne. */
 .social-barres-parts { display: grid; grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); gap: 28px; align-items: start; }
 .social-barres-parts.seules { grid-template-columns: minmax(0, 1fr); }
 .social-sans-parts { font-style: italic; }
+/* Titres de panneau de même hauteur des deux côtés : barres et parts alignées. */
+.social-barres-parts .social-panneau-titre { display: flex; align-items: center; height: 24px; margin: 0; }
+/* Sous les barres, comme la démo : titre d'axe centré, légende des plateformes. */
+.social-axe-titre { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 14px 0 4px; }
+.social-axe-titre > span { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--ink); }
+.social-legende-pf { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; list-style: none; margin: 0; padding: 0; }
+.social-legende-pf li {
+  display: inline-flex; align-items: center; gap: 8px; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft);
+}
+.social-legende-pf i {
+  display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 16px;
+  border-radius: 2px; background-color: var(--ink-soft); color: #fff;
+}
 @media (max-width: 1023px) { .social-barres-parts { grid-template-columns: minmax(0, 1fr); } }
 .social-audience-nombre { margin-top: 10px; }
 /* « En chiffres » dans la colonne des filtres : empilés, filet entre les blocs. */

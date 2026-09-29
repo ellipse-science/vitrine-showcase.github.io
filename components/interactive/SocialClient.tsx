@@ -80,6 +80,18 @@ const MESURES: { cle: Mesure; libelle: string; court: string; unite: string; def
   },
 ];
 const MESURE = Object.fromEntries(MESURES.map((x) => [x.cle, x])) as Record<Mesure, (typeof MESURES)[number]>;
+/** Titre d'axe des barres, comme la démo (« Nombre de publications »). */
+const AXES: Record<Mesure, string> = {
+  abonnes: "Nombre d’abonnés",
+  publications: "Nombre de publications",
+  parJour: "Publications par jour, en moyenne",
+  jaime: "Nombre de j’aime",
+  commentaires: "Nombre de commentaires",
+  parPublication: "J’aime par publication",
+};
+/** Hauteur d'une rangée de barres (barre + marges), normale et compacte :
+ *  le treemap voisin en tire sa hauteur, pour finir avec la dernière barre. */
+const RANGEE = { normale: 44, compacte: 36, marge: 7 };
 
 /** Les grands chiffres en Playfair : l'espace fine y disparaît à l'œil
  *  (« 8903 ») ; une espace insécable ordinaire y reste lisible. */
@@ -472,6 +484,49 @@ function IconeForme({ f }: { f: Forme }) {
     </svg>
   );
 }
+/** Icônes des mesures, au trait, au format des boutons de réglage de la démo. */
+function IconeMesure({ m }: { m: Mesure }) {
+  const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const coeur = (x: number, y: number, k: number) =>
+    `M${x} ${y + 3 * k}c${-2.5 * k} ${-2.6 * k} ${-5 * k} ${-4.4 * k} ${-5 * k} ${-6.8 * k}a${2.6 * k} ${2.6 * k} 0 0 1 ${5 * k} ${-1.2 * k}a${2.6 * k} ${2.6 * k} 0 0 1 ${5 * k} ${1.2 * k}c0 ${2.4 * k} ${-2.5 * k} ${4.2 * k} ${-5 * k} ${6.8 * k}z`;
+  return (
+    <svg viewBox="0 0 34 24" aria-hidden="true" className="trait">
+      {m === "abonnes" && (
+        <g {...trait}>
+          <circle cx="13" cy="8" r="3.2" />
+          <path d="M6.5 20c.6-3.8 3.2-5.8 6.5-5.8s5.9 2 6.5 5.8" />
+          <circle cx="22.5" cy="9" r="2.6" />
+          <path d="M21.5 14.6c2.8-.4 5.4 1.2 6 5.4" />
+        </g>
+      )}
+      {m === "publications" && (
+        <g {...trait}>
+          <rect x="10" y="3" width="14" height="18" rx="1.5" />
+          <path d="M13.5 8h7M13.5 12h7M13.5 16h4.5" />
+        </g>
+      )}
+      {m === "parJour" && (
+        <g {...trait}>
+          <rect x="8" y="5" width="18" height="16" rx="1.5" />
+          <path d="M8 10h18M13 3v4M21 3v4" />
+          <path d="M13 17v-3M17 17v-5M21 17v-2" />
+        </g>
+      )}
+      {m === "jaime" && <path d={coeur(17, 15.5, 1.35)} {...trait} />}
+      {m === "commentaires" && (
+        <path d="M8 6h18a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H15l-5 3.5V18H8a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 8 6z" {...trait} />
+      )}
+      {m === "parPublication" && (
+        <g {...trait}>
+          <path d={coeur(17, 7.8, 0.85)} />
+          <path d="M10 12.5h14" />
+          <rect x="13" y="15" width="8" height="7" rx="1" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
 function IconeDecoupe({ d, data }: { d: Decoupe; data: SocialData }) {
   if (d === "ensemble")
     return (
@@ -576,12 +631,20 @@ function Barres({
   pans,
   m,
   jours = 1,
+  legende = false,
+  axe = true,
+  maxCommun,
 }: {
   data: SocialData;
   rows: CubeRow[];
   pans: Panneau[];
   m: Mesure;
   jours?: number;
+  /** La légende des plateformes de la démo, sous le titre d'axe. */
+  legende?: boolean;
+  axe?: boolean;
+  /** Échelle imposée (panneaux dessinés un à un, même échelle pour tous). */
+  maxCommun?: number;
 }) {
   const blocs = pans.map((pan) => ({
     panneau: pan,
@@ -590,7 +653,7 @@ function Barres({
       return { element: el, segments: sg, total: m === "parPublication" ? (sg[0]?.valeur ?? 0) : sg.reduce((a, b) => a + b.valeur, 0) };
     }),
   }));
-  const max = Math.max(1e-9, ...blocs.flatMap((b) => b.barres.map((x) => x.total)));
+  const max = maxCommun ?? Math.max(1e-9, ...blocs.flatMap((b) => b.barres.map((x) => x.total)));
   const multiples = blocs.length > 1;
   const seuilLogo = multiples ? 9 : 5; // % de la piste sous lequel le logo ne tient pas
   return (
@@ -639,6 +702,23 @@ function Barres({
           </ol>
         </div>
       ))}
+      {axe && (
+      <div className="social-axe-titre">
+        <span>{AXES[m]}</span>
+        {legende && (
+          <ul className="social-legende-pf" aria-label="Plateformes">
+            {PLATEFORMES.map((p) => (
+              <li key={p}>
+                <i className={texture(p).trim() || undefined}>
+                  <Logo p={p} taille={11} />
+                </i>
+                {NOMS_PLATEFORMES[p]}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      )}
     </div>
   );
 }
@@ -648,9 +728,15 @@ function Barres({
  * à la part, couleur du parti (ou de la plateforme), étiquette dans la tuile
  * quand elle y tient, infobulle avec le nombre.
  */
-function Parts({ data, blocs, m }: { data: SocialData; blocs: Blocs; m: Mesure }) {
+function Parts({ data, blocs, m, rangs }: { data: SocialData; blocs: Blocs; m: Mesure; rangs?: number }) {
   const multiples = blocs.length > 1;
-  const ratio = multiples ? 1.6 : 2.6; // largeur / hauteur du cadre (CSS)
+  const ratio = multiples ? 1.6 : rangs ? 1.4 : 2.6; // largeur / hauteur du cadre (CSS)
+  // À côté des barres : la hauteur du bloc de barres, du haut de la première
+  // au bas de la dernière (nombre de rangées × hauteur d'une rangée).
+  const pas = multiples ? RANGEE.compacte : RANGEE.normale;
+  const cadre = rangs
+    ? { height: `${rangs * pas - 2 * RANGEE.marge}px`, marginTop: `${RANGEE.marge}px` }
+    : { aspectRatio: String(ratio) };
   return (
     <div className={`social-panneaux${multiples ? " multiples" : ""}`}>
       {blocs.map((b) => {
@@ -665,7 +751,7 @@ function Parts({ data, blocs, m }: { data: SocialData; blocs: Blocs; m: Mesure }
             {total === 0 ? (
               <p className="social-vide">Aucune donnée dans cette sélection.</p>
             ) : (
-              <div className="social-treemap" role="list" style={{ aspectRatio: String(ratio) }}>
+              <div className="social-treemap" role="list" style={cadre}>
                 {tuiles.map((t) => {
                   const part = Math.round((100 * t.valeur) / total);
                   const nom = nomElement(data, t.item);
@@ -1797,25 +1883,6 @@ export function SocialClient({ data }: { data: SocialData }) {
               onChange={setTypes}
             />
             </div>
-            {/* La mesure n'est pas un filtre : un groupe à part, dans Partis et
-                Candidats seulement. Un filet la sépare des filtres et des chiffres. */}
-            {(vue === "partis" || vue === "candidats") && (
-              <section className="social-groupe social-mesure" aria-label="Mesure affichée">
-                <h3 className="social-groupe-titre">Mesure</h3>
-                <Bascule
-                  label="Mesure affichée"
-                  options={
-                    vue === "candidats" && !(data.audienceJour.length || data.audienceJourDispo)
-                      ? MESURES.slice(0, 1)
-                      : MESURES
-                  }
-                  valeur={m}
-                  onChange={setMesure}
-                  court={(c) => MESURE[c].court}
-                  classe="social-mesures"
-                />
-              </section>
-            )}
             {/* Les chiffres de la période : un résultat, pas un contrôle. */}
             <section className="social-groupe social-chiffres" aria-label="En chiffres">
               <h3 className="social-groupe-titre">
@@ -1854,6 +1921,24 @@ export function SocialClient({ data }: { data: SocialData }) {
           <div className="social-onglets">
             <Bascule label="Vue" options={vues} valeur={vue} onChange={setVue} />
           </div>
+          {/* La mesure, sous les onglets, dans Partis et Candidats seulement :
+              des icônes, le nom complet de la mesure active à côté. */}
+          {(vue === "partis" || vue === "candidats") && (
+            <div className="social-mesure">
+              <Bascule
+                label="Mesure affichée"
+                options={
+                  vue === "candidats" && !(data.audienceJour.length || data.audienceJourDispo) ? MESURES.slice(0, 1) : MESURES
+                }
+                valeur={m}
+                onChange={setMesure}
+                icone={(c) => <IconeMesure m={c} />}
+              />
+              <span className="social-mesure-nom" aria-hidden="true">
+                {MESURE[m].libelle}
+              </span>
+            </div>
+          )}
 
           {graphique && (
             <div className="social-reglages">
@@ -1930,16 +2015,37 @@ export function SocialClient({ data }: { data: SocialData }) {
 
           {/* Barres et parts côte à côte (même mesure, filtres et découpe) ; une
               moyenne ne se découpe pas en parts : les barres seules. */}
-          {graphique && formeEff === "barres" && (
-            <div className={`social-barres-parts${sansParts ? " seules" : ""}`}>
-              <Barres data={data} rows={rowsM} pans={pans} m={m} jours={nbJours} />
-              {sansParts ? (
-                <p className="social-note social-sans-parts">Une moyenne ne se découpe pas en parts.</p>
-              ) : (
-                <Parts data={data} blocs={parElement(data, rowsM, pans, m, nbJours)} m={m} />
-              )}
-            </div>
-          )}
+          {graphique &&
+            formeEff === "barres" &&
+            (() => {
+              // Une paire barres + parts par panneau : chaque treemap garde la
+              // hauteur de ses barres ; les barres gardent une échelle commune.
+              const blocs = parElement(data, rowsM, pans, m, nbJours);
+              const maxCommun = Math.max(1e-9, ...blocs.flatMap((b) => b.valeurs.map((v) => v.valeur)));
+              return (
+                <>
+                  {pans.map((pan, i) => (
+                    <div key={pan.cle} className={`social-barres-parts${sansParts ? " seules" : ""}`}>
+                      <Barres
+                        data={data}
+                        rows={rowsM}
+                        pans={[pan]}
+                        m={m}
+                        jours={nbJours}
+                        maxCommun={pans.length > 1 ? maxCommun : undefined}
+                        axe={i === pans.length - 1}
+                        legende={i === pans.length - 1 && decoupe !== "parti"}
+                      />
+                      {sansParts ? (
+                        i === 0 && <p className="social-note social-sans-parts">Une moyenne ne se découpe pas en parts.</p>
+                      ) : (
+                        <Parts data={data} blocs={[blocs[i]]} m={m} rangs={pan.elements.length} />
+                      )}
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
           {graphique &&
             formeEff === "temps" &&
             (() => {

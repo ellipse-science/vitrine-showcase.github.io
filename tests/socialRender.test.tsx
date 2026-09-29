@@ -46,7 +46,7 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
   it("filtres, onglets, formes et découpes de la démo sont présents", () => {
     // « Filtres » puis « En chiffres » dans la colonne de droite.
     for (const mot of ["Filtres", "Plateforme", "Parti", "Type de compte", "Présence", "Partis", "Candidats",
-      "Palmarès", "Campagne", "Mesure", "En chiffres", "Abonnés, dernier relevé"]) {
+      "Palmarès", "Campagne", "En chiffres", "Abonnés, dernier relevé"]) {
       expect(texte).toContain(mot);
     }
     // Formes, découpes et plateformes en icônes, comme la démo : le nom est
@@ -57,6 +57,13 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
       // « Dans le temps », grisé sur les abonnés, porte la raison en infobulle.
       if (nom !== "Dans le temps") expect(html).toContain(`title="${nom}"`);
     }
+  });
+
+  it("la mesure : des icônes sous les onglets, le nom complet de la mesure active à côté", () => {
+    expect(html).toContain('aria-label="Mesure affichée"');
+    for (const nom of ["Abonnés", "Publications", "Par jour, en moyenne", "J’aime", "Commentaires", "J’aime par publication"])
+      expect(html).toContain(`aria-label="${nom}"`);
+    expect(html).toMatch(/class="social-mesure-nom"[^>]*>Abonnés</);
   });
 
   it("Partis s'ouvre sur les abonnés : « dans le temps » grisé, faute de série", () => {
