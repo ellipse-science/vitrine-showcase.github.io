@@ -44,14 +44,15 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
   });
 
   it("filtres, onglets, formes et découpes de la démo sont présents", () => {
-    // Formes et découpes en boutons texte, comme la maquette ; les plateformes
-    // en blocs logo + nom, dont le nom est aussi dans aria-label et title.
+    // Filtres de plateforme en blocs logo + nom ; « En chiffres » dans la colonne.
     for (const mot of ["Plateforme", "Parti", "Type de compte", "Présence", "Audience", "Engagement", "Palmarès",
-      "Campagne", "Barres", "Parts", "Dans le temps", "Ensemble", "Par plateforme", "Par parti", "En chiffres",
-      "Facebook", "Instagram", "TikTok"]) {
+      "Campagne", "En chiffres", "Facebook", "Instagram", "TikTok"]) {
       expect(texte).toContain(mot);
     }
-    for (const nom of ["Facebook", "Instagram", "TikTok"]) {
+    // Formes et découpes en icônes, comme la démo : le nom est dans aria-label
+    // (lecteurs d'écran) et title (infobulle).
+    for (const nom of ["Barres", "Parts", "Dans le temps", "Ensemble", "Par plateforme", "Par parti",
+      "Facebook", "Instagram", "TikTok"]) {
       expect(html).toContain(`aria-label="${nom}"`);
       expect(html).toContain(`title="${nom}"`);
     }
