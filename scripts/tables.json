@@ -612,7 +612,12 @@
         "abonnes",
         "releve",
         "calcule_le",
-        "candidatures_parti"
+        "candidatures_parti",
+        "publications_7j",
+        "jaime_7j",
+        "publications_campagne",
+        "jaime_campagne",
+        "derniere_publication"
       ],
       "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : publiée par le raffineur agora-social (aws-refiners) à partir de la collecte a-social-accounts d'aws-infra, remplacée à chaque passage.",
       "enabled": true,
@@ -655,10 +660,13 @@
         "type",
         "candidat",
         "pseudo",
+        "post_id",
         "url",
         "texte",
         "jaime",
-        "commentaires"
+        "commentaires",
+        "media_type",
+        "vignette"
       ],
       "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : publiée par le raffineur agora-social (aws-refiners) à partir de la collecte a-social-accounts d'aws-infra, remplacée à chaque passage.",
       "enabled": true,
@@ -667,6 +675,34 @@
       "api": false,
       "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
       "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
+    },
+    {
+      "name": "agora_social_fil",
+      "athena": "agora_datamart-social_fil",
+      "out": "public/data/agora/agora_social_fil.json",
+      "cols": [
+        "circonscription",
+        "jour",
+        "compte",
+        "candidat",
+        "parti",
+        "plateforme",
+        "pseudo",
+        "post_id",
+        "url",
+        "texte",
+        "jaime",
+        "commentaires",
+        "media_type",
+        "vignette"
+      ],
+      "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : les 20 publications les plus récentes de chaque circonscription, publiées par le raffineur agora-social (aws-refiners), remplacée à chaque passage. Servie en un fichier statique par circonscription (app/reseaux/fil/[fichier]/route.ts), pas dans les props.",
+      "enabled": true,
+      "env": "DEV",
+      "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
+      "api": false,
+      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "used_by": "lib/data/social.ts + app/reseaux/fil/[fichier]/route.ts"
     }
   ],
   "post_process": [

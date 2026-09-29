@@ -78,6 +78,7 @@ une redécouverte.
 | Type | Source(s) actuelle(s) | Statut | Note |
 |---|---|---|---|
 | Québec / Canada / international | `aws-refiners` : `COUNTRY_TO_REGION_LABEL` (source unique propre, `radar-event-salience/runtime.R`) ; `aws-infra` : `countries.ts` (ISO-3) + `provinces-or-states.ts` + codes pays 2 lettres incohérents dans `dim-medias` ; vitrine : couleurs régionales et libellés dupliqués (`globals.css` `--bleu`/`--red`, `lib/modules.ts`, composants) | DUPLIQUÉ, avec incohérence de format (ISO-2 vs ISO-3) en plus du contenu | |
+| Circonscriptions provinciales (tracés, carte électorale 2026) | vitrine `lib/geo/circonscriptions-2026.json`, dérivé par `scripts/reference/carte_circonscriptions.mjs` du GeoJSON officiel d'Élections Québec (`donnees.electionsquebec.qc.ca/autres/provincial/circonscriptions_electorales_sans_eau_2026.json`, licence d'utilisation des données ouvertes du DGE, `dgeq.org/licence.html`, mention de la source obligatoire et affichée sous la carte) ; clé `CO_CEP`, nom `NM_CEP` | LIVRÉ, source unique pour les tracés | statique, régénéré à la main si la carte électorale change, jamais au build. Les noms du raffineur `agora-social` (tirets typographiques) s'y joignent par `cleCirco()` (`lib/data/social.ts`). |
 
 ### Enjeux
 

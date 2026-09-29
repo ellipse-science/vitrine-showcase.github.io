@@ -1,24 +1,31 @@
 "use client";
 
-import { useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import type { PartyKey } from "@/lib/data/parties";
 import {
   COULEURS_PLATEFORMES,
+  LOGOS_PLATEFORMES,
   NOMS_PLATEFORMES,
   NOMS_TYPES,
   PLATEFORMES,
   TYPES,
+  type Circo,
+  type CompteCirco,
+  type FilItem,
+  type CubeRow,
   type Plateforme,
   type SocialData,
   type TypeCompte,
 } from "@/lib/data/social-meta";
 import {
   lignes,
+  meneur,
   palmares,
   palmaresApproche,
   panneaux,
   parElement,
   parJour,
+  segments,
   series,
   totaux,
   treemap,
@@ -28,10 +35,11 @@ import {
   type Filtres,
   type Mesure,
   type Panneau,
+  type PeriodeCarte,
 } from "@/lib/data/social-calc";
 import { MONTHS_FR } from "@/lib/dates";
 
-type Vue = "presence" | "audience" | "publications" | "engagement" | "palmares";
+type Vue = "presence" | "audience" | "publications" | "engagement" | "palmares" | "carte";
 type Forme = "barres" | "parts" | "temps";
 
 const VUES: { cle: Vue; libelle: string }[] = [
@@ -40,6 +48,11 @@ const VUES: { cle: Vue; libelle: string }[] = [
   { cle: "publications", libelle: "Publications" },
   { cle: "engagement", libelle: "Engagement" },
   { cle: "palmares", libelle: "Palmarès" },
+  { cle: "carte", libelle: "Carte" },
+];
+const PERIODES_CARTE: { cle: PeriodeCarte; libelle: string }[] = [
+  { cle: "7j", libelle: "7 derniers jours" },
+  { cle: "campagne", libelle: "Depuis le déclenchement" },
 ];
 const FORMES: { cle: Forme; libelle: string }[] = [
   { cle: "barres", libelle: "Barres" },
@@ -228,26 +241,100 @@ function Bascule<T extends string>({
   valeur: v,
   onChange,
   label,
+  icone,
 }: {
   options: { cle: T; libelle: string }[];
   valeur: T;
   onChange: (v: T) => void;
   label: string;
+  /** Boutons en icônes, comme la démo : le libellé passe en aria-label et en infobulle. */
+  icone?: (cle: T) => ReactNode;
 }) {
   return (
-    <div className="social-bascule" role="group" aria-label={label}>
+    <div className={`social-bascule${icone ? " icones" : ""}`} role="group" aria-label={label}>
       {options.map((o) => (
         <button
           type="button"
           key={o.cle}
           className={o.cle === v ? "active" : undefined}
           aria-pressed={o.cle === v}
+          aria-label={icone ? o.libelle : undefined}
+          title={icone ? o.libelle : undefined}
           onClick={() => onChange(o.cle)}
         >
-          {o.libelle}
+          {icone ? icone(o.cle) : o.libelle}
         </button>
       ))}
     </div>
+  );
+}
+
+/** Logo d'une plateforme (Simple Icons), dans la couleur du texte. */
+function Logo({ p, taille = 14 }: { p: Plateforme; taille?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={taille} height={taille} aria-hidden="true" className="social-logo">
+      <path d={LOGOS_PLATEFORMES[p]} fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Plateforme nommée par son logo ; le nom reste pour les lecteurs d'écran. */
+function Plateforme_({ p, taille = 13 }: { p: Plateforme; taille?: number }) {
+  return (
+    <span className="social-plateforme" title={NOMS_PLATEFORMES[p]}>
+      <Logo p={p} taille={taille} />
+      <span className="visually-hidden">{NOMS_PLATEFORMES[p]}</span>
+    </span>
+  );
+}
+
+/** Icônes des formes et des découpes, reprises de la démo. */
+function IconeForme({ f }: { f: Forme }) {
+  if (f === "barres")
+    return (
+      <svg viewBox="0 0 34 24" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="4" />
+        <rect x="3" y="10" width="28" height="4" />
+        <rect x="3" y="16" width="12" height="4" />
+      </svg>
+    );
+  if (f === "parts")
+    return (
+      <svg viewBox="0 0 34 24" aria-hidden="true">
+        <rect x="3" y="3" width="16" height="11" />
+        <rect x="21" y="3" width="10" height="7" />
+        <rect x="3" y="16" width="16" height="5" />
+        <rect x="21" y="12" width="10" height="9" />
+      </svg>
+    );
+  return (
+    <svg viewBox="0 0 34 24" aria-hidden="true" className="trait">
+      <polyline points="3,19 11,12 18,15 31,5" />
+      <polyline points="3,21 12,17 20,19 31,12" opacity="0.5" />
+    </svg>
+  );
+}
+function IconeDecoupe({ d, data }: { d: Decoupe; data: SocialData }) {
+  if (d === "ensemble")
+    return (
+      <svg viewBox="0 0 34 24" aria-hidden="true">
+        <rect x="4" y="5" width="26" height="14" />
+      </svg>
+    );
+  if (d === "plateforme")
+    return (
+      <span className="social-icone-logos" aria-hidden="true">
+        {PLATEFORMES.map((p) => (
+          <Logo key={p} p={p} taille={11} />
+        ))}
+      </span>
+    );
+  return (
+    <svg viewBox="0 0 34 24" aria-hidden="true">
+      {data.partis.map((k, i) => (
+        <circle key={k} cx={4 + i * 6.5} cy={12} r={2.9} style={{ fill: data.partiInfo[k].couleur }} />
+      ))}
+    </svg>
   );
 }
 
@@ -258,12 +345,14 @@ function Coches<T extends string>({
   onChange,
   label,
   couleur,
+  icone,
 }: {
   options: { cle: T; libelle: string }[];
   actifs: T[];
   onChange: (v: T[]) => void;
   label: string;
   couleur?: (c: T) => string;
+  icone?: (c: T) => ReactNode;
 }) {
   const bascule = (c: T) => {
     const on = actifs.includes(c);
@@ -284,8 +373,10 @@ function Coches<T extends string>({
               className={on ? "actif" : undefined}
               style={on && couleur ? { background: couleur(o.cle), borderColor: couleur(o.cle) } : undefined}
               onClick={() => bascule(o.cle)}
+              aria-label={icone ? o.libelle : undefined}
+              title={icone ? o.libelle : undefined}
             >
-              {o.libelle}
+              {icone ? icone(o.cle) : o.libelle}
             </button>
           );
         })}
@@ -294,38 +385,97 @@ function Coches<T extends string>({
   );
 }
 
-function titrePanneau(data: SocialData, p: Panneau) {
+function titrePanneau(data: SocialData, p: Panneau): ReactNode {
   if (p.party) return data.partiInfo[p.party].nom;
-  if (p.plateforme) return NOMS_PLATEFORMES[p.plateforme];
+  if (p.plateforme) return <Plateforme_ p={p.plateforme} taille={16} />;
   return null;
 }
 function nomElement(data: SocialData, e: Element) {
   return e.party ? data.partiInfo[e.party].sigle : NOMS_PLATEFORMES[e.plateforme!];
 }
-function couleurElement(data: SocialData, e: Element) {
-  return e.party ? data.partiInfo[e.party].couleur : COULEURS_PLATEFORMES[e.plateforme!];
+function couleurElement(data: SocialData, e: Element, p?: Panneau) {
+  if (e.party) return data.partiInfo[e.party].couleur;
+  // Dans les panneaux « Par parti », les éléments sont des plateformes : la
+  // couleur reste celle du parti, la texture dit la plateforme (comme la démo).
+  if (p?.party) return data.partiInfo[p.party].couleur;
+  return COULEURS_PLATEFORMES[e.plateforme!];
 }
+/** Texture d'une plateforme : Facebook plein, Instagram hachuré, TikTok pointillé. */
+const texture = (p: Plateforme | null | undefined) => (p ? ` tex-${p}` : "");
 const formatMesure = (m: Mesure) => (v: number) => (m === "parPublication" ? nombreFr(v, 1) : nombreFr(v));
 
 type Blocs = ReturnType<typeof parElement>;
 
-function Barres({ data, blocs, m }: { data: SocialData; blocs: Blocs; m: Mesure }) {
-  const max = Math.max(1e-9, ...blocs.flatMap((b) => b.valeurs.map((v) => v.valeur)));
+/**
+ * Barres, comme la démo : une barre par élément, découpée par plateforme
+ * (couleur du parti ; Facebook plein, Instagram hachuré, TikTok pointillé ;
+ * logo dans le segment quand il y tient), total au bout. Sans légende : les
+ * logos la portent.
+ */
+function Barres({
+  data,
+  rows,
+  pans,
+  m,
+}: {
+  data: SocialData;
+  rows: CubeRow[];
+  pans: Panneau[];
+  m: Mesure;
+}) {
+  const blocs = pans.map((pan) => ({
+    panneau: pan,
+    barres: pan.elements.map((el) => {
+      const sg = segments(data, rows, pan, el, m);
+      return { element: el, segments: sg, total: m === "parPublication" ? (sg[0]?.valeur ?? 0) : sg.reduce((a, b) => a + b.valeur, 0) };
+    }),
+  }));
+  const max = Math.max(1e-9, ...blocs.flatMap((b) => b.barres.map((x) => x.total)));
+  const multiples = blocs.length > 1;
+  const seuilLogo = multiples ? 9 : 5; // % de la piste sous lequel le logo ne tient pas
   return (
-    <div className={`social-panneaux${blocs.length > 1 ? " multiples" : ""}`}>
+    <div className={`social-panneaux${multiples ? " multiples" : ""}`}>
       {blocs.map((b) => (
         <div key={b.panneau.cle} className="social-panneau">
           {titrePanneau(data, b.panneau) && <div className="social-panneau-titre">{titrePanneau(data, b.panneau)}</div>}
-          <ol className="social-barres">
-            {b.valeurs.map((v) => (
-              <li key={v.element.cle}>
-                <span className="social-nom">{nomElement(data, v.element)}</span>
-                <span className="social-piste">
-                  <i style={{ width: `${(100 * v.valeur) / max}%`, background: couleurElement(data, v.element) }} />
-                </span>
-                <span className="social-valeur">{formatMesure(m)(v.valeur)}</span>
-              </li>
-            ))}
+          <ol className={`social-barres social-barres-empilees${multiples ? " compactes" : ""}`}>
+            {b.barres.map((x) => {
+              const couleur = couleurElement(data, x.element, b.panneau);
+              const detail = x.segments
+                .map((sg) => `${sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] : ""} ${formatMesure(m)(sg.valeur)}`.trim())
+                .join(" · ");
+              return (
+                <li key={x.element.cle}>
+                  <span className="social-nom">
+                    {x.element.plateforme && !x.element.party ? <Logo p={x.element.plateforme} /> : nomElement(data, x.element)}
+                  </span>
+                  <span
+                    className="social-piste"
+                    role="img"
+                    aria-label={`${nomElement(data, x.element)}\u00a0: ${formatMesure(m)(x.total)} ${NOMS_MESURES[m]}${detail ? ` (${detail})` : ""}`}
+                  >
+                    {/* La barre occupe sa part de la piste, total réservé au bout. */}
+                    <span className="social-segments" style={{ width: `calc((100% - 5rem) * ${x.total / max})` }}>
+                      {x.segments.map((sg, k) => {
+                        const part = x.total > 0 ? sg.valeur / x.total : 0;
+                        return (
+                          <i
+                            key={sg.plateforme ?? k}
+                            // Texture seulement là où des plateformes se côtoient dans la barre.
+                            className={x.segments.length > 1 ? texture(sg.plateforme) : undefined}
+                            style={{ width: `${100 * part}%`, background: couleur }}
+                            title={`${sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] + "\u00a0: " : ""}${formatMesure(m)(sg.valeur)} ${NOMS_MESURES[m]}`}
+                          >
+                            {sg.plateforme && (100 * sg.valeur) / max >= seuilLogo && <Logo p={sg.plateforme} />}
+                          </i>
+                        );
+                      })}
+                    </span>
+                    <span className="social-valeur">{formatMesure(m)(x.total)}</span>
+                  </span>
+                </li>
+              );
+            })}
           </ol>
         </div>
       ))}
@@ -367,18 +517,18 @@ function Parts({ data, blocs, m }: { data: SocialData; blocs: Blocs; m: Mesure }
                       role="listitem"
                       aria-label={detail}
                       title={detail}
-                      className="social-tuile"
+                      className={`social-tuile${texture(t.item.plateforme)}`}
                       style={{
                         left: `${100 * t.x0}%`,
                         top: `${100 * t.y0}%`,
                         width: `${100 * (t.x1 - t.x0)}%`,
                         height: `${100 * (t.y1 - t.y0)}%`,
-                        background: couleurElement(data, t.item),
+                        background: couleurElement(data, t.item, b.panneau),
                       }}
                     >
                       {lisible && (
                         <span aria-hidden="true">
-                          <b>{nom}</b>
+                          <b>{t.item.plateforme && !t.item.party ? <Logo p={t.item.plateforme} taille={16} /> : nom}</b>
                           {part}&nbsp;%
                         </span>
                       )}
@@ -405,6 +555,7 @@ function Courbes({
   hebdo,
   s,
   m,
+  panneau,
   compact = false,
 }: {
   data: SocialData;
@@ -412,8 +563,12 @@ function Courbes({
   hebdo: boolean;
   s: { element: Element; valeurs: number[] }[];
   m: Mesure;
+  panneau?: Panneau;
   compact?: boolean;
 }) {
+  // Dans un panneau « Par parti », les courbes sont des plateformes : couleur du
+  // parti, trait plein (Facebook), tireté (Instagram) ou pointillé (TikTok).
+  const tirets: Record<Plateforme, string | undefined> = { facebook: undefined, instagram: "6 4", tiktok: "1.5 3.5" };
   const n = jours.length;
   const max = Math.max(1e-9, ...s.flatMap((x) => x.valeurs));
   const pas = Math.pow(10, Math.floor(Math.log10(max)));
@@ -456,7 +611,8 @@ function Courbes({
                 key={c.element.cle}
                 points={c.valeurs.map((v, i) => `${x(i)},${y(v)}`).join(" ")}
                 fill="none"
-                stroke={couleurElement(data, c.element)}
+                stroke={couleurElement(data, c.element, panneau)}
+                strokeDasharray={c.element.plateforme && !c.element.party ? tirets[c.element.plateforme] : undefined}
                 strokeWidth={1.8}
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
@@ -469,7 +625,7 @@ function Courbes({
             <span
               key={c.element.cle}
               className="social-point"
-              style={{ top: `${y(c.valeurs[0])}%`, background: couleurElement(data, c.element) }}
+              style={{ top: `${y(c.valeurs[0])}%`, background: couleurElement(data, c.element, panneau) }}
             />
           ))}
         {graduations.map((v) => (
@@ -486,12 +642,474 @@ function Courbes({
           <span
             key={f.c.element.cle}
             className="social-etiquette"
-            style={{ top: `${f.y}%`, color: couleurElement(data, f.c.element) }}
+            style={{ top: `${f.y}%`, color: couleurElement(data, f.c.element, panneau) }}
+            title={nomElement(data, f.c.element)}
           >
-            {nomElement(data, f.c.element)}
+            {f.c.element.plateforme && !f.c.element.party ? <Logo p={f.c.element.plateforme} /> : nomElement(data, f.c.element)}
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ── Une publication (palmarès, fil d'une circonscription) ─────────────────────
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+function IconeLecture() {
+  return (
+    <svg className="social-lecture" viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="20" r="18" />
+      <path d="M16 12.5v15l12-7.5z" />
+    </svg>
+  );
+}
+
+/** La vignette, ou à sa place un emplacement de même taille : ▶ et logo pour
+ *  une vidéo sans image, logo seul pour une publication sans média. Le texte
+ *  reste ainsi aligné, et l'image comme l'emplacement mènent à la publication. */
+function Media({ p }: { p: Pick<FilItem, "vignette" | "media" | "plateforme" | "url" | "nom"> }) {
+  const video = p.media === "video";
+  const corps = p.vignette ? (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element -- export statique, vignette déjà réduite */}
+      <img src={p.vignette} alt="" loading="lazy" width={240} height={240} />
+      {video && <IconeLecture />}
+    </>
+  ) : (
+    <span className={`social-media-vide${video ? " video" : ""}`}>
+      {video && <IconeLecture />}
+      <span className="social-media-coin">
+        <Logo p={p.plateforme} taille={14} />
+      </span>
+    </span>
+  );
+  const quoi = video ? "Vidéo" : p.vignette ? "Image" : "Publication";
+  const libelle = `${quoi} de ${p.nom} sur ${NOMS_PLATEFORMES[p.plateforme]}`;
+  return p.url ? (
+    <a className="social-media" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={libelle} title={libelle}>
+      {corps}
+    </a>
+  ) : (
+    <span className="social-media" role="img" aria-label={libelle}>
+      {corps}
+    </span>
+  );
+}
+
+export function CartePublication({ data, p, rang }: { data: SocialData; p: FilItem; rang?: number }) {
+  return (
+    <li className="social-publication">
+      <Media p={p} />
+      <div className="social-palmares-tete">
+        {rang != null && <span className="social-rang">{rang}</span>}
+        <span className="social-nom" style={{ color: data.partiInfo[p.party].couleur }}>
+          {p.nom}
+        </span>
+        <span className="social-meta">
+          <Plateforme_ p={p.plateforme} /> {data.partiInfo[p.party].sigle} · {jourCourt(p.jour)}
+        </span>
+      </div>
+      {p.texte && <p className="social-texte">{p.texte}</p>}
+      <div className="social-meta">
+        {nombreFr(p.jaime)}&nbsp;j’aime · {nombreFr(p.commentaires)}&nbsp;commentaires
+        {p.url && (
+          <>
+            {" · "}
+            <a href={p.url} target="_blank" rel="noopener noreferrer">
+              voir la publication
+            </a>
+          </>
+        )}
+      </div>
+    </li>
+  );
+}
+
+/** Le fil d'une circonscription : son fichier statique, chargé à l'ouverture
+ *  de la fiche (app/reseaux/fil/[fichier]/route.ts), filtré par plateforme et
+ *  par parti comme le reste du module. */
+function Fil({
+  data,
+  code,
+  plateformes,
+  partis,
+}: {
+  data: SocialData;
+  code: number;
+  plateformes: Plateforme[];
+  partis: PartyKey[];
+}) {
+  const [etat, setEtat] = useState<{ code: number; fil: FilItem[] | null } | null>(null);
+  useEffect(() => {
+    let vivant = true;
+    fetch(`${BASE_PATH}/reseaux/fil/${code}.json`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
+      .then((fil: FilItem[] | null) => vivant && setEtat({ code, fil: Array.isArray(fil) ? fil : null }));
+    return () => {
+      vivant = false;
+    };
+  }, [code]);
+  if (!etat || etat.code !== code) return <p className="social-note">Chargement du fil…</p>;
+  if (!etat.fil) return <p className="social-note">Le fil de cette circonscription est indisponible.</p>;
+  const fil = etat.fil.filter((p) => plateformes.includes(p.plateforme) && partis.includes(p.party));
+  return (
+    <div className="social-fil">
+      <h4>Fil des candidats</h4>
+      {fil.length === 0 ? (
+        <p className="social-note">Aucune publication récente dans cette sélection.</p>
+      ) : (
+        <ol className="social-palmares">
+          {fil.map((p, i) => (
+            <CartePublication key={`${p.url ?? ""}-${i}`} data={data} p={p} />
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+// ── Carte des circonscriptions ────────────────────────────────────────────────
+// Les tracés sont écrits UNE fois dans <defs> et repris par <use> dans la carte
+// et ses deux encarts : trois vues pour le poids d'une. Au clavier, la liste
+// des circonscriptions remplace les 127 formes (autant d'arrêts de tabulation).
+const ENCARTS = [
+  { cle: "montreal", titre: "Grand Montréal" },
+  { cle: "quebec", titre: "Québec" },
+] as const;
+
+/** Au survol ou au focus d'une circonscription : nom, région, parti en tête,
+ *  et chaque candidat suivi avec les logos de ses comptes et ses publications
+ *  de la période. Décorative pour les lecteurs d'écran (aria-hidden) : le
+ *  libellé de la forme et la fiche portent la même information. */
+function Infobulle({
+  data,
+  circo,
+  m,
+  periode,
+  plateformes,
+  partis,
+  x,
+  y,
+  largeur,
+}: {
+  data: SocialData;
+  circo: Circo;
+  m: ReturnType<typeof meneur>;
+  periode: PeriodeCarte;
+  plateformes: Plateforme[];
+  partis: PartyKey[];
+  x: number;
+  y: number;
+  largeur: number;
+}) {
+  const aGauche = x > largeur - 300;
+  const lignes = data.partis
+    .filter((k) => partis.includes(k))
+    .map((k) => ({ k, comptes: circo.comptes.filter((c) => c.party === k && plateformes.includes(c.plateforme)) }))
+    .filter((l) => l.comptes.length > 0);
+  return (
+    <div
+      className="social-infobulle"
+      aria-hidden="true"
+      style={{ left: aGauche ? undefined : x + 16, right: aGauche ? largeur - x + 16 : undefined, top: y + 16 }}
+    >
+      <strong>{circo.nom}</strong>
+      <span className="social-meta">{circo.region}</span>
+      <div className="social-infobulle-tete">
+        {m.party ? (
+          <>
+            <span className="social-fiche-parti" style={{ background: data.partiInfo[m.party].couleur }}>
+              {data.partiInfo[m.party].sigle}
+            </span>{" "}
+            en tête {periode === "7j" ? "sur 7 jours" : "depuis le déclenchement"}
+          </>
+        ) : m.jaime > 0 ? (
+          "Égalité entre partis"
+        ) : m.publications > 0 ? (
+          "Aucun j’aime sur la période"
+        ) : (
+          "Aucune publication sur la période"
+        )}
+      </div>
+      {lignes.length === 0 ? (
+        <div className="social-meta">Aucun compte de candidat suivi</div>
+      ) : (
+        <ul>
+          {lignes.map(({ k, comptes }) => {
+            const n = comptes.reduce((s, c) => s + (periode === "7j" ? c.jaime7j : c.jaimeCampagne), 0);
+            return (
+              <li key={k}>
+                <span className="social-infobulle-sigle" style={{ color: data.partiInfo[k].couleur }}>
+                  {data.partiInfo[k].sigle}
+                </span>
+                <span className="social-infobulle-nom">{comptes[0].nom}</span>
+                <span className="social-infobulle-logos">
+                  {comptes.map((c) => (
+                    <Logo key={c.plateforme} p={c.plateforme} taille={12} />
+                  ))}
+                </span>
+                <span className="social-infobulle-n">{nombreFr(n)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <span className="social-infobulle-pied">j’aime · clic pour la fiche</span>
+    </div>
+  );
+}
+
+export function Carte({
+  data,
+  plateformes,
+  partis,
+}: {
+  data: SocialData;
+  plateformes: Plateforme[];
+  partis: PartyKey[];
+}) {
+  const carte = data.carte!;
+  const [periode, setPeriode] = useState<PeriodeCarte>("campagne");
+  const [choix, setChoix] = useState<number | null>(null);
+  const meneurs = useMemo(
+    () => new Map(carte.circos.map((c) => [c.code, meneur(c.comptes, periode, plateformes, partis)])),
+    [carte, periode, plateformes, partis],
+  );
+  const circo = carte.circos.find((c) => c.code === choix) ?? null;
+  // Ordre du clavier et de la liste : par région, puis par nom.
+  const ordre = useMemo(
+    () => [...carte.circos].sort((a, b) => a.region.localeCompare(b.region, "fr") || a.nom.localeCompare(b.nom, "fr")),
+    [carte],
+  );
+  const regions = useMemo(() => [...new Set(ordre.map((c) => c.region))], [ordre]);
+  const [actif, setActif] = useState<number>(ordre[0]?.code ?? 0);
+  // Souris ou clavier : quitter une forme avec la souris n'efface pas
+  // l'infobulle ouverte au clavier, et inversement.
+  type Survol = { code: number; x: number; y: number; par: "souris" | "clavier" };
+  const [survol, setSurvol] = useState<Survol | null>(null);
+  const vuesRef = useRef<HTMLDivElement>(null);
+  const place = (code: number, x: number, y: number, par: Survol["par"]) => {
+    const r = vuesRef.current?.getBoundingClientRect();
+    if (r) setSurvol({ code, x: x - r.left, y: y - r.top, par });
+  };
+  const efface = (par: Survol["par"]) => setSurvol((s) => (s?.par === par ? null : s));
+  const auFocus = (code: number, el: SVGElement) => {
+    const b = el.getBoundingClientRect();
+    place(code, b.left + b.width / 2, b.top + b.height / 2, "clavier");
+  };
+  const clavier = (e: KeyboardEvent<SVGUseElement>, code: number) => {
+    const i = ordre.findIndex((c) => c.code === code);
+    const pas = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (pas) {
+      e.preventDefault();
+      const suivant = ordre[(i + pas + ordre.length) % ordre.length].code;
+      setActif(suivant);
+      const el = vuesRef.current?.querySelector<SVGUseElement>(`.social-carte-province use[data-code="${suivant}"]`);
+      el?.focus();
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setChoix(code);
+    } else if (e.key === "Escape") {
+      efface("clavier");
+    }
+  };
+  const couleur = (code: number) => {
+    const k = meneurs.get(code)?.party;
+    return k ? data.partiInfo[k].couleur : "var(--social-carte-vide)";
+  };
+  const titre = (code: number, nom: string) => {
+    const m = meneurs.get(code);
+    return m?.party
+      ? `${nom}\u00a0: ${data.partiInfo[m.party].sigle} en tête, ${nombreFr(m.parParti[m.party]!.jaime)}\u00a0j’aime`
+      : `${nom}\u00a0: ${m && m.jaime > 0 ? "égalité" : "aucun j’aime"}`;
+  };
+  const formes = (encart: boolean) => (
+    <g>
+      {(encart ? carte.circos : ordre).map((c) => (
+        <use
+          key={c.code}
+          href={`#sc-circo-${c.code}`}
+          data-code={c.code}
+          fill={couleur(c.code)}
+          className={c.code === choix ? "choisie" : undefined}
+          onClick={() => setChoix(c.code)}
+          onPointerMove={(e) => e.pointerType !== "touch" && place(c.code, e.clientX, e.clientY, "souris")}
+          onPointerLeave={() => efface("souris")}
+          // Carte principale : un seul arrêt de tabulation, les flèches font le reste.
+          {...(encart
+            ? {}
+            : {
+                tabIndex: c.code === actif ? 0 : -1,
+                role: "button",
+                "aria-label": `${titre(c.code, c.nom)}. Entrée pour la fiche.`,
+                onFocus: (e: FocusEvent<SVGUseElement>) => {
+                  setActif(c.code);
+                  auFocus(c.code, e.currentTarget);
+                },
+                onBlur: () => efface("clavier"),
+                onKeyDown: (e: KeyboardEvent<SVGUseElement>) => clavier(e, c.code),
+              })}
+        />
+      ))}
+      {circo && <use href={`#sc-circo-${circo.code}`} className="social-carte-contour" />}
+    </g>
+  );
+  const pub = (c: CompteCirco) => (periode === "7j" ? c.publications7j : c.publicationsCampagne);
+  const jaime = (c: CompteCirco) => (periode === "7j" ? c.jaime7j : c.jaimeCampagne);
+
+  return (
+    <div className="social-carte">
+      <div className="social-carte-outils">
+        <Bascule label="Période de la carte" options={PERIODES_CARTE} valeur={periode} onChange={setPeriode} />
+        <label className="social-carte-liste">
+          <span>Circonscription</span>
+          <select value={choix ?? ""} onChange={(e) => setChoix(e.target.value ? Number(e.target.value) : null)}>
+            <option value="">Choisir…</option>
+            {regions.map((r) => (
+              <optgroup key={r} label={r}>
+                {ordre
+                  .filter((c) => c.region === r)
+                  .map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.nom}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+      </div>
+      <ul className="social-carte-legende" aria-label="Parti qui reçoit le plus de j’aime">
+        {data.partis
+          .filter((k) => partis.includes(k))
+          .map((k) => (
+            <li key={k}>
+              <i style={{ background: data.partiInfo[k].couleur }} />
+              {data.partiInfo[k].sigle}
+            </li>
+          ))}
+        <li>
+          <i style={{ background: "var(--social-carte-vide)" }} />
+          Aucun j’aime
+        </li>
+      </ul>
+
+      <div className="social-carte-vues" ref={vuesRef}>
+        <svg
+          className="social-carte-province"
+          viewBox={carte.vue.join(" ")}
+          role="img"
+          aria-label="Carte des circonscriptions, colorées selon le parti dont les candidats y reçoivent le plus de j’aime. Les flèches passent d’une circonscription à l’autre, par région, et Entrée ouvre sa fiche."
+        >
+          <defs>
+            {carte.circos.map((c) => (
+              <path key={c.code} id={`sc-circo-${c.code}`} d={c.d} vectorEffect="non-scaling-stroke" />
+            ))}
+          </defs>
+          {formes(false)}
+          {ENCARTS.map((e) => {
+            const [x, y, w, h] = carte.encarts[e.cle];
+            return (
+              <rect
+                key={e.cle}
+                className="social-carte-cadre"
+                x={x}
+                y={y}
+                width={w}
+                height={h}
+                vectorEffect="non-scaling-stroke"
+              />
+            );
+          })}
+        </svg>
+        <div className="social-carte-encarts">
+          {ENCARTS.map((e) => (
+            <figure key={e.cle}>
+              <svg viewBox={carte.encarts[e.cle].join(" ")} aria-hidden="true">
+                {formes(true)}
+              </svg>
+              <figcaption>{e.titre}</figcaption>
+            </figure>
+          ))}
+        </div>
+        {survol && (
+          <Infobulle
+            data={data}
+            circo={carte.circos.find((c) => c.code === survol.code)!}
+            m={meneurs.get(survol.code)!}
+            periode={periode}
+            plateformes={plateformes}
+            partis={partis}
+            x={survol.x}
+            y={survol.y}
+            largeur={vuesRef.current?.clientWidth ?? 0}
+          />
+        )}
+      </div>
+
+      <section className="social-fiche" aria-live="polite">
+        {!circo ? (
+          <p className="social-note">Choisissez une circonscription sur la carte ou dans la liste.</p>
+        ) : (
+          <>
+            <h3>{circo.nom}</h3>
+            <ul>
+              {data.partis.map((k) => {
+                const comptes = circo.comptes.filter((c) => c.party === k);
+                const nom = comptes[0]?.nom;
+                const p = comptes.reduce((s, c) => s + pub(c), 0);
+                const j = comptes.reduce((s, c) => s + jaime(c), 0);
+                return (
+                  <li key={k}>
+                    <div className="social-fiche-tete">
+                      <span className="social-fiche-parti" style={{ background: data.partiInfo[k].couleur }}>
+                        {data.partiInfo[k].sigle}
+                      </span>
+                      <span className="social-nom">{nom ?? "Aucun compte suivi"}</span>
+                    </div>
+                    {comptes.length > 0 && (
+                      <>
+                        <div className="social-fiche-comptes">
+                          {comptes.map((c) => {
+                            const contenu = (
+                              <>
+                                <Plateforme_ p={c.plateforme} taille={16} />
+                                {c.abonnes != null ? `${nombreFr(c.abonnes)} abonnés` : "abonnés inconnus"}
+                              </>
+                            );
+                            return c.url ? (
+                              <a key={c.plateforme} href={c.url} target="_blank" rel="noopener noreferrer">
+                                {contenu}
+                              </a>
+                            ) : (
+                              <span key={c.plateforme}>{contenu}</span>
+                            );
+                          })}
+                        </div>
+                        <div className="social-meta">
+                          {nombreFr(p)}&nbsp;{p > 1 ? "publications" : "publication"} · {nombreFr(j)}&nbsp;j’aime
+                        </div>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <Fil data={data} code={circo.code} plateformes={plateformes} partis={partis} />
+          </>
+        )}
+      </section>
+      <p className="social-note">
+        Comptes de candidats seulement ; la période choisie en haut ne s’applique pas à la carte. Comprend des données
+        ouvertes octroyées sous la{" "}
+        <a href="https://www.dgeq.org/licence.html" target="_blank" rel="noopener noreferrer">
+          licence d’utilisation des données ouvertes du directeur général des élections
+        </a>{" "}
+        disponible à l’adresse Web dgeq.org. L’octroi de la licence n’implique aucune approbation par le directeur
+        général des élections de l’utilisation des données ouvertes qui en est faite.
+      </p>
     </div>
   );
 }
@@ -505,6 +1123,7 @@ export function SocialClient({ data }: { data: SocialData }) {
   const [partis, setPartis] = useState<PartyKey[]>([...data.partis]);
   const [types, setTypes] = useState<TypeCompte[]>([...TYPES]);
   const [vue, setVue] = useState<Vue>("publications");
+  const vues = data.carte ? VUES : VUES.filter((v) => v.cle !== "carte");
   const [forme, setForme] = useState<Forme>("barres");
   const [decoupe, setDecoupe] = useState<Decoupe>("ensemble");
   const [mesureEng, setMesureEng] = useState<Mesure>("jaime");
@@ -545,6 +1164,8 @@ export function SocialClient({ data }: { data: SocialData }) {
         ? "Les 20 comptes les plus suivis, en abonnés. Dernier relevé : la période ne s’applique pas."
         : vue === "palmares"
           ? "Les 10 publications les plus aimées de la période."
+          : vue === "carte"
+            ? "Chaque circonscription prend la couleur du parti dont les candidats y reçoivent le plus de j’aime sur la période."
           : m === "parPublication"
             ? "J’aime par publication : total des j’aime divisé par le nombre de publications de la période."
             : `Total des ${NOMS_MESURES[m]} de la période.`;
@@ -613,6 +1234,7 @@ export function SocialClient({ data }: { data: SocialData }) {
               actifs={plateformes}
               onChange={setPlateformes}
               couleur={(p) => COULEURS_PLATEFORMES[p]}
+              icone={(p) => <Logo p={p} taille={15} />}
             />
             <Coches
               label="Parti"
@@ -631,16 +1253,31 @@ export function SocialClient({ data }: { data: SocialData }) {
         </div>
 
         <div className="social-onglets">
-          <Bascule label="Vue" options={VUES} valeur={vue} onChange={setVue} />
+          <Bascule label="Vue" options={vues} valeur={vue} onChange={setVue} />
         </div>
 
         {graphique && (
           <div className="social-reglages">
             {vue === "engagement" && (
-              <Bascule label="Mesure" options={MESURES_ENGAGEMENT} valeur={mesureEng} onChange={setMesureEng} />
+              <div className="social-reglages-mesure">
+                <Bascule label="Mesure" options={MESURES_ENGAGEMENT} valeur={mesureEng} onChange={setMesureEng} />
+              </div>
             )}
-            <Bascule label="Forme" options={formes} valeur={formeEff} onChange={setForme} />
-            <Bascule label="Découpe" options={DECOUPES} valeur={decoupe} onChange={setDecoupe} />
+            {/* Comme la démo : la forme en haut à gauche, la découpe en haut à droite. */}
+            <Bascule
+              label="Forme"
+              options={formes}
+              valeur={formeEff}
+              onChange={setForme}
+              icone={(c) => <IconeForme f={c} />}
+            />
+            <Bascule
+              label="Découpe"
+              options={DECOUPES}
+              valeur={decoupe}
+              onChange={setDecoupe}
+              icone={(c) => <IconeDecoupe d={c} data={data} />}
+            />
           </div>
         )}
         <p className="social-sous-titre">{sousTitre}</p>
@@ -652,7 +1289,7 @@ export function SocialClient({ data }: { data: SocialData }) {
                 <th scope="col" />
                 {PLATEFORMES.map((p) => (
                   <th key={p} scope="col">
-                    {NOMS_PLATEFORMES[p]}
+                    <Plateforme_ p={p} taille={18} />
                   </th>
                 ))}
               </tr>
@@ -690,10 +1327,9 @@ export function SocialClient({ data }: { data: SocialData }) {
             {audience.map((a) => (
               <li key={`${a.plateforme}-${a.nom}-${a.abonnes}`}>
                 <span className="social-nom">
+                  <Plateforme_ p={a.plateforme} />
                   {a.nom}
-                  <span className="social-meta">
-                    {data.partiInfo[a.party].sigle} · {NOMS_PLATEFORMES[a.plateforme]}
-                  </span>
+                  <span className="social-meta">{data.partiInfo[a.party].sigle}</span>
                 </span>
                 <span className="social-piste">
                   <i
@@ -709,7 +1345,7 @@ export function SocialClient({ data }: { data: SocialData }) {
           </ol>
         )}
 
-        {graphique && formeEff === "barres" && <Barres data={data} blocs={parElement(data, rows, pans, m)} m={m} />}
+        {graphique && formeEff === "barres" && <Barres data={data} rows={rows} pans={pans} m={m} />}
         {graphique && formeEff === "parts" && <Parts data={data} blocs={parElement(data, rows, pans, m)} m={m} />}
         {graphique &&
           formeEff === "temps" &&
@@ -729,6 +1365,7 @@ export function SocialClient({ data }: { data: SocialData }) {
                       hebdo={s.hebdo}
                       s={p.series}
                       m={m}
+                      panneau={p.panneau}
                       compact={s.panneaux.length > 1}
                     />
                   </div>
@@ -741,34 +1378,14 @@ export function SocialClient({ data }: { data: SocialData }) {
             );
           })()}
 
+        {vue === "carte" && data.carte && <Carte data={data} plateformes={plateformes} partis={partis} />}
+
         {vue === "palmares" && (
           <>
             <ol className="social-palmares">
               {tops.length === 0 && <li className="social-vide">Aucune publication dans cette sélection.</li>}
               {tops.map((p, i) => (
-                <li key={`${p.url ?? ""}-${i}`}>
-                  <div className="social-palmares-tete">
-                    <span className="social-rang">{i + 1}</span>
-                    <span className="social-nom" style={{ color: data.partiInfo[p.party].couleur }}>
-                      {p.nom}
-                    </span>
-                    <span className="social-meta">
-                      {data.partiInfo[p.party].sigle} · {NOMS_PLATEFORMES[p.plateforme]} · {jourCourt(p.jour)}
-                    </span>
-                  </div>
-                  {p.texte && <p className="social-texte">{p.texte}</p>}
-                  <div className="social-meta">
-                    {nombreFr(p.jaime)}&nbsp;j’aime · {nombreFr(p.commentaires)}&nbsp;commentaires
-                    {p.url && (
-                      <>
-                        {" · "}
-                        <a href={p.url} target="_blank" rel="noopener noreferrer">
-                          voir la publication
-                        </a>
-                      </>
-                    )}
-                  </div>
-                </li>
+                <CartePublication key={`${p.url ?? ""}-${i}`} data={data} p={p} rang={i + 1} />
               ))}
             </ol>
             {palmaresApproche(data, f) && (

@@ -10,6 +10,7 @@ import type { PartyKey } from "./parties";
 import {
   PLATEFORMES,
   TYPES,
+  type CompteCirco,
   type CubeRow,
   type PalmaresItem,
   type Plateforme,
@@ -110,6 +111,30 @@ export function parElement(data: SocialData, rows: CubeRow[], pans: Panneau[], m
   }));
 }
 
+/**
+ * Segments d'une barre, comme la démo : la valeur de l'élément découpée par
+ * plateforme (Facebook plein, Instagram hachuré, TikTok pointillé). Le j'aime
+ * par publication n'est pas additif : une seule barre, sans segment.
+ */
+export function segments(
+  data: SocialData,
+  rows: CubeRow[],
+  pan: Panneau,
+  el: Element,
+  m: Mesure,
+): { plateforme: Plateforme | null; valeur: number }[] {
+  if (m === "parPublication") {
+    const t = zero();
+    for (const r of rows) if (dans(data, r, pan, el)) ajoute(t, r);
+    return [{ plateforme: el.plateforme ?? pan.plateforme ?? null, valeur: valeur(t, m) }];
+  }
+  return PLATEFORMES.map((pl) => {
+    const t = zero();
+    for (const r of rows) if (PLATEFORMES[r[2]] === pl && dans(data, r, pan, el)) ajoute(t, r);
+    return { plateforme: pl, valeur: valeur(t, m) };
+  }).filter((sg) => sg.valeur > 0);
+}
+
 /** Pas de temps : par jour jusqu'à SEUIL_HEBDO jours, sinon par semaine. */
 export function pasDeTemps(f: Filtres): { hebdo: boolean; debuts: number[] } {
   const n = f.d1 - f.d0 + 1;
@@ -201,4 +226,48 @@ export function treemap<T>(items: { item: T; valeur: number }[], ratio = 1): Tui
   };
   coupe(tries, 0, 0, 1, 1);
   return out;
+}
+
+// ── Carte des circonscriptions ────────────────────────────────────────────────
+/** Fenêtre de la carte : l'activité par compte est précalculée par le
+ *  raffineur sur ces deux périodes seulement (la frise ne s'y applique pas). */
+export type PeriodeCarte = "7j" | "campagne";
+
+export type Meneur = {
+  /** Parti qui reçoit le plus de j'aime, ou null : aucun j'aime, ou égalité parfaite. */
+  party: PartyKey | null;
+  publications: number;
+  jaime: number;
+  parParti: Partial<Record<PartyKey, { publications: number; jaime: number }>>;
+};
+
+/** Le parti en tête d'une circonscription : le plus de j'aime reçus sur la
+ *  période, puis le plus de publications en cas d'égalité. Filtres Plateforme
+ *  et Parti. */
+export function meneur(
+  comptes: CompteCirco[],
+  periode: PeriodeCarte,
+  plateformes: readonly Plateforme[],
+  partis: readonly PartyKey[],
+): Meneur {
+  const parParti: Meneur["parParti"] = {};
+  let total = 0;
+  let totalJaime = 0;
+  for (const c of comptes) {
+    if (!plateformes.includes(c.plateforme) || !partis.includes(c.party)) continue;
+    const pub = periode === "7j" ? c.publications7j : c.publicationsCampagne;
+    const jaime = periode === "7j" ? c.jaime7j : c.jaimeCampagne;
+    const acc = (parParti[c.party] ??= { publications: 0, jaime: 0 });
+    acc.publications += pub;
+    acc.jaime += jaime;
+    total += pub;
+    totalJaime += jaime;
+  }
+  const rang = (Object.entries(parParti) as [PartyKey, { publications: number; jaime: number }][])
+    .filter(([, v]) => v.jaime > 0)
+    .sort((a, b) => b[1].jaime - a[1].jaime || b[1].publications - a[1].publications);
+  const [premier, second] = rang;
+  const egalite =
+    premier && second && premier[1].publications === second[1].publications && premier[1].jaime === second[1].jaime;
+  return { party: premier && !egalite ? premier[0] : null, publications: total, jaime: totalJaime, parParti };
 }

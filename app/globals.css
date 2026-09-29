@@ -11899,7 +11899,8 @@
 
 /* Onglets, réglages, notes */
 .social-onglets { margin: 26px 0 8px; }
-.social-reglages { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 6px 0; }
+.social-reglages { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; margin: 10px 0 6px; }
+.social-reglages-mesure { flex-basis: 100%; }
 .social-sous-titre, .social-note {
   font-family: "Source Serif 4", serif; font-size: 14px; color: var(--ink-softer); margin: 8px 0 14px;
 }
@@ -11951,6 +11952,44 @@
   text-align: right; color: var(--ink);
 }
 
+/* Barres empilées par plateforme, comme la démo : couleur du parti, texture de
+   la plateforme (Facebook plein, Instagram hachuré, TikTok pointillé), logo
+   blanc dans le segment, total au bout. */
+.social-barres-empilees li { grid-template-columns: minmax(0, 4rem) 1fr; padding: 7px 0; border-bottom: 0; }
+.social-barres-empilees .social-nom { text-align: right; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.social-barres-empilees .social-piste { display: flex; align-items: center; gap: 2px; height: 30px; background: none; }
+.social-barres-empilees.compactes .social-piste { height: 22px; }
+.social-segments { display: flex; gap: 2px; height: 100%; flex: none; }
+.social-barres-empilees .social-piste i {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  flex: none; height: 100%; color: #fff; min-width: 2px;
+}
+.social-segments i:first-child { border-radius: 3px 0 0 3px; }
+.social-segments i:last-child { border-radius: 0 3px 3px 0; }
+.social-segments i:only-child { border-radius: 3px; }
+.social-barres-empilees .social-valeur { flex: none; margin-left: 8px; font-family: "IBM Plex Mono", monospace; font-weight: 400; font-size: 14px; color: var(--ink-soft); }
+.social-barres-empilees .social-nom .social-logo { color: var(--ink-soft); vertical-align: middle; }
+.social-logo { display: inline-block; flex: none; }
+.social-plateforme { display: inline-flex; align-items: center; vertical-align: -2px; margin-right: 6px; color: var(--ink-soft); }
+.social-audience .social-piste { height: 14px; background: none; }
+.social-audience .social-piste i { border-radius: 2px; }
+.social-audience .social-meta { display: inline; margin-left: 6px; }
+.tex-instagram { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.42) 0 3px, transparent 3px 7px) !important; }
+.tex-tiktok { background-image: radial-gradient(rgba(255,255,255,0.62) 1.1px, transparent 1.3px) !important; background-size: 5px 5px !important; }
+.social-barres-empilees .social-piste i.tex-instagram, .social-tuile.tex-instagram { background-blend-mode: normal; }
+
+/* Boutons en icônes (forme, découpe), comme la démo */
+.social-bascule.icones { gap: 8px; }
+.social-bascule.icones button {
+  display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px;
+  min-width: 52px; min-height: 40px; color: var(--ink-softer); background: var(--paper);
+  border: 0.5px solid var(--rule); border-radius: 2px;
+}
+.social-bascule.icones button.active { background: var(--cordovan); border-color: var(--cordovan); color: var(--paper); }
+.social-bascule.icones button svg { width: 30px; height: 20px; fill: currentColor; }
+.social-bascule.icones button svg.trait { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; }
+.social-icone-logos { display: inline-flex; gap: 2px; }
+
 /* Parts : treemap en tuiles */
 .social-treemap { position: relative; width: 100%; max-height: 360px; }
 .social-tuile { position: absolute; box-sizing: border-box; border: 2px solid var(--paper); overflow: hidden; }
@@ -11992,6 +12031,96 @@
 }
 .social-palmares a { color: var(--cordovan); border-bottom: 0.5px solid var(--cordovan); text-decoration: none; }
 .social-vide { font-family: "Source Serif 4", serif; color: var(--ink-softer); padding: 12px 0; }
+.social-publication { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: 14px; align-items: start; }
+.social-publication > * { grid-column: 2; }
+.social-media {
+  grid-column: 1 !important; grid-row: 1 / span 3; position: relative; display: block;
+  width: 96px; height: 96px; overflow: hidden; border-radius: 2px; background: var(--paper-deep);
+  border: 0.5px solid var(--rule-faint); border-bottom: 0.5px solid var(--rule-faint) !important;
+}
+.social-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.social-media-vide { position: absolute; inset: 0; display: block; }
+.social-media-coin { position: absolute; right: 6px; bottom: 5px; display: inline-flex; color: var(--ink-soft); }
+.social-lecture { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; }
+.social-lecture circle { fill: rgba(28, 25, 23, 0.55); stroke: var(--paper); stroke-width: 1.5; }
+.social-lecture path { fill: var(--paper); }
+.social-media-vide .social-lecture circle { fill: none; stroke: var(--ink-soft); }
+.social-media-vide .social-lecture path { fill: var(--ink-soft); }
+.social-media:hover .social-lecture circle { fill: var(--cordovan); stroke: var(--cordovan); }
+.social-media:hover .social-media-vide .social-lecture path { fill: var(--paper); }
+.social-fil { margin-top: 18px; }
+.social-fil h4 {
+  margin: 0 0 4px; font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-softer);
+}
+
+/* Carte des circonscriptions */
+.social { --social-carte-vide: var(--rule-faint); }
+.social-carte-outils { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; margin: 4px 0 10px; }
+.social-carte-liste { display: inline-flex; align-items: center; gap: 8px; }
+.social-carte-liste span {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-softer);
+}
+.social-carte-liste select {
+  min-height: 36px; max-width: 16rem; padding: 4px 8px; font: 14px "Source Serif 4", serif;
+  color: var(--ink); background: var(--paper); border: 0.5px solid var(--rule); border-radius: 2px;
+}
+.social-carte-legende { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; margin: 0 0 10px; padding: 0; }
+.social-carte-legende li {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--ink-soft);
+}
+.social-carte-legende i { width: 12px; height: 12px; border-radius: 2px; }
+.social-carte-vues { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.social-carte-province, .social-carte-encarts svg { display: block; width: 100%; height: auto; }
+.social-carte-province { max-height: 760px; }
+.social-carte use { stroke: var(--paper); cursor: pointer; }
+.social-carte use { stroke-width: 0.6px; }
+.social-carte-encarts use { stroke-width: 1px; }
+.social-carte use:hover { opacity: 0.8; }
+.social-carte use.social-carte-contour { fill: none; stroke: var(--ink); stroke-width: 2.5px; pointer-events: none; }
+.social-carte-cadre { fill: none; stroke: var(--ink-soft); stroke-width: 1px; stroke-dasharray: 4 3; pointer-events: none; }
+.social-carte-encarts { display: grid; gap: 14px; }
+.social-carte-encarts figure { margin: 0; border: 0.5px solid var(--rule); background: var(--paper-deep); }
+.social-carte-encarts figcaption {
+  padding: 4px 8px; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-softer);
+}
+.social-fiche { margin: 18px 0 6px; padding-top: 12px; border-top: 0.5px solid var(--rule); }
+.social-fiche h3 { margin: 0 0 8px; font-family: "Playfair Display", serif; font-size: 22px; color: var(--ink); }
+.social-fiche ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0 28px; }
+.social-fiche li { padding: 10px 0; border-bottom: 0.5px solid var(--rule-faint); }
+.social-fiche-tete { display: flex; align-items: baseline; gap: 8px; }
+.social-fiche-parti {
+  flex: none; padding: 1px 6px; border-radius: 2px; color: var(--paper);
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+}
+.social-fiche-comptes { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 2px; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft); }
+.social-fiche-comptes a, .social-fiche-comptes span { display: inline-flex; align-items: center; min-height: 28px; color: inherit; text-decoration: none; }
+.social-fiche-comptes a:hover { color: var(--cordovan); }
+.social-carte .social-note a { color: var(--cordovan); }
+.social-carte-vues { position: relative; }
+.social-carte-province use:focus { outline: none; }
+.social-carte-province use:focus-visible { stroke: var(--cordovan); stroke-width: 3px; }
+.social-infobulle {
+  position: absolute; z-index: 5; width: 17rem; max-width: calc(100% - 32px); padding: 10px 12px;
+  pointer-events: none; background: var(--paper); border: 0.5px solid var(--rule);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); font-family: "Source Serif 4", serif; font-size: 14px; color: var(--ink);
+}
+.social-infobulle strong { display: block; font-family: "Playfair Display", serif; font-size: 17px; line-height: 1.2; }
+.social-infobulle > .social-meta { display: block; margin-top: 2px; }
+.social-infobulle-tete { margin: 8px 0 6px; font-size: 13px; color: var(--ink-soft); }
+.social-infobulle ul { list-style: none; margin: 0; padding: 6px 0 0; border-top: 0.5px solid var(--rule-faint); }
+.social-infobulle li { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) auto 2.6rem; align-items: center; gap: 6px; padding: 2px 0; }
+.social-infobulle-sigle { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
+.social-infobulle-nom { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
+.social-infobulle-logos { display: inline-flex; gap: 3px; color: var(--ink-soft); }
+.social-infobulle-n { text-align: right; font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+.social-infobulle-pied {
+  display: block; margin-top: 6px; text-align: right; font-family: "IBM Plex Mono", monospace;
+  font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-softer);
+}
 
 @media (max-width: 900px) {
   .social-tdb { grid-template-columns: 1fr; gap: 18px; }
@@ -11999,6 +12128,13 @@
 }
 @media (max-width: 640px) {
   .social-raccourcis button, .social-coches button, .social-bascule button { min-height: 40px; min-width: 40px; padding: 8px 10px; }
+  .social-carte-vues { grid-template-columns: 1fr; }
+  .social-carte-encarts { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .social-carte-liste, .social-carte-liste select { width: 100%; max-width: none; }
+  .social-carte-liste select { min-height: 40px; }
+  .social-fiche-comptes a { min-height: 40px; }
+  .social-publication { grid-template-columns: 72px minmax(0, 1fr); column-gap: 10px; }
+  .social-media { width: 72px; height: 72px; }
   .social-frise { padding: 0 20px 20px; } /* la zone tactile des poignées reste dans l'écran */
   .social-frise-zone { height: 72px; }
   .social-frise-poignee { width: 40px; }
