@@ -26,19 +26,11 @@ const jourCourt = (iso: string) => `${Number(iso.slice(8, 10))} ${MONTHS_FR[Numb
 const COULEURS_PF: Record<Plateforme, string> = { facebook: "#2E4663", instagram: "#A07A3D", tiktok: "#433F38" };
 const rang = (n: number) => (n === 1 ? "1er" : `${n}e`);
 
-/** « aujourd'hui », « hier », « il y a 4 jours » : par rapport au jour du
- *  dernier relevé (le lendemain du dernier jour complet). */
-function ilYa(jour: string, fin: string) {
-  const ref = new Date(`${fin}T00:00:00Z`).getTime() + 86400000;
-  const n = Math.round((ref - new Date(`${jour}T00:00:00Z`).getTime()) / 86400000);
-  return n <= 0 ? "aujourd’hui" : n === 1 ? "hier" : `il y a ${nombreFr(n)}\u00a0jours`;
-}
-
 /** Les candidats de la circonscription, une carte chacun, classés par
  *  j'aime depuis le déclenchement (sans compte ou sans publication : à la fin,
  *  dans l'ordre des partis). Chaque carte : pastille de rang, abonnés,
- *  publications, j'aime et commentaires, part des plateformes, dernière
- *  publication, la plus aimée, et les j'aime par jour depuis le 1er août. */
+ *  publications, j'aime et commentaires, part des plateformes, la
+ *  publication la plus aimée, et les j'aime par jour depuis le 1er août. */
 export function CandidatsCirco({
   page,
   partiInfo,
@@ -49,7 +41,6 @@ export function CandidatsCirco({
   const avecSerie = page.jours.length > 0 && page.candidats.some((c) => c.serie);
   const max = Math.max(1, ...page.candidats.flatMap((c) => (c.serie ?? []).map((j) => j.jaime)));
   const n = page.jours.length;
-  const fin = page.jours[n - 1] ?? "";
   const iCampagne = page.jours.indexOf(page.campagne);
   const mois = page.jours.flatMap((j, i) => (j.endsWith("-01") ? [{ i, m: MONTHS_FR[Number(j.slice(5, 7)) - 1] }] : []));
   const actif = (c: CandidatPage) => c.comptes.length > 0 && c.publications > 0;
@@ -154,19 +145,6 @@ export function CandidatsCirco({
                       )}
                     </>
                   )}
-                  {c.derniere && (
-                    <p className="social-meta circo-derniere">
-                      Dernière publication {ilYa(c.derniere.jour, fin)}
-                      {c.derniere.url && (
-                        <>
-                          {" · "}
-                          <a href={c.derniere.url} target="_blank" rel="noopener noreferrer">
-                            voir
-                          </a>
-                        </>
-                      )}
-                    </p>
-                  )}
                   {c.meilleure && c.meilleure.jaime > 0 && (
                     <div className="circo-meilleure">
                       <Media p={c.meilleure} />
@@ -237,20 +215,13 @@ export function CandidatsCirco({
   );
 }
 
-const NOMS_NATURES: Record<string, string> = {
-  video: "Vidéos",
-  photo: "Photos",
-  carrousel: "Carrousels",
-  texte: "Textes",
-  partage: "Partages",
-};
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const PAS = 20;
 
 /** Le fil de la circonscription. Le HTML en porte les 20 premières
  *  publications ; « Voir plus » charge le fichier statique complet de la
  *  circonscription (une fois), puis en montre 20 de plus à chaque clic. Les
- *  filtres (candidat, plateforme, nature) portent sur tout ce qui est chargé. */
+ *  filtres (candidat, plateforme) portent sur tout ce qui est chargé. */
 export function FilCirco({ page, partiInfo }: { page: PageCirco; partiInfo: SocialData["partiInfo"] }) {
   const [tout, setTout] = useState<FilItem[] | null>(null);
   const [chargement, setChargement] = useState(false);
@@ -258,16 +229,9 @@ export function FilCirco({ page, partiInfo }: { page: PageCirco; partiInfo: Soci
   const liste = tout ?? page.fil;
   const presentes = PLATEFORMES.filter((p) => liste.some((x) => x.plateforme === p));
   const partis = [...new Set(liste.map((x) => x.party))] as PartyKey[];
-  const natures = Object.keys(NOMS_NATURES).filter((n) => liste.some((x) => x.nature === n));
   const [plateformes, setPlateformes] = useState<Plateforme[]>([...PLATEFORMES]);
   const [exclus, setExclus] = useState<PartyKey[]>([]);
-  const [naturesExclues, setNaturesExclues] = useState<string[]>([]);
-  const fil = liste.filter(
-    (x) =>
-      plateformes.includes(x.plateforme) &&
-      !exclus.includes(x.party) &&
-      !(x.nature && naturesExclues.includes(x.nature)),
-  );
+  const fil = liste.filter((x) => plateformes.includes(x.plateforme) && !exclus.includes(x.party));
   const bascule = <T,>(l: T[], v: T) => (l.includes(v) ? l.filter((x) => x !== v) : [...l, v]);
   const total = page.total ?? page.fil.length;
   const voirPlus = async () => {
@@ -321,17 +285,6 @@ export function FilCirco({ page, partiInfo }: { page: PageCirco; partiInfo: Soci
                   onClick={() => setPlateformes(bascule(plateformes, p))}
                 >
                   <Logo p={p} taille={15} />
-                </button>
-              ))}
-              {natures.map((n) => (
-                <button
-                  type="button"
-                  key={n}
-                  aria-pressed={!naturesExclues.includes(n)}
-                  className={!naturesExclues.includes(n) ? "actif" : undefined}
-                  onClick={() => setNaturesExclues(bascule(naturesExclues, n))}
-                >
-                  {NOMS_NATURES[n]}
                 </button>
               ))}
             </div>

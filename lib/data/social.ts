@@ -617,7 +617,6 @@ export function construirePageCirco(
       if (p) parPlateforme[p] += pc;
     }
     const siensFil = fil.filter((x) => x.party === k);
-    const derniere = siensFil.reduce<FilItem | null>((m, x) => (!m || x.jour > m.jour ? x : m), null);
     const meilleure = siensFil.reduce<FilItem | null>((m, x) => (!m || x.jaime > m.jaime ? x : m), null);
     return {
       nom,
@@ -634,7 +633,6 @@ export function construirePageCirco(
       parPublication: publications ? jaime / publications : 0,
       parPlateforme,
       serie,
-      derniere,
       meilleure,
     };
   });
@@ -669,7 +667,7 @@ export function loadPagesCirco(): Promise<Map<string, PageCirco>> {
     const fin = jourMoins(dernier, 1);
     for (const c of (geo as FondCarte).circonscriptions) {
       const tout = complet?.get(cleCirco(c.nom));
-      // Dernière et plus aimée : sur tout le fil connu ; la page n'en garde que 20.
+      // La plus aimée : sur tout le fil connu ; la page n'en garde que 20.
       const connu = tout ?? fils.get(cleCirco(c.nom)) ?? [];
       const page = construirePageCirco(c, comptes, connu, comptesJour, fin, officiels);
       out.set(page.slug, {

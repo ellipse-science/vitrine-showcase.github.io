@@ -12227,7 +12227,7 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 }
 .circo-plateformes { display: flex; height: 14px; gap: 1px; margin-top: 4px; background: var(--rule-faint); }
 .circo-plateformes i { display: flex; align-items: center; justify-content: center; height: 100%; color: #fff; }
-.circo-derniere a, .circo-meilleure a { color: var(--cordovan); }
+.circo-meilleure a { color: var(--cordovan); }
 .circo-meilleure { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: start; margin-top: 4px; }
 .circo-meilleure .social-media { width: 64px; height: 64px; grid-row: auto; }
 .circo-meilleure p { margin: 2px 0; font-family: "Source Serif 4", serif; font-size: 13px; line-height: 1.35; color: var(--ink-soft); }

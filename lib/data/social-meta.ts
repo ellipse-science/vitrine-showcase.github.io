@@ -131,7 +131,6 @@ export type CandidatPage = {
   parPlateforme: Record<Plateforme, number>;
   /** Publications et j'aime par jour depuis le 1er août ; null sans la table. */
   serie: SerieJour[] | null;
-  derniere: FilItem | null;
   meilleure: FilItem | null;
 };
 export type PageCirco = {
