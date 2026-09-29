@@ -12,7 +12,7 @@ import {
   type Plateforme,
   type SocialData,
 } from "@/lib/data/social-meta";
-import { CartePublication, Logo } from "@/components/interactive/SocialClient";
+import { CartePublication, Logo, Media } from "@/components/interactive/SocialClient";
 import { MONTHS_FR } from "@/lib/dates";
 
 // Page d'une circonscription du module « Les candidats sur les réseaux » :
@@ -23,11 +23,21 @@ const jourCourt = (iso: string) => `${Number(iso.slice(8, 10))} ${MONTHS_FR[Numb
 
 type MesureSerie = "publications" | "jaime";
 
-/** Les candidats de la circonscription, une carte chacun : parti et nom, ses
- *  comptes (logo, abonnés, lien vers le profil), son activité depuis le
- *  déclenchement et sa série jour par jour. La bascule Publications / J'aime
- *  agit sur toutes les séries, à la même échelle. Un parti sans compte suivi
- *  garde sa carte. */
+const COULEURS_PF: Record<Plateforme, string> = { facebook: "#2E4663", instagram: "#A07A3D", tiktok: "#433F38" };
+const rang = (n: number) => (n === 1 ? "1er" : `${n}e`);
+
+/** « aujourd'hui », « hier », « il y a 4 jours » : par rapport au jour du
+ *  dernier relevé (le lendemain du dernier jour complet). */
+function ilYa(jour: string, fin: string) {
+  const ref = new Date(`${fin}T00:00:00Z`).getTime() + 86400000;
+  const n = Math.round((ref - new Date(`${jour}T00:00:00Z`).getTime()) / 86400000);
+  return n <= 0 ? "aujourd’hui" : n === 1 ? "hier" : `il y a ${nombreFr(n)}\u00a0jours`;
+}
+
+/** Les candidats de la circonscription, une carte chacun : abonnés, chiffres
+ *  depuis le déclenchement, rang dans la circonscription, part des
+ *  plateformes, dernière publication, la plus aimée, et la série jour par
+ *  jour. La bascule Publications / J'aime agit sur les séries et le rang. */
 export function CandidatsCirco({
   page,
   partiInfo,
@@ -39,79 +49,143 @@ export function CandidatsCirco({
   const avecSerie = page.jours.length > 0 && page.candidats.some((c) => c.serie);
   const max = Math.max(1, ...page.candidats.flatMap((c) => (c.serie ?? []).map((j) => j[mesure])));
   const n = page.jours.length;
+  const fin = page.jours[n - 1] ?? "";
   const iCampagne = page.jours.indexOf(page.campagne);
   const mois = page.jours.flatMap((j, i) => (j.endsWith("-01") ? [{ i, m: MONTHS_FR[Number(j.slice(5, 7)) - 1] }] : []));
   const unite = mesure === "publications" ? "publications" : "j’aime";
+  // Rang dans la circonscription, pour la mesure de la bascule (ex æquo au même rang).
+  const valeurs = page.candidats.map((c) => c[mesure]);
+  const rangDe = (v: number) => 1 + valeurs.filter((x) => x > v).length;
   return (
     <section className="circo-section">
       <div className="circo-section-tete">
         <h2 className="apropos-section-title">Les candidats</h2>
-        {avecSerie && (
-          <div className="social-bascule" role="group" aria-label="Mesure des séries">
-            {(
-              [
-                ["publications", "Publications"],
-                ["jaime", "J’aime"],
-              ] as const
-            ).map(([cle, libelle]) => (
-              <button
-                type="button"
-                key={cle}
-                aria-pressed={mesure === cle}
-                className={mesure === cle ? "active" : undefined}
-                onClick={() => setMesure(cle)}
-              >
-                {libelle}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="social-bascule" role="group" aria-label="Mesure des séries et du rang">
+          {(
+            [
+              ["publications", "Publications"],
+              ["jaime", "J’aime"],
+            ] as const
+          ).map(([cle, libelle]) => (
+            <button
+              type="button"
+              key={cle}
+              aria-pressed={mesure === cle}
+              className={mesure === cle ? "active" : undefined}
+              onClick={() => setMesure(cle)}
+            >
+              {libelle}
+            </button>
+          ))}
+        </div>
       </div>
-      {avecSerie && (
-        <p className="social-sous-titre">
-          {mesure === "publications" ? "Publications" : "J’aime reçus"} par jour depuis le 1er&nbsp;août, même échelle
-          pour tous ; le pointillé marque le déclenchement des élections.
-        </p>
-      )}
+      <p className="social-sous-titre">
+        Depuis le déclenchement, jours complets.
+        {avecSerie
+          ? ` En bas de chaque carte, ${mesure === "publications" ? "les publications" : "les j’aime reçus"} par jour depuis le 1er\u00a0août, à la même échelle pour tous. Le pointillé marque le déclenchement.`
+          : ""}
+      </p>
       <ul className="circo-cartes">
         {page.candidats.map((c) => {
           const total = (c.serie ?? []).reduce((t, j) => t + j[mesure], 0);
+          const totalPf = PLATEFORMES.reduce((t, p) => t + c.parPlateforme[p], 0);
           return (
-            <li key={`${c.party}-${c.nom}`} className="circo-carte">
+            <li key={`${c.party}-${c.nom}`} className="circo-carte" style={{ borderLeftColor: partiInfo[c.party].couleur }}>
               <div className="social-fiche-tete">
                 <span className="social-fiche-parti" style={{ background: partiInfo[c.party].couleur }}>
                   {partiInfo[c.party].sigle}
                 </span>
                 <span className="social-nom">{c.nom}</span>
               </div>
-              <ul className="circo-comptes">
-                {c.comptes.map((k) => {
-                  const contenu = (
+              {c.comptes.length === 0 ? (
+                <p className="social-meta circo-vide">Aucun compte suivi</p>
+              ) : (
+                <>
+                  <div className="circo-abonnes">
+                    <span className="circo-grand">{nombreFr(c.abonnes)}</span>
+                    <span className="social-meta">abonnés</span>
+                  </div>
+                  <ul className="circo-comptes">
+                    {c.comptes.map((k) => {
+                      const contenu = (
+                        <span className="circo-compte">
+                          <Logo p={k.plateforme} taille={14} />
+                          <span className="visually-hidden">{NOMS_PLATEFORMES[k.plateforme]}</span>
+                          <span>{k.abonnes != null ? nombreFr(k.abonnes) : "?"}</span>
+                        </span>
+                      );
+                      return (
+                        <li key={k.plateforme}>
+                          {k.url ? (
+                            <a href={k.url} target="_blank" rel="noopener noreferrer" title={`${NOMS_PLATEFORMES[k.plateforme]} de ${c.nom}`}>
+                              {contenu}
+                            </a>
+                          ) : (
+                            contenu
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {c.publications === 0 ? (
+                    <p className="social-meta circo-vide">Aucune publication depuis le déclenchement</p>
+                  ) : (
                     <>
-                      <Logo p={k.plateforme} taille={15} />
-                      <span className="visually-hidden">{NOMS_PLATEFORMES[k.plateforme]}</span>
-                      <span>{k.abonnes != null ? `${nombreFr(k.abonnes)}\u00a0abonnés` : "abonnés inconnus"}</span>
-                    </>
-                  );
-                  return (
-                    <li key={k.plateforme}>
-                      {k.url ? (
-                        <a href={k.url} target="_blank" rel="noopener noreferrer" title={`${NOMS_PLATEFORMES[k.plateforme]} de ${c.nom}`}>
-                          {contenu}
-                        </a>
-                      ) : (
-                        contenu
+                      <dl className="circo-chiffres">
+                        <div><dd>{nombreFr(c.publications)}</dd><dt>Publications</dt></div>
+                        <div><dd>{nombreFr(c.parJour, 1)}</dd><dt>Par jour</dt></div>
+                        <div><dd>{nombreFr(c.jaime)}</dd><dt>J’aime</dt></div>
+                        <div><dd>{nombreFr(c.commentaires)}</dd><dt>Commentaires</dt></div>
+                        <div><dd>{nombreFr(c.parPublication, 1)}</dd><dt>J’aime par publication</dt></div>
+                      </dl>
+                      <p className="circo-rang">
+                        {rang(rangDe(c[mesure]))} sur {page.candidats.length} en {unite}
+                      </p>
+                      {totalPf > 0 && (
+                        <div className="circo-plateformes" role="img" aria-label={PLATEFORMES.filter((p) => c.parPlateforme[p]).map((p) => `${NOMS_PLATEFORMES[p]} ${Math.round((100 * c.parPlateforme[p]) / totalPf)}\u00a0%`).join(", ")}>
+                          {PLATEFORMES.filter((p) => c.parPlateforme[p]).map((p) => (
+                            <i
+                              key={p}
+                              style={{ width: `${(100 * c.parPlateforme[p]) / totalPf}%`, background: COULEURS_PF[p] }}
+                              title={`${NOMS_PLATEFORMES[p]}\u00a0: ${Math.round((100 * c.parPlateforme[p]) / totalPf)}\u00a0% des publications`}
+                            />
+                          ))}
+                        </div>
                       )}
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="social-meta">
-                {c.publications > 0
-                  ? `${nombreFr(c.publications)}\u00a0publication${c.publications > 1 ? "s" : ""} · ${nombreFr(c.jaime)}\u00a0j’aime depuis le déclenchement`
-                  : "Aucune publication depuis le déclenchement"}
-              </p>
-              {c.serie && n > 0 && (
+                    </>
+                  )}
+                  {c.derniere && (
+                    <p className="social-meta circo-derniere">
+                      Dernière publication {ilYa(c.derniere.jour, fin)}
+                      {c.derniere.url && (
+                        <>
+                          {" · "}
+                          <a href={c.derniere.url} target="_blank" rel="noopener noreferrer">
+                            voir
+                          </a>
+                        </>
+                      )}
+                    </p>
+                  )}
+                  {c.meilleure && c.meilleure.jaime > 0 && (
+                    <div className="circo-meilleure">
+                      <Media p={c.meilleure} />
+                      <div>
+                        <span className="social-meta">La plus aimée · {nombreFr(c.meilleure.jaime)}&nbsp;j’aime</span>
+                        <p>
+                          {c.meilleure.texte.length > 80 ? `${c.meilleure.texte.slice(0, 79).trimEnd()}…` : c.meilleure.texte || "(sans texte)"}
+                        </p>
+                        {c.meilleure.url && (
+                          <a href={c.meilleure.url} target="_blank" rel="noopener noreferrer" className="social-meta">
+                            voir la publication
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              {c.serie && n > 0 && c.comptes.length > 0 && (
                 <figure className="circo-serie">
                   <figcaption className="social-meta">
                     {nombreFr(total)}&nbsp;{unite} depuis le 1er&nbsp;août
@@ -153,14 +227,14 @@ export function CandidatsCirco({
           );
         })}
         {page.sansCompte.map((k) => (
-          <li key={k} className="circo-carte vide">
+          <li key={k} className="circo-carte" style={{ borderLeftColor: partiInfo[k].couleur }}>
             <div className="social-fiche-tete">
               <span className="social-fiche-parti" style={{ background: partiInfo[k].couleur }}>
                 {partiInfo[k].sigle}
               </span>
               <span className="social-nom">{partiInfo[k].nom}</span>
             </div>
-            <p className="social-meta">Aucun compte suivi</p>
+            <p className="social-meta circo-vide">Aucun compte suivi</p>
           </li>
         ))}
       </ul>

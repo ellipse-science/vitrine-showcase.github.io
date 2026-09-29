@@ -45,17 +45,23 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
 
   it("filtres, onglets, formes et découpes de la démo sont présents", () => {
     // « Filtres » puis « En chiffres » dans la colonne de droite.
-    for (const mot of ["Filtres", "Plateforme", "Parti", "Type de compte", "Présence", "Audience", "Engagement",
-      "Palmarès", "Campagne", "En chiffres"]) {
+    for (const mot of ["Filtres", "Plateforme", "Parti", "Type de compte", "Présence", "Partis", "Candidats",
+      "Palmarès", "Campagne", "Mesure", "En chiffres", "Abonnés, dernier relevé"]) {
       expect(texte).toContain(mot);
     }
     // Formes, découpes et plateformes en icônes, comme la démo : le nom est
     // dans aria-label (lecteurs d'écran) et title (infobulle).
-    for (const nom of ["Barres", "Parts", "Dans le temps", "Ensemble", "Par plateforme", "Par parti",
-      "Facebook", "Instagram", "TikTok"]) {
+    for (const nom of ["Barres et parts", "Dans le temps", "Ensemble", "Par plateforme", "Par parti",
+      "Facebook", "Instagram", "TikTok", "Par jour, en moyenne", "J’aime par publication"]) {
       expect(html).toContain(`aria-label="${nom}"`);
-      expect(html).toContain(`title="${nom}"`);
+      // « Dans le temps », grisé sur les abonnés, porte la raison en infobulle.
+      if (nom !== "Dans le temps") expect(html).toContain(`title="${nom}"`);
     }
+  });
+
+  it("Partis s'ouvre sur les abonnés : « dans le temps » grisé, faute de série", () => {
+    expect(texte).toContain("Total des abonnés des comptes suivis");
+    expect(html).toMatch(/title="Pas de série d’abonnés" disabled=""/);
   });
 
   it("sans fond de carte, pas d'onglet Carte", () => {

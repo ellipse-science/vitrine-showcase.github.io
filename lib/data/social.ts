@@ -54,6 +54,7 @@ export const SOCIAL_DATASETS = {
   palmares: "public/data/agora/agora_social_palmares.json",
   fil: "public/data/agora/agora_social_fil.json",
   comptesJour: "public/data/agora/agora_social_comptes_jour.json",
+  candidats: "public/data/agora/agora_social_candidats.json",
   /** Fil complet depuis le déclenchement (aws-refiners#590) : un fichier par
    *  circonscription (contenu, déterministe) et un fichier de compteurs, écrits
    *  par fetch_data.R (post-traitements social_fil_*). */
@@ -120,6 +121,7 @@ type PalmaresRow = {
   nature?: string | null;
   texte_origine?: string | null;
 };
+type CandidatRow = { circonscription: string; parti: string; candidat: string };
 type CompteJourRow = {
   compte: string;
   jour: string;
@@ -215,7 +217,10 @@ export function construireFil(
   vignetteDisponible: (cle: string) => boolean = () => false,
   maxTexte = TEXTE_MAX,
 ): Map<string, FilItem[]> {
-  const coupe = (t: string) => (t.length > maxTexte ? `${t.slice(0, maxTexte - 1).trimEnd()}…` : t);
+  const coupe = (t: string) => {
+    const u = sansGrasUnicode(t);
+    return u.length > maxTexte ? `${u.slice(0, maxTexte - 1).trimEnd()}…` : u;
+  };
   const out = new Map<string, FilItem[]>();
   for (const r of rows) {
     const k = partyKey(r.parti);
@@ -305,8 +310,17 @@ export function construireCarte(
   return { vue, encarts: { montreal, quebec }, circos };
 }
 
+/** Les « caractères mathématiques gras » (U+1D400–1D7FF) que certains
+ *  candidats emploient pour simuler du gras s'affichent dans une autre police :
+ *  ramenés aux lettres ordinaires (NFKC, sur ce bloc seulement : accents et
+ *  émojis intacts). « 𝗡𝗼𝘀 𝗲𝗻𝗴𝗮𝗴𝗲𝗺𝗲𝗻𝘁𝘀 » → « Nos engagements ». */
+export const sansGrasUnicode = (t: string) => t.replace(/[\u{1D400}-\u{1D7FF}]/gu, (c) => c.normalize("NFKC"));
+
 const typeCompte = (t: string | null | undefined): TypeCompte => (t === "parti" ? "parti" : "candidat");
-const tronque = (t: string) => (t.length > TEXTE_MAX ? `${t.slice(0, TEXTE_MAX - 1).trimEnd()}…` : t);
+const tronque = (t: string) => {
+  const u = sansGrasUnicode(t);
+  return u.length > TEXTE_MAX ? `${u.slice(0, TEXTE_MAX - 1).trimEnd()}…` : u;
+};
 
 /** Assemble les trois tables en données prêtes à filtrer (pure, testée). */
 export function construireSocial(
@@ -520,78 +534,131 @@ export function loadComptesJour(): Promise<CompteJourRow[] | null> {
   return comptesJourMemo;
 }
 
-/** Une page de circonscription. Pure, testée. */
+/** Une page de circonscription. Pure, testée.
+ *  - Candidats : les candidatures officielles des cinq partis (table
+ *    social_candidats) quand elles sont là, chacun avec les comptes suivis de
+ *    son parti dans la circonscription ; sinon, les seuls comptes suivis.
+ *  - Chiffres : UNE source, l'activité par compte et par jour
+ *    (social_comptes_jour) sur les jours complets ; la série depuis le 1er août
+ *    contient donc toujours les chiffres depuis le déclenchement. Sans elle,
+ *    repli sur les colonnes de social_comptes. */
 export function construirePageCirco(
   circo: { nom: string; region: string },
   comptes: CompteRow[],
   fil: FilItem[],
   comptesJour: CompteJourRow[] | null,
   fin: string,
+  officiels: CandidatRow[] | null = null,
 ): PageCirco {
+  const cle = cleCirco(circo.nom);
   const siens = comptes.filter(
-    (r) => typeCompte(r.type) === "candidat" && r.circonscription && cleCirco(r.circonscription) === cleCirco(circo.nom),
+    (r) => typeCompte(r.type) === "candidat" && r.circonscription && cleCirco(r.circonscription) === cle,
   );
-  const nomTypo = siens[0]?.circonscription ?? circo.nom;
-  const parCompte = new Map<string, Map<string, SerieJour>>();
+  const nomTypo = siens[0]?.circonscription ?? officiels?.find((o) => cleCirco(o.circonscription) === cle)?.circonscription ?? circo.nom;
+  const parCompte = new Map<string, Map<string, CompteJourRow>>();
   for (const r of comptesJour ?? []) {
     if (!parCompte.has(r.compte)) parCompte.set(r.compte, new Map());
-    parCompte.get(r.compte)!.set(r.jour, { jour: r.jour, publications: nombre(r.publications), jaime: nombre(r.jaime) });
+    parCompte.get(r.compte)!.set(r.jour, r);
   }
   const jours = fin >= SERIES_DEBUT ? joursEntre(SERIES_DEBUT, fin) : [];
-  const candidats: CandidatPage[] = [];
-  for (const k of PARTY_KEYS) {
-    const leurs = siens.filter((r) => partyKey(r.parti) === k);
-    const noms = [...new Set(leurs.map((r) => r.candidat ?? r.pseudo ?? r.compte))];
-    for (const nom of noms) {
-      const cs = leurs.filter((r) => (r.candidat ?? r.pseudo ?? r.compte) === nom);
-      const serie = comptesJour
-        ? jours.map((j) => {
-            let publications = 0;
-            let jaime = 0;
-            for (const c of cs) {
-              const x = parCompte.get(c.compte)?.get(j);
-              publications += x?.publications ?? 0;
-              jaime += x?.jaime ?? 0;
-            }
-            return { jour: j, publications, jaime };
-          })
-        : null;
-      candidats.push({
-        nom,
-        party: k,
-        comptes: cs.flatMap((c) => {
-          const p = plateforme(c.plateforme);
-          return p ? [{ plateforme: p, url: urlCompte(p, c.pseudo), abonnes: c.abonnes }] : [];
-        }),
-        publications: cs.reduce((t, c) => t + nombre(c.publications_campagne), 0),
-        jaime: cs.reduce((t, c) => t + nombre(c.jaime_campagne), 0),
-        serie,
-      });
+  const campagne = ELECTION_CALL_DATE ?? SERIES_DEBUT;
+  const joursCampagne = fin >= campagne ? joursEntre(campagne, fin).length : 0;
+
+  // Qui figure sur la page : les officiels, sinon les noms des comptes suivis.
+  const noms: { party: PartyKey; nom: string }[] = [];
+  const leursOfficiels = (officiels ?? []).filter((o) => cleCirco(o.circonscription) === cle);
+  if (leursOfficiels.length) {
+    for (const k of PARTY_KEYS) {
+      const o = leursOfficiels.find((x) => partyKey(x.parti) === k);
+      if (o) noms.push({ party: k, nom: o.candidat });
     }
+  } else {
+    for (const k of PARTY_KEYS)
+      for (const nom of new Set(siens.filter((r) => partyKey(r.parti) === k).map((r) => r.candidat ?? r.pseudo ?? r.compte)))
+        noms.push({ party: k, nom });
   }
+
+  const candidats: CandidatPage[] = noms.map(({ party: k, nom }) => {
+    // Un seul candidat par parti et circonscription : tous les comptes du parti sont les siens.
+    const cs = siens.filter((r) => partyKey(r.parti) === k && (leursOfficiels.length || (r.candidat ?? r.pseudo ?? r.compte) === nom));
+    const serie = comptesJour
+      ? jours.map((j) => {
+          let publications = 0;
+          let jaime = 0;
+          for (const c of cs) {
+            const x = parCompte.get(c.compte)?.get(j);
+            publications += nombre(x?.publications);
+            jaime += nombre(x?.jaime);
+          }
+          return { jour: j, publications, jaime };
+        })
+      : null;
+    let publications = 0;
+    let jaime = 0;
+    let commentaires = 0;
+    const parPlateforme = { facebook: 0, instagram: 0, tiktok: 0 } as Record<Plateforme, number>;
+    for (const c of cs) {
+      const p = plateforme(c.plateforme);
+      let pc = 0;
+      if (comptesJour) {
+        for (const [j, x] of parCompte.get(c.compte) ?? []) {
+          if (j < campagne || j > fin) continue;
+          pc += nombre(x.publications);
+          jaime += nombre(x.jaime);
+          commentaires += nombre(x.commentaires);
+        }
+      } else {
+        pc = nombre(c.publications_campagne);
+        jaime += nombre(c.jaime_campagne);
+      }
+      publications += pc;
+      if (p) parPlateforme[p] += pc;
+    }
+    const siensFil = fil.filter((x) => x.party === k);
+    const derniere = siensFil.reduce<FilItem | null>((m, x) => (!m || x.jour > m.jour ? x : m), null);
+    const meilleure = siensFil.reduce<FilItem | null>((m, x) => (!m || x.jaime > m.jaime ? x : m), null);
+    return {
+      nom,
+      party: k,
+      comptes: cs.flatMap((c) => {
+        const p = plateforme(c.plateforme);
+        return p ? [{ plateforme: p, url: urlCompte(p, c.pseudo), abonnes: c.abonnes }] : [];
+      }),
+      abonnes: cs.reduce((t, c) => t + nombre(c.abonnes), 0),
+      publications,
+      jaime,
+      commentaires,
+      parJour: joursCampagne ? publications / joursCampagne : 0,
+      parPublication: publications ? jaime / publications : 0,
+      parPlateforme,
+      serie,
+      derniere,
+      meilleure,
+    };
+  });
   return {
     slug: slugCirco(circo.nom),
     nom: nomTypo,
     region: circo.region,
     candidats,
-    sansCompte: PARTY_KEYS.filter((k) => !candidats.some((c) => c.party === k)),
+    sansCompte: leursOfficiels.length ? [] : PARTY_KEYS.filter((k) => !candidats.some((c) => c.party === k)),
     fil,
     jours,
     campagne: ELECTION_CALL_DATE ?? "",
   };
-
 }
 
 let pagesMemo: Promise<Map<string, PageCirco>> | null = null;
 /** Toutes les pages, une lecture par build. Vide si le module n'a pas de données. */
 export function loadPagesCirco(): Promise<Map<string, PageCirco>> {
   pagesMemo ??= (async () => {
-    const [comptes, jours, filRows, complet, comptesJour] = await Promise.all([
+    const [comptes, jours, filRows, complet, comptesJour, officiels] = await Promise.all([
       lire<CompteRow>(SOCIAL_DATASETS.comptes),
       lire<JourRow>(SOCIAL_DATASETS.publicationsJour),
       lire<FilRow>(SOCIAL_DATASETS.fil),
       loadFilComplet(),
       loadComptesJour(),
+      lire<CandidatRow>(SOCIAL_DATASETS.candidats),
     ]);
     const fils = construireFil(filRows ?? [], vignetteSurDisque, TEXTE_PAGE);
     const out = new Map<string, PageCirco>();
@@ -600,8 +667,16 @@ export function loadPagesCirco(): Promise<Map<string, PageCirco>> {
     const fin = jourMoins(dernier, 1);
     for (const c of (geo as FondCarte).circonscriptions) {
       const tout = complet?.get(cleCirco(c.nom));
-      const page = construirePageCirco(c, comptes, (tout ?? fils.get(cleCirco(c.nom)) ?? []).slice(0, FIL_PAGE), comptesJour, fin);
-      out.set(page.slug, { ...page, code: c.code, total: tout ? tout.length : page.fil.length, complet: !!tout && tout.length > FIL_PAGE });
+      // Dernière et plus aimée : sur tout le fil connu ; la page n'en garde que 20.
+      const connu = tout ?? fils.get(cleCirco(c.nom)) ?? [];
+      const page = construirePageCirco(c, comptes, connu, comptesJour, fin, officiels);
+      out.set(page.slug, {
+        ...page,
+        fil: connu.slice(0, FIL_PAGE),
+        code: c.code,
+        total: tout ? tout.length : Math.min(connu.length, FIL_PAGE),
+        complet: !!tout && tout.length > FIL_PAGE,
+      });
     }
     return out;
   })();

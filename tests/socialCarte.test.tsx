@@ -8,6 +8,7 @@ import {
   construirePageCirco,
   construireSocial,
   joindreCompteurs,
+  sansGrasUnicode,
   slugCirco,
   urlCompte,
   type FondCarte,
@@ -413,5 +414,61 @@ describe("infobulle : grands nombres et noms longs", () => {
     expect(html).toContain("1\u202f432\u202f983");
     expect(html).toContain('class="social-infobulle-nom"');
     expect(html).toContain("Marie-Ève Laflamme-Beauchemin de la Rivière-du-Loup");
+  });
+});
+
+describe("pages de circonscription : candidats officiels et cohérence", () => {
+  const f = fond as FondCarte;
+  const PARTIS = ["PLQ", "CAQ", "QS", "PQ", "PCQ"];
+  // Les 127 circonscriptions, cinq candidatures chacune (noms synthétiques ;
+  // les noms de circonscription réels, en tirets typographiques, comme la liste officielle).
+  const officiels = f.circonscriptions.flatMap((c) =>
+    PARTIS.map((p) => ({ circonscription: c.nom.replace(/-/g, "–"), parti: p, candidat: `${p} de ${c.nom}` })),
+  );
+  const cj = [
+    { compte: "facebook:qs", jour: "2026-08-10", publications: 4, jaime: 40, commentaires: 1 },
+    { compte: "facebook:qs", jour: "2026-09-01", publications: 3, jaime: 30, commentaires: 2 },
+    { compte: "instagram:qs", jour: "2026-09-02", publications: 1, jaime: 5, commentaires: 0 },
+  ];
+
+  it("les 127 pages montrent exactement leurs cinq candidats officiels, nommés, même sans compte", () => {
+    for (const c of f.circonscriptions) {
+      const page = construirePageCirco(c, comptes, [], cj, "2026-09-28", officiels);
+      expect(page.candidats.map((x) => x.party)).toEqual(["plq", "caq", "qs", "pq", "pcq"]);
+      expect(page.candidats.every((x) => x.nom.endsWith(`de ${c.nom}`))).toBe(true);
+      expect(page.sansCompte).toEqual([]);
+    }
+  });
+
+  it("chaque candidat : total depuis le 1er août ≥ total depuis le déclenchement (une seule source)", () => {
+    for (const c of f.circonscriptions) {
+      const page = construirePageCirco(c, comptes, [], cj, "2026-09-28", officiels);
+      for (const x of page.candidats) {
+        const serie = (x.serie ?? []).reduce((t, j) => t + j.publications, 0);
+        expect(serie).toBeGreaterThanOrEqual(x.publications);
+      }
+    }
+    const anjou = construirePageCirco({ nom: "Anjou-Louis-Riel", region: "Montréal" }, comptes, [], cj, "2026-09-28", officiels);
+    const qs = anjou.candidats.find((x) => x.party === "qs")!;
+    expect([qs.publications, qs.jaime, qs.commentaires]).toEqual([4, 35, 2]); // depuis le 27 août seulement
+    expect(qs.parPlateforme).toEqual({ facebook: 3, instagram: 1, tiktok: 0 });
+    expect((qs.serie ?? []).reduce((t, j) => t + j.publications, 0)).toBe(8);
+    expect(anjou.candidats.find((x) => x.party === "plq")!.comptes).toEqual([]);
+  });
+
+  it("gras Unicode ramené aux lettres ordinaires, accents et émojis intacts", () => {
+    expect(sansGrasUnicode("𝗡𝗼𝘀 𝗲𝗻𝗴𝗮𝗴𝗲𝗺𝗲𝗻𝘁𝘀")).toBe("Nos engagements");
+    expect(sansGrasUnicode("Été 🎉 𝐇𝐨𝐦𝐦𝐚𝐠𝐞")).toBe("Été 🎉 Hommage");
+  });
+});
+
+describe("mesures communes : abonnés et par jour", () => {
+  it("par jour divise par la durée ; les abonnés viennent du dernier relevé", async () => {
+    const { valeur, lignesAbonnes, totaux } = await import("@/lib/data/social-calc");
+    expect(valeur({ publications: 70, jaime: 0, commentaires: 0 }, "parJour", 7)).toBe(10);
+    const data = construireSocial(comptes, jours, [], null)!;
+    const f = { d0: 0, d1: data.jours.length - 1, plateformes: ["facebook" as const, "instagram" as const, "tiktok" as const], partis: data.partis, types: ["candidat" as const, "parti" as const] };
+    expect(totaux(lignesAbonnes(data, f)).publications).toBe(1200 + 300 + 900 + 99);
+    expect(totaux(lignesAbonnes(data, { ...f, partis: ["qs"] })).publications).toBe(1500);
   });
 });

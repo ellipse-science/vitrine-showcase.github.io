@@ -728,6 +728,23 @@
       "used_by": "lib/data/social.ts + app/reseaux/circonscriptions/[slug]/page.tsx"
     },
     {
+      "name": "agora_social_candidats",
+      "athena": "agora_datamart-social_candidats",
+      "out": "public/data/agora/agora_social_candidats.json",
+      "cols": [
+        "circonscription",
+        "parti",
+        "candidat"
+      ],
+      "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : candidatures officielles des cinq partis (127 × 5, liste close du 25 septembre), publiées par le raffineur agora-social (aws-refiners#590), pour que chaque page de circonscription nomme ses candidats, même sans compte suivi.",
+      "enabled": true,
+      "env": "DEV",
+      "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
+      "api": false,
+      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "used_by": "lib/data/social.ts (loadPagesCirco)"
+    },
+    {
       "name": "agora_social_fil_complet",
       "athena": "agora_datamart-social_fil_complet",
       "out": "public/data/agora/brut/agora_social_fil_complet.json",

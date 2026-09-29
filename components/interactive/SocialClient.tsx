@@ -24,8 +24,10 @@ import {
   classementAudience,
   integration,
   lignes,
+  lignesAbonnes,
   MIN_PUBLICATIONS_MOYENNE,
   meneur,
+  MOYENNES,
   palmares,
   palmaresApproche,
   panneaux,
@@ -46,26 +48,38 @@ import {
 } from "@/lib/data/social-calc";
 import { MONTHS_FR } from "@/lib/dates";
 
-type Vue = "presence" | "audience" | "publications" | "engagement" | "palmares" | "carte";
-type Forme = "barres" | "parts" | "temps";
+type Vue = "presence" | "partis" | "candidats" | "palmares" | "carte";
+/** « Barres et parts » côte à côte, ou « dans le temps ». */
+type Forme = "barres" | "temps";
 
 const VUES: { cle: Vue; libelle: string }[] = [
   { cle: "presence", libelle: "Présence" },
-  { cle: "audience", libelle: "Audience" },
-  { cle: "publications", libelle: "Publications" },
-  { cle: "engagement", libelle: "Engagement" },
+  { cle: "partis", libelle: "Partis" },
+  { cle: "candidats", libelle: "Candidats" },
   { cle: "palmares", libelle: "Palmarès" },
   { cle: "carte", libelle: "Carte" },
 ];
-// Les libellés des tuiles du haut, et leur définition.
-const MESURES_AUDIENCE: { cle: MesureAudience; libelle: string; unite: string }[] = [
-  { cle: "abonnes", libelle: "Abonnés", unite: "abonnés" },
-  { cle: "publications", libelle: "Publications", unite: "publications" },
-  { cle: "parJour", libelle: "Par jour, en moyenne", unite: "publications par jour, en moyenne" },
-  { cle: "jaime", libelle: "J’aime", unite: "j’aime" },
-  { cle: "commentaires", libelle: "Commentaires", unite: "commentaires" },
-  { cle: "parPublication", libelle: "J’aime par publication", unite: "j’aime par publication" },
+/** LA liste des mesures du module : onglets Partis et Candidats, chiffres de
+ *  la colonne de droite. Libellé complet, libellé court (bouton), unité, et la
+ *  définition d'où viennent les sous-titres. */
+const MESURES: { cle: Mesure; libelle: string; court: string; unite: string; definition: string }[] = [
+  {
+    cle: "abonnes", libelle: "Abonnés", court: "Abonnés", unite: "abonnés",
+    definition: "Total des abonnés des comptes suivis, au dernier relevé\u00a0: la période ne s’applique pas.",
+  },
+  { cle: "publications", libelle: "Publications", court: "Publications", unite: "publications", definition: "Total des publications de la période." },
+  {
+    cle: "parJour", libelle: "Par jour, en moyenne", court: "Par jour", unite: "publications par jour, en moyenne",
+    definition: "Publications par jour, en moyenne sur la période.",
+  },
+  { cle: "jaime", libelle: "J’aime", court: "J’aime", unite: "j’aime", definition: "Total des j’aime de la période." },
+  { cle: "commentaires", libelle: "Commentaires", court: "Commentaires", unite: "commentaires", definition: "Total des commentaires de la période." },
+  {
+    cle: "parPublication", libelle: "J’aime par publication", court: "J’aime / pub.", unite: "j’aime par publication",
+    definition: "J’aime par publication\u00a0: total des j’aime divisé par le nombre de publications de la période.",
+  },
 ];
+const MESURE = Object.fromEntries(MESURES.map((x) => [x.cle, x])) as Record<Mesure, (typeof MESURES)[number]>;
 
 /** Les grands chiffres en Playfair : l'espace fine y disparaît à l'œil
  *  (« 8903 ») ; une espace insécable ordinaire y reste lisible. */
@@ -202,13 +216,8 @@ function Audience({
   );
 }
 
-const PERIODES_CARTE: { cle: PeriodeCarte; libelle: string }[] = [
-  { cle: "7j", libelle: "7 derniers jours" },
-  { cle: "campagne", libelle: "Depuis le déclenchement" },
-];
 const FORMES: { cle: Forme; libelle: string }[] = [
-  { cle: "barres", libelle: "Barres" },
-  { cle: "parts", libelle: "Parts" },
+  { cle: "barres", libelle: "Barres et parts" },
   { cle: "temps", libelle: "Dans le temps" },
 ];
 const DECOUPES: { cle: Decoupe; libelle: string }[] = [
@@ -216,17 +225,7 @@ const DECOUPES: { cle: Decoupe; libelle: string }[] = [
   { cle: "plateforme", libelle: "Par plateforme" },
   { cle: "parti", libelle: "Par parti" },
 ];
-const MESURES_ENGAGEMENT: { cle: Mesure; libelle: string }[] = [
-  { cle: "jaime", libelle: "J’aime" },
-  { cle: "commentaires", libelle: "Commentaires" },
-  { cle: "parPublication", libelle: "J’aime par publication" },
-];
-const NOMS_MESURES: Record<Mesure, string> = {
-  publications: "publications",
-  jaime: "j’aime",
-  commentaires: "commentaires",
-  parPublication: "j’aime par publication",
-};
+const NOMS_MESURES = Object.fromEntries(MESURES.map((x) => [x.cle, x.unite])) as Record<Mesure, string>;
 
 const court = (n: number) =>
   n >= 1e6 ? `${nombreFr(n / 1e6, 1)} M` : n >= 1e4 ? `${nombreFr(n / 1e3, 0)} k` : nombreFr(n);
@@ -392,6 +391,9 @@ function Bascule<T extends string>({
   onChange,
   label,
   icone,
+  court,
+  desactives,
+  classe,
 }: {
   options: { cle: T; libelle: string }[];
   valeur: T;
@@ -399,22 +401,32 @@ function Bascule<T extends string>({
   label: string;
   /** Boutons en icônes, comme la démo : le libellé passe en aria-label et en infobulle. */
   icone?: (cle: T) => ReactNode;
+  /** Libellé court dans le bouton, le complet en aria-label et en infobulle. */
+  court?: (cle: T) => string;
+  /** Boutons grisés (pas masqués), avec la raison en infobulle. */
+  desactives?: Partial<Record<T, string>>;
+  classe?: string;
 }) {
   return (
-    <div className={`social-bascule${icone ? " icones" : ""}`} role="group" aria-label={label}>
-      {options.map((o) => (
-        <button
-          type="button"
-          key={o.cle}
-          className={o.cle === v ? "active" : undefined}
-          aria-pressed={o.cle === v}
-          aria-label={icone ? o.libelle : undefined}
-          title={icone ? o.libelle : undefined}
-          onClick={() => onChange(o.cle)}
-        >
-          {icone ? icone(o.cle) : o.libelle}
-        </button>
-      ))}
+    <div className={`social-bascule${icone ? " icones" : ""}${classe ? ` ${classe}` : ""}`} role="group" aria-label={label}>
+      {options.map((o) => {
+        const raison = desactives?.[o.cle];
+        const nomme = !!icone || !!court;
+        return (
+          <button
+            type="button"
+            key={o.cle}
+            className={o.cle === v ? "active" : undefined}
+            aria-pressed={o.cle === v}
+            aria-label={nomme ? o.libelle : undefined}
+            title={raison ?? (nomme ? o.libelle : undefined)}
+            disabled={!!raison}
+            onClick={() => onChange(o.cle)}
+          >
+            {icone ? icone(o.cle) : court ? court(o.cle) : o.libelle}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -440,21 +452,17 @@ export function Plateforme_({ p, taille = 13 }: { p: Plateforme; taille?: number
 
 /** Icônes des formes et des découpes, reprises de la démo. */
 function IconeForme({ f }: { f: Forme }) {
+  // Barres et parts côte à côte : les deux icônes de la démo dans un bouton.
   if (f === "barres")
     return (
       <svg viewBox="0 0 34 24" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="4" />
-        <rect x="3" y="10" width="28" height="4" />
-        <rect x="3" y="16" width="12" height="4" />
-      </svg>
-    );
-  if (f === "parts")
-    return (
-      <svg viewBox="0 0 34 24" aria-hidden="true">
-        <rect x="3" y="3" width="16" height="11" />
-        <rect x="21" y="3" width="10" height="7" />
-        <rect x="3" y="16" width="16" height="5" />
-        <rect x="21" y="12" width="10" height="9" />
+        <rect x="2" y="4" width="10" height="4" />
+        <rect x="2" y="10" width="14" height="4" />
+        <rect x="2" y="16" width="7" height="4" />
+        <rect x="19" y="4" width="8" height="9" />
+        <rect x="28.5" y="4" width="4" height="5" />
+        <rect x="28.5" y="10.5" width="4" height="9.5" />
+        <rect x="19" y="14.5" width="8" height="5.5" />
       </svg>
     );
   return (
@@ -552,7 +560,7 @@ function couleurElement(data: SocialData, e: Element, p?: Panneau) {
 }
 /** Texture d'une plateforme : Facebook plein, Instagram hachuré, TikTok pointillé. */
 const texture = (p: Plateforme | null | undefined) => (p ? ` tex-${p}` : "");
-const formatMesure = (m: Mesure) => (v: number) => (m === "parPublication" ? nombreFr(v, 1) : nombreFr(v));
+const formatMesure = (m: Mesure) => (v: number) => (MOYENNES.includes(m) ? nombreFr(v, 1) : nombreFr(v));
 
 type Blocs = ReturnType<typeof parElement>;
 
@@ -567,16 +575,18 @@ function Barres({
   rows,
   pans,
   m,
+  jours = 1,
 }: {
   data: SocialData;
   rows: CubeRow[];
   pans: Panneau[];
   m: Mesure;
+  jours?: number;
 }) {
   const blocs = pans.map((pan) => ({
     panneau: pan,
     barres: pan.elements.map((el) => {
-      const sg = segments(data, rows, pan, el, m);
+      const sg = segments(data, rows, pan, el, m, jours);
       return { element: el, segments: sg, total: m === "parPublication" ? (sg[0]?.valeur ?? 0) : sg.reduce((a, b) => a + b.valeur, 0) };
     }),
   }));
@@ -878,7 +888,7 @@ function Lecteur({
   );
 }
 
-function Media({ p }: { p: Pick<FilItem, "vignette" | "media" | "plateforme" | "url" | "nom"> }) {
+export function Media({ p }: { p: Pick<FilItem, "vignette" | "media" | "plateforme" | "url" | "nom"> }) {
   const video = p.media === "video";
   const [ouvert, setOuvert] = useState(false);
   const corps = p.vignette ? (
@@ -1138,7 +1148,7 @@ export function Infobulle({
             <span className="social-fiche-parti" style={{ background: data.partiInfo[m.party].couleur }}>
               {data.partiInfo[m.party].sigle}
             </span>{" "}
-            en tête {periode === "7j" ? "sur 7 jours" : "depuis le déclenchement"}
+            en tête ces 7 derniers jours
           </>
         ) : m.jaime > 0 ? (
           "Égalité entre partis"
@@ -1208,7 +1218,8 @@ export function Infobulle({
       </div>
       {epinglee ? (
         <a className="social-infobulle-fiche" href={`${BASE_PATH}/reseaux/circonscriptions/${circo.slug}/`}>
-          Voir la page de la circonscription →
+          <span>Voir la page de la circonscription</span>
+          <span aria-hidden="true">→</span>
         </a>
       ) : (
         <span className="social-infobulle-pied">j’aime · cliquez pour épingler et faire défiler le fil</span>
@@ -1338,7 +1349,8 @@ export function Carte({
 }) {
   const carte = data.carte!;
   const [W, H] = [carte.vue[2], carte.vue[3]];
-  const [periode, setPeriode] = useState<PeriodeCarte>("campagne");
+  // La carte porte sur les 7 derniers jours, indépendamment de la frise.
+  const periode: PeriodeCarte = "7j";
   const [choix, setChoix] = useState<number | null>(null);
   const meneurs = useMemo(
     () => new Map(carte.circos.map((c) => [c.code, meneur(c.comptes, periode, plateformes, partis)])),
@@ -1551,9 +1563,6 @@ export function Carte({
   return (
     <div className="social-carte">
       <Recherche data={data} onChoisir={trouver} />
-      <div className="social-carte-outils">
-        <Bascule label="Période de la carte" options={PERIODES_CARTE} valeur={periode} onChange={setPeriode} />
-      </div>
       <ul className="social-carte-legende" aria-label="Parti qui reçoit le plus de j’aime">
         {data.partis
           .filter((k) => partis.includes(k))
@@ -1679,11 +1688,12 @@ export function SocialClient({ data }: { data: SocialData }) {
   const [plateformes, setPlateformes] = useState<Plateforme[]>([...PLATEFORMES]);
   const [partis, setPartis] = useState<PartyKey[]>([...data.partis]);
   const [types, setTypes] = useState<TypeCompte[]>([...TYPES]);
-  const [vue, setVue] = useState<Vue>("publications");
+  const [vue, setVue] = useState<Vue>("partis");
   const vues = data.carte ? VUES : VUES.filter((v) => v.cle !== "carte");
   const [forme, setForme] = useState<Forme>("barres");
   const [decoupe, setDecoupe] = useState<Decoupe>("ensemble");
-  const [mesureEng, setMesureEng] = useState<Mesure>("jaime");
+  // Une seule mesure, partagée par Partis et Candidats (abonnés par défaut).
+  const [m, setMesure] = useState<Mesure>("abonnes");
 
   const f: Filtres = useMemo(() => ({ d0, d1, plateformes, partis, types }), [d0, d1, plateformes, partis, types]);
   const periode = (a: number, b: number) => {
@@ -1696,11 +1706,13 @@ export function SocialClient({ data }: { data: SocialData }) {
   const t = totaux(rows);
   const nbJours = d1 - d0 + 1;
 
-  const m: Mesure = vue === "engagement" ? mesureEng : "publications";
-  const formes = m === "parPublication" ? FORMES.filter((x) => x.cle !== "parts") : FORMES;
-  const formeEff: Forme = m === "parPublication" && forme === "parts" ? "barres" : forme;
+  // Pas de série d'abonnés par jour : « dans le temps » est grisé pour eux.
+  const formeEff: Forme = m === "abonnes" ? "barres" : forme;
   const pans = panneaux(decoupe, f);
-  const graphique = vue === "publications" || vue === "engagement";
+  const graphique = vue === "partis";
+  const rowsM = useMemo(() => (m === "abonnes" ? lignesAbonnes(data, f) : rows), [m, data, f, rows]);
+  const abonnes = useMemo(() => totaux(lignesAbonnes(data, f)).publications, [data, f]);
+  const sansParts = MOYENNES.includes(m);
 
   const raccourcis: { libelle: string; a: number }[] = [
     { libelle: "7 j", a: Math.max(0, n - 7) },
@@ -1709,24 +1721,20 @@ export function SocialClient({ data }: { data: SocialData }) {
     { libelle: "Tout", a: 0 },
   ];
 
-  const [mesureAud, setMesureAud] = useState<MesureAudience>("abonnes");
-  const uniteAud = MESURES_AUDIENCE.find((x) => x.cle === mesureAud)!.unite;
   const tops = vue === "palmares" ? palmares(data, f) : [];
 
   const sousTitre =
     vue === "presence"
       ? "Part des candidatures de chaque parti dont au moins un compte est suivi. Dernier relevé : la période ne s’applique pas."
-      : vue === "audience"
-        ? mesureAud === "abonnes"
+      : vue === "candidats"
+        ? m === "abonnes"
           ? `Les ${AUDIENCE_MAX} comptes les plus suivis, en abonnés. Dernier relevé\u00a0: la période ne s’applique pas.`
-          : `Les ${AUDIENCE_MAX} comptes en tête sur la période, en ${uniteAud}.`
+          : `Les ${AUDIENCE_MAX} comptes en tête sur la période, en ${MESURE[m].unite}.`
         : vue === "palmares"
           ? "Les 10 publications les plus aimées de la période."
           : vue === "carte"
-            ? "Chaque circonscription prend la couleur du parti dont les candidats y reçoivent le plus de j’aime sur la période."
-          : m === "parPublication"
-            ? "J’aime par publication : total des j’aime divisé par le nombre de publications de la période."
-            : `Total des ${NOMS_MESURES[m]} de la période.`;
+            ? "Chaque circonscription prend la couleur du parti dont les candidats y reçoivent le plus de j’aime ces 7 derniers jours."
+          : MESURE[m].definition;
 
   return (
     <>
@@ -1764,8 +1772,9 @@ export function SocialClient({ data }: { data: SocialData }) {
             </div>
           </div>
 
-          <aside className="social-filtres" aria-label="Filtres">
-            <span className="social-filtres-titre">Filtres</span>
+          <aside className="social-filtres">
+            <div className="social-groupe" role="group" aria-label="Filtres">
+            <h3 className="social-groupe-titre">Filtres</h3>
             <Coches
               label="Plateforme"
               options={PLATEFORMES.map((p) => ({ cle: p, libelle: NOMS_PLATEFORMES[p] }))}
@@ -1781,30 +1790,42 @@ export function SocialClient({ data }: { data: SocialData }) {
               onChange={setPartis}
               couleur={(p) => data.partiInfo[p].couleur}
             />
-            {vue === "audience" && (
-              <div className="social-coches">
-                <span className="social-coches-titre">Mesure</span>
-                <Bascule
-                  label="Mesure de l’audience"
-                  options={data.audienceJour.length || data.audienceJourDispo ? MESURES_AUDIENCE : MESURES_AUDIENCE.slice(0, 1)}
-                  valeur={mesureAud}
-                  onChange={setMesureAud}
-                />
-              </div>
-            )}
             <Coches
               label="Type de compte"
               options={TYPES.map((c) => ({ cle: c, libelle: NOMS_TYPES[c] }))}
               actifs={types}
               onChange={setTypes}
             />
-            {/* Les chiffres de la période : un résultat, pas un contrôle ; un filet
-                plus appuyé les sépare des filtres. */}
-            <section className="social-chiffres" aria-label="En chiffres">
-              <h3 className="social-chiffres-titre">
+            </div>
+            {/* La mesure n'est pas un filtre : un groupe à part, dans Partis et
+                Candidats seulement. Un filet la sépare des filtres et des chiffres. */}
+            {(vue === "partis" || vue === "candidats") && (
+              <section className="social-groupe social-mesure" aria-label="Mesure affichée">
+                <h3 className="social-groupe-titre">Mesure</h3>
+                <Bascule
+                  label="Mesure affichée"
+                  options={
+                    vue === "candidats" && !(data.audienceJour.length || data.audienceJourDispo)
+                      ? MESURES.slice(0, 1)
+                      : MESURES
+                  }
+                  valeur={m}
+                  onChange={setMesure}
+                  court={(c) => MESURE[c].court}
+                  classe="social-mesures"
+                />
+              </section>
+            )}
+            {/* Les chiffres de la période : un résultat, pas un contrôle. */}
+            <section className="social-groupe social-chiffres" aria-label="En chiffres">
+              <h3 className="social-groupe-titre">
                 En chiffres · {nombreFr(nbJours)}&nbsp;{nbJours > 1 ? "jours" : "jour"}
               </h3>
               <dl className="social-tuiles">
+                <div>
+                  <dt>Abonnés, dernier relevé</dt>
+                  <dd>{nombreGrand(abonnes)}</dd>
+                </div>
                 <div>
                   <dt>Publications</dt>
                   <dd>{nombreGrand(t.publications)}</dd>
@@ -1836,17 +1857,13 @@ export function SocialClient({ data }: { data: SocialData }) {
 
           {graphique && (
             <div className="social-reglages">
-              {vue === "engagement" && (
-                <div className="social-reglages-mesure">
-                  <Bascule label="Mesure" options={MESURES_ENGAGEMENT} valeur={mesureEng} onChange={setMesureEng} />
-                </div>
-              )}
               {/* Comme la démo : la forme en haut à gauche, la découpe en haut à droite. */}
               <Bascule
                 label="Forme"
-                options={formes}
+                options={FORMES}
                 valeur={formeEff}
                 onChange={setForme}
+                desactives={m === "abonnes" ? { temps: "Pas de série d’abonnés" } : undefined}
                 icone={(c) => <IconeForme f={c} />}
               />
               <Bascule
@@ -1899,10 +1916,10 @@ export function SocialClient({ data }: { data: SocialData }) {
             </table>
           )}
 
-          {vue === "audience" && (
+          {vue === "candidats" && (
             <Audience
               data={data}
-              mesure={mesureAud}
+              mesure={m}
               plateformes={plateformes}
               partis={partis}
               types={types}
@@ -1911,12 +1928,22 @@ export function SocialClient({ data }: { data: SocialData }) {
             />
           )}
 
-          {graphique && formeEff === "barres" && <Barres data={data} rows={rows} pans={pans} m={m} />}
-          {graphique && formeEff === "parts" && <Parts data={data} blocs={parElement(data, rows, pans, m)} m={m} />}
+          {/* Barres et parts côte à côte (même mesure, filtres et découpe) ; une
+              moyenne ne se découpe pas en parts : les barres seules. */}
+          {graphique && formeEff === "barres" && (
+            <div className={`social-barres-parts${sansParts ? " seules" : ""}`}>
+              <Barres data={data} rows={rowsM} pans={pans} m={m} jours={nbJours} />
+              {sansParts ? (
+                <p className="social-note social-sans-parts">Une moyenne ne se découpe pas en parts.</p>
+              ) : (
+                <Parts data={data} blocs={parElement(data, rowsM, pans, m, nbJours)} m={m} />
+              )}
+            </div>
+          )}
           {graphique &&
             formeEff === "temps" &&
             (() => {
-              const s = series(data, rows, pans, m, f);
+              const s = series(data, rowsM, pans, m, f);
               const libelles = s.debuts.map((i) => data.jours[i]);
               return (
                 <div className={`social-panneaux${s.panneaux.length > 1 ? " multiples" : ""}`}>

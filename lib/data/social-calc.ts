@@ -20,7 +20,12 @@ import {
   type TypeCompte,
 } from "./social-meta";
 
-export type Mesure = "publications" | "jaime" | "commentaires" | "parPublication";
+/** Les mesures du module, communes aux onglets Partis et Candidats et aux
+ *  chiffres de la colonne de droite. Les abonnés sont au dernier relevé (la
+ *  période ne s'y applique pas) ; les autres portent sur la période. */
+export type Mesure = "abonnes" | "publications" | "parJour" | "jaime" | "commentaires" | "parPublication";
+/** Moyennes : pas de découpe en parts. */
+export const MOYENNES: readonly Mesure[] = ["parJour", "parPublication"];
 export type Decoupe = "ensemble" | "plateforme" | "parti";
 
 export type Filtres = {
@@ -44,9 +49,25 @@ const ajoute = (t: Totaux, r: CubeRow) => {
   t.commentaires += r[6];
 };
 
-export function valeur(t: Totaux, m: Mesure): number {
+/** Valeur d'une mesure pour des totaux. `jours` : la durée qu'ils couvrent
+ *  (pour « par jour »). Pour les abonnés, les lignes portent les abonnés dans
+ *  la case des publications (cf. lignesAbonnes). */
+export function valeur(t: Totaux, m: Mesure, jours = 1): number {
   if (m === "parPublication") return t.publications > 0 ? t.jaime / t.publications : 0;
+  if (m === "parJour") return t.publications / Math.max(1, jours);
+  if (m === "abonnes") return t.publications;
   return t[m];
+}
+
+/** Lignes « abonnés » : une par compte suivi, au dernier relevé, sur le
+ *  dernier jour de la période, abonnés dans la case des publications. Même
+ *  forme que le cube, pour réutiliser barres, parts et découpes. */
+export function lignesAbonnes(data: SocialData, f: Filtres): CubeRow[] {
+  return data.audience.flatMap((a) => {
+    if (a.abonnes == null || !f.plateformes.includes(a.plateforme) || !f.partis.includes(a.party) || !f.types.includes(a.type))
+      return [];
+    return [[f.d1, data.partis.indexOf(a.party), PLATEFORMES.indexOf(a.plateforme), TYPES.indexOf(a.type), a.abonnes, 0, 0] as CubeRow];
+  });
 }
 
 /** Lignes du cube qui passent les filtres (période comprise, sauf `sansPeriode`). */
@@ -102,13 +123,13 @@ const dans = (data: SocialData, r: CubeRow, pan: Panneau, el: Element) => {
 };
 
 /** Total d'une mesure par élément, pour chaque panneau (barres et parts). */
-export function parElement(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Mesure) {
+export function parElement(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Mesure, jours = 1) {
   return pans.map((pan) => ({
     panneau: pan,
     valeurs: pan.elements.map((el) => {
       const t = zero();
       for (const r of rows) if (dans(data, r, pan, el)) ajoute(t, r);
-      return { element: el, valeur: valeur(t, m) };
+      return { element: el, valeur: valeur(t, m, jours) };
     }),
   }));
 }
@@ -124,16 +145,17 @@ export function segments(
   pan: Panneau,
   el: Element,
   m: Mesure,
+  jours = 1,
 ): { plateforme: Plateforme | null; valeur: number }[] {
   if (m === "parPublication") {
     const t = zero();
     for (const r of rows) if (dans(data, r, pan, el)) ajoute(t, r);
-    return [{ plateforme: el.plateforme ?? pan.plateforme ?? null, valeur: valeur(t, m) }];
+    return [{ plateforme: el.plateforme ?? pan.plateforme ?? null, valeur: valeur(t, m, jours) }];
   }
   return PLATEFORMES.map((pl) => {
     const t = zero();
     for (const r of rows) if (PLATEFORMES[r[2]] === pl && dans(data, r, pan, el)) ajoute(t, r);
-    return { plateforme: pl, valeur: valeur(t, m) };
+    return { plateforme: pl, valeur: valeur(t, m, jours) };
   }).filter((sg) => sg.valeur > 0);
 }
 
@@ -158,7 +180,8 @@ export function series(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Me
       series: pan.elements.map((el) => {
         const t = debuts.map(zero);
         for (const r of rows) if (dans(data, r, pan, el)) ajoute(t[case_(r[0])], r);
-        return { element: el, valeurs: t.map((x) => valeur(x, m)) };
+        // « Par jour » : chaque case divisée par sa durée (7, ou moins en fin de période).
+        return { element: el, valeurs: t.map((x, i) => valeur(x, m, Math.min(hebdo ? 7 : 1, f.d1 - debuts[i] + 1))) };
       }),
     })),
   };
@@ -302,7 +325,7 @@ export function integration(p: Plateforme, url: string | null | undefined): Inte
 // ── Audience : classements ────────────────────────────────────────────────────
 /** Abonnés (dernier relevé), puis les cinq statistiques des tuiles du haut,
  *  sur la période choisie, avec leur définition. */
-export type MesureAudience = "abonnes" | "publications" | "parJour" | "jaime" | "commentaires" | "parPublication";
+export type MesureAudience = Mesure;
 /** Sous ce nombre de publications sur la période, un compte n'entre pas aux
  *  classements des moyennes : un seul billet très aimé les dominerait. */
 export const MIN_PUBLICATIONS_MOYENNE = 5;

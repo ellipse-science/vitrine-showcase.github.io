@@ -116,10 +116,19 @@ export type CandidatPage = {
   nom: string;
   party: PartyKey;
   comptes: { plateforme: Plateforme; url: string | null; abonnes: number | null }[];
+  abonnes: number;
+  /** Depuis le déclenchement, jours complets (même source que la série). */
   publications: number;
   jaime: number;
+  commentaires: number;
+  parJour: number;
+  parPublication: number;
+  /** Publications depuis le déclenchement, par plateforme. */
+  parPlateforme: Record<Plateforme, number>;
   /** Publications et j'aime par jour depuis le 1er août ; null sans la table. */
   serie: SerieJour[] | null;
+  derniere: FilItem | null;
+  meilleure: FilItem | null;
 };
 export type PageCirco = {
   slug: string;

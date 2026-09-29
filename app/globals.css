@@ -11904,17 +11904,21 @@
 /* Filtres */
 .social-filtres { border-left: 0.5px solid var(--rule); padding-left: 22px; }
 .social-coches { margin-bottom: 18px; }
-.social-filtres-titre {
-  display: block; margin-bottom: 12px; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
-  letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-softer);
-}
-/* Les chiffres : un résultat, séparé des filtres par un filet appuyé. */
-.social-chiffres { margin-top: 36px; padding-top: 32px; border-top: 1px solid var(--rule); }
-.social-chiffres-titre {
-  display: inline-block; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1.5px solid var(--cordovan);
+/* Colonne de droite : trois groupes au même niveau (Filtres, Mesure, En
+   chiffres), séparés par le même filet appuyé ; Mesure absente, un seul filet. */
+.social-groupe + .social-groupe { margin-top: 34px; padding-top: 30px; border-top: 1px solid var(--rule); }
+.social-groupe-titre {
+  display: inline-block; margin: 0 0 14px; padding-bottom: 4px; border-bottom: 1.5px solid var(--cordovan);
   font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.2em;
   text-transform: uppercase; color: var(--cordovan);
 }
+.social-mesures { display: flex; flex-wrap: wrap; gap: 4px; }
+.social-bascule button:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Partis : barres et parts côte à côte (55 / 45), les barres seules pour une moyenne. */
+.social-barres-parts { display: grid; grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); gap: 28px; align-items: start; }
+.social-barres-parts.seules { grid-template-columns: minmax(0, 1fr); }
+.social-sans-parts { font-style: italic; }
+@media (max-width: 1023px) { .social-barres-parts { grid-template-columns: minmax(0, 1fr); } }
 .social-audience-nombre { margin-top: 10px; }
 /* « En chiffres » dans la colonne des filtres : empilés, filet entre les blocs. */
 .social-chiffres .social-tuiles { display: block; margin: 0; padding: 0; border: 0; }
@@ -12115,12 +12119,15 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
   font-size: 22px; line-height: 1; color: var(--ink-soft); cursor: pointer;
 }
 .social-infobulle-fermer:focus-visible, .social-infobulle-fiche:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+/* Lien pleine largeur, aligné sur le contenu, sous un filet fin ; hors de la
+   zone qui défile, il n'est jamais coupé. */
 .social-infobulle-fiche {
-  align-self: flex-end; margin-top: 8px; min-height: 40px; padding: 0 12px; border: 0.5px solid var(--cordovan);
-  background: var(--paper); color: var(--cordovan); cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; flex: none;
+  margin-top: 8px; min-height: 40px; padding: 0; border-top: 0.5px solid var(--rule);
+  color: var(--cordovan); text-decoration: none; cursor: pointer;
   font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
 }
-.social-infobulle-fiche:hover { background: var(--cordovan); color: var(--paper); }
+.social-infobulle-fiche:hover { text-decoration: underline; text-underline-offset: 3px; }
 .social-recherche { position: relative; max-width: 26rem; margin: 4px 0 10px; }
 .social-recherche input {
   width: 100%; box-sizing: border-box; min-height: 40px; padding: 6px 10px; font: 15px "Source Serif 4", serif;
@@ -12156,24 +12163,47 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 .circo-page .apropos-header { margin-bottom: 8px; }
 .circo-section { margin: 26px 0; }
 .circo-section-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
-/* Une carte par candidat : 3 colonnes, 2 sur tablette, 1 sur mobile ; filets
-   fins, pas de fond ; hauteurs alignées par rangée (grille). */
-.circo-cartes {
-  list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 28px; border-top: 0.5px solid var(--rule);
+/* Une carte par candidat : un bloc net (cadre fin, liseré du parti à gauche),
+   3 colonnes, 2 sur tablette, 1 sur mobile ; hauteurs égales par rangée. */
+.circo-cartes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.circo-carte {
+  display: flex; flex-direction: column; gap: 8px; padding: 22px;
+  border: 1px solid var(--rule); border-left: 3px solid var(--rule); background: var(--paper);
 }
-.circo-carte { display: flex; flex-direction: column; gap: 6px; padding: 14px 0; border-bottom: 0.5px solid var(--rule); }
-.circo-carte.vide .social-meta { font-style: italic; }
-.circo-comptes { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.circo-comptes a, .circo-comptes li > span {
-  display: inline-flex; align-items: center; gap: 7px; min-height: 28px; color: var(--ink-soft);
-  text-decoration: none; font-family: "IBM Plex Mono", monospace; font-size: 12px;
-}
+.circo-vide { font-style: italic; }
+.circo-abonnes { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.circo-grand { font-family: "Playfair Display", serif; font-weight: 700; font-size: 26px; line-height: 1; color: var(--ink); }
+.circo-comptes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; }
+.circo-comptes a { color: var(--ink-soft); text-decoration: none; }
 .circo-comptes a:hover { color: var(--cordovan); }
-.circo-serie { margin: auto 0 0; padding-top: 6px; }
+/* Logo et chiffre centrés sur la ligne, écart fixe, quelle que soit la balise. */
+.circo-compte {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 28px; line-height: 1;
+  font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft);
+}
+.circo-compte .social-logo { display: block; flex: none; }
+.circo-chiffres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; margin: 6px 0 0; }
+.circo-chiffres > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.circo-chiffres dd { margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 18px; color: var(--ink); }
+.circo-chiffres dt {
+  font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-softer);
+}
+.circo-rang { margin: 2px 0 0; font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--cordovan); }
+.circo-plateformes { display: flex; height: 6px; gap: 1px; background: var(--rule-faint); }
+.circo-plateformes i { display: block; height: 100%; }
+.circo-derniere a, .circo-meilleure a { color: var(--cordovan); }
+.circo-meilleure { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: start; margin-top: 4px; }
+.circo-meilleure .social-media { width: 64px; height: 64px; grid-row: auto; }
+.circo-meilleure p { margin: 2px 0; font-family: "Source Serif 4", serif; font-size: 13px; line-height: 1.35; color: var(--ink-soft); }
+.circo-serie { margin: auto 0 0; padding-top: 10px; }
 .circo-serie figcaption { text-align: right; margin-bottom: 2px; }
 @media (max-width: 1100px) { .circo-cartes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .circo-cartes { grid-template-columns: 1fr; } .circo-comptes a { min-height: 40px; } }
+@media (max-width: 640px) {
+  .circo-cartes { grid-template-columns: 1fr; }
+  .circo-comptes a, .circo-compte { min-height: 40px; }
+  .circo-carte { padding: 18px; }
+}
 .circo-serie svg { display: block; width: 100%; height: 56px; border-bottom: 0.5px solid var(--rule); }
 .circo-sigle {
   padding: 0 5px; border-radius: 2px; color: var(--paper); font-family: "IBM Plex Mono", monospace;
