@@ -11837,3 +11837,68 @@
 @media print {
   .dg-promo { display: none; }
 }
+
+/* ── Module « Les candidats sur les réseaux » (expérimental, dev seulement) ── */
+.social { margin: 18px 0 8px; }
+.social-presence { border-collapse: collapse; width: 100%; max-width: 560px; }
+.social-presence th {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-soft);
+  padding: 6px 8px; text-align: center;
+}
+.social-presence tbody th { text-align: left; }
+.social-presence td {
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px;
+  text-align: center; padding: 12px 6px; color: var(--ink);
+  border: 2px solid var(--paper);
+}
+.social-presence td.fonce { color: var(--paper); }
+.social-barres, .social-palmares { list-style: none; margin: 0; padding: 0; }
+.social-barres li {
+  display: grid; grid-template-columns: minmax(0, 15rem) 1fr 5.5rem;
+  align-items: center; gap: 10px; padding: 5px 0;
+  border-bottom: 0.5px solid var(--rule-faint);
+}
+.social-nom { font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink); }
+.social-meta {
+  display: block; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-softer);
+}
+.social-palmares-tete .social-meta { display: inline; margin-left: 8px; }
+.social-piste { height: 10px; background: var(--rule-faint); }
+.social-piste i { display: block; height: 100%; }
+.social-valeur {
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 15px;
+  text-align: right; color: var(--ink);
+}
+.social-graphe { padding: 8px 44px 28px 52px; }
+.social-trace { position: relative; height: 280px; }
+.social-trace svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.social-axe {
+  position: absolute; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  letter-spacing: 0.08em; color: var(--ink-softer); white-space: nowrap;
+}
+.social-axe-y { right: calc(100% + 8px); transform: translateY(-50%); }
+.social-axe-x { top: calc(100% + 8px); transform: translateX(-50%); }
+.social-etiquette {
+  position: absolute; left: calc(100% + 6px); transform: translateY(-50%);
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.08em;
+}
+.social-palmares li { padding: 12px 0; border-bottom: 0.5px solid var(--rule); }
+.social-rang {
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 18px;
+  color: var(--cordovan); margin-right: 10px;
+}
+.social-texte {
+  font-family: "Source Serif 4", serif; font-size: 15px; line-height: 1.5;
+  color: var(--ink-soft); margin: 6px 0;
+}
+.social-palmares a { color: var(--cordovan); border-bottom: 0.5px solid var(--cordovan); text-decoration: none; }
+.social-vide { font-family: "Source Serif 4", serif; color: var(--ink-softer); padding: 12px 0; }
+@media (max-width: 640px) {
+  .social-trace { height: 220px; }
+  .social-graphe { padding: 8px 40px 28px 40px; }
+  .social-barres li { grid-template-columns: minmax(0, 1fr) 4.5rem; }
+  .social-barres .social-piste { grid-column: 1 / -1; order: 3; }
+}

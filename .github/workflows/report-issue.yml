@@ -49,6 +49,8 @@ jobs:
               { match: ['enjeux saillants', '12 enjeux', 'de quoi parle', 'module 4'],                section: 'Enjeux saillants',       label: { name: 'module-4-enjeux-saillants',   color: '1a7f37', description: 'Signalements du module Enjeux saillants' } },
               { match: ['assemblee nationale', "que dit-on a l'assemblee", 'module 5'],  section: 'Assemblée nationale',    label: { name: 'module-5-assemblee-nationale', color: 'bf8700', description: 'Signalements du module Assemblée nationale' } },
               { match: ['polimetre', 'module 6'],                                        section: 'Polimètre+',             label: { name: 'module-6-polimetre',          color: '8250df', description: 'Signalements du module Polimètre+' } },
+              // Module 7, expérimental (dev seulement) : les candidats sur les réseaux sociaux.
+              { match: ['candidats sur les reseaux', 'reseaux sociaux', 'module 7'],     section: 'Candidats sur les réseaux', label: { name: 'module-7-reseaux-sociaux',   color: 'cf222e', description: 'Signalements du module Candidats sur les réseaux (expérimental)' } },
               // ── Habillage général du site (hors modules) ───────────────
               { match: ['en-tete', 'en tete', 'header'],                                 section: 'En-tête',                label: { name: 'site-header',                 color: 'c8cdd4', description: 'Signalements sur l’en-tête du site' } },
               { match: ['pied de page', 'footer'],                                       section: 'Pied de page',           label: { name: 'site-footer',                 color: 'c8cdd4', description: 'Signalements sur le pied de page du site' } },
