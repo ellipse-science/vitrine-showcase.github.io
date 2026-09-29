@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import type { PartyKey } from "@/lib/data/parties";
-import { NOMS_PLATEFORMES, PLATEFORMES, type CandidatPage, type PageCirco, type Plateforme, type SocialData } from "@/lib/data/social-meta";
+import {
+  NOMS_PLATEFORMES,
+  PLATEFORMES,
+  type CandidatPage,
+  type FilItem,
+  type PageCirco,
+  type Plateforme,
+  type SocialData,
+} from "@/lib/data/social-meta";
 import { CartePublication, Logo } from "@/components/interactive/SocialClient";
 import { MONTHS_FR } from "@/lib/dates";
 
@@ -110,23 +118,79 @@ export function SeriesCirco({
   );
 }
 
-/** Le fil des 20 dernières publications, filtrable par plateforme et par parti. */
+const NOMS_NATURES: Record<string, string> = {
+  video: "Vidéos",
+  photo: "Photos",
+  carrousel: "Carrousels",
+  texte: "Textes",
+  partage: "Partages",
+};
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const PAS = 20;
+
+/** Le fil de la circonscription. Le HTML en porte les 20 premières
+ *  publications ; « Voir plus » charge le fichier statique complet de la
+ *  circonscription (une fois), puis en montre 20 de plus à chaque clic. Les
+ *  filtres (candidat, plateforme, nature) portent sur tout ce qui est chargé. */
 export function FilCirco({ page, partiInfo }: { page: PageCirco; partiInfo: SocialData["partiInfo"] }) {
+  const [tout, setTout] = useState<FilItem[] | null>(null);
+  const [chargement, setChargement] = useState(false);
+  const [montres, setMontres] = useState(PAS);
+  const liste = tout ?? page.fil;
+  const presentes = PLATEFORMES.filter((p) => liste.some((x) => x.plateforme === p));
+  const partis = [...new Set(liste.map((x) => x.party))] as PartyKey[];
+  const natures = Object.keys(NOMS_NATURES).filter((n) => liste.some((x) => x.nature === n));
   const [plateformes, setPlateformes] = useState<Plateforme[]>([...PLATEFORMES]);
-  const presentes = PLATEFORMES.filter((p) => page.fil.some((x) => x.plateforme === p));
-  const partis = [...new Set(page.fil.map((x) => x.party))] as PartyKey[];
-  const [actifs, setActifs] = useState<PartyKey[]>(partis);
-  const fil = page.fil.filter((x) => plateformes.includes(x.plateforme) && actifs.includes(x.party));
-  const bascule = <T,>(liste: T[], v: T) => (liste.includes(v) ? liste.filter((x) => x !== v) : [...liste, v]);
+  const [exclus, setExclus] = useState<PartyKey[]>([]);
+  const [naturesExclues, setNaturesExclues] = useState<string[]>([]);
+  const fil = liste.filter(
+    (x) =>
+      plateformes.includes(x.plateforme) &&
+      !exclus.includes(x.party) &&
+      !(x.nature && naturesExclues.includes(x.nature)),
+  );
+  const bascule = <T,>(l: T[], v: T) => (l.includes(v) ? l.filter((x) => x !== v) : [...l, v]);
+  const total = page.total ?? page.fil.length;
+  const voirPlus = async () => {
+    if (!tout && page.complet && page.code != null) {
+      setChargement(true);
+      const r = await fetch(`${BASE_PATH}/reseaux/fil-complet/${page.code}.json`).catch(() => null);
+      const j = r && r.ok ? await r.json().catch(() => null) : null;
+      setTout(Array.isArray(j) && j.length ? (j as FilItem[]) : page.fil);
+      setChargement(false);
+    }
+    setMontres((n) => n + PAS);
+  };
+  const reste = (tout ? fil.length : page.complet ? total : fil.length) - montres;
   return (
     <section className="circo-section">
-      <h2 className="apropos-section-title">Leurs dernières publications</h2>
-      {page.fil.length === 0 ? (
-        <p className="social-note">Aucune publication récente de ces candidats.</p>
+      <div className="circo-section-tete">
+        <h2 className="apropos-section-title">Leurs publications</h2>
+        <span className="social-meta">
+          {page.complet
+            ? `${nombreFr(total)}\u00a0publication${total > 1 ? "s" : ""} depuis le déclenchement`
+            : `Les ${nombreFr(page.fil.length)} dernières publications`}
+        </span>
+      </div>
+      {liste.length === 0 ? (
+        <p className="social-note">Aucune publication de ces candidats.</p>
       ) : (
         <>
           <div className="social-coches circo-filtres">
-            <div role="group" aria-label="Plateformes">
+            <div role="group" aria-label="Filtres du fil">
+              {partis.map((k) => (
+                <button
+                  type="button"
+                  key={k}
+                  aria-pressed={!exclus.includes(k)}
+                  className={!exclus.includes(k) ? "actif" : undefined}
+                  style={!exclus.includes(k) ? { background: partiInfo[k].couleur, borderColor: partiInfo[k].couleur } : undefined}
+                  title={liste.find((x) => x.party === k)?.nom}
+                  onClick={() => setExclus(bascule(exclus, k))}
+                >
+                  {partiInfo[k].sigle}
+                </button>
+              ))}
               {presentes.map((p) => (
                 <button
                   type="button"
@@ -140,28 +204,38 @@ export function FilCirco({ page, partiInfo }: { page: PageCirco; partiInfo: Soci
                   <Logo p={p} taille={15} />
                 </button>
               ))}
-              {partis.map((k) => (
+              {natures.map((n) => (
                 <button
                   type="button"
-                  key={k}
-                  aria-pressed={actifs.includes(k)}
-                  className={actifs.includes(k) ? "actif" : undefined}
-                  style={actifs.includes(k) ? { background: partiInfo[k].couleur, borderColor: partiInfo[k].couleur } : undefined}
-                  onClick={() => setActifs(bascule(actifs, k))}
+                  key={n}
+                  aria-pressed={!naturesExclues.includes(n)}
+                  className={!naturesExclues.includes(n) ? "actif" : undefined}
+                  onClick={() => setNaturesExclues(bascule(naturesExclues, n))}
                 >
-                  {partiInfo[k].sigle}
+                  {NOMS_NATURES[n]}
                 </button>
               ))}
             </div>
+            {!tout && page.complet && (
+              <p className="social-note">
+                Les filtres portent sur les publications affichées. Le bouton «&nbsp;Voir plus&nbsp;» charge toutes les
+                autres.
+              </p>
+            )}
           </div>
           {fil.length === 0 ? (
             <p className="social-note">Aucune publication dans cette sélection.</p>
           ) : (
             <ol className="social-palmares">
-              {fil.map((p, i) => (
+              {fil.slice(0, montres).map((p, i) => (
                 <CartePublication key={`${p.url ?? ""}-${i}`} partiInfo={partiInfo} p={p} />
               ))}
             </ol>
+          )}
+          {reste > 0 && (page.complet || tout) && (
+            <button type="button" className="circo-plus" onClick={voirPlus} disabled={chargement}>
+              {chargement ? "Chargement…" : `Voir plus (${nombreFr(Math.min(PAS, reste))} sur ${nombreFr(reste)} restantes)`}
+            </button>
           )}
         </>
       )}

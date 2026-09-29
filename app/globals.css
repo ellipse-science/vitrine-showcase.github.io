@@ -11844,7 +11844,7 @@
    la hauteur, derrière un filet vertical. */
 .social-tdb {
   display: grid; grid-template-columns: minmax(0, 1fr) 15rem; column-gap: 28px;
-  grid-template-areas: "entete filtres" "haut filtres" "bas filtres"; grid-template-rows: auto auto 1fr;
+  grid-template-areas: "entete entete" "haut filtres" "bas filtres"; grid-template-rows: auto auto 1fr;
 }
 .social-entete { grid-area: entete; }
 .social-haut { grid-area: haut; min-width: 0; }
@@ -11902,14 +11902,26 @@
 .social-tuiles dd { order: 1; margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 22px; color: var(--ink); }
 
 /* Filtres */
-.social-filtres { border-left: 0.5px solid var(--rule); padding-left: 18px; }
-.social-coches { margin-bottom: 14px; }
+.social-filtres { border-left: 0.5px solid var(--rule); padding-left: 22px; }
+.social-coches { margin-bottom: 18px; }
+/* « En chiffres » dans la colonne des filtres : empilés, filet entre les blocs. */
+.social-chiffres .social-tuiles {
+  display: block; margin: 0; padding: 0; border: 0;
+}
+.social-chiffres .social-tuiles > div {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 0;
+  border-bottom: 0.5px solid var(--rule-faint);
+}
+.social-chiffres .social-tuiles > div:last-child { border-bottom: 0; }
+.social-chiffres .social-tuiles dd { order: 0; font-size: 24px; line-height: 1.1; }
+.social-chiffres .social-tuiles dt { order: 1; }
 .social-coches > div { display: flex; flex-wrap: wrap; gap: 4px; }
 .social-coches button.actif { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+.social-coches button .social-logo { vertical-align: -2px; margin-right: 2px; }
 
 /* Onglets, réglages, notes */
 .social-onglets { margin: 26px 0 8px; }
-.social-reglages { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; margin: 10px 0 6px; }
+.social-reglages { display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; gap: 8px 16px; margin: 10px 0 6px; }
 .social-reglages-mesure { flex-basis: 100%; }
 .social-sous-titre, .social-note {
   font-family: "Source Serif 4", serif; font-size: 14px; color: var(--ink-softer); margin: 8px 0 14px;
@@ -11965,40 +11977,32 @@
 /* Barres empilées par plateforme, comme la démo : couleur du parti, texture de
    la plateforme (Facebook plein, Instagram hachuré, TikTok pointillé), logo
    blanc dans le segment, total au bout. */
-.social-barres-empilees li { grid-template-columns: minmax(0, 4rem) 1fr; padding: 7px 0; border-bottom: 0; }
-.social-barres-empilees .social-nom { text-align: right; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
-.social-barres-empilees .social-piste { display: flex; align-items: center; gap: 2px; height: 30px; background: none; }
-.social-barres-empilees.compactes .social-piste { height: 22px; }
-.social-segments { display: flex; gap: 2px; height: 100%; flex: none; }
-.social-barres-empilees .social-piste i {
-  position: relative; display: flex; align-items: center; justify-content: center;
-  flex: none; height: 100%; color: #fff; min-width: 2px;
+/* Barres fines (8 px) sur un rail beige de longueur fixe, comme la maquette :
+   étiquette mono à gauche, chiffre Playfair en bout de rail, filet sous
+   chaque ligne ; plateformes en nuances pleines de la couleur du parti. */
+.social-barres-empilees li {
+  grid-template-columns: minmax(0, 4.5rem) 1fr 5.5rem; column-gap: 14px; padding: 12px 0;
+  border-bottom: 0.5px solid var(--rule);
 }
-.social-segments i:first-child { border-radius: 3px 0 0 3px; }
-.social-segments i:last-child { border-radius: 0 3px 3px 0; }
-.social-segments i:only-child { border-radius: 3px; }
-.social-barres-empilees .social-valeur { flex: none; margin-left: 8px; font-family: "IBM Plex Mono", monospace; font-weight: 400; font-size: 14px; color: var(--ink-soft); }
-.social-barres-empilees .social-nom .social-logo { color: var(--ink-soft); vertical-align: middle; }
+.social-barres-empilees.compactes li { padding: 8px 0; }
+.social-barres-empilees .social-nom {
+  text-align: left; font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.14em; color: var(--ink-soft);
+}
+.social-rail { display: block; height: 8px; background: var(--rule-faint); }
+.social-segments { display: flex; height: 100%; }
+.social-segments i { display: block; flex: none; height: 100%; min-width: 1px; }
+.social-barres-empilees .social-valeur {
+  text-align: right; font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px; color: var(--ink);
+}
+.social-barres-empilees .social-nom .social-plateforme { margin: 0; }
 .social-logo { display: inline-block; flex: none; }
 .social-plateforme { display: inline-flex; align-items: center; vertical-align: -2px; margin-right: 6px; color: var(--ink-soft); }
 .social-audience .social-piste { height: 14px; background: none; }
 .social-audience .social-piste i { border-radius: 2px; }
 .social-audience .social-meta { display: inline; margin-left: 6px; }
-.tex-instagram { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.42) 0 3px, transparent 3px 7px) !important; }
-.tex-tiktok { background-image: radial-gradient(rgba(255,255,255,0.62) 1.1px, transparent 1.3px) !important; background-size: 5px 5px !important; }
-.social-barres-empilees .social-piste i.tex-instagram, .social-tuile.tex-instagram { background-blend-mode: normal; }
 
 /* Boutons en icônes (forme, découpe), comme la démo */
-.social-bascule.icones { gap: 8px; }
-.social-bascule.icones button {
-  display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px;
-  min-width: 52px; min-height: 40px; color: var(--ink-softer); background: var(--paper);
-  border: 0.5px solid var(--rule); border-radius: 2px;
-}
-.social-bascule.icones button.active { background: var(--cordovan); border-color: var(--cordovan); color: var(--paper); }
-.social-bascule.icones button svg { width: 30px; height: 20px; fill: currentColor; }
-.social-bascule.icones button svg.trait { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; }
-.social-icone-logos { display: inline-flex; gap: 2px; }
 
 /* Parts : treemap en tuiles */
 .social-treemap { position: relative; width: 100%; max-height: 360px; }
@@ -12153,6 +12157,13 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 }
 .circo-filtres { margin: 6px 0 4px; }
 .circo-filtres > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.circo-plus {
+  display: block; margin: 16px auto 0; min-height: 40px; padding: 0 18px; border: 0.5px solid var(--ink);
+  background: var(--paper); color: var(--ink); cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.circo-plus:hover { background: var(--ink); color: var(--paper); }
+.circo-plus:disabled { opacity: 0.5; cursor: wait; }
 .social-publication.compacte { grid-template-columns: 34px minmax(0, 1fr); }
 .social-media.social-media-pastille {
   width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
@@ -12260,6 +12271,7 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 
 @media (max-width: 900px) {
   .social-tdb { grid-template-columns: 1fr; grid-template-areas: "entete" "haut" "filtres" "bas"; row-gap: 18px; }
+  .social-chiffres .social-tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
   .social-filtres { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 640px) {

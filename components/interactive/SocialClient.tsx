@@ -430,56 +430,6 @@ export function Plateforme_({ p, taille = 13 }: { p: Plateforme; taille?: number
   );
 }
 
-/** Icônes des formes et des découpes, reprises de la démo. */
-function IconeForme({ f }: { f: Forme }) {
-  if (f === "barres")
-    return (
-      <svg viewBox="0 0 34 24" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="4" />
-        <rect x="3" y="10" width="28" height="4" />
-        <rect x="3" y="16" width="12" height="4" />
-      </svg>
-    );
-  if (f === "parts")
-    return (
-      <svg viewBox="0 0 34 24" aria-hidden="true">
-        <rect x="3" y="3" width="16" height="11" />
-        <rect x="21" y="3" width="10" height="7" />
-        <rect x="3" y="16" width="16" height="5" />
-        <rect x="21" y="12" width="10" height="9" />
-      </svg>
-    );
-  return (
-    <svg viewBox="0 0 34 24" aria-hidden="true" className="trait">
-      <polyline points="3,19 11,12 18,15 31,5" />
-      <polyline points="3,21 12,17 20,19 31,12" opacity="0.5" />
-    </svg>
-  );
-}
-function IconeDecoupe({ d, data }: { d: Decoupe; data: SocialData }) {
-  if (d === "ensemble")
-    return (
-      <svg viewBox="0 0 34 24" aria-hidden="true">
-        <rect x="4" y="5" width="26" height="14" />
-      </svg>
-    );
-  if (d === "plateforme")
-    return (
-      <span className="social-icone-logos" aria-hidden="true">
-        {PLATEFORMES.map((p) => (
-          <Logo key={p} p={p} taille={11} />
-        ))}
-      </span>
-    );
-  return (
-    <svg viewBox="0 0 34 24" aria-hidden="true">
-      {data.partis.map((k, i) => (
-        <circle key={k} cx={4 + i * 6.5} cy={12} r={2.9} style={{ fill: data.partiInfo[k].couleur }} />
-      ))}
-    </svg>
-  );
-}
-
 /** Boutons à cocher : au moins un reste actif. */
 function Coches<T extends string>({
   options,
@@ -538,12 +488,16 @@ function nomElement(data: SocialData, e: Element) {
 function couleurElement(data: SocialData, e: Element, p?: Panneau) {
   if (e.party) return data.partiInfo[e.party].couleur;
   // Dans les panneaux « Par parti », les éléments sont des plateformes : la
-  // couleur reste celle du parti, la texture dit la plateforme (comme la démo).
-  if (p?.party) return data.partiInfo[p.party].couleur;
+  // couleur reste celle du parti, sa nuance dit la plateforme.
+  if (p?.party) return nuance(data.partiInfo[p.party].couleur, e.plateforme);
   return COULEURS_PLATEFORMES[e.plateforme!];
 }
-/** Texture d'une plateforme : Facebook plein, Instagram hachuré, TikTok pointillé. */
-const texture = (p: Plateforme | null | undefined) => (p ? ` tex-${p}` : "");
+/** Nuance pleine d'une couleur de parti selon la plateforme (pas de texture) :
+ *  Facebook foncé, Instagram moyen, TikTok clair. */
+const NUANCES: Record<Plateforme, number> = { facebook: 100, instagram: 68, tiktok: 42 };
+function nuance(couleur: string, p: Plateforme | null | undefined) {
+  return p && NUANCES[p] < 100 ? `color-mix(in srgb, ${couleur} ${NUANCES[p]}%, var(--paper))` : couleur;
+}
 const formatMesure = (m: Mesure) => (v: number) => (m === "parPublication" ? nombreFr(v, 1) : nombreFr(v));
 
 type Blocs = ReturnType<typeof parElement>;
@@ -574,7 +528,6 @@ function Barres({
   }));
   const max = Math.max(1e-9, ...blocs.flatMap((b) => b.barres.map((x) => x.total)));
   const multiples = blocs.length > 1;
-  const seuilLogo = multiples ? 9 : 5; // % de la piste sous lequel le logo ne tient pas
   return (
     <div className={`social-panneaux${multiples ? " multiples" : ""}`}>
       {blocs.map((b) => (
@@ -589,32 +542,32 @@ function Barres({
               return (
                 <li key={x.element.cle}>
                   <span className="social-nom">
-                    {x.element.plateforme && !x.element.party ? <Logo p={x.element.plateforme} /> : nomElement(data, x.element)}
+                    {x.element.plateforme && !x.element.party ? <Plateforme_ p={x.element.plateforme} /> : nomElement(data, x.element)}
                   </span>
+                  {/* Un rail beige de longueur fixe, la barre fine en occupe sa part ;
+                      les plateformes s'y suivent en nuances de la couleur du parti. */}
                   <span
-                    className="social-piste"
+                    className="social-rail"
                     role="img"
                     aria-label={`${nomElement(data, x.element)}\u00a0: ${formatMesure(m)(x.total)} ${NOMS_MESURES[m]}${detail ? ` (${detail})` : ""}`}
                   >
-                    {/* La barre occupe sa part de la piste, total réservé au bout. */}
-                    <span className="social-segments" style={{ width: `calc((100% - 5rem) * ${x.total / max})` }}>
+                    <span className="social-segments" style={{ width: `${(100 * x.total) / max}%` }}>
                       {x.segments.map((sg, k) => {
                         const part = x.total > 0 ? sg.valeur / x.total : 0;
                         return (
                           <i
                             key={sg.plateforme ?? k}
-                            // Texture seulement là où des plateformes se côtoient dans la barre.
-                            className={x.segments.length > 1 ? texture(sg.plateforme) : undefined}
-                            style={{ width: `${100 * part}%`, background: couleur }}
+                            style={{
+                              width: `${100 * part}%`,
+                              background: x.segments.length > 1 ? nuance(couleur, sg.plateforme) : couleur,
+                            }}
                             title={`${sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] + "\u00a0: " : ""}${formatMesure(m)(sg.valeur)} ${NOMS_MESURES[m]}`}
-                          >
-                            {sg.plateforme && (100 * sg.valeur) / max >= seuilLogo && <Logo p={sg.plateforme} />}
-                          </i>
+                          />
                         );
                       })}
                     </span>
-                    <span className="social-valeur">{formatMesure(m)(x.total)}</span>
                   </span>
+                  <span className="social-valeur">{formatMesure(m)(x.total)}</span>
                 </li>
               );
             })}
@@ -659,7 +612,7 @@ function Parts({ data, blocs, m }: { data: SocialData; blocs: Blocs; m: Mesure }
                       role="listitem"
                       aria-label={detail}
                       title={detail}
-                      className={`social-tuile${texture(t.item.plateforme)}`}
+                      className="social-tuile"
                       style={{
                         left: `${100 * t.x0}%`,
                         top: `${100 * t.y0}%`,
@@ -1754,29 +1707,6 @@ export function SocialClient({ data }: { data: SocialData }) {
               </div>
               <Frise jours={data.jours} valeurs={frise} d0={d0} d1={d1} campagne={data.campagne} onChange={periode} />
             </div>
-
-            <dl className="social-tuiles">
-              <div>
-                <dt>Publications</dt>
-                <dd>{nombreFr(t.publications)}</dd>
-              </div>
-              <div>
-                <dt>Par jour, en moyenne</dt>
-                <dd>{nombreFr(t.publications / nbJours)}</dd>
-              </div>
-              <div>
-                <dt>J’aime</dt>
-                <dd>{nombreFr(t.jaime)}</dd>
-              </div>
-              <div>
-                <dt>Commentaires</dt>
-                <dd>{nombreFr(t.commentaires)}</dd>
-              </div>
-              <div>
-                <dt>J’aime par publication</dt>
-                <dd>{nombreFr(valeur(t, "parPublication"), 1)}</dd>
-              </div>
-            </dl>
           </div>
 
           <aside className="social-filtres" aria-label="Filtres">
@@ -1786,7 +1716,11 @@ export function SocialClient({ data }: { data: SocialData }) {
               actifs={plateformes}
               onChange={setPlateformes}
               couleur={(p) => COULEURS_PLATEFORMES[p]}
-              icone={(p) => <Logo p={p} taille={15} />}
+              icone={(p) => (
+                <>
+                  <Logo p={p} taille={12} /> {NOMS_PLATEFORMES[p]}
+                </>
+              )}
             />
             <Coches
               label="Parti"
@@ -1812,6 +1746,32 @@ export function SocialClient({ data }: { data: SocialData }) {
               actifs={types}
               onChange={setTypes}
             />
+            {/* Les chiffres de la période, sous les filtres (maquette). */}
+            <div className="social-coches social-chiffres">
+              <span className="social-coches-titre">En chiffres</span>
+              <dl className="social-tuiles">
+                <div>
+                  <dt>Publications</dt>
+                  <dd>{nombreFr(t.publications)}</dd>
+                </div>
+                <div>
+                  <dt>Par jour, en moyenne</dt>
+                  <dd>{nombreFr(t.publications / nbJours)}</dd>
+                </div>
+                <div>
+                  <dt>J’aime</dt>
+                  <dd>{nombreFr(t.jaime)}</dd>
+                </div>
+                <div>
+                  <dt>Commentaires</dt>
+                  <dd>{nombreFr(t.commentaires)}</dd>
+                </div>
+                <div>
+                  <dt>J’aime par publication</dt>
+                  <dd>{nombreFr(valeur(t, "parPublication"), 1)}</dd>
+                </div>
+              </dl>
+            </div>
           </aside>
 
           <div className="social-bas">
@@ -1832,15 +1792,13 @@ export function SocialClient({ data }: { data: SocialData }) {
                 options={formes}
                 valeur={formeEff}
                 onChange={setForme}
-                icone={(c) => <IconeForme f={c} />}
-              />
+                />
               <Bascule
                 label="Découpe"
                 options={DECOUPES}
                 valeur={decoupe}
                 onChange={setDecoupe}
-                icone={(c) => <IconeDecoupe d={c} data={data} />}
-              />
+                />
             </div>
           )}
           <p className="social-sous-titre">{sousTitre}</p>

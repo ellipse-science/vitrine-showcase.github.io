@@ -72,3 +72,8 @@ _worktrees/
 
 # Reels et légendes produits par scripts/social/ : livrables à publier, pas du code.
 /social-out/
+
+# Fil complet des circonscriptions (aws-refiners#590, ~60 Mo) : lu au build
+# s'il est présent, JAMAIS commité (refresh-data le recopierait sur main à
+# chaque synchro). Sans lui, les pages de circonscription gardent 20 publications.
+/public/data/agora/agora_social_fil_complet.json

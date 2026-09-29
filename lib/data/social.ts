@@ -53,7 +53,14 @@ export const SOCIAL_DATASETS = {
   palmares: "public/data/agora/agora_social_palmares.json",
   fil: "public/data/agora/agora_social_fil.json",
   comptesJour: "public/data/agora/agora_social_comptes_jour.json",
+  /** Fil complet (aws-refiners#590, ~60 Mo) : JAMAIS commité (.gitignore) ; lu
+   *  au build s'il est présent, sinon les pages s'en tiennent à 20 publications. */
+  filComplet: "public/data/agora/agora_social_fil_complet.json",
 } as const;
+/** Publications portées par le HTML d'une page ; le reste se charge à la demande. */
+export const FIL_PAGE = 20;
+/** Texte des publications sur les pages de circonscription. */
+export const TEXTE_PAGE = 500;
 /** Début des séries par candidat des pages de circonscription. */
 export const SERIES_DEBUT = "2026-08-01";
 
@@ -203,7 +210,9 @@ export const slugCirco = (nom: string) =>
 export function construireFil(
   rows: FilRow[],
   vignetteDisponible: (cle: string) => boolean = () => false,
+  maxTexte = TEXTE_MAX,
 ): Map<string, FilItem[]> {
+  const coupe = (t: string) => (t.length > maxTexte ? `${t.slice(0, maxTexte - 1).trimEnd()}…` : t);
   const out = new Map<string, FilItem[]>();
   for (const r of rows) {
     const k = partyKey(r.parti);
@@ -217,7 +226,7 @@ export function construireFil(
       party: k,
       plateforme: p,
       url: r.url,
-      texte: tronque((r.texte ?? "").trim()),
+      texte: coupe((r.texte ?? "").trim()),
       jaime: nombre(r.jaime),
       commentaires: nombre(r.commentaires),
       vignette: urlVignette(r.vignette, vignetteDisponible),
@@ -460,6 +469,15 @@ export async function loadSocial(): Promise<SocialData | null> {
 let comptesJourMemo: Promise<CompteJourRow[] | null> | null = null;
 /** Séries par compte (table social_comptes_jour, aws-refiners#590) ; null
  *  tant que le raffineur ne l'a pas publiée : les pages masquent alors les séries. */
+let filCompletMemo: Promise<Map<string, FilItem[]> | null> | null = null;
+/** Fil complet par circonscription, ou null si le fichier n'est pas là. */
+export function loadFilComplet(): Promise<Map<string, FilItem[]> | null> {
+  filCompletMemo ??= lire<FilRow>(SOCIAL_DATASETS.filComplet).then((rows) =>
+    rows && rows.length ? construireFil(rows, vignetteSurDisque, TEXTE_PAGE) : null,
+  );
+  return filCompletMemo;
+}
+
 export function loadComptesJour(): Promise<CompteJourRow[] | null> {
   comptesJourMemo ??= lire<CompteJourRow>(SOCIAL_DATASETS.comptesJour);
   return comptesJourMemo;
@@ -531,19 +549,22 @@ let pagesMemo: Promise<Map<string, PageCirco>> | null = null;
 /** Toutes les pages, une lecture par build. Vide si le module n'a pas de données. */
 export function loadPagesCirco(): Promise<Map<string, PageCirco>> {
   pagesMemo ??= (async () => {
-    const [comptes, jours, fils, comptesJour] = await Promise.all([
+    const [comptes, jours, filRows, complet, comptesJour] = await Promise.all([
       lire<CompteRow>(SOCIAL_DATASETS.comptes),
       lire<JourRow>(SOCIAL_DATASETS.publicationsJour),
-      loadSocialFil(),
+      lire<FilRow>(SOCIAL_DATASETS.fil),
+      loadFilComplet(),
       loadComptesJour(),
     ]);
+    const fils = construireFil(filRows ?? [], vignetteSurDisque, TEXTE_PAGE);
     const out = new Map<string, PageCirco>();
     if (!comptes || comptes.length === 0 || !jours) return out;
     const dernier = jours.reduce((m, r) => (r.jour > m ? r.jour : m), "");
     const fin = jourMoins(dernier, 1);
     for (const c of (geo as FondCarte).circonscriptions) {
-      const page = construirePageCirco(c, comptes, fils.get(cleCirco(c.nom)) ?? [], comptesJour, fin);
-      out.set(page.slug, page);
+      const tout = complet?.get(cleCirco(c.nom));
+      const page = construirePageCirco(c, comptes, (tout ?? fils.get(cleCirco(c.nom)) ?? []).slice(0, FIL_PAGE), comptesJour, fin);
+      out.set(page.slug, { ...page, code: c.code, total: tout ? tout.length : page.fil.length, complet: !!tout && tout.length > FIL_PAGE });
     }
     return out;
   })();

@@ -121,9 +121,16 @@ export type PageCirco = {
   candidats: CandidatPage[];
   /** Partis des cinq sans compte suivi dans la circonscription. */
   sansCompte: PartyKey[];
+  /** Les 20 premières publications (le HTML de la page n'en porte pas plus). */
   fil: FilItem[];
   jours: string[];
   campagne: string;
+  /** Code de la circonscription : son fil complet est reseaux/fil-complet/<code>.json. */
+  code?: number;
+  /** Nombre total de publications (fil complet), ou celles du fil court. */
+  total?: number;
+  /** Vrai si un fichier de fil complet existe et dépasse les 20 publications. */
+  complet?: boolean;
 };
 
 /** Un compte de candidat, dans la fiche de sa circonscription. */
