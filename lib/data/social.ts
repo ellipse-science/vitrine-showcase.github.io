@@ -3,15 +3,15 @@ import { lastUpdatedLabel } from "@/lib/dates";
 import { ELECTION_CALL_DATE } from "@/lib/election";
 import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS, PARTY_FULL_NAMES, type PartyKey } from "./parties";
 import {
-  FILTRES,
   PLATEFORMES,
+  TYPES,
   type AudienceItem,
-  type FiltrePlateforme,
+  type CubeRow,
   type PalmaresItem,
   type Plateforme,
   type PresenceCell,
-  type Serie,
   type SocialData,
+  type TypeCompte,
 } from "./social-meta";
 
 export * from "./social-meta";
@@ -19,12 +19,14 @@ export * from "./social-meta";
 /**
  * Module « Les candidats sur les réseaux » (expérimental, dev seulement).
  *
- * Quatre tables publiées par le raffineur `agora-social` (aws-refiners) dans
+ * Trois tables publiées par le raffineur `agora-social` (aws-refiners) dans
  * `agora_datamart`, à partir de la collecte `a-social-accounts` d'aws-infra.
  * Elles n'existent qu'en DEV (tables.json : `env: "DEV"`, `api: false`) : le
  * chargeur les lit dans le fichier, jamais dans l'API.
  *
- * Tout est pré-calculé ici ; le composant client ne fait que choisir une vue.
+ * Le chargeur remet au client un cube compact (jour x parti x plateforme x
+ * type, additif) : la période et les filtres se recalculent côté client par
+ * simple somme, sans jamais relire de donnée dans le navigateur.
  * Tant que le raffineur n'a rien publié (fichier absent ou vide), le chargeur
  * rend `null` et le module ne s'affiche pas.
  */
@@ -32,14 +34,13 @@ export * from "./social-meta";
 export const SOCIAL_DATASETS = {
   comptes: "public/data/agora/agora_social_comptes.json",
   publicationsJour: "public/data/agora/agora_social_publications_jour.json",
-  presence: "public/data/agora/agora_social_presence.json",
   palmares: "public/data/agora/agora_social_palmares.json",
 } as const;
 
-/** Palmarès : les publications des N derniers jours de relevé. */
-export const PALMARES_JOURS = 7;
-export const PALMARES_N = 10;
-export const AUDIENCE_N = 20;
+/** Début de la collecte : l'axe de la frise part de là. */
+export const DEBUT_COLLECTE = "2026-04-01";
+/** Texte du palmarès tronqué pour garder la page légère. */
+export const TEXTE_MAX = 120;
 
 // ── Lignes telles que fetch_data.R les écrit (tableau d'objets, NA → null) ────
 type CompteRow = {
@@ -53,6 +54,8 @@ type CompteRow = {
   abonnes: number | null;
   releve: string | null;
   calcule_le: string | null;
+  /** Candidatures officielles du parti du compte (127 pour les cinq partis). */
+  candidatures_parti: number | null;
 };
 type JourRow = {
   jour: string;
@@ -62,13 +65,6 @@ type JourRow = {
   publications: number | null;
   jaime: number | null;
   commentaires: number | null;
-};
-type PresenceRow = {
-  parti: string;
-  plateforme: string;
-  avec_compte: number | null;
-  candidats: number | null;
-  part: number | null;
 };
 type PalmaresRow = {
   jour: string;
@@ -117,107 +113,109 @@ async function lire<T>(fichier: string): Promise<T[] | null> {
   }
 }
 
-/** Assemble les quatre tables en vues prêtes à dessiner (pure, testée). */
+const typeCompte = (t: string | null | undefined): TypeCompte => (t === "parti" ? "parti" : "candidat");
+const tronque = (t: string) => (t.length > TEXTE_MAX ? `${t.slice(0, TEXTE_MAX - 1).trimEnd()}…` : t);
+
+/** Assemble les trois tables en données prêtes à filtrer (pure, testée). */
 export function construireSocial(
   comptes: CompteRow[],
   jours: JourRow[],
-  presence: PresenceRow[],
   palmares: PalmaresRow[],
 ): SocialData | null {
-  if (comptes.length === 0 || jours.length === 0 || presence.length === 0) return null;
+  if (comptes.length === 0 || jours.length === 0) return null;
 
   const partis = [...PARTY_KEYS];
 
-  // Présence : parti x plateforme, les candidatures officielles au dénominateur.
-  const vide = () =>
-    Object.fromEntries(PLATEFORMES.map((p) => [p, { avecCompte: 0, candidats: 0, part: 0 }])) as Record<
-      Plateforme,
-      PresenceCell
-    >;
-  const presenceParParti = Object.fromEntries(partis.map((k) => [k, vide()])) as SocialData["presence"];
-  for (const r of presence) {
+  // Présence : pour chaque parti et plateforme, les circonscriptions distinctes
+  // des comptes de CANDIDAT suivis, rapportées aux candidatures officielles du
+  // parti (colonne candidatures_parti). 0 % si aucun compte.
+  const candidatures = new Map<PartyKey, number>();
+  const circos = new Map<string, Set<string>>();
+  for (const r of comptes) {
     const k = partyKey(r.parti);
     const p = plateforme(r.plateforme);
     if (!k || !p) continue;
-    const candidats = nombre(r.candidats);
-    const avecCompte = nombre(r.avec_compte);
-    presenceParParti[k][p] = { avecCompte, candidats, part: candidats > 0 ? avecCompte / candidats : 0 };
+    if (r.candidatures_parti != null) candidatures.set(k, r.candidatures_parti);
+    if (typeCompte(r.type) !== "candidat" || !r.circonscription) continue;
+    const cle = `${k}|${p}`;
+    if (!circos.has(cle)) circos.set(cle, new Set());
+    circos.get(cle)!.add(r.circonscription);
   }
-
-  // Audience : les comptes les plus suivis, toutes plateformes et par plateforme.
-  const items: AudienceItem[] = comptes.flatMap((r) => {
-    const k = partyKey(r.parti);
-    const p = plateforme(r.plateforme);
-    if (!k || !p || r.abonnes == null) return [];
-    const estParti = r.type === "parti";
-    return [{
-      nom: estParti ? PARTY_FULL_NAMES[k] : (r.candidat ?? r.pseudo ?? r.compte),
-      party: k,
-      plateforme: p,
-      estParti,
-      abonnes: r.abonnes,
-    }];
-  });
-  const parAbonnes = (a: AudienceItem, b: AudienceItem) => b.abonnes - a.abonnes;
-  const audience = Object.fromEntries(
-    FILTRES.map((f) => [
-      f,
-      items
-        .filter((i) => f === "toutes" || i.plateforme === f)
-        .sort(parAbonnes)
-        .slice(0, AUDIENCE_N),
+  const presenceParParti = Object.fromEntries(
+    partis.map((k) => [
+      k,
+      Object.fromEntries(
+        PLATEFORMES.map((p) => {
+          const avecCompte = circos.get(`${k}|${p}`)?.size ?? 0;
+          const cands = candidatures.get(k) ?? 0;
+          return [p, { avecCompte, candidats: cands, part: cands > 0 ? avecCompte / cands : 0 }];
+        }),
+      ) as Record<Plateforme, PresenceCell>,
     ]),
-  ) as SocialData["audience"];
+  ) as SocialData["presence"];
 
-  // Séries par jour depuis le déclenchement, jusqu'au dernier jour COMPLET :
-  // le jour du dernier relevé n'est collecté qu'en partie.
+  // Audience : tous les comptes, du plus suivi au moins suivi (filtrés au client).
+  const audience: AudienceItem[] = comptes
+    .flatMap((r) => {
+      const k = partyKey(r.parti);
+      const p = plateforme(r.plateforme);
+      if (!k || !p || r.abonnes == null) return [];
+      const type = typeCompte(r.type);
+      return [{
+        nom: type === "parti" ? PARTY_FULL_NAMES[k] : (r.candidat ?? r.pseudo ?? r.compte),
+        party: k,
+        plateforme: p,
+        type,
+        abonnes: r.abonnes,
+      }];
+    })
+    .sort((a, b) => b.abonnes - a.abonnes);
+
+  // Axe : du début de la collecte au dernier jour COMPLET (le jour du dernier
+  // relevé n'est collecté qu'en partie : l'afficher dessinerait une chute).
   const dernierJour = jours.reduce((m, r) => (r.jour > m ? r.jour : m), "");
-  const debut = ELECTION_CALL_DATE ?? jourMoins(dernierJour, 30);
   const fin = jourMoins(dernierJour, 1);
-  const axe = fin >= debut ? joursEntre(debut, fin) : [];
+  const axe = fin >= DEBUT_COLLECTE ? joursEntre(DEBUT_COLLECTE, fin) : [];
+  if (axe.length === 0) return null;
   const index = new Map(axe.map((j, i) => [j, i]));
-  const series = (champ: "publications" | "jaime") =>
-    Object.fromEntries(
-      FILTRES.map((f) => {
-        const parParti = new Map(partis.map((k) => [k, new Array(axe.length).fill(0) as number[]]));
-        for (const r of jours) {
-          const i = index.get(r.jour);
-          const k = partyKey(r.parti);
-          if (i === undefined || !k) continue;
-          if (f !== "toutes" && plateforme(r.plateforme) !== f) continue;
-          parParti.get(k)![i] += nombre(r[champ]);
-        }
-        return [f, partis.map((k) => ({ party: k, valeurs: parParti.get(k)! }))];
-      }),
-    ) as Record<FiltrePlateforme, Serie[]>;
+  const iParti = new Map(partis.map((k, i) => [k, i]));
 
-  // Palmarès : les plus aimées des PALMARES_JOURS derniers jours de relevé.
-  const palmaresAu = dernierJour;
-  const palmaresDu = jourMoins(dernierJour, PALMARES_JOURS - 1);
-  const recents: PalmaresItem[] = palmares.flatMap((r) => {
+  const cube: CubeRow[] = jours.flatMap((r) => {
+    const i = index.get(r.jour);
     const k = partyKey(r.parti);
     const p = plateforme(r.plateforme);
-    if (!k || !p || r.jour < palmaresDu || r.jour > palmaresAu || r.jaime == null) return [];
+    if (i === undefined || !k || !p) return [];
+    return [[
+      i,
+      iParti.get(k)!,
+      PLATEFORMES.indexOf(p),
+      TYPES.indexOf(typeCompte(r.type)),
+      nombre(r.publications),
+      nombre(r.jaime),
+      nombre(r.commentaires),
+    ] as CubeRow];
+  });
+
+  const declenchement = ELECTION_CALL_DATE;
+  const campagne = declenchement ? Math.max(0, axe.findIndex((j) => j >= declenchement)) : 0;
+
+  const tops: PalmaresItem[] = palmares.flatMap((r) => {
+    const k = partyKey(r.parti);
+    const p = plateforme(r.plateforme);
+    if (!k || !p || r.jaime == null || !index.has(r.jour)) return [];
+    const type = typeCompte(r.type);
     return [{
       jour: r.jour,
-      nom: r.type === "parti" ? PARTY_FULL_NAMES[k] : (r.candidat ?? r.pseudo ?? PARTY_LABELS[k]),
+      nom: type === "parti" ? PARTY_FULL_NAMES[k] : (r.candidat ?? r.pseudo ?? PARTY_LABELS[k]),
       party: k,
       plateforme: p,
+      type,
       url: r.url,
-      texte: (r.texte ?? "").trim(),
+      texte: tronque((r.texte ?? "").trim()),
       jaime: r.jaime,
       commentaires: nombre(r.commentaires),
     }];
   });
-  const palmaresParFiltre = Object.fromEntries(
-    FILTRES.map((f) => [
-      f,
-      recents
-        .filter((i) => f === "toutes" || i.plateforme === f)
-        .sort((a, b) => b.jaime - a.jaime)
-        .slice(0, PALMARES_N),
-    ]),
-  ) as SocialData["palmares"];
 
   const calcule = comptes.reduce((m, r) => ((r.calcule_le ?? "") > m ? (r.calcule_le ?? "") : m), "");
 
@@ -226,27 +224,24 @@ export function construireSocial(
   ) as SocialData["partiInfo"];
 
   return {
-    partiInfo,
     lastUpdated: lastUpdatedLabel((calcule || dernierJour).slice(0, 10)),
     partis,
+    partiInfo,
     presence: presenceParParti,
     audience,
     jours: axe,
-    publications: series("publications"),
-    jaime: series("jaime"),
-    palmares: palmaresParFiltre,
-    palmaresDu,
-    palmaresAu,
+    campagne: campagne < 0 ? 0 : campagne,
+    cube,
+    palmares: tops,
   };
 }
 
 export async function loadSocial(): Promise<SocialData | null> {
-  const [comptes, jours, presence, palmares] = await Promise.all([
+  const [comptes, jours, palmares] = await Promise.all([
     lire<CompteRow>(SOCIAL_DATASETS.comptes),
     lire<JourRow>(SOCIAL_DATASETS.publicationsJour),
-    lire<PresenceRow>(SOCIAL_DATASETS.presence),
     lire<PalmaresRow>(SOCIAL_DATASETS.palmares),
   ]);
-  if (!comptes || !jours || !presence) return null;
-  return construireSocial(comptes, jours, presence, palmares ?? []);
+  if (!comptes || !jours) return null;
+  return construireSocial(comptes, jours, palmares ?? []);
 }
