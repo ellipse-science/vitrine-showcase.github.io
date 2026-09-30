@@ -27,6 +27,11 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Un build normal prend ~7 min. Avec la mémoire d'échange, un build qui
+    # pagine pourrait traîner des heures et bloquer les éditions suivantes
+    # (concurrency sans annulation) : au-delà de 30 min, on coupe, et le
+    # secours en mode fichiers prend le relais.
+    timeout-minutes: 30
 
     permissions:
       contents: read
@@ -59,18 +64,22 @@ jobs:
       # mémoire utilisée toutes les 5 s pendant le build et on publie le pic
       # dans le résumé du run. `nohup … &` survit à la fin de l'étape ; le
       # runner nettoie les orphelins à la fin du job.
-      # SWAP (30 septembre 2026). Le pic mesuré frôlait les 16 Go du runner
-      # (15 650 à 15 812 Mo) ; ce jour-là, deux builds ont franchi la limite et
-      # le runner a été tué en plein build (« received a shutdown signal »),
-      # laissant le site public figé 11 h. 8 Go d'échange sur /mnt (disque
-      # temporaire du runner) : au-delà de la mémoire vive, le build ralentit au
-      # lieu de mourir. Filet, pas remède : la cause du pic reste à trouver.
+      # ÉCHANGE (30 septembre 2026). Le pic mesuré est plaqué à 15 650-15 812 Mo
+      # sur 15 989 ; ce jour-là, deux builds ont été interrompus (« runner has
+      # received a shutdown signal ») et le secours en mode fichiers a publié à
+      # leur place. HYPOTHÈSE : saturation mémoire. 8 Go d'échange de plus sur
+      # /mnt (disque temporaire du runner) ; `swapon --show` dit s'il en existait
+      # déjà. Étape NON BLOQUANTE : si elle échoue, le build part comme avant.
+      # Filet, pas remède : la cause du pic reste à mesurer (source `api`).
       - name: Ajouter 8 Go de mémoire d'échange
+        continue-on-error: true
         run: |
+          swapon --show || true
           sudo fallocate -l 8G /mnt/swap-build
           sudo chmod 600 /mnt/swap-build
           sudo mkswap /mnt/swap-build >/dev/null
           sudo swapon /mnt/swap-build
+          swapon --show
           free -m
 
       - name: Démarrer la sonde mémoire
@@ -126,9 +135,10 @@ jobs:
         run: |
           if [ -s "$RUNNER_TEMP/memoire.log" ]; then
             pic=$(awk '{print $1}' "$RUNNER_TEMP/memoire.log" | sort -n | tail -1)
-            pic_swap=$(awk '{print $2}' "$RUNNER_TEMP/memoire.log" | sort -n | tail -1)
+            pic_swap=$(awk '{print ($2 == "" ? 0 : $2)}' "$RUNNER_TEMP/memoire.log" | sort -n | tail -1)
+            pic_total=$(awk '{print $1 + $2}' "$RUNNER_TEMP/memoire.log" | sort -n | tail -1)
             total=$(free -m | awk 'NR==2 {print $2}')
-            echo "Pic mémoire du build : ${pic} Mo sur ${total} Mo ; échange utilisé au pic : ${pic_swap:-0} Mo" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "Pic mémoire du build : ${pic} Mo sur ${total} Mo ; échange max : ${pic_swap:-0} Mo ; pic mémoire + échange : ${pic_total} Mo" | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "Sonde mémoire : aucun échantillon" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
