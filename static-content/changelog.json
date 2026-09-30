@@ -1,5 +1,11 @@
 [
   {
+    "pr": 902,
+    "date": "2026-09-30T16:38:43Z",
+    "note": "La page Méthodologie décrit le nouveau module sur l'activité des candidates et des candidats sur les réseaux sociaux, affiché pour l'instant sur le miroir de travail seulement.",
+    "version": null
+  },
+  {
     "pr": 895,
     "date": "2026-09-30T01:34:01Z",
     "note": "Sur le miroir de travail : chaque circonscription a sa page, la carte se fouille et se zoome, et les vidéos se regardent sans quitter le site.",
