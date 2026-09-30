@@ -11946,11 +11946,11 @@
 
 /* Onglets, réglages, notes */
 /* Onglets : le niveau au-dessus des réglages. Grands, en pleine largeur de la
-   colonne du graphique, un filet dessous, puis 22 px avant la ligne des
-   réglages. Sur mobile, ils défilent dans leur rangée si la place manque,
-   jamais la page. */
+   colonne du graphique, puis 22 px avant la ligne des réglages, sans filet
+   entre les deux. Sur mobile, ils défilent dans leur rangée si la place
+   manque, jamais la page. */
 .social-onglets {
-  margin: 26px 0 22px; padding-bottom: 12px; border-bottom: 0.5px solid var(--rule);
+  margin: 26px 0 22px;
   overflow-x: auto; scrollbar-width: none;
 }
 .social-onglets::-webkit-scrollbar { display: none; }
