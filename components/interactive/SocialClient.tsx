@@ -2336,6 +2336,7 @@ export function SocialClient({ data }: { data: SocialData }) {
               </div>
               {graphique && (
                 <>
+                  <span className="social-reglages-filet" aria-hidden="true" />
                   <div className="social-reglage">
                     <span className="social-coches-titre" aria-hidden="true">
                       Graphique
@@ -2349,6 +2350,7 @@ export function SocialClient({ data }: { data: SocialData }) {
                       icone={(c) => <IconeForme f={c} />}
                     />
                   </div>
+                  <span className="social-reglages-filet" aria-hidden="true" />
                   <div className="social-reglage">
                     <span className="social-coches-titre" aria-hidden="true">
                       Découpage

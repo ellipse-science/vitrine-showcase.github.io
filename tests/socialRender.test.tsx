@@ -76,6 +76,8 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
     for (const nom of ["Abonnés", "Publications", "J’aime", "Commentaires"]) expect(html).toContain(`aria-label="${nom}"`);
     for (const nom of ["Par jour, en moyenne", "J’aime par publication"]) expect(html).not.toContain(`aria-label="${nom}"`);
     expect(html).not.toContain("social-mesure-nom");
+    // Un filet entre deux groupes : Mesure | Graphique | Découpage.
+    expect(reglages.match(/class="social-reglages-filet"/g)).toHaveLength(2);
   });
 
   it("s'ouvre sur Partis, en j'aime, barres et parts, ensemble ; « dans le temps » disponible", () => {

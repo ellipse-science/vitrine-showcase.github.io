@@ -11946,9 +11946,20 @@
 
 /* Onglets, réglages, notes */
 .social-onglets { margin: 26px 0 8px; }
-/* Mesure, Graphique, Découpage : une ligne de groupes alignés en bas, chacun
-   sous son en-tête ; ils passent à la ligne quand la place manque. */
-.social-reglages { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 28px; margin: 10px 0 8px; }
+/* Mesure, Graphique, Découpage : toute la largeur du graphique, Mesure à
+   gauche, Découpage à droite, Graphique au milieu, chacun sous son en-tête ;
+   un filet fin (celui des filtres) au milieu de chaque intervalle : les filets
+   sont des éléments de la ligne, space-between les centre. Sur mobile, les
+   groupes s'empilent et les filets deviennent horizontaux. */
+.social-reglages {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
+  gap: 12px 16px; margin: 10px 0 8px;
+}
+.social-reglages-filet { align-self: stretch; width: 0; border-left: 0.5px solid var(--rule); }
+@media (max-width: 640px) {
+  .social-reglages { flex-direction: column; align-items: stretch; gap: 10px; }
+  .social-reglages-filet { width: auto; height: 0; border-left: 0; border-top: 0.5px solid var(--rule); }
+}
 .social-reglage { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
 .social-reglage .social-bascule { flex-wrap: nowrap; }
 .social-sous-titre, .social-note {
