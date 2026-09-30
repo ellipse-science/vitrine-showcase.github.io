@@ -34,7 +34,13 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
 
   it("les tuiles portent la période : le jour partiel du relevé n'y entre pas", () => {
     expect(texte).toContain("Publications 162"); // 132 + 30, pas les 9 du 29
-    expect(texte).toContain("J’aime par publication");
+    expect(texte).toContain("J’aime 9 074"); // 8 281 + 793
+  });
+
+  it("En chiffres : quatre mesures, sans les moyennes retirées", () => {
+    expect((html.match(/<dt>/g) ?? []).length).toBe(4);
+    for (const mot of ["Par jour, en moyenne", "J’aime par publication", "Une moyenne ne se découpe pas"])
+      expect(texte).not.toContain(mot);
   });
 
   it("la frise et ses deux poignées sont des curseurs accessibles au clavier", () => {
@@ -52,23 +58,46 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
     // Formes, découpes et plateformes en icônes, comme la démo : le nom est
     // dans aria-label (lecteurs d'écran) et title (infobulle).
     for (const nom of ["Barres et parts", "Dans le temps", "Ensemble", "Par plateforme", "Par parti",
-      "Facebook", "Instagram", "TikTok", "Par jour, en moyenne", "J’aime par publication"]) {
+      "Facebook", "Instagram", "TikTok"]) {
       expect(html).toContain(`aria-label="${nom}"`);
       // « Dans le temps », grisé sur les abonnés, porte la raison en infobulle.
       if (nom !== "Dans le temps") expect(html).toContain(`title="${nom}"`);
     }
   });
 
-  it("la mesure : des icônes sous les onglets, le nom complet de la mesure active à côté", () => {
+  it("la mesure : quatre icônes sous les onglets, le nom complet de la mesure active à côté", () => {
     expect(html).toContain('aria-label="Mesure affichée"');
-    for (const nom of ["Abonnés", "Publications", "Par jour, en moyenne", "J’aime", "Commentaires", "J’aime par publication"])
-      expect(html).toContain(`aria-label="${nom}"`);
-    expect(html).toMatch(/class="social-mesure-nom"[^>]*>Abonnés</);
+    const groupe = html.slice(html.indexOf('aria-label="Mesure affichée"'));
+    const boutons = groupe.slice(0, groupe.indexOf("</div>")).match(/<button/g) ?? [];
+    expect(boutons).toHaveLength(4);
+    for (const nom of ["Abonnés", "Publications", "J’aime", "Commentaires"]) expect(html).toContain(`aria-label="${nom}"`);
+    for (const nom of ["Par jour, en moyenne", "J’aime par publication"]) expect(html).not.toContain(`aria-label="${nom}"`);
+    expect(html).toMatch(/class="social-mesure-nom"[^>]*>J’aime</);
   });
 
-  it("Partis s'ouvre sur les abonnés : « dans le temps » grisé, faute de série", () => {
-    expect(texte).toContain("Total des abonnés des comptes suivis");
-    expect(html).toMatch(/title="Pas de série d’abonnés" disabled=""/);
+  it("s'ouvre sur Partis, en j'aime, barres et parts, ensemble ; « dans le temps » disponible", () => {
+    expect(html).toMatch(/aria-pressed="true"[^>]*>Partis</);
+    expect(html).toMatch(/aria-pressed="true" aria-label="J’aime"/);
+    expect(html).toMatch(/aria-pressed="true" aria-label="Barres et parts"/);
+    expect(html).toMatch(/aria-pressed="true" aria-label="Ensemble"/);
+    expect(texte).toContain("Total des j’aime de la période.");
+    expect(html).not.toContain('title="Pas de série d’abonnés" disabled=""');
+    expect(html).toContain("social-treemap");
+  });
+
+  it("toutes plateformes cochées : la barre porte un segment par plateforme présente", () => {
+    const tri = construireSocial(
+      [{ compte: "facebook:x", plateforme: "facebook", pseudo: "x", candidat: "X", parti: "QS", circonscription: "Gouin",
+        type: "candidat", abonnes: 1, releve: "2026-09-29 12:40", calcule_le: "2026-09-29 13:54", candidatures_parti: 127 }],
+      (["facebook", "instagram", "tiktok"] as const).flatMap((p) => [
+        { jour: "2026-09-27", parti: "QS", plateforme: p, type: "candidat", publications: 3, jaime: 100, commentaires: 1 },
+        { jour: "2026-09-29", parti: "QS", plateforme: p, type: "candidat", publications: 1, jaime: 1, commentaires: 1 },
+      ]),
+      [],
+    )!;
+    const h = renderToStaticMarkup(<SocialClient data={tri} />);
+    expect(h).toContain('aria-label="QS\u00a0: 300 j’aime (Facebook 100 · Instagram 100 · TikTok 100)"');
+    for (const p of ["Facebook", "Instagram", "TikTok"]) expect(h).toContain(`title="${p}\u00a0: 100 j’aime"`);
   });
 
   it("sans fond de carte, pas d'onglet Carte", () => {

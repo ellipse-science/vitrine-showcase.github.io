@@ -11927,8 +11927,6 @@
 .social-bascule button:disabled { opacity: 0.35; cursor: not-allowed; }
 /* Partis : barres et parts côte à côte (55 / 45), les barres seules pour une moyenne. */
 .social-barres-parts { display: grid; grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); gap: 28px; align-items: start; }
-.social-barres-parts.seules { grid-template-columns: minmax(0, 1fr); }
-.social-sans-parts { font-style: italic; }
 /* Titres de panneau de même hauteur des deux côtés : barres et parts alignées. */
 .social-barres-parts .social-panneau-titre { display: flex; align-items: center; height: 24px; margin: 0; }
 /* Sous les barres, comme la démo : titre d'axe centré, légende des plateformes. */
@@ -12420,3 +12418,45 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
   .social-tuiles dd { font-size: 19px; }
   .social-tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
 }
+.social-infobulle-filtres { display: grid; justify-items: start; gap: 2px; }
+.social-lien {
+  min-height: 32px; padding: 0; border: 0; background: none; cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--cordovan); text-decoration: underline; text-underline-offset: 3px;
+}
+.social-lien:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+/* Page d'un candidat : sa carte en grand, puis son fil. */
+.candidat-sous-titre { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 6px 0 0; font-family: "Source Serif 4", serif; font-size: 16px; color: var(--ink-soft); }
+.candidat-sous-titre a, .candidat-profils a, .circo-carte .social-nom a { color: var(--cordovan); text-decoration: none; border-bottom: 0.5px solid var(--cordovan); }
+.candidat-sous-titre a:hover, .candidat-profils a:hover, .circo-carte .social-nom a:hover { border-bottom-width: 1.5px; }
+.candidat-sous-titre .social-meta { flex-basis: 100%; }
+.candidat-profils { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 10px 0 0; padding: 0; font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+.candidat-profils a { display: inline-flex; align-items: center; min-height: 40px; }
+.candidat-rang { margin: 14px 0 8px; font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink-soft); }
+.circo-cartes.candidat-carte { grid-template-columns: minmax(0, 1fr); }
+.circo-carte.grand { padding: 22px 26px; }
+.circo-carte.grand h2.social-nom { margin: 0; font-family: "Playfair Display", serif; font-size: 22px; font-weight: 700; }
+.circo-carte.grand .circo-grand { font-size: 30px; }
+.circo-carte.grand .circo-chiffres dd { font-size: 24px; }
+.circo-carte.grand .circo-plateformes { height: 20px; }
+.circo-carte.grand .circo-meilleure { grid-template-columns: 120px minmax(0, 1fr); }
+.circo-carte.grand .circo-meilleure .social-media { width: 120px; height: 120px; }
+.circo-carte.grand .circo-meilleure p { font-size: 15px; }
+.circo-carte.grand .circo-serie svg { height: 120px; }
+/* Onglet Candidats : une ligne se survole, se focalise et s'épingle (infobulle
+   de ses dernières publications) ; un fond léger le dit, sans sélection de
+   texte au clic. La ligne trouvée par la recherche reste surlignée. */
+.social-audience-bloc { position: relative; }
+.social-audience li {
+  margin: 0 -6px; padding-left: 6px; padding-right: 6px; border-radius: 2px;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+}
+.social-audience li:hover { background: var(--paper-deep); }
+.social-audience li:focus { outline: none; }
+.social-audience li:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; background: var(--paper-deep); }
+.social-audience li.surligne { background: color-mix(in srgb, var(--cordovan) 12%, transparent); box-shadow: inset 3px 0 0 var(--cordovan); }
+.social-audience-apart { margin: 0 0 14px; padding: 8px 10px 4px; border: 0.5px solid var(--rule); }
+.social-audience-apart .social-meta { display: block; margin: 0 0 4px; }
+.social-audience-apart .social-infobulle-fiche { margin-top: 4px; }
+.social-infobulle.compte { z-index: 6; }
+.social-infobulle.compte .social-infobulle-fil li { grid-template-columns: 12px 3.4rem minmax(0, 1fr) auto; }
