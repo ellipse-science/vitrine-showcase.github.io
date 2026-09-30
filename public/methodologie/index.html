@@ -528,6 +528,7 @@
       <li><a href="#limites">Limites reconnues</a></li>
       <li><a href="#ethique">Éthique et transparence</a></li>
       <li><a href="#citation">Citation et accès aux données</a></li>
+      <li><a href="#reseaux-sociaux">Miroir de travail&nbsp;: Les candidats sur les réseaux</a></li>
     </ol>
   </nav>
 
@@ -960,6 +961,38 @@
     <p class="metho-body">Pour toute demande d'accès aux données brutes ou pour établir une collaboration de recherche, utilisez le <a href="https://clessn.notion.site/2398cfa805498059a2b8f797f05867d0?pvs=105" target="_blank" rel="noopener" style="color: var(--cordovan);">formulaire d'accès aux données</a> ou écrivez à <a href="mailto:info@capp.ulaval.ca" style="color: var(--cordovan);">info@capp.ulaval.ca</a>.</p>
 
     <button class="metho-btn" onclick="window.print()">Télécharger en PDF ↓</button>
+  </section>
+
+  <!-- §13 Module du miroir de travail : Les candidats sur les réseaux.
+       Placé après la citation pour ne pas renuméroter les §09 à §12, cités
+       ailleurs (app/methodologie/*, skill synchro-methodologie). Sources de
+       vérité : aws-refiners refiners/agora-social/runtime.R, vitrine
+       lib/data/social*.ts, aws-infra src/pipelines/pipelines.ts
+       (SOCIAL_ACCOUNTS). -->
+  <section id="reseaux-sociaux" class="metho-section">
+    <p class="metho-section-label">§ 13 · Miroir de travail</p>
+    <h2>Module&nbsp;: Les candidats sur les réseaux</h2>
+    <p class="metho-body">Ce module est publié sur le miroir de travail de la Vitrine seulement&nbsp;: il n'apparaît pas encore sur le site public. Il décrit l'activité des candidates et des candidats aux élections générales québécoises de 2026 sur Facebook, Instagram et TikTok, ainsi que celle des comptes officiels des cinq partis.</p>
+
+    <h3>Source des données</h3>
+    <p class="metho-body">Le point de départ est la liste des candidatures officielles des cinq partis publiée par Élections Québec, close le 25&nbsp;septembre 2026&nbsp;: 635 candidatures, soit 127 par parti. Les comptes de chaque personne ont été cherchés sur les trois plateformes, puis vérifiés un à un par l'équipe avant d'entrer dans la collecte. S'y ajoutent les comptes officiels des partis, un par parti et par plateforme.</p>
+    <p class="metho-body">La collecte passe plusieurs fois par jour sur chaque compte. Elle relève le nombre d'abonnés et les publications, avec leur texte, leur date et leurs nombres de j'aime et de commentaires. L'historique remonte au 1<sup>er</sup>&nbsp;avril 2026. Au 30&nbsp;septembre 2026, 1&nbsp;003 comptes étaient suivis et 602 des 635 candidatures avaient au moins un compte collecté.</p>
+
+    <h3>Ce qui est mesuré</h3>
+    <p class="metho-body">Le module propose quatre indicateurs. Le nombre d'abonnés est celui du dernier relevé de chaque compte&nbsp;: il ne dépend pas de la période choisie. Les publications, les j'aime et les commentaires sont comptés par jour de publication, puis additionnés sur la période.</p>
+    <p class="metho-body">La collecte relit une publication à chaque passage, et ses compteurs continuent de grimper pendant des jours. Seule la dernière observation est retenue&nbsp;: chaque publication compte une fois, avec ses chiffres les plus récents. Une publication signée par deux comptes compte pour chacun d'eux. La date retenue est le jour de mise en ligne en temps universel; Facebook ne fournit que le jour, sans l'heure.</p>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">L'onglet Présence donne, pour chaque parti, la part de ses candidatures dont au moins un compte est suivi. L'onglet Partis additionne les indicateurs par parti, par plateforme ou dans le temps. L'onglet Candidats classe les 40 comptes en tête pour l'indicateur choisi. Le palmarès montre les 10 publications les plus aimées de la période, parmi celles des 60 derniers jours.</p>
+    <p class="metho-body">Sur la carte, chaque circonscription prend la couleur du parti dont les candidats y ont reçu le plus de j'aime au cours des 7 derniers jours; plus la couleur est soutenue, plus il y a de j'aime. Chaque circonscription a sa page, qui présente ses candidats et le fil de leurs publications depuis le déclenchement des élections, le 27&nbsp;août 2026.</p>
+
+    <h3>Limites</h3>
+    <ul class="metho-list">
+      <li>Seuls les comptes publics sont collectés. Les comptes privés et les profils personnels Facebook, que la collecte ne peut pas lire, en sont absents&nbsp;: une personne qui ne publie que sur son profil personnel n'apparaît pas.</li>
+      <li>Au 30&nbsp;septembre 2026, 33 candidatures n'avaient aucun compte collecté&nbsp;: soit la personne n'a pas de compte public, soit son compte n'a pas été retrouvé.</li>
+      <li>Les chiffres sont ceux qu'affichent les plateformes. TikTok arrondit ses nombres d'abonnés et de j'aime au-delà de 10&nbsp;000 (par exemple 61&nbsp;300).</li>
+      <li>Les j'aime et les commentaires mesurent une réaction en ligne, pas un appui électoral. Ils dépendent aussi de la taille de l'auditoire de chaque compte.</li>
+    </ul>
   </section>
 
   <!-- Footer -->
