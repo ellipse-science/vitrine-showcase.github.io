@@ -12200,14 +12200,15 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
    3 colonnes, 2 sur tablette, 1 sur mobile ; hauteurs égales par rangée. */
 .circo-cartes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .circo-carte {
-  position: relative; display: flex; flex-direction: column; gap: 8px; padding: 22px;
+  position: relative; display: flex; flex-direction: column; gap: 10px; padding: 18px 20px;
   border: 1px solid var(--rule); border-left: 3px solid var(--rule); background: var(--paper);
 }
 .circo-vide { font-style: italic; }
-.circo-abonnes { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
-.circo-grand { font-family: "Playfair Display", serif; font-weight: 700; font-size: 26px; line-height: 1; color: var(--ink); }
-.circo-comptes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; }
-.circo-comptes a { color: var(--ink-soft); text-decoration: none; }
+/* En-tête compact : total des abonnés et détail par compte sur une ligne. */
+.circo-abonnes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 2px; }
+.circo-grand { font-family: "Playfair Display", serif; font-weight: 700; font-size: 20px; line-height: 1; color: var(--ink); }
+.circo-comptes { list-style: none; margin: 0 0 0 4px; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.circo-abonnes a, .circo-comptes a { color: var(--ink-soft); text-decoration: none; }
 .circo-comptes a:hover { color: var(--cordovan); }
 /* Logo et chiffre centrés sur la ligne, écart fixe, quelle que soit la balise. */
 .circo-compte {
@@ -12215,20 +12216,20 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
   font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft);
 }
 .circo-compte .social-logo { display: block; flex: none; }
-.circo-chiffres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; margin: 6px 0 0; }
+.circo-chiffres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 12px; margin: 2px 0 0; }
 /* Pastille de rang en j'aime : 1er plein bordeaux, 2e-3e contour bordeaux, les autres gris. */
 .circo-pastille {
-  position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: flex-start; justify-content: center;
-  width: 38px; height: 38px; padding-top: 7px; box-sizing: border-box; border-radius: 50%;
+  position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: flex-start; justify-content: center;
+  width: 34px; height: 34px; padding-top: 6px; box-sizing: border-box; border-radius: 50%;
   border: 1.5px solid var(--rule); color: var(--ink-soft);
 }
-.circo-pastille b { font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px; line-height: 1; }
+.circo-pastille b { font-family: "Playfair Display", serif; font-weight: 700; font-size: 15px; line-height: 1; }
 .circo-pastille sup { font-family: "IBM Plex Mono", monospace; font-size: 8px; line-height: 1; margin-left: 1px; }
 .circo-pastille.podium { border-color: var(--cordovan); color: var(--cordovan); }
 .circo-pastille.premier { border-color: var(--cordovan); background: var(--cordovan); color: var(--paper); }
 .circo-carte .social-fiche-tete { padding-right: 44px; }
 .circo-chiffres > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.circo-chiffres dd { margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 18px; color: var(--ink); }
+.circo-chiffres dd { margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px; line-height: 1.1; color: var(--ink); }
 .circo-chiffres dt {
   font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--ink-softer);

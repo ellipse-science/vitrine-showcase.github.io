@@ -88,32 +88,53 @@ export function CandidatsCirco({
                 <p className="social-meta circo-vide">Aucun compte suivi</p>
               ) : (
                 <>
+                  {/* Une ligne : le total des abonnés, puis le détail par compte ; un
+                      seul compte, son logo suffit (le détail répéterait le total). */}
                   <div className="circo-abonnes">
                     <span className="circo-grand">{nombreGrand(c.abonnes)}</span>
                     <span className="social-meta">abonnés</span>
+                    {c.comptes.length === 1 ? (
+                      (() => {
+                        const k = c.comptes[0];
+                        const logo = (
+                          <span className="circo-compte">
+                            <Logo p={k.plateforme} taille={14} />
+                            <span className="visually-hidden">{NOMS_PLATEFORMES[k.plateforme]}</span>
+                          </span>
+                        );
+                        return k.url ? (
+                          <a href={k.url} target="_blank" rel="noopener noreferrer" title={`${NOMS_PLATEFORMES[k.plateforme]} de ${c.nom}`}>
+                            {logo}
+                          </a>
+                        ) : (
+                          logo
+                        );
+                      })()
+                    ) : (
+                      <ul className="circo-comptes">
+                        {c.comptes.map((k) => {
+                          const contenu = (
+                            <span className="circo-compte">
+                              <Logo p={k.plateforme} taille={14} />
+                              <span className="visually-hidden">{NOMS_PLATEFORMES[k.plateforme]}</span>
+                              <span>{k.abonnes != null ? nombreFr(k.abonnes) : "?"}</span>
+                            </span>
+                          );
+                          return (
+                            <li key={k.plateforme}>
+                              {k.url ? (
+                                <a href={k.url} target="_blank" rel="noopener noreferrer" title={`${NOMS_PLATEFORMES[k.plateforme]} de ${c.nom}`}>
+                                  {contenu}
+                                </a>
+                              ) : (
+                                contenu
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
-                  <ul className="circo-comptes">
-                    {c.comptes.map((k) => {
-                      const contenu = (
-                        <span className="circo-compte">
-                          <Logo p={k.plateforme} taille={14} />
-                          <span className="visually-hidden">{NOMS_PLATEFORMES[k.plateforme]}</span>
-                          <span>{k.abonnes != null ? nombreFr(k.abonnes) : "?"}</span>
-                        </span>
-                      );
-                      return (
-                        <li key={k.plateforme}>
-                          {k.url ? (
-                            <a href={k.url} target="_blank" rel="noopener noreferrer" title={`${NOMS_PLATEFORMES[k.plateforme]} de ${c.nom}`}>
-                              {contenu}
-                            </a>
-                          ) : (
-                            contenu
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
                   {c.publications === 0 ? (
                     <p className="social-meta circo-vide">Aucune publication depuis le déclenchement</p>
                   ) : (
