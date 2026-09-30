@@ -3,7 +3,7 @@
   "source_url": "https://www.assnat.qc.ca/fr/deputes/",
   "licence": "Reproduction autorisée pour usage non commercial avec mention de la source.",
   "licence_url": "https://www.assnat.qc.ca/fr/propos-site/droits-propriete-intellectuelle.html",
-  "recupere_le": "2026-09-29",
+  "recupere_le": "2026-09-30",
   "deputes": [
     {
       "deputy_id": "17823",
@@ -546,6 +546,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/gagnon-yannick-19317/index.html"
     },
     {
+      "deputy_id": "4131",
+      "circonscription": "L'Assomption",
+      "circonscription_slug": "l-assomption",
+      "asset_slug": "l-assomption",
+      "nom": "François Legault",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/l-assomption.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/legault-francois-4131/index.html"
+    },
+    {
       "deputy_id": "485",
       "circonscription": "La Peltrie",
       "circonscription_slug": "la-peltrie",
@@ -704,6 +714,16 @@
       "parti": "Coalition avenir Québec",
       "fichier": "/images/deputes/marie-victorin.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/dorismond-shirley-19063/index.html"
+    },
+    {
+      "deputy_id": "17943",
+      "circonscription": "Marquette",
+      "circonscription_slug": "marquette",
+      "asset_slug": "marquette",
+      "nom": "Enrico Ciccone",
+      "parti": "Parti libéral du Québec",
+      "fichier": "/images/deputes/marquette.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/ciccone-enrico-17943/index.html"
     },
     {
       "deputy_id": "17941",
