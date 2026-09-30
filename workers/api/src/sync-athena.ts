@@ -23,7 +23,7 @@
 // à 'true' (phase d'ombre = false : on écrit Postgres, aucun build déclenché).
 import { Client } from '@neondatabase/serverless'
 import { AthenaClient } from './athena'
-import { EXTERNE_MS, PG_CONNEXION_MS, PG_FERMETURE_MS, PG_REQUETE_MS, avecDelai } from './delai'
+import { DelaiDepasse, EXTERNE_MS, PG_CONNEXION_MS, PG_FERMETURE_MS, PG_REQUETE_MS, avecDelai } from './delai'
 import { avecReconnexion, messageDe, resumerErreur } from './reconnexion'
 import { hasColumnTypes, putTableSnapshot, rowsToObjects, type SnapshotEnv } from './snapshot'
 import type { SnapshotTableEntry } from './snapshot-logic'
@@ -159,8 +159,8 @@ async function writeTable(
   // quand (cf. reconnexion.ts, « ce qui n'est pas établi »).
   const t0 = Date.now()
   let etape = 'BEGIN'
-  await requete(pg, 'BEGIN')
   try {
+    await requete(pg, 'BEGIN')
     // Un verrou laissé par une connexion coupée en pleine transaction (le
     // TRUNCATE prend un ACCESS EXCLUSIVE) ferait attendre la nouvelle
     // tentative jusqu'à PG_REQUETE_MS : on préfère échouer vite.
@@ -226,7 +226,10 @@ async function writeTable(
         `après BEGIN, ${rows.length} lignes :`,
       messageDe(err),
     )
-    await requete(pg, 'ROLLBACK').catch(() => {})
+    // Pas de ROLLBACK après un délai dépassé : il se mettrait en file derrière
+    // la requête pendue et attendrait PG_REQUETE_MS de plus. La fermeture de
+    // la connexion (fermerPg) annule la transaction côté serveur.
+    if (!(err instanceof DelaiDepasse)) await requete(pg, 'ROLLBACK').catch(() => {})
     throw err
   }
 }
@@ -343,6 +346,9 @@ export async function runAthenaSync(
     try {
       await avecDelai(pg.connect(), PG_CONNEXION_MS, 'connexion Postgres')
     } catch (err) {
+      // Sans l'attendre : un WebSocket qui aboutirait après le délai ne doit pas
+      // rester ouvert jusqu'à la fin de l'invocation.
+      void pg.end().catch(() => {})
       throw new PostgresInjoignable(messageDe(err))
     }
     return pg

@@ -7,8 +7,10 @@ import { avecReconnexion, estCoupureConnexion, messageDe, resumerErreur } from "
 /**
  * 30 septembre 2026, 8 h 10 : « Connection terminated unexpectedly » sur la
  * première table, puis « Client … is not queryable » sur la seconde, qui
- * héritait du client mort. Ces tests verrouillent la connexion par table et
- * la nouvelle tentative unique.
+ * héritait du client mort. Ces tests verrouillent la PARTIE PURE : la
+ * reconnaissance d'une coupure, la nouvelle tentative unique et la fermeture
+ * unique (avecReconnexion, avec des clients simulés). Le câblage dans
+ * runAthenaSync (client Neon réel) n'est éprouvé qu'en production.
  */
 describe("sync-athena — connexion Postgres par table", () => {
   it("reconnaît les deux messages observés en production", () => {
@@ -54,6 +56,12 @@ describe("sync-athena — connexion Postgres par table", () => {
     await avecReconnexion(async () => 7, fermer, async () => "ok", "t");
     expect(fermer).toHaveBeenCalledWith(7);
   });
+  it("arrêt ou suspension du compute (SQLSTATE 57P01, classe 08) : une coupure", () => {
+    expect(estCoupureConnexion(Object.assign(new Error("terminating connection due to administrator command"), { code: "57P01" }))).toBe(true);
+    expect(estCoupureConnexion(Object.assign(new Error("x"), { code: "08006" }))).toBe(true);
+    expect(estCoupureConnexion(Object.assign(new Error('relation "x" does not exist'), { code: "42P01" }))).toBe(false);
+  });
+
   it("une donnée qui contient « connection error » n'est pas une coupure", () => {
     expect(estCoupureConnexion(new Error('invalid input syntax for type integer: "connection error"'))).toBe(false);
   });

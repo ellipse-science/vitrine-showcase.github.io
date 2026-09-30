@@ -25,12 +25,21 @@
  * Module sans dépendance, importable par les tests de la racine.
  */
 
-/** Messages connus d'une connexion coupée (Neon serverless / node-postgres). */
+/** Messages connus d'une connexion coupée (Neon serverless). Pas d'ECONNRESET :
+ *  le Worker n'a pas de socket Node (pas de `nodejs_compat`). Un délai dépassé
+ *  (DelaiDepasse) n'est PAS retenté : une requête pendue le serait sans doute
+ *  encore, et la tranche a son propre budget. */
 const COUPURES = [
   /^Connection terminated/,
   /is not queryable$/,
-  /\bECONNRESET\b/,
+  /^terminating connection/,
 ]
+
+/** SQLSTATE d'une connexion fermée par le serveur (arrêt, suspension du compute
+ *  Neon) : 57P01-57P03, et toute la classe 08 (exceptions de connexion). */
+function estCodeDeCoupure(code: unknown): boolean {
+  return typeof code === 'string' && (/^57P0[123]$/.test(code) || code.startsWith('08'))
+}
 
 /** Texte d'une erreur, y compris un Event WebSocket (qui n'est pas un Error). */
 export function messageDe(err: unknown): string {
@@ -49,6 +58,7 @@ export function messageDe(err: unknown): string {
 export function estCoupureConnexion(err: unknown): boolean {
   if (!(err instanceof Error) && err && typeof err === 'object' &&
       (err as { type?: unknown }).type === 'error') return true
+  if (err && typeof err === 'object' && estCodeDeCoupure((err as { code?: unknown }).code)) return true
   const message = messageDe(err)
   return COUPURES.some((motif) => motif.test(message))
 }
@@ -61,7 +71,8 @@ export function resumerErreur(message: string, max = 300): string {
     .replace(/\bAKIA[0-9A-Z]{16}\b/g, 'AKIA***')
     .replace(/\s+/g, ' ')
     .trim()
-  return masque.length > max ? `${masque.slice(0, max - 1)}…` : masque
+  const car = Array.from(masque)          // par caractère, jamais au milieu d'un emoji
+  return car.length > max ? `${car.slice(0, max - 1).join('')}…` : masque
 }
 
 /** Ouvre une connexion, exécute `travail`, la ferme (une seule fois). Sur une
