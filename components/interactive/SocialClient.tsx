@@ -215,7 +215,10 @@ export function InfobulleCompte({
       </span>
       {a.type === "candidat" && a.code != null && (
         <div className="social-infobulle-fil">
+          <span className="social-infobulle-entete">
           <span className="social-meta">Dernières publications</span>
+          <span className="social-meta">J’aime</span>
+        </span>
           {etat.charge ? (
             <span className="social-meta">Chargement du fil…</span>
           ) : fil.length === 0 ? (
@@ -1462,6 +1465,9 @@ export function Infobulle({
     .filter((k) => partis.includes(k))
     .map((k) => ({ k, comptes: circo.comptes.filter((c) => c.party === k && plateformes.includes(c.plateforme)) }))
     .filter((l) => l.comptes.length > 0);
+  // Les plateformes présentes dans la circonscription : une colonne chacune,
+  // pour aligner les logos sans réserver de place aux plateformes absentes.
+  const pfPresentes = PLATEFORMES.filter((pf) => lignes.some((l) => l.comptes.some((c) => c.plateforme === pf)));
   // Des comptes suivis, tous écartés par les filtres : le dire, et non « aucun compte ».
   const filtresVides = lignes.length === 0 && circo.comptes.length > 0;
   const filtresActifs = resumeFiltres(data, plateformes, partis);
@@ -1519,6 +1525,11 @@ export function Infobulle({
       ) : lignes.length === 0 ? (
         <div className="social-meta">Aucun compte de candidat suivi</div>
       ) : (
+        <>
+        <span className="social-infobulle-entete">
+          <span className="social-meta">Candidats</span>
+          <span className="social-meta">{periode === "7j" ? "J’aime · 7 jours" : "J’aime"}</span>
+        </span>
         <ul>
           {lignes.map(({ k, comptes }) => {
             const n = comptes.reduce((s, c) => s + (periode === "7j" ? c.jaime7j : c.jaimeCampagne), 0);
@@ -1528,19 +1539,29 @@ export function Infobulle({
                   {data.partiInfo[k].sigle}
                 </span>
                 <span className="social-infobulle-nom">{comptes[0].nom}</span>
-                <span className="social-infobulle-logos">
-                  {comptes.map((c) => (
-                    <Logo key={c.plateforme} p={c.plateforme} taille={12} />
-                  ))}
+                {/* Une case fixe par plateforme (Facebook, Instagram, TikTok) : les
+                    logos d'une même plateforme restent alignés d'une ligne à l'autre. */}
+                <span className="social-infobulle-logos" style={{ gridTemplateColumns: `repeat(${pfPresentes.length}, 14px)` }}>
+                  {pfPresentes.map((pf) =>
+                    comptes.some((c) => c.plateforme === pf) ? (
+                      <Logo key={pf} p={pf} taille={12} />
+                    ) : (
+                      <span key={pf} className="social-infobulle-logo-vide" aria-hidden="true" />
+                    ),
+                  )}
                 </span>
                 <span className="social-infobulle-n">{nombreFr(n)}</span>
               </li>
             );
           })}
         </ul>
+        </>
       )}
       <div className="social-infobulle-fil">
-        <span className="social-meta">Dernières publications</span>
+        <span className="social-infobulle-entete">
+          <span className="social-meta">Dernières publications</span>
+          <span className="social-meta">J’aime</span>
+        </span>
         {etat.charge ? (
           // En attendant le fichier : la dernière publication, déjà dans les props.
           circo.derniere ? (
