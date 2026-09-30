@@ -127,6 +127,22 @@ En cas d'hésitation entre deux niveaux, prends le plus bas.
 
 10. **Aucune fonctionnalité en production sans passage vérifié sur dev.** La production (`vitrinedemocratique.com`, branche `main`) n'avance en code que par une fusion délibérée `develop → main`; cette règle ajoute la condition d'entrée : la fonctionnalité doit avoir été **observée en marche** sur `dev.vitrinedemocratique.com` (même build que la prod, mêmes données lues de l'API) avant la promotion. La PR de promotion doit contenir la ligne « `- [x] Vérifié sur dev le AAAA-MM-JJ : <ce qui a été observé>` » : des faits (« le module X s'affiche avec les données du cycle courant », « aucune 404 d'actif », « les onglets répondent »), pas le mot « vérifié » tout seul. C'est « prouver, pas décrire » appliqué au gitflow. **Vérifié mécaniquement** par le check `garde-promotion` sur toute PR visant `main`. Précisions : les poussées de données automatiques (`[prod data sync]`) passent par la clé de déploiement, pas par PR, et ne sont pas concernées; ⚠️ l'échappatoire « vérifier sur le miroir GitHub Pages » **n'existe plus** depuis son débranchement du 2026-08-30, et elle reposait sur une parité jamais garantie (autre build, autre source de données). À trancher : l'observation revient à un humain, ou un agent accède à dev autrement. D'ici là, un agent qui remplit cette ligne dit ce qu'il a vérifié (build, déploiement Cloudflare confirmé) et ce qu'il n'a PAS pu voir. Pourquoi : le piège documenté est la prod qui tourne sur du vieux code; le piège symétrique est de promouvoir du code que personne n'a regardé tourner, avec l'attention médiatique dessus. Demande du 2026-08-19.
 
+11. **Données de référence CAPP — une seule source par concept.** Député·e·s,
+    institutions/législatures, partis (codes, couleurs, attributs), médias, enjeux
+    et promesses sont pour la plupart **produits par un raffineur ou tirés
+    d'Ellipse** (`ellipse-science/tube`, `ellipse-science/pplmatch`) — ce ne sont
+    pas des inventions locales. **Dériver ou adapter un sous-ensemble pour un
+    besoin de module différent est correct** ; **redéfinir tout le concept en
+    parallèle, indépendamment, ne l'est pas** — c'est ce qui produit des copies qui
+    se ressemblent sans se mettre à jour ensemble (le problème des dossiers
+    partagés Dropbox). Cas déjà trouvé dans ce repo : les couleurs de partis sont
+    définies dans `lib/data/parties.ts` (`PARTY_COLORS`) puis recopiées deux fois
+    dans `app/globals.css`, dont un bloc dont le commentaire s'auto-décrit comme
+    « TROISIÈME copie des couleurs de parti ». Avant d'ajouter une nouvelle
+    constante/liste pour une donnée de référence, consulter le registre :
+    [`docs/reference/donnees-de-reference.md`](./docs/reference/donnees-de-reference.md)
+    (copie canonique — les repos `aws-refiners`/`aws-infra` y pointent).
+
 ## Module naming + signalement labels (triage)
 
 Treat these as **distinct modules**. A right-click report inside a block must be tagged to that module and receive its GitHub label:

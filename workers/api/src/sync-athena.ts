@@ -23,6 +23,8 @@
 // à 'true' (phase d'ombre = false : on écrit Postgres, aucun build déclenché).
 import { Client } from '@neondatabase/serverless'
 import { AthenaClient } from './athena'
+import { DelaiDepasse, EXTERNE_MS, PG_CONNEXION_MS, PG_FERMETURE_MS, PG_REQUETE_MS, avecDelai } from './delai'
+import { avecReconnexion, messageDe, resumerErreur } from './reconnexion'
 import { hasColumnTypes, putTableSnapshot, rowsToObjects, type SnapshotEnv } from './snapshot'
 import type { SnapshotTableEntry } from './snapshot-logic'
 import { TABLES, type TableSpec } from './tables'
@@ -139,6 +141,13 @@ async function fetchTableRows(
   return rows
 }
 
+/** Une requête Postgres, bornée par PG_REQUETE_MS : le client Neon parle par
+ *  WebSocket, et une socket fermée sans erreur laissait la promesse pendante
+ *  à jamais — le « code had hung » des 27 et 29 septembre 2026 (cf. delai.ts). */
+function requete(pg: Client, sql: string, params?: unknown[]) {
+  return avecDelai(pg.query(sql, params), PG_REQUETE_MS, 'Postgres')
+}
+
 async function writeTable(
   pg: Client,
   spec: TableSpec,
@@ -146,8 +155,17 @@ async function writeTable(
 ): Promise<number> {
   const table = `vitrine.${quoteIdent(spec.name)}`
   const colList = spec.cols.map(quoteIdent).join(', ')
-  await pg.query('BEGIN')
+  // ÉTAPE EN COURS et durée : si la connexion tombe, le journal dit où et
+  // quand (cf. reconnexion.ts, « ce qui n'est pas établi »).
+  const t0 = Date.now()
+  let etape = 'BEGIN'
   try {
+    await requete(pg, 'BEGIN')
+    // Un verrou laissé par une connexion coupée en pleine transaction (le
+    // TRUNCATE prend un ACCESS EXCLUSIVE) ferait attendre la nouvelle
+    // tentative jusqu'à PG_REQUETE_MS : on préfère échouer vite.
+    etape = 'lock_timeout'
+    await requete(pg, `SET LOCAL lock_timeout = '10s'`)
     // GARDE ZÉRO-LIGNE. Une requête Athena qui renvoie 0 ligne sur une table
     // qui en avait est presque toujours une panne amont (partition manquante,
     // vue vide, permission), pas une réalité éditoriale. Sans cette garde, on
@@ -158,7 +176,7 @@ async function writeTable(
     // table suffit : le tout-ou-rien retient les hooks, la transaction est
     // annulée, et l'ancienne donnée continue d'être servie.
     if (rows.length === 0) {
-      const prev = await pg.query(
+      const prev = await requete(pg, 
         `SELECT row_count FROM vitrine.sync_state WHERE table_name = $1`,
         [spec.name],
       )
@@ -169,8 +187,10 @@ async function writeTable(
         )
       }
     }
-    await pg.query(`TRUNCATE ${table}`)
+    etape = 'TRUNCATE'
+    await requete(pg, `TRUNCATE ${table}`)
     for (let start = 0; start < rows.length; start += BATCH_ROWS) {
+      etape = `INSERT lot ${start / BATCH_ROWS + 1}`
       const batch = rows.slice(start, start + BATCH_ROWS)
       const placeholders = batch
         .map(
@@ -178,16 +198,17 @@ async function writeTable(
             `(${spec.cols.map((_, c) => `$${r * spec.cols.length + c + 1}`).join(', ')})`,
         )
         .join(', ')
-      await pg.query(
+      await requete(pg, 
         `INSERT INTO ${table} (${colList}) VALUES ${placeholders}`,
         batch.flat(),
       )
     }
     // Recomptage post-insertion : ne jamais se fier au compte du pilote
     // (leçon documentée de sync.ts, où le pilote HTTP rapportait 0 ligne).
-    const counted = await pg.query(`SELECT count(*)::int AS n FROM ${table}`)
+    etape = 'recomptage'
+    const counted = await requete(pg, `SELECT count(*)::int AS n FROM ${table}`)
     const n = Number(counted.rows[0]?.n ?? 0)
-    await pg.query(
+    await requete(pg, 
       `INSERT INTO vitrine.sync_state (table_name, synced_at, row_count, source)
        VALUES ($1, now(), $2, 'cf-athena')
        ON CONFLICT (table_name) DO UPDATE SET
@@ -196,10 +217,19 @@ async function writeTable(
          source = EXCLUDED.source`,
       [spec.name, n],
     )
-    await pg.query('COMMIT')
+    etape = 'COMMIT'
+    await requete(pg, 'COMMIT')
     return n
   } catch (err) {
-    await pg.query('ROLLBACK').catch(() => {})
+    console.error(
+      `${spec.name} : échec à l'étape ${etape}, ${Math.round((Date.now() - t0) / 1000)} s ` +
+        `après BEGIN, ${rows.length} lignes :`,
+      messageDe(err),
+    )
+    // Pas de ROLLBACK après un délai dépassé : il se mettrait en file derrière
+    // la requête pendue et attendrait PG_REQUETE_MS de plus. La fermeture de
+    // la connexion (fermerPg) annule la transaction côté serveur.
+    if (!(err instanceof DelaiDepasse)) await requete(pg, 'ROLLBACK').catch(() => {})
     throw err
   }
 }
@@ -209,6 +239,7 @@ export async function notifySlack(env: SyncAthenaEnv, text: string): Promise<voi
   try {
     const res = await fetch(env.SLACK_WEBHOOK_URL, {
       method: 'POST',
+      signal: AbortSignal.timeout(EXTERNE_MS),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     })
@@ -267,6 +298,15 @@ export function datamartCredentials(
   return { accessKeyId, secretAccessKey, outputLocation }
 }
 
+/** Ouverture de la connexion Postgres impossible (et non coupure en cours de
+ *  route) : les tables restantes de la tranche ne sont pas tentées. */
+class PostgresInjoignable extends Error {
+  constructor(message: string) {
+    super(`connexion Postgres impossible : ${message}`)
+    this.name = 'PostgresInjoignable'
+  }
+}
+
 /** Exécute la synchronisation sur une TRANCHE de la whitelist (offset/limit
  *  sur la liste des tables, comme /v1/sync). Le cron passe sans tranche :
  *  les 19 tables. Les hooks ne partent que sur une passe complète, sans
@@ -293,8 +333,28 @@ export async function runAthenaSync(
     outputLocation: creds.outputLocation,
   })
 
-  const pg = new Client(env.DATABASE_URL)
-  await pg.connect()
+  // Une connexion PAR TABLE, ouverte après la lecture Athena (cf. reconnexion.ts).
+  // Un écouteur 'error' est obligatoire : sans lui, l'EventEmitter du client
+  // LÈVE l'erreur d'une coupure hors de toute requête (exception non attrapée).
+  // Un client déjà terminé n'est pas refermé : son end() attendrait un
+  // événement « end » déjà passé, soit PG_FERMETURE_MS pour rien.
+  const termines = new WeakSet<Client>()
+  const ouvrirPg = async (): Promise<Client> => {
+    const pg = new Client(env.DATABASE_URL)
+    pg.on('error', (e: unknown) => console.warn('Postgres (événement) :', messageDe(e)))
+    pg.on('end', () => termines.add(pg))
+    try {
+      await avecDelai(pg.connect(), PG_CONNEXION_MS, 'connexion Postgres')
+    } catch (err) {
+      // Sans l'attendre : un WebSocket qui aboutirait après le délai ne doit pas
+      // rester ouvert jusqu'à la fin de l'invocation.
+      void pg.end().catch(() => {})
+      throw new PostgresInjoignable(messageDe(err))
+    }
+    return pg
+  }
+  const fermerPg = (pg: Client) =>
+    termines.has(pg) ? Promise.resolve() : avecDelai(pg.end(), PG_FERMETURE_MS, 'fermeture Postgres')
 
   const synced: TableResult[] = []
   const failed: FailedTable[] = []
@@ -302,61 +362,65 @@ export async function runAthenaSync(
    *  échec de synchro (cf. le side-car plus bas) : une information, qui
    *  remonte jusqu'à Slack pour que la dérive ne s'installe pas en silence. */
   const snapshotSkipped: string[] = []
-  try {
-    for (const spec of specs) {
-      try {
-        const rows = await fetchTableRows(athena, spec)
-        const n = await writeTable(pg, spec, rows)
+  for (const [i, spec] of specs.entries()) {
+    try {
+      const rows = await fetchTableRows(athena, spec)
+      const n = await avecReconnexion(ouvrirPg, fermerPg, (pg) => writeTable(pg, spec, rows), spec.name)
 
-        // INSTANTANÉ R2, ÉCRIT AU PASSAGE. Les lignes sont déjà là, en
-        // mémoire : c'est précisément ce que le build allait sinon
-        // redemander à Postgres, table par table, à chaque build (incident
-        // du 2026-08-26, cf. l'en-tête de snapshot.ts). Le dépôt vient
-        // APRÈS le COMMIT, jamais avant : une table n'entre dans
-        // l'instantané que si elle est entrée dans la base.
-        //
-        // Une conversion qui échoue (colonne numérique polluée en amont)
-        // lève et fait ÉCHOUER la table — donc retient les hooks et
-        // préserve la donnée servie, comme la garde zéro-ligne ci-dessus.
-        // L'INSTANTANÉ EST UN SIDE-CAR : il ne peut JAMAIS faire échouer la
-        // synchro. Postgres a déjà commité à ce stade, et un échec ici
-        // remonterait dans `failed`, donc retiendrait les Deploy Hooks au
-        // titre du tout-ou-rien : le site cesserait de se rafraîchir pour
-        // protéger une copie dont il n'a pas besoin pour fonctionner. C'est
-        // l'inverse du bon compromis.
-        //
-        // Une table qui n'entre pas dans l'instantané en est simplement
-        // ABSENTE, donc absente du manifeste, donc lue par le build dans son
-        // fichier publié : le comportement d'avant cette PR. On perd
-        // l'économie sur cette table, jamais la justesse ni l'édition.
-        let snapshot: SnapshotTableEntry | undefined
-        if (cycle && env.ART_BUCKET) {
-          try {
-            if (!hasColumnTypes(spec.name)) {
-              throw new Error('types de colonnes inconnus (régénérer column-types.ts)')
-            }
-            const objects = rowsToObjects(spec.name, spec.cols, rows)
-            snapshot = await putTableSnapshot(env.ART_BUCKET, cycle, spec.name, objects)
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err)
-            console.warn(`${spec.name} : hors instantané (${message})`)
-            snapshotSkipped.push(`${spec.name} : ${message}`)
+      // INSTANTANÉ R2, ÉCRIT AU PASSAGE. Les lignes sont déjà là, en
+      // mémoire : c'est précisément ce que le build allait sinon
+      // redemander à Postgres, table par table, à chaque build (incident
+      // du 2026-08-26, cf. l'en-tête de snapshot.ts). Le dépôt vient
+      // APRÈS le COMMIT, jamais avant : une table n'entre dans
+      // l'instantané que si elle est entrée dans la base.
+      //
+      // Une conversion qui échoue (colonne numérique polluée en amont)
+      // lève et fait ÉCHOUER la table — donc retient les hooks et
+      // préserve la donnée servie, comme la garde zéro-ligne ci-dessus.
+      // L'INSTANTANÉ EST UN SIDE-CAR : il ne peut JAMAIS faire échouer la
+      // synchro. Postgres a déjà commité à ce stade, et un échec ici
+      // remonterait dans `failed`, donc retiendrait les Deploy Hooks au
+      // titre du tout-ou-rien : le site cesserait de se rafraîchir pour
+      // protéger une copie dont il n'a pas besoin pour fonctionner. C'est
+      // l'inverse du bon compromis.
+      //
+      // Une table qui n'entre pas dans l'instantané en est simplement
+      // ABSENTE, donc absente du manifeste, donc lue par le build dans son
+      // fichier publié : le comportement d'avant cette PR. On perd
+      // l'économie sur cette table, jamais la justesse ni l'édition.
+      let snapshot: SnapshotTableEntry | undefined
+      if (cycle && env.ART_BUCKET) {
+        try {
+          if (!hasColumnTypes(spec.name)) {
+            throw new Error('types de colonnes inconnus (régénérer column-types.ts)')
           }
+          const objects = rowsToObjects(spec.name, spec.cols, rows)
+          snapshot = await putTableSnapshot(env.ART_BUCKET, cycle, spec.name, objects)
+        } catch (err) {
+          const message = resumerErreur(messageDe(err))
+          console.warn(`${spec.name} : hors instantané (${message})`)
+          snapshotSkipped.push(`${spec.name} : ${message}`)
         }
+      }
 
-        console.log(
-          `${spec.name} : ${n} lignes (cf-athena)` +
-            (snapshot ? `, instantané ${Math.round(snapshot.bytes / 1024)} Ko` : ''),
-        )
-        synced.push({ table: spec.name, rows: n, snapshot })
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err)
-        console.error(`${spec.name} en échec :`, message)
-        failed.push({ table: spec.name, error: message })
+      console.log(
+        `${spec.name} : ${n} lignes (cf-athena)` +
+          (snapshot ? `, instantané ${Math.round(snapshot.bytes / 1024)} Ko` : ''),
+      )
+      synced.push({ table: spec.name, rows: n, snapshot })
+    } catch (err) {
+      const message = resumerErreur(messageDe(err))
+      console.error(`${spec.name} en échec :`, message)
+      failed.push({ table: spec.name, error: message })
+      // Postgres injoignable : les tables suivantes échoueraient pareil, après
+      // une lecture Athena inutile et PG_CONNEXION_MS d'attente chacune.
+      if (err instanceof PostgresInjoignable) {
+        for (const reste of specs.slice(i + 1)) {
+          failed.push({ table: reste.name, error: 'non tentée : Postgres injoignable' })
+        }
+        break
       }
     }
-  } finally {
-    await pg.end().catch(() => {})
   }
 
   // Ni Slack ni hooks ici : une TRANCHE ne connaît pas le sort de la passe.

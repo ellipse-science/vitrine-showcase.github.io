@@ -7,6 +7,7 @@ import { listEditions, loadHeadlineEvents, loadTreemap } from "@/lib/data/headli
 import { loadParties } from "@/lib/data/parties";
 import { loadAssemblee } from "@/lib/data/assemblee";
 import { loadPolimetre } from "@/lib/data/polimetre";
+import { couleurEnjeu } from "@/lib/enjeux";
 
 const BASE_SHARE_MODULE_SLUGS = [
   "une-des-unes",
@@ -329,25 +330,39 @@ export async function getShareModuleContent(
   }
 
   if (slug === "polimetre-plus") {
-    const polimetre = await loadPolimetre(asOfIso);
-    const monthPromises = polimetre?.ranges.month;
-    const verdicted = monthPromises?.filter((p) => p.verdict !== null) ?? [];
-    if (verdicted.length > 0) {
-      const kept = verdicted.filter((p) => p.verdict === "realisee" || p.verdict === "partielle").length;
-      const pct = Math.round((kept / verdicted.length) * 100);
-      // Polimètre+ publie un instantané hebdomadaire, pas quotidien (cf.
-      // lib/data/polimetre.ts) — la promesse la plus saillante « du jour »
-      // n'existe pas ; `ranges.week` (déjà triée par salienceIndex desc dans
-      // loadPolimetre) est la donnée la plus fraîche disponible.
-      const topPromise = polimetre?.ranges.week[0];
+    // Polimètre+ publie un instantané hebdomadaire, pas quotidien (cf.
+    // lib/data/polimetre.ts) — la promesse la plus saillante « du jour »
+    // n'existe pas ; `ranges.week` (déjà triée par salienceIndex desc dans
+    // loadPolimetre) est la donnée la plus fraîche disponible.
+    const top = (await loadPolimetre(asOfIso))?.ranges.week[0];
+    if (top) {
+      // `articles` porte un article par média ayant couvert la promesse sur la
+      // fenêtre (pickArticlesByMedia) : son compte est le nombre de médias
+      // québécois qui en ont parlé, ceux-là mêmes que le détail du module liste
+      // sous « À lire sur ». Sans couple titre/lien exploitable, on annonce le
+      // rang plutôt qu'un « 0 média » qui contredirait la promesse en tête.
+      const medias = top.articles.length;
+      const figure =
+        medias > 1
+          ? { value: String(medias), label: "médias québécois l'ont couverte cette semaine" }
+          : medias === 1
+            ? { value: "1", label: "média québécois l'a couverte cette semaine" }
+            : { value: "#1", label: "des promesses de la CAQ dans les médias cette semaine" };
       return {
         title: fallback.title,
         subtitle: fallback.subtitle,
-        description: fallback.description,
+        description: `${top.title} : la promesse de la CAQ la plus couverte par les médias québécois cette semaine.`,
         stat: {
-          value: `${pct} %`,
-          label: "des promesses de la CAQ tenues, en tout ou en partie",
-          context: topPromise?.title,
+          ...figure,
+          // Comme la Une des Unes, la carte mène avec la promesse elle-même
+          // (`kicker` bascule le gabarit sur la mise en page « manchette »,
+          // cf. lib/shareCardTemplate.tsx) : le libellé court en manchette, le
+          // texte intégral de l'engagement dans le cadre du bas, et le compte
+          // de médias en preuve de second plan.
+          kicker: top.category ?? "Promesse la plus couverte",
+          context: top.title,
+          excerpt: top.fullTitle,
+          color: couleurEnjeu(top.category),
         },
       };
     }

@@ -119,8 +119,8 @@ export default function ConfidentialitePage() {
               <p className="apropos-text">
                 Pour toute question sur cette page, ou pour faire retirer un
                 signalement transmis avant le 20 août 2026, écrivez à{" "}
-                <a href="mailto:capp@ulaval.ca" className="apropos-link">
-                  capp@ulaval.ca
+                <a href="mailto:info@capp.ulaval.ca" className="apropos-link">
+                  info@capp.ulaval.ca
                 </a>
                 . Nous répondons dans les meilleurs délais.
               </p>
@@ -176,8 +176,8 @@ export default function ConfidentialitePage() {
               >
                 Une question?
                 <br />
-                <a href="mailto:capp@ulaval.ca" className="apropos-link">
-                  capp@ulaval.ca
+                <a href="mailto:info@capp.ulaval.ca" className="apropos-link">
+                  info@capp.ulaval.ca
                 </a>
               </p>
             </section>
