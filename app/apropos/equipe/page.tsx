@@ -35,6 +35,11 @@ const GROUPES: { titre: string; membres: Membre[] }[] = [
     membres: [
       { nom: "Shannon Dinan", titre: "Co-directrice du CAPP", detail: "Professeure agrégée", universite: LAVAL, photo: "shannon-dinan" },
       { nom: "Yannick Dufresne", titre: "Directeur du CAPP", detail: "Professeur titulaire", universite: LAVAL, photo: "yannick-dufresne" },
+    ],
+  },
+  {
+    titre: "Professeurs collaborateurs",
+    membres: [
       { nom: "Benjamin Guinaudeau", titre: "Professeur collaborateur", universite: LAVAL, photo: "benjamin-guinaudeau" },
     ],
   },
