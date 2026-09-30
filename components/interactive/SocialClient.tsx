@@ -2316,16 +2316,16 @@ export function SocialClient({ data }: { data: SocialData }) {
             <Bascule label="Vue" options={vues} valeur={vue} onChange={setVue} />
           </div>
           {/* Sous les onglets, dans Partis et Candidats seulement : une ligne de
-              groupes en icônes, chacun sous son en-tête (Mesure · j'aime active,
-              Graphique, Découpage) ; Candidats n'a que la mesure. */}
+              groupes en icônes, chacun sous son en-tête (Indicateur · j'aime actif,
+              Graphique, Découpage) ; Candidats n'a que l'indicateur. */}
           {(vue === "partis" || vue === "candidats") && (
             <div className="social-reglages">
               <div className="social-reglage">
                 <span className="social-coches-titre" aria-hidden="true">
-                  Mesure · {MESURE[m].libelle}
+                  Indicateur · {MESURE[m].libelle}
                 </span>
                 <Bascule
-                  label="Mesure"
+                  label="Indicateur affiché"
                   options={
                     vue === "candidats" && !(data.audienceJour.length || data.audienceJourDispo) ? MESURES.slice(0, 1) : MESURES
                   }

@@ -65,18 +65,20 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
     }
   });
 
-  it("Mesure, Graphique, Découpage : une ligne de groupes, chacun sous son en-tête", () => {
+  it("Indicateur, Graphique, Découpage : une ligne de groupes, chacun sous son en-tête", () => {
     const reglages = html.slice(html.indexOf('class="social-reglages"'), html.indexOf('class="social-sous-titre"'));
     const entetes = [...reglages.matchAll(/class="social-coches-titre"[^>]*>([^<]+)</g)].map((x) => x[1].replace(/\s+/g, " "));
-    expect(entetes).toEqual(["Mesure · J’aime", "Graphique", "Découpage"]);
+    expect(entetes).toEqual(["Indicateur · J’aime", "Graphique", "Découpage"]);
     const groupes = [...reglages.matchAll(/role="group" aria-label="([^"]+)"/g)].map((x) => x[1]);
-    expect(groupes).toEqual(["Mesure", "Graphique", "Découpage"]);
-    const mesure = reglages.slice(reglages.indexOf('aria-label="Mesure"'));
+    expect(groupes).toEqual(["Indicateur affiché", "Graphique", "Découpage"]);
+    const mesure = reglages.slice(reglages.indexOf('aria-label="Indicateur affiché"'));
     expect(mesure.slice(0, mesure.indexOf("</div>")).match(/<button/g)).toHaveLength(4);
     for (const nom of ["Abonnés", "Publications", "J’aime", "Commentaires"]) expect(html).toContain(`aria-label="${nom}"`);
     for (const nom of ["Par jour, en moyenne", "J’aime par publication"]) expect(html).not.toContain(`aria-label="${nom}"`);
     expect(html).not.toContain("social-mesure-nom");
-    // Un filet entre deux groupes : Mesure | Graphique | Découpage.
+    // L'interface dit « indicateur », jamais « mesure » (libellés et aria-label).
+    expect(html).not.toMatch(/[Mm]esure/);
+    // Un filet entre deux groupes : Indicateur | Graphique | Découpage.
     expect(reglages.match(/class="social-reglages-filet"/g)).toHaveLength(2);
   });
 
