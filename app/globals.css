@@ -11912,18 +11912,6 @@
   font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.2em;
   text-transform: uppercase; color: var(--cordovan);
 }
-/* Sélecteur de mesure sous les onglets : les icônes de la démo, le nom de la
-   mesure active à droite ; sur mobile, une ligne qui défile. */
-.social-mesure { display: flex; align-items: center; gap: 14px; margin: 0 0 8px; }
-.social-mesure .social-bascule { flex-wrap: nowrap; }
-.social-mesure-nom {
-  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--ink-soft); white-space: nowrap;
-}
-@media (max-width: 640px) {
-  .social-mesure { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
-  .social-mesure .social-bascule button { flex: none; }
-}
 .social-bascule button:disabled { opacity: 0.35; cursor: not-allowed; }
 /* Partis : barres et parts côte à côte (55 / 45), les barres seules pour une moyenne. */
 .social-barres-parts { display: grid; grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); gap: 28px; align-items: start; }
@@ -11958,8 +11946,11 @@
 
 /* Onglets, réglages, notes */
 .social-onglets { margin: 26px 0 8px; }
-.social-reglages { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; margin: 10px 0 6px; }
-.social-reglages-mesure { flex-basis: 100%; }
+/* Mesure, Graphique, Découpage : une ligne de groupes alignés en bas, chacun
+   sous son en-tête ; ils passent à la ligne quand la place manque. */
+.social-reglages { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 28px; margin: 10px 0 8px; }
+.social-reglage { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.social-reglage .social-bascule { flex-wrap: nowrap; }
 .social-sous-titre, .social-note {
   font-family: "Source Serif 4", serif; font-size: 14px; color: var(--ink-softer); margin: 8px 0 14px;
 }
@@ -12038,10 +12029,10 @@
 .social-barres-empilees .social-piste i.tex-instagram, .social-tuile.tex-instagram { background-blend-mode: normal; }
 
 /* Boutons en icônes (forme, découpe), comme la démo */
-.social-bascule.icones { gap: 8px; }
+.social-bascule.icones { gap: 6px; }
 .social-bascule.icones button {
-  display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px;
-  min-width: 52px; min-height: 40px; color: var(--ink-softer); background: var(--paper);
+  display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px;
+  min-width: 56px; min-height: 44px; color: var(--ink-softer); background: var(--paper);
   border: 0.5px solid var(--rule); border-radius: 2px;
 }
 .social-bascule.icones button.active { background: var(--cordovan); border-color: var(--cordovan); color: var(--paper); }

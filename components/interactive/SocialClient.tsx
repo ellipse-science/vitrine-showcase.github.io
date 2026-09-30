@@ -2315,43 +2315,54 @@ export function SocialClient({ data }: { data: SocialData }) {
           <div className="social-onglets">
             <Bascule label="Vue" options={vues} valeur={vue} onChange={setVue} />
           </div>
-          {/* La mesure, sous les onglets, dans Partis et Candidats seulement :
-              des icônes, le nom complet de la mesure active à côté. */}
+          {/* Sous les onglets, dans Partis et Candidats seulement : une ligne de
+              groupes en icônes, chacun sous son en-tête (Mesure · j'aime active,
+              Graphique, Découpage) ; Candidats n'a que la mesure. */}
           {(vue === "partis" || vue === "candidats") && (
-            <div className="social-mesure">
-              <Bascule
-                label="Mesure affichée"
-                options={
-                  vue === "candidats" && !(data.audienceJour.length || data.audienceJourDispo) ? MESURES.slice(0, 1) : MESURES
-                }
-                valeur={m}
-                onChange={setMesure}
-                icone={(c) => <IconeMesure m={c} />}
-              />
-              <span className="social-mesure-nom" aria-hidden="true">
-                {MESURE[m].libelle}
-              </span>
-            </div>
-          )}
-
-          {graphique && (
             <div className="social-reglages">
-              {/* Comme la démo : la forme en haut à gauche, la découpe en haut à droite. */}
-              <Bascule
-                label="Forme"
-                options={FORMES}
-                valeur={formeEff}
-                onChange={setForme}
-                desactives={m === "abonnes" ? { temps: "Pas de série d’abonnés" } : undefined}
-                icone={(c) => <IconeForme f={c} />}
-              />
-              <Bascule
-                label="Découpe"
-                options={DECOUPES}
-                valeur={decoupe}
-                onChange={setDecoupe}
-                icone={(c) => <IconeDecoupe d={c} data={data} />}
-              />
+              <div className="social-reglage">
+                <span className="social-coches-titre" aria-hidden="true">
+                  Mesure · {MESURE[m].libelle}
+                </span>
+                <Bascule
+                  label="Mesure"
+                  options={
+                    vue === "candidats" && !(data.audienceJour.length || data.audienceJourDispo) ? MESURES.slice(0, 1) : MESURES
+                  }
+                  valeur={m}
+                  onChange={setMesure}
+                  icone={(c) => <IconeMesure m={c} />}
+                />
+              </div>
+              {graphique && (
+                <>
+                  <div className="social-reglage">
+                    <span className="social-coches-titre" aria-hidden="true">
+                      Graphique
+                    </span>
+                    <Bascule
+                      label="Graphique"
+                      options={FORMES}
+                      valeur={formeEff}
+                      onChange={setForme}
+                      desactives={m === "abonnes" ? { temps: "Pas de série d’abonnés" } : undefined}
+                      icone={(c) => <IconeForme f={c} />}
+                    />
+                  </div>
+                  <div className="social-reglage">
+                    <span className="social-coches-titre" aria-hidden="true">
+                      Découpage
+                    </span>
+                    <Bascule
+                      label="Découpage"
+                      options={DECOUPES}
+                      valeur={decoupe}
+                      onChange={setDecoupe}
+                      icone={(c) => <IconeDecoupe d={c} data={data} />}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           )}
           <p className="social-sous-titre">{sousTitre}</p>

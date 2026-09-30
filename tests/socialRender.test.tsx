@@ -65,14 +65,17 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
     }
   });
 
-  it("la mesure : quatre icônes sous les onglets, le nom complet de la mesure active à côté", () => {
-    expect(html).toContain('aria-label="Mesure affichée"');
-    const groupe = html.slice(html.indexOf('aria-label="Mesure affichée"'));
-    const boutons = groupe.slice(0, groupe.indexOf("</div>")).match(/<button/g) ?? [];
-    expect(boutons).toHaveLength(4);
+  it("Mesure, Graphique, Découpage : une ligne de groupes, chacun sous son en-tête", () => {
+    const reglages = html.slice(html.indexOf('class="social-reglages"'), html.indexOf('class="social-sous-titre"'));
+    const entetes = [...reglages.matchAll(/class="social-coches-titre"[^>]*>([^<]+)</g)].map((x) => x[1].replace(/\s+/g, " "));
+    expect(entetes).toEqual(["Mesure · J’aime", "Graphique", "Découpage"]);
+    const groupes = [...reglages.matchAll(/role="group" aria-label="([^"]+)"/g)].map((x) => x[1]);
+    expect(groupes).toEqual(["Mesure", "Graphique", "Découpage"]);
+    const mesure = reglages.slice(reglages.indexOf('aria-label="Mesure"'));
+    expect(mesure.slice(0, mesure.indexOf("</div>")).match(/<button/g)).toHaveLength(4);
     for (const nom of ["Abonnés", "Publications", "J’aime", "Commentaires"]) expect(html).toContain(`aria-label="${nom}"`);
     for (const nom of ["Par jour, en moyenne", "J’aime par publication"]) expect(html).not.toContain(`aria-label="${nom}"`);
-    expect(html).toMatch(/class="social-mesure-nom"[^>]*>J’aime</);
+    expect(html).not.toContain("social-mesure-nom");
   });
 
   it("s'ouvre sur Partis, en j'aime, barres et parts, ensemble ; « dans le temps » disponible", () => {
