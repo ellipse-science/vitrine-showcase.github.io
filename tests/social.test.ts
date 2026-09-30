@@ -149,12 +149,6 @@ describe("calculs de période et de filtres", () => {
     expect(c.totaux(c.lignes(d, tout(d, 0, i - 1))).publications).toBe(0);
   });
 
-  it("j'aime par publication = somme des j'aime / publications (pas une médiane)", async () => {
-    const c = await calc();
-    expect(c.valeur({ publications: 4, jaime: 10, commentaires: 0 }, "parPublication")).toBe(2.5);
-    expect(c.valeur({ publications: 0, jaime: 0, commentaires: 0 }, "parPublication")).toBe(0);
-  });
-
   it("par jour jusqu'à 45 jours, par semaine au-delà", async () => {
     const d = await base();
     const c = await calc();

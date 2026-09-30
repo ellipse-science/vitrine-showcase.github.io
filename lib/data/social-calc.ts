@@ -23,9 +23,7 @@ import {
 /** Les mesures du module, communes aux onglets Partis et Candidats et aux
  *  chiffres de la colonne de droite. Les abonnés sont au dernier relevé (la
  *  période ne s'y applique pas) ; les autres portent sur la période. */
-export type Mesure = "abonnes" | "publications" | "parJour" | "jaime" | "commentaires" | "parPublication";
-/** Moyennes : pas de découpe en parts. */
-export const MOYENNES: readonly Mesure[] = ["parJour", "parPublication"];
+export type Mesure = "abonnes" | "publications" | "jaime" | "commentaires";
 export type Decoupe = "ensemble" | "plateforme" | "parti";
 
 export type Filtres = {
@@ -49,12 +47,10 @@ const ajoute = (t: Totaux, r: CubeRow) => {
   t.commentaires += r[6];
 };
 
-/** Valeur d'une mesure pour des totaux. `jours` : la durée qu'ils couvrent
- *  (pour « par jour »). Pour les abonnés, les lignes portent les abonnés dans
- *  la case des publications (cf. lignesAbonnes). */
-export function valeur(t: Totaux, m: Mesure, jours = 1): number {
-  if (m === "parPublication") return t.publications > 0 ? t.jaime / t.publications : 0;
-  if (m === "parJour") return t.publications / Math.max(1, jours);
+/** Valeur d'une mesure pour des totaux (toutes additives). Pour les abonnés,
+ *  les lignes portent les abonnés dans la case des publications (cf.
+ *  lignesAbonnes). */
+export function valeur(t: Totaux, m: Mesure): number {
   if (m === "abonnes") return t.publications;
   return t[m];
 }
@@ -123,21 +119,20 @@ const dans = (data: SocialData, r: CubeRow, pan: Panneau, el: Element) => {
 };
 
 /** Total d'une mesure par élément, pour chaque panneau (barres et parts). */
-export function parElement(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Mesure, jours = 1) {
+export function parElement(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Mesure) {
   return pans.map((pan) => ({
     panneau: pan,
     valeurs: pan.elements.map((el) => {
       const t = zero();
       for (const r of rows) if (dans(data, r, pan, el)) ajoute(t, r);
-      return { element: el, valeur: valeur(t, m, jours) };
+      return { element: el, valeur: valeur(t, m) };
     }),
   }));
 }
 
 /**
  * Segments d'une barre, comme la démo : la valeur de l'élément découpée par
- * plateforme (Facebook plein, Instagram hachuré, TikTok pointillé). Le j'aime
- * par publication n'est pas additif : une seule barre, sans segment.
+ * plateforme (Facebook plein, Instagram hachuré, TikTok pointillé).
  */
 export function segments(
   data: SocialData,
@@ -145,17 +140,11 @@ export function segments(
   pan: Panneau,
   el: Element,
   m: Mesure,
-  jours = 1,
 ): { plateforme: Plateforme | null; valeur: number }[] {
-  if (m === "parPublication") {
-    const t = zero();
-    for (const r of rows) if (dans(data, r, pan, el)) ajoute(t, r);
-    return [{ plateforme: el.plateforme ?? pan.plateforme ?? null, valeur: valeur(t, m, jours) }];
-  }
   return PLATEFORMES.map((pl) => {
     const t = zero();
     for (const r of rows) if (PLATEFORMES[r[2]] === pl && dans(data, r, pan, el)) ajoute(t, r);
-    return { plateforme: pl, valeur: valeur(t, m, jours) };
+    return { plateforme: pl, valeur: valeur(t, m) };
   }).filter((sg) => sg.valeur > 0);
 }
 
@@ -180,8 +169,7 @@ export function series(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Me
       series: pan.elements.map((el) => {
         const t = debuts.map(zero);
         for (const r of rows) if (dans(data, r, pan, el)) ajoute(t[case_(r[0])], r);
-        // « Par jour » : chaque case divisée par sa durée (7, ou moins en fin de période).
-        return { element: el, valeurs: t.map((x, i) => valeur(x, m, Math.min(hebdo ? 7 : 1, f.d1 - debuts[i] + 1))) };
+        return { element: el, valeurs: t.map((x) => valeur(x, m)) };
       }),
     })),
   };
@@ -323,23 +311,21 @@ export function integration(p: Plateforme, url: string | null | undefined): Inte
 }
 
 // ── Audience : classements ────────────────────────────────────────────────────
-/** Abonnés (dernier relevé), puis les cinq statistiques des tuiles du haut,
- *  sur la période choisie, avec leur définition. */
+/** Abonnés (dernier relevé), puis les totaux de la période. */
 export type MesureAudience = Mesure;
-/** Sous ce nombre de publications sur la période, un compte n'entre pas aux
- *  classements des moyennes : un seul billet très aimé les dominerait. */
-export const MIN_PUBLICATIONS_MOYENNE = 5;
 export const AUDIENCE_MAX = 40;
 
-/** Les comptes classés selon la mesure (40 au plus) ; un compte à 0, ou sans
- *  valeur, n'y figure pas. Filtres Plateforme, Parti, Type ; période d0..d1
- *  (hors abonnés). La somme sur les comptes recoupe les tuiles. */
+/** Les comptes classés selon la mesure (40 au plus, `max` pour le classement
+ *  entier) ; un compte à 0, ou sans valeur, n'y figure pas. Filtres
+ *  Plateforme, Parti, Type ; période d0..d1 (hors abonnés). La somme sur les
+ *  comptes recoupe les tuiles. `index` : la place du compte dans `items`. */
 export function classementAudience(
   items: readonly AudienceItem[],
   jours: readonly AudienceJour[],
   mesure: MesureAudience,
   f: Pick<Filtres, "plateformes" | "partis" | "types" | "d0" | "d1">,
-): { item: AudienceItem; valeur: number }[] {
+  max = AUDIENCE_MAX,
+): { item: AudienceItem; valeur: number; index: number }[] {
   const somme = items.map(() => ({ publications: 0, jaime: 0, commentaires: 0 }));
   if (mesure !== "abonnes") {
     for (const [c, j, p, l, k] of jours) {
@@ -349,19 +335,11 @@ export function classementAudience(
       somme[c].commentaires += k;
     }
   }
-  const nbJours = f.d1 - f.d0 + 1;
-  const valeurDe = (a: AudienceItem, i: number): number | null => {
-    const s = somme[i];
-    if (mesure === "abonnes") return a.abonnes;
-    if (mesure === "parPublication")
-      return s.publications >= MIN_PUBLICATIONS_MOYENNE ? s.jaime / s.publications : null;
-    if (mesure === "parJour") return s.publications >= MIN_PUBLICATIONS_MOYENNE ? s.publications / nbJours : null;
-    return s[mesure];
-  };
+  const valeurDe = (a: AudienceItem, i: number): number | null => (mesure === "abonnes" ? a.abonnes : somme[i][mesure]);
   return items
-    .map((item, i) => ({ item, valeur: valeurDe(item, i) }))
+    .map((item, i) => ({ item, valeur: valeurDe(item, i), index: i }))
     .filter(
-      (x): x is { item: AudienceItem; valeur: number } =>
+      (x): x is { item: AudienceItem; valeur: number; index: number } =>
         x.valeur != null &&
         x.valeur > 0 &&
         f.plateformes.includes(x.item.plateforme) &&
@@ -369,5 +347,5 @@ export function classementAudience(
         f.types.includes(x.item.type),
     )
     .sort((a, b) => b.valeur - a.valeur)
-    .slice(0, AUDIENCE_MAX);
+    .slice(0, max);
 }

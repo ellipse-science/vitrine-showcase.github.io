@@ -17,6 +17,7 @@ import {
   type FilItem,
   type CubeRow,
   type Plateforme,
+  slugCandidat,
   type SocialData,
   type TypeCompte,
 } from "@/lib/data/social-meta";
@@ -26,9 +27,7 @@ import {
   integration,
   lignes,
   lignesAbonnes,
-  MIN_PUBLICATIONS_MOYENNE,
   meneur,
-  MOYENNES,
   palmares,
   palmaresApproche,
   panneaux,
@@ -38,7 +37,6 @@ import {
   series,
   totaux,
   treemap,
-  valeur,
   type Decoupe,
   type Element,
   type Filtres,
@@ -69,26 +67,16 @@ const MESURES: { cle: Mesure; libelle: string; court: string; unite: string; def
     definition: "Total des abonnés des comptes suivis, au dernier relevé\u00a0: la période ne s’applique pas.",
   },
   { cle: "publications", libelle: "Publications", court: "Publications", unite: "publications", definition: "Total des publications de la période." },
-  {
-    cle: "parJour", libelle: "Par jour, en moyenne", court: "Par jour", unite: "publications par jour, en moyenne",
-    definition: "Publications par jour, en moyenne sur la période.",
-  },
   { cle: "jaime", libelle: "J’aime", court: "J’aime", unite: "j’aime", definition: "Total des j’aime de la période." },
   { cle: "commentaires", libelle: "Commentaires", court: "Commentaires", unite: "commentaires", definition: "Total des commentaires de la période." },
-  {
-    cle: "parPublication", libelle: "J’aime par publication", court: "J’aime / pub.", unite: "j’aime par publication",
-    definition: "J’aime par publication\u00a0: total des j’aime divisé par le nombre de publications de la période.",
-  },
 ];
 const MESURE = Object.fromEntries(MESURES.map((x) => [x.cle, x])) as Record<Mesure, (typeof MESURES)[number]>;
 /** Titre d'axe des barres, comme la démo (« Nombre de publications »). */
 const AXES: Record<Mesure, string> = {
   abonnes: "Nombre d’abonnés",
   publications: "Nombre de publications",
-  parJour: "Publications par jour, en moyenne",
   jaime: "Nombre de j’aime",
   commentaires: "Nombre de commentaires",
-  parPublication: "J’aime par publication",
 };
 /** Hauteur d'une rangée de barres (barre + marges), normale et compacte :
  *  le treemap voisin en tire sa hauteur, pour finir avec la dernière barre. */
@@ -127,6 +115,144 @@ function useAudienceJour(data: SocialData, besoin: boolean): { jours: AudienceJo
   return { jours: jours ?? [], charge: besoin && !jours && !!data.audienceJourDispo };
 }
 
+// Fils complets des circonscriptions (reseaux/fil-complet/<code>.json, déjà
+// servis pour « Voir plus »), lus à la demande et une seule fois par visite
+// pour l'infobulle d'un compte ; à défaut, le fil court (reseaux/fil/<code>.json).
+const filsComplets = new Map<number, FilItem[] | null>();
+const filsCompletsEnCours = new Map<number, Promise<void>>();
+const lireJson = (url: string) =>
+  fetch(url)
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null)
+    .then((j: unknown) => (Array.isArray(j) && j.length ? (j as FilItem[]) : null));
+export function chargeFilComplet(code: number): Promise<void> {
+  if (!filsCompletsEnCours.has(code)) {
+    filsCompletsEnCours.set(
+      code,
+      lireJson(`${BASE_PATH}/reseaux/fil-complet/${code}.json`)
+        .then((fil) => fil ?? lireJson(`${BASE_PATH}/reseaux/fil/${code}.json`))
+        .then((fil) => {
+          filsComplets.set(code, fil);
+        }),
+    );
+  }
+  return filsCompletsEnCours.get(code)!;
+}
+function useFilComplet(code: number | undefined): { fil: FilItem[] | null; charge: boolean } {
+  const [, relire] = useState(0);
+  useEffect(() => {
+    if (code == null || filsComplets.has(code)) return;
+    let vivant = true;
+    chargeFilComplet(code).then(() => vivant && relire((n) => n + 1));
+    return () => {
+      vivant = false;
+    };
+  }, [code]);
+  if (code == null) return { fil: null, charge: false };
+  return filsComplets.has(code) ? { fil: filsComplets.get(code)!, charge: false } : { fil: null, charge: true };
+}
+
+/** Où est un candidat dans le classement entier : son meilleur compte (rang
+ *  réel), s'il est dans les 40 affichés, et sa page de pagination. Rang null :
+ *  aucun de ses comptes n'entre au classement avec ces filtres. */
+export function trouverCandidat(
+  complet: { item: SocialData["audience"][number]; index: number }[],
+  sg: Pick<SuggestionCandidat, "code" | "party">,
+  parPage: number,
+): { index: number; rang: number | null; dans: boolean; page: number | null } {
+  const r = complet.findIndex((x) => x.item.type === "candidat" && x.item.code === sg.code && x.item.party === sg.party);
+  if (r < 0) return { index: -1, rang: null, dans: false, page: null };
+  const dans = r < AUDIENCE_MAX;
+  return { index: complet[r].index, rang: r + 1, dans, page: dans ? Math.floor(r / parPage) : null };
+}
+
+/** Adresse de la fiche d'un compte de candidat, ou null (compte de parti). */
+const ficheDe = (a: SocialData["audience"][number]) =>
+  a.type === "candidat" && a.fiche ? `${BASE_PATH}/reseaux/candidats/${a.fiche}/` : null;
+
+/** Position d'une infobulle de compte, relative au bloc du classement : sous la ligne. */
+type BulleCompte = { index: number; x: number; y: number; largeur: number };
+
+/** Au survol ou au focus d'une ligne de l'onglet Candidats : les 10 dernières
+ *  publications du compte (date, logo, extrait, j'aime), et le lien vers la
+ *  page du candidat une fois épinglée. Les comptes de parti n'ont pas de
+ *  circonscription, donc pas de fichier de fil publié : leur nom complet seul. */
+export function InfobulleCompte({
+  data,
+  a,
+  bulle,
+  etroit = false,
+  epinglee = false,
+  onFermer,
+}: {
+  data: SocialData;
+  a: SocialData["audience"][number];
+  bulle: BulleCompte;
+  etroit?: boolean;
+  epinglee?: boolean;
+  onFermer?: () => void;
+}) {
+  const etat = useFilComplet(a.type === "candidat" ? a.code : undefined);
+  // Le compte lui-même (son parti, sa plateforme), jamais les filtres du module.
+  const fil = (etat.fil ?? []).filter((x) => x.party === a.party && x.plateforme === a.plateforme).slice(0, 10);
+  const circo = a.code != null ? data.carte?.circos.find((c) => c.code === a.code)?.nom : undefined;
+  const aDroite = bulle.x + 352 > bulle.largeur;
+  const nom = NOMS_PLATEFORMES[a.plateforme];
+  return (
+    <div
+      className={`social-infobulle compte${epinglee ? " epinglee" : ""}${etroit ? " etroite" : ""}`}
+      {...(epinglee ? { role: "dialog", "aria-label": `${a.nom}\u00a0: dernières publications` } : { "aria-hidden": true })}
+      style={
+        etroit
+          ? { left: 0, right: 0, top: bulle.y + 4 }
+          : { left: aDroite ? undefined : bulle.x, right: aDroite ? 0 : undefined, top: bulle.y + 4 }
+      }
+    >
+      {epinglee && (
+        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer l’infobulle">
+          ×
+        </button>
+      )}
+      <strong>{ficheDe(a) ? <a className="social-infobulle-nom-lien" href={ficheDe(a)!}>{a.nom}</a> : a.nom}</strong>
+      <span className="social-meta">
+        {data.partiInfo[a.party].sigle} · {a.type === "parti" ? `compte du parti sur ${nom}` : `${circo ? `${circo} · ` : ""}${nom}`}
+      </span>
+      {a.type === "candidat" && a.code != null && (
+        <div className="social-infobulle-fil">
+          <span className="social-infobulle-entete">
+          <span className="social-meta">Dernières publications</span>
+          <span className="social-meta">J’aime</span>
+        </span>
+          {etat.charge ? (
+            <span className="social-meta">Chargement du fil…</span>
+          ) : fil.length === 0 ? (
+            <span className="social-meta">Aucune publication récente</span>
+          ) : (
+            <ol>
+              {fil.map((x, i) => (
+                <li key={`${x.url ?? ""}-${i}`}>
+                  <Logo p={x.plateforme} taille={11} />
+                  <span className="social-infobulle-date">{jourBref(x.jour)}</span>
+                  <span className="social-infobulle-texte">{x.texte || "(sans texte)"}</span>
+                  <span className="social-infobulle-n">{nombreFr(x.jaime)}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
+      {a.fiche && epinglee ? (
+        <a className="social-infobulle-fiche" href={`${BASE_PATH}/reseaux/candidats/${a.fiche}/`}>
+          <span>Voir la fiche du candidat</span>
+          <span aria-hidden="true">→</span>
+        </a>
+      ) : a.type === "candidat" && !epinglee ? (
+        <span className="social-infobulle-pied">cliquez pour épingler et faire défiler le fil</span>
+      ) : null}
+    </div>
+  );
+}
+
 /** Audience : 20 comptes par page en deux colonnes de 10 (10 sur mobile),
  *  jusqu'à 50 ; une même échelle d'une page à l'autre (le premier du classement). */
 function Audience({
@@ -150,43 +276,191 @@ function Audience({
   const parPage = etroit ? 10 : 20;
   const [page, setPage] = useState(0);
   const activite = useAudienceJour(data, mesure !== "abonnes");
-  const classement = useMemo(
-    () => classementAudience(data.audience, activite.jours, mesure, { plateformes, partis, types, d0, d1 }),
+  // Le classement entier (la recherche donne le rang réel), les 40 premiers affichés.
+  const complet = useMemo(
+    () => classementAudience(data.audience, activite.jours, mesure, { plateformes, partis, types, d0, d1 }, Infinity),
     [data, activite.jours, mesure, plateformes, partis, types, d0, d1],
   );
-  // Un filtre, une mesure, la période ou la taille des pages change : retour à la page 1.
-  useEffect(() => setPage(0), [mesure, plateformes, partis, types, d0, d1, parPage]);
+  const classement = useMemo(() => complet.slice(0, AUDIENCE_MAX), [complet]);
+
+  // ── Infobulle d'un compte : survol, focus, épingle (comme sur la carte) ────
+  const blocRef = useRef<HTMLDivElement>(null);
+  const [survol, setSurvol] = useState<BulleCompte | null>(null);
+  const [epingle, setEpingle] = useState<BulleCompte | null>(null);
+  // Candidat choisi dans la recherche : sa ligne est surlignée ; hors des 40,
+  // elle s'affiche à part au-dessus de la liste.
+  const [cherche, setCherche] = useState<{ index: number; rang: number | null; dans: boolean; sg: SuggestionCandidat } | null>(null);
+  const bulleDe = (index: number, el: HTMLElement): BulleCompte | null => {
+    const b = blocRef.current?.getBoundingClientRect();
+    if (!b) return null;
+    const r = el.getBoundingClientRect();
+    return { index, x: r.left - b.left, y: r.bottom - b.top, largeur: b.width };
+  };
+  const toucher = useRef(false);
+  const epingler = (index: number, el: HTMLElement) => {
+    setSurvol(null);
+    setEpingle((e) => (e?.index === index ? null : bulleDe(index, el)));
+  };
+  // Un filtre, une mesure, la période ou la taille des pages change : retour à
+  // la page 1, sans infobulle ni recherche en cours.
+  useEffect(() => {
+    setPage(0);
+    setSurvol(null);
+    setEpingle(null);
+    setCherche(null);
+  }, [mesure, plateformes, partis, types, d0, d1, parPage]);
+  useEffect(() => {
+    if (!epingle) return;
+    const touche = (e: globalThis.KeyboardEvent) => e.key === "Escape" && setEpingle(null);
+    const dehors = (e: globalThis.PointerEvent) => {
+      const t = e.target as globalThis.Element | null;
+      if (t?.closest(".social-infobulle, .social-audience li, .social-recherche")) return;
+      setEpingle(null);
+    };
+    document.addEventListener("keydown", touche);
+    document.addEventListener("pointerdown", dehors);
+    return () => {
+      document.removeEventListener("keydown", touche);
+      document.removeEventListener("pointerdown", dehors);
+    };
+  }, [epingle]);
+  const choisirCandidat = (sg: SuggestionCandidat) => {
+    // Sans compte suivi : rien à classer, direction sa page.
+    if (!sg.comptes) {
+      window.location.assign(`${BASE_PATH}/reseaux/candidats/${sg.fiche}/`);
+      return;
+    }
+    const t = trouverCandidat(complet, sg, parPage);
+    setSurvol(null);
+    setEpingle(null);
+    if (t.page != null) setPage(t.page);
+    setCherche({ index: t.index, rang: t.rang, dans: t.dans, sg });
+  };
+  // Après le rendu de la bonne page : défiler jusqu'à la ligne, puis épingler son infobulle.
+  useEffect(() => {
+    if (!cherche || cherche.index < 0) return;
+    const el = blocRef.current?.querySelector<HTMLElement>(`[data-compte="${cherche.index}"]`);
+    if (!el) return;
+    const doux = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView?.({ block: "center", behavior: doux ? "smooth" : "auto" });
+    el.focus({ preventScroll: true });
+    setSurvol(null);
+    setEpingle(bulleDe(cherche.index, el));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cherche, page]);
+  const chercher = useMemo(() => (t: string) => suggestionsCandidats(data, t), [data]);
+
   const pages = Math.max(1, Math.ceil(classement.length / parPage));
   const p = Math.min(page, pages - 1);
   const vus = classement.slice(p * parPage, (p + 1) * parPage);
   const max = classement[0]?.valeur ?? 1;
   // Valeurs en Playfair : séparateur de milliers visible (nombreGrand).
-  const format = (v: number) => (mesure === "parJour" || mesure === "parPublication" ? nombreGrand(v, 1) : nombreGrand(v));
+  const format = (v: number) => nombreGrand(v);
   const colonnes = etroit ? [vus] : [vus.slice(0, 10), vus.slice(10, 20)].filter((c) => c.length > 0);
+  const recherche = data.candidatures?.length ? (
+    <Combobox
+      id="social-recherche-candidat"
+      libelle="Rechercher un·e candidat·e"
+      placeholder="Rechercher un·e candidat·e"
+      chercher={chercher}
+      onChoisir={choisirCandidat}
+    />
+  ) : null;
+  const ligne = ({ item: a, valeur: v, index }: (typeof complet)[number], rang: number) => (
+    <li
+      key={`${a.plateforme}-${a.nom}-${a.party}`}
+      data-compte={index}
+      className={cherche?.index === index ? "surligne" : undefined}
+      tabIndex={0}
+      aria-haspopup="dialog"
+      aria-label={`${rang}. ${a.nom}, ${data.partiInfo[a.party].sigle}, ${NOMS_PLATEFORMES[a.plateforme]}\u00a0: ${format(v)} ${MESURE[mesure].unite}. ${ficheDe(a) ? "Entrée pour ouvrir sa fiche, espace pour épingler ses dernières publications." : "Entrée pour épingler ses dernières publications."}`}
+      onPointerEnter={(e) => e.pointerType !== "touch" && !epingle && setSurvol(bulleDe(index, e.currentTarget))}
+      onPointerLeave={() => setSurvol((s) => (s?.index === index ? null : s))}
+      onFocus={(e) => !epingle && setSurvol(bulleDe(index, e.currentTarget))}
+      onBlur={() => setSurvol((s) => (s?.index === index ? null : s))}
+      // Un candidat : le clic ouvre sa fiche (au toucher, le premier tap épingle
+      // l'infobulle, qui porte le lien). Un compte de parti n'a pas de fiche :
+      // le clic épingle ses dernières publications.
+      onClick={(e) => {
+        const fiche = ficheDe(a);
+        if (fiche && !(toucher.current && epingle?.index !== index)) window.location.assign(fiche);
+        else epingler(index, e.currentTarget);
+      }}
+      onPointerDown={(e) => {
+        toucher.current = e.pointerType === "touch";
+      }}
+      onKeyDown={(e) => {
+        const fiche = ficheDe(a);
+        if (e.key === "Enter" && fiche) {
+          e.preventDefault();
+          window.location.assign(fiche);
+        } else if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          epingler(index, e.currentTarget);
+        }
+      }}
+    >
+      <span className="social-nom">
+        <span className="social-rang-petit">{rang}</span>
+        <Plateforme_ p={a.plateforme} />
+        <span className="social-nom-texte">{a.nom}</span>
+        <span className="social-meta">{data.partiInfo[a.party].sigle}</span>
+      </span>
+      <span className="social-piste">
+        <i style={{ width: `${Math.min(100, (100 * v) / max)}%`, background: data.partiInfo[a.party].couleur }} />
+      </span>
+      <span className="social-valeur">{format(v)}</span>
+    </li>
+  );
+  const bulle = epingle ?? survol;
   if (activite.charge) return <p className="social-note">Chargement de l’activité des comptes…</p>;
-  if (classement.length === 0) return <p className="social-vide">Aucun compte pour ces filtres.</p>;
+  if (classement.length === 0)
+    return (
+      <>
+        {recherche}
+        <p className="social-vide">Aucun compte pour ces filtres.</p>
+      </>
+    );
   return (
-    <div className="social-audience-bloc">
+    <div className="social-audience-bloc" ref={blocRef}>
+      {recherche}
+      {cherche && !cherche.dans && (
+        <div className="social-audience-apart" role="status">
+          <p className="social-meta">
+            {cherche.rang
+              ? `${cherche.sg.nom}\u00a0: hors des ${AUDIENCE_MAX} premiers, rang ${nombreFr(cherche.rang)}`
+              : `${cherche.sg.nom}\u00a0: aucun compte dans ce classement avec ces filtres`}
+          </p>
+          {cherche.rang ? (
+            <ol className="social-barres social-audience" start={cherche.rang}>
+              {ligne(complet[cherche.rang - 1], cherche.rang)}
+            </ol>
+          ) : (
+            <a className="social-infobulle-fiche" href={`${BASE_PATH}/reseaux/candidats/${cherche.sg.fiche}/`}>
+              <span>Voir la fiche du candidat</span>
+              <span aria-hidden="true">→</span>
+            </a>
+          )}
+        </div>
+      )}
       <div className={`social-audience-colonnes${colonnes.length > 1 ? " deux" : ""}`}>
         {colonnes.map((col, n) => (
           <ol key={n} className="social-barres social-audience" start={p * parPage + n * 10 + 1}>
-            {col.map(({ item: a, valeur: v }, i) => (
-              <li key={`${a.plateforme}-${a.nom}-${a.party}`}>
-                <span className="social-nom" title={`${a.nom} · ${data.partiInfo[a.party].sigle}`}>
-                  <span className="social-rang-petit">{p * parPage + n * 10 + i + 1}</span>
-                  <Plateforme_ p={a.plateforme} />
-                  <span className="social-nom-texte">{a.nom}</span>
-                  <span className="social-meta">{data.partiInfo[a.party].sigle}</span>
-                </span>
-                <span className="social-piste">
-                  <i style={{ width: `${(100 * v) / max}%`, background: data.partiInfo[a.party].couleur }} />
-                </span>
-                <span className="social-valeur">{format(v)}</span>
-              </li>
-            ))}
+            {col.map((x, i) => ligne(x, p * parPage + n * 10 + i + 1))}
           </ol>
         ))}
       </div>
+      {bulle && data.audience[bulle.index] && (
+        <InfobulleCompte
+          key={epingle ? `e${bulle.index}` : "survol"}
+          data={data}
+          a={data.audience[bulle.index]}
+          bulle={bulle}
+          etroit={etroit}
+          epinglee={!!epingle}
+          onFermer={() => setEpingle(null)}
+        />
+      )}
       {pages === 1 && (
         <p className="social-meta social-audience-nombre">
           {classement.length}&nbsp;{classement.length > 1 ? "comptes" : "compte"}
@@ -219,9 +493,6 @@ function Audience({
             Comptes {p * parPage + 1} à {Math.min((p + 1) * parPage, classement.length)} sur {classement.length}
           </span>
         </nav>
-      )}
-      {(mesure === "parPublication" || mesure === "parJour") && (
-        <p className="social-note">Comptes ayant au moins {MIN_PUBLICATIONS_MOYENNE}&nbsp;publications sur la période.</p>
       )}
     </div>
   );
@@ -504,23 +775,9 @@ function IconeMesure({ m }: { m: Mesure }) {
           <path d="M13.5 8h7M13.5 12h7M13.5 16h4.5" />
         </g>
       )}
-      {m === "parJour" && (
-        <g {...trait}>
-          <rect x="8" y="5" width="18" height="16" rx="1.5" />
-          <path d="M8 10h18M13 3v4M21 3v4" />
-          <path d="M13 17v-3M17 17v-5M21 17v-2" />
-        </g>
-      )}
       {m === "jaime" && <path d={coeur(17, 15.5, 1.35)} {...trait} />}
       {m === "commentaires" && (
         <path d="M8 6h18a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H15l-5 3.5V18H8a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 8 6z" {...trait} />
-      )}
-      {m === "parPublication" && (
-        <g {...trait}>
-          <path d={coeur(17, 7.8, 0.85)} />
-          <path d="M10 12.5h14" />
-          <rect x="13" y="15" width="8" height="7" rx="1" />
-        </g>
       )}
     </svg>
   );
@@ -614,7 +871,6 @@ function couleurElement(data: SocialData, e: Element, p?: Panneau) {
 }
 /** Texture d'une plateforme : Facebook plein, Instagram hachuré, TikTok pointillé. */
 const texture = (p: Plateforme | null | undefined) => (p ? ` tex-${p}` : "");
-const formatMesure = (m: Mesure) => (v: number) => (MOYENNES.includes(m) ? nombreFr(v, 1) : nombreFr(v));
 
 type Blocs = ReturnType<typeof parElement>;
 
@@ -629,8 +885,6 @@ function Barres({
   rows,
   pans,
   m,
-  jours = 1,
-  legende = false,
   axe = true,
   maxCommun,
 }: {
@@ -638,9 +892,6 @@ function Barres({
   rows: CubeRow[];
   pans: Panneau[];
   m: Mesure;
-  jours?: number;
-  /** La légende des plateformes de la démo, sous le titre d'axe. */
-  legende?: boolean;
   axe?: boolean;
   /** Échelle imposée (panneaux dessinés un à un, même échelle pour tous). */
   maxCommun?: number;
@@ -648,8 +899,8 @@ function Barres({
   const blocs = pans.map((pan) => ({
     panneau: pan,
     barres: pan.elements.map((el) => {
-      const sg = segments(data, rows, pan, el, m, jours);
-      return { element: el, segments: sg, total: m === "parPublication" ? (sg[0]?.valeur ?? 0) : sg.reduce((a, b) => a + b.valeur, 0) };
+      const sg = segments(data, rows, pan, el, m);
+      return { element: el, segments: sg, total: sg.reduce((a, b) => a + b.valeur, 0) };
     }),
   }));
   const max = maxCommun ?? Math.max(1e-9, ...blocs.flatMap((b) => b.barres.map((x) => x.total)));
@@ -664,7 +915,7 @@ function Barres({
             {b.barres.map((x) => {
               const couleur = couleurElement(data, x.element, b.panneau);
               const detail = x.segments
-                .map((sg) => `${sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] : ""} ${formatMesure(m)(sg.valeur)}`.trim())
+                .map((sg) => `${sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] : ""} ${nombreFr(sg.valeur)}`.trim())
                 .join(" · ");
               return (
                 <li key={x.element.cle}>
@@ -674,7 +925,7 @@ function Barres({
                   <span
                     className="social-piste"
                     role="img"
-                    aria-label={`${nomElement(data, x.element)}\u00a0: ${formatMesure(m)(x.total)} ${NOMS_MESURES[m]}${detail ? ` (${detail})` : ""}`}
+                    aria-label={`${nomElement(data, x.element)}\u00a0: ${nombreFr(x.total)} ${NOMS_MESURES[m]}${detail ? ` (${detail})` : ""}`}
                   >
                     {/* La barre occupe sa part de la piste, total réservé au bout. */}
                     <span className="social-segments" style={{ width: `calc((100% - 5rem) * ${x.total / max})` }}>
@@ -686,14 +937,14 @@ function Barres({
                             // Texture seulement là où des plateformes se côtoient dans la barre.
                             className={x.segments.length > 1 ? texture(sg.plateforme) : undefined}
                             style={{ width: `${100 * part}%`, background: couleur }}
-                            title={`${sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] + "\u00a0: " : ""}${formatMesure(m)(sg.valeur)} ${NOMS_MESURES[m]}`}
+                            title={`${sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] + "\u00a0: " : ""}${nombreFr(sg.valeur)} ${NOMS_MESURES[m]}`}
                           >
                             {sg.plateforme && (100 * sg.valeur) / max >= seuilLogo && <Logo p={sg.plateforme} />}
                           </i>
                         );
                       })}
                     </span>
-                    <span className="social-valeur">{formatMesure(m)(x.total)}</span>
+                    <span className="social-valeur">{nombreFr(x.total)}</span>
                   </span>
                 </li>
               );
@@ -704,18 +955,6 @@ function Barres({
       {axe && (
       <div className="social-axe-titre">
         <span>{AXES[m]}</span>
-        {legende && (
-          <ul className="social-legende-pf" aria-label="Plateformes">
-            {PLATEFORMES.map((p) => (
-              <li key={p}>
-                <i className={texture(p).trim() || undefined}>
-                  <Logo p={p} taille={11} />
-                </i>
-                {NOMS_PLATEFORMES[p]}
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
       )}
     </div>
@@ -757,7 +996,7 @@ function Parts({ data, blocs, m, rangs }: { data: SocialData; blocs: Blocs; m: M
                   // La case décide, à sa taille réelle (requêtes de conteneur, CSS) :
                   // logo (ou sigle) et pourcentage, le seul logo, ou rien.
                   const logo = t.item.plateforme && !t.item.party ? t.item.plateforme : null;
-                  const detail = `${nom}\u00a0: ${part}\u00a0% · ${formatMesure(m)(t.valeur)} ${NOMS_MESURES[m]}`;
+                  const detail = `${nom}\u00a0: ${part}\u00a0% · ${nombreFr(t.valeur)} ${NOMS_MESURES[m]}`;
                   return (
                     <div
                       key={t.item.cle}
@@ -879,7 +1118,7 @@ function Courbes({
           ))}
         {graduations.map((v) => (
           <span key={v} className="social-axe social-axe-y" style={{ top: `${y(v)}%` }}>
-            {m === "parPublication" ? nombreFr(v, 1) : court(v)}
+            {court(v)}
           </span>
         ))}
         {reperes.map((i) => (
@@ -1113,7 +1352,7 @@ export function CartePublication({
 // par visite et partagé entre l'infobulle (10 publications) et la fiche (20).
 const filLus = new Map<number, FilItem[] | null>();
 const filEnCours = new Map<number, Promise<void>>();
-function chargeFil(code: number) {
+export function chargeFil(code: number) {
   if (!filEnCours.has(code)) {
     filEnCours.set(
       code,
@@ -1181,6 +1420,23 @@ export function cadreChemin(d: string): { x: number; y: number; w: number; h: nu
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
+/** Les filtres qui écartent quelque chose, en clair : « TikTok · QS, PQ ».
+ *  Vide quand tout est coché. */
+export function resumeFiltres(data: SocialData, plateformes: Plateforme[], partis: PartyKey[]): string {
+  return [
+    plateformes.length < PLATEFORMES.length ? PLATEFORMES.filter((p) => plateformes.includes(p)).map((p) => NOMS_PLATEFORMES[p]).join(", ") : "",
+    partis.length < data.partis.length ? data.partis.filter((k) => partis.includes(k)).map((k) => data.partiInfo[k].sigle).join(", ") : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** Vrai si un filtre (Plateforme, Parti, Type de compte) diffère du défaut :
+ *  tout coché. Montre « Réinitialiser ». */
+export function filtresModifies(data: SocialData, plateformes: Plateforme[], partis: PartyKey[], types: TypeCompte[]): boolean {
+  return plateformes.length !== PLATEFORMES.length || partis.length !== data.partis.length || types.length !== TYPES.length;
+}
+
 /** Au survol ou au focus d'une circonscription : nom, région, parti en tête,
  *  et chaque candidat suivi avec les logos de ses comptes et ses publications
  *  de la période. Décorative pour les lecteurs d'écran (aria-hidden) : le
@@ -1198,9 +1454,12 @@ export function Infobulle({
   hauteur,
   epinglee = false,
   onFermer,
+  onRetirerFiltres,
 }: {
   epinglee?: boolean;
   onFermer?: () => void;
+  /** Remet les filtres par défaut (lien « Retirer les filtres »). */
+  onRetirerFiltres?: () => void;
   data: SocialData;
   circo: Circo;
   m: ReturnType<typeof meneur>;
@@ -1217,11 +1476,20 @@ export function Infobulle({
   // Écran étroit : l'infobulle prend toute la largeur, jamais coupée.
   const etroit = largeur < 600;
   const etat = useFil(circo.code);
-  const fil = (etat.fil ?? []).filter((p) => plateformes.includes(p.plateforme) && partis.includes(p.party)).slice(0, 10);
+  // Le fil suit l'actualité, pas les filtres : les 10 dernières publications
+  // de la circonscription, toutes plateformes et tous partis. La couleur et la
+  // liste des candidats, elles, suivent les filtres.
+  const fil = (etat.fil ?? []).slice(0, 10);
   const lignes = data.partis
     .filter((k) => partis.includes(k))
     .map((k) => ({ k, comptes: circo.comptes.filter((c) => c.party === k && plateformes.includes(c.plateforme)) }))
     .filter((l) => l.comptes.length > 0);
+  // Les plateformes présentes dans la circonscription : une colonne chacune,
+  // pour aligner les logos sans réserver de place aux plateformes absentes.
+  const pfPresentes = PLATEFORMES.filter((pf) => lignes.some((l) => l.comptes.some((c) => c.plateforme === pf)));
+  // Des comptes suivis, tous écartés par les filtres : le dire, et non « aucun compte ».
+  const filtresVides = lignes.length === 0 && circo.comptes.length > 0;
+  const filtresActifs = resumeFiltres(data, plateformes, partis);
   return (
     <div
       className={`social-infobulle${epinglee ? " epinglee" : ""}${etroit ? " etroite" : ""}`}
@@ -1256,13 +1524,31 @@ export function Infobulle({
           "Égalité entre partis"
         ) : m.publications > 0 ? (
           "Aucun j’aime sur la période"
+        ) : filtresVides ? (
+          "Aucune publication avec ces filtres"
         ) : (
           "Aucune publication sur la période"
         )}
       </div>
-      {lignes.length === 0 ? (
+      {filtresVides ? (
+        <div className="social-infobulle-filtres">
+          <span className="social-meta">
+            Aucun compte ne correspond aux filtres{filtresActifs ? ` (${filtresActifs})` : ""}
+          </span>
+          {onRetirerFiltres && (
+            <button type="button" className="social-lien" onClick={onRetirerFiltres}>
+              Retirer les filtres
+            </button>
+          )}
+        </div>
+      ) : lignes.length === 0 ? (
         <div className="social-meta">Aucun compte de candidat suivi</div>
       ) : (
+        <>
+        <span className="social-infobulle-entete">
+          <span className="social-meta">Candidats</span>
+          <span className="social-meta">{periode === "7j" ? "J’aime · 7 jours" : "J’aime"}</span>
+        </span>
         <ul>
           {lignes.map(({ k, comptes }) => {
             const n = comptes.reduce((s, c) => s + (periode === "7j" ? c.jaime7j : c.jaimeCampagne), 0);
@@ -1272,19 +1558,29 @@ export function Infobulle({
                   {data.partiInfo[k].sigle}
                 </span>
                 <span className="social-infobulle-nom">{comptes[0].nom}</span>
-                <span className="social-infobulle-logos">
-                  {comptes.map((c) => (
-                    <Logo key={c.plateforme} p={c.plateforme} taille={12} />
-                  ))}
+                {/* Une case fixe par plateforme (Facebook, Instagram, TikTok) : les
+                    logos d'une même plateforme restent alignés d'une ligne à l'autre. */}
+                <span className="social-infobulle-logos" style={{ gridTemplateColumns: `repeat(${pfPresentes.length}, 14px)` }}>
+                  {pfPresentes.map((pf) =>
+                    comptes.some((c) => c.plateforme === pf) ? (
+                      <Logo key={pf} p={pf} taille={12} />
+                    ) : (
+                      <span key={pf} className="social-infobulle-logo-vide" aria-hidden="true" />
+                    ),
+                  )}
                 </span>
                 <span className="social-infobulle-n">{nombreFr(n)}</span>
               </li>
             );
           })}
         </ul>
+        </>
       )}
       <div className="social-infobulle-fil">
-        <span className="social-meta">Dernières publications</span>
+        <span className="social-infobulle-entete">
+          <span className="social-meta">Dernières publications</span>
+          <span className="social-meta">J’aime</span>
+        </span>
         {etat.charge ? (
           // En attendant le fichier : la dernière publication, déjà dans les props.
           circo.derniere ? (
@@ -1303,7 +1599,7 @@ export function Infobulle({
             <span className="social-meta">Chargement du fil…</span>
           )
         ) : fil.length === 0 ? (
-          <span className="social-meta">Aucune publication récente dans cette sélection</span>
+          <span className="social-meta">Aucune publication récente</span>
         ) : (
           <ol>
             {fil.map((p, i) => (
@@ -1324,7 +1620,7 @@ export function Infobulle({
           <span aria-hidden="true">→</span>
         </a>
       ) : (
-        <span className="social-infobulle-pied">j’aime · cliquez pour épingler et faire défiler le fil</span>
+        <span className="social-infobulle-pied">cliquez pour épingler et faire défiler le fil</span>
       )}
     </div>
   );
@@ -1355,29 +1651,73 @@ export function suggestions(data: SocialData, requete: string, max = 8): Suggest
       toutes.push({ cle: `p${c.code}-${k.nom}`, code: c.code, nom: k.nom, sous: `${c.nom} · ${data.partiInfo[k.party].sigle}` });
     }
   }
-  const rang = (s: Suggestion) => {
-    const n = sansAccents(s.nom);
-    if (n.startsWith(q)) return 0;
-    if (n.split(" ").some((m) => m.startsWith(q))) return 1;
-    return n.includes(q) ? 2 : -1;
-  };
   return toutes
-    .map((s) => ({ s, r: rang(s) }))
+    .map((s) => ({ s, r: rangSuggestion(s.nom, q) }))
     .filter((x) => x.r >= 0)
     .sort((a, b) => a.r - b.r || a.s.nom.localeCompare(b.s.nom, "fr"))
     .slice(0, max)
     .map((x) => x.s);
 }
 
-function Recherche({ data, onChoisir }: { data: SocialData; onChoisir: (code: number) => void }) {
+/** Rang d'une suggestion : début du nom, puis début d'un mot, puis ailleurs. */
+function rangSuggestion(nom: string, q: string) {
+  const n = sansAccents(nom);
+  if (n.startsWith(q)) return 0;
+  if (n.split(" ").some((m) => m.startsWith(q))) return 1;
+  return n.includes(q) ? 2 : -1;
+}
+
+/** Une candidature proposée par la recherche de l'onglet Candidats. */
+export type SuggestionCandidat = { cle: string; nom: string; sous: string; party: PartyKey; code: number; comptes: number; fiche: string };
+
+/** Les candidatures officielles (635), pour la recherche de l'onglet
+ *  Candidats : mêmes règles que la recherche de la carte. */
+export function suggestionsCandidats(data: SocialData, requete: string, max = 8): SuggestionCandidat[] {
+  const q = sansAccents(requete.trim());
+  if (q.length < 2 || !data.candidatures?.length) return [];
+  const circos = new Map((data.carte?.circos ?? []).map((c) => [c.code, c.nom]));
+  return data.candidatures
+    .map(([nom, iParti, code, comptes]) => ({ nom, party: data.partis[iParti], code, comptes, r: rangSuggestion(nom, q) }))
+    .filter((x) => x.r >= 0 && x.party)
+    .sort((a, b) => a.r - b.r || a.nom.localeCompare(b.nom, "fr"))
+    .slice(0, max)
+    .map(({ nom, party, code, comptes }) => {
+      const circo = circos.get(code) ?? "";
+      return {
+        cle: `${code}-${party}`,
+        nom,
+        party,
+        code,
+        comptes,
+        fiche: slugCandidat(nom, circo),
+        sous: `${circo} · ${data.partiInfo[party].sigle}${comptes ? "" : " · aucun compte suivi"}`,
+      };
+    });
+}
+
+/** Champ de recherche à suggestions, accessible au clavier (motif
+ *  « combobox ») : la carte et l'onglet Candidats s'en servent. */
+function Combobox<T extends { cle: string; nom: string; sous: string }>({
+  id,
+  libelle,
+  placeholder,
+  chercher,
+  onChoisir,
+}: {
+  id: string;
+  libelle: string;
+  placeholder: string;
+  chercher: (texte: string) => T[];
+  onChoisir: (sg: T) => void;
+}) {
   const [texte, setTexte] = useState("");
   const [ouvert, setOuvert] = useState(false);
   const [i, setI] = useState(0);
-  const liste = useMemo(() => suggestions(data, texte), [data, texte]);
-  const choisir = (sg: Suggestion) => {
+  const liste = useMemo(() => chercher(texte), [chercher, texte]);
+  const choisir = (sg: T) => {
     setTexte(sg.nom);
     setOuvert(false);
-    onChoisir(sg.code);
+    onChoisir(sg);
   };
   const touche = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -1394,19 +1734,19 @@ function Recherche({ data, onChoisir }: { data: SocialData; onChoisir: (code: nu
   const visible = ouvert && liste.length > 0;
   return (
     <div className="social-recherche">
-      <label htmlFor="social-recherche-champ" className="visually-hidden">
-        Chercher une circonscription ou un candidat
+      <label htmlFor={`${id}-champ`} className="visually-hidden">
+        {libelle}
       </label>
       <input
-        id="social-recherche-champ"
+        id={`${id}-champ`}
         type="search"
         role="combobox"
         autoComplete="off"
-        placeholder="Circonscription ou candidat·e"
+        placeholder={placeholder}
         aria-expanded={visible}
-        aria-controls="social-recherche-liste"
+        aria-controls={`${id}-liste`}
         aria-autocomplete="list"
-        aria-activedescendant={visible ? `social-sg-${liste[i]?.cle}` : undefined}
+        aria-activedescendant={visible ? `${id}-sg-${liste[i]?.cle}` : undefined}
         value={texte}
         onChange={(e) => {
           setTexte(e.target.value);
@@ -1417,11 +1757,11 @@ function Recherche({ data, onChoisir }: { data: SocialData; onChoisir: (code: nu
         onBlur={() => setTimeout(() => setOuvert(false), 150)}
       />
       {visible && (
-        <ul id="social-recherche-liste" role="listbox" aria-label="Suggestions">
+        <ul id={`${id}-liste`} role="listbox" aria-label="Suggestions">
           {liste.map((sg, n) => (
             <li
               key={sg.cle}
-              id={`social-sg-${sg.cle}`}
+              id={`${id}-sg-${sg.cle}`}
               role="option"
               aria-selected={n === i}
               className={n === i ? "actif" : undefined}
@@ -1440,14 +1780,29 @@ function Recherche({ data, onChoisir }: { data: SocialData; onChoisir: (code: nu
   );
 }
 
+function Recherche({ data, onChoisir }: { data: SocialData; onChoisir: (code: number) => void }) {
+  const chercher = useMemo(() => (t: string) => suggestions(data, t), [data]);
+  return (
+    <Combobox
+      id="social-recherche"
+      libelle="Chercher une circonscription ou un candidat"
+      placeholder="Circonscription ou candidat·e"
+      chercher={chercher}
+      onChoisir={(sg) => onChoisir(sg.code)}
+    />
+  );
+}
+
 export function Carte({
   data,
   plateformes,
   partis,
+  onRetirerFiltres,
 }: {
   data: SocialData;
   plateformes: Plateforme[];
   partis: PartyKey[];
+  onRetirerFiltres?: () => void;
 }) {
   const carte = data.carte!;
   const [W, H] = [carte.vue[2], carte.vue[3]];
@@ -1807,6 +2162,7 @@ export function Carte({
               setEpingle(null);
               setChoix(null);
             }}
+            onRetirerFiltres={onRetirerFiltres}
           />
         )}
       </div>
@@ -1836,13 +2192,20 @@ export function SocialClient({ data }: { data: SocialData }) {
   const vues = data.carte ? VUES : VUES.filter((v) => v.cle !== "carte");
   const [forme, setForme] = useState<Forme>("barres");
   const [decoupe, setDecoupe] = useState<Decoupe>("ensemble");
-  // Une seule mesure, partagée par Partis et Candidats (abonnés par défaut).
-  const [m, setMesure] = useState<Mesure>("abonnes");
+  // Une seule mesure, partagée par Partis et Candidats : j'aime à l'arrivée
+  // (onglet Partis, barres et parts, ensemble).
+  const [m, setMesure] = useState<Mesure>("jaime");
 
   const f: Filtres = useMemo(() => ({ d0, d1, plateformes, partis, types }), [d0, d1, plateformes, partis, types]);
   const periode = (a: number, b: number) => {
     setD0(a);
     setD1(b);
+  };
+  const modifies = filtresModifies(data, plateformes, partis, types);
+  const retirerFiltres = () => {
+    setPlateformes([...PLATEFORMES]);
+    setPartis([...data.partis]);
+    setTypes([...TYPES]);
   };
 
   const frise = useMemo(() => parJour(data, f), [data, f]);
@@ -1856,7 +2219,6 @@ export function SocialClient({ data }: { data: SocialData }) {
   const graphique = vue === "partis";
   const rowsM = useMemo(() => (m === "abonnes" ? lignesAbonnes(data, f) : rows), [m, data, f, rows]);
   const abonnes = useMemo(() => totaux(lignesAbonnes(data, f)).publications, [data, f]);
-  const sansParts = MOYENNES.includes(m);
 
   const raccourcis: { libelle: string; a: number }[] = [
     { libelle: "7 j", a: Math.max(0, n - 7) },
@@ -1918,7 +2280,14 @@ export function SocialClient({ data }: { data: SocialData }) {
 
           <aside className="social-filtres">
             <div className="social-groupe" role="group" aria-label="Filtres">
-            <h3 className="social-groupe-titre">Filtres</h3>
+            <div className="social-groupe-tete">
+              <h3 className="social-groupe-titre">Filtres</h3>
+              {modifies && (
+                <button type="button" className="social-lien social-reinitialiser" onClick={retirerFiltres} aria-label="Réinitialiser les filtres">
+                  <span aria-hidden="true">⟲</span> Réinitialiser
+                </button>
+              )}
+            </div>
             <Coches
               label="Plateforme"
               options={PLATEFORMES.map((p) => ({ cle: p, libelle: NOMS_PLATEFORMES[p] }))}
@@ -1956,20 +2325,12 @@ export function SocialClient({ data }: { data: SocialData }) {
                   <dd>{nombreGrand(t.publications)}</dd>
                 </div>
                 <div>
-                  <dt>Par jour, en moyenne</dt>
-                  <dd>{nombreGrand(t.publications / nbJours)}</dd>
-                </div>
-                <div>
                   <dt>J’aime</dt>
                   <dd>{nombreGrand(t.jaime)}</dd>
                 </div>
                 <div>
                   <dt>Commentaires</dt>
                   <dd>{nombreGrand(t.commentaires)}</dd>
-                </div>
-                <div>
-                  <dt>J’aime par publication</dt>
-                  <dd>{nombreGrand(valeur(t, "parPublication"), 1)}</dd>
                 </div>
               </dl>
             </section>
@@ -1979,43 +2340,56 @@ export function SocialClient({ data }: { data: SocialData }) {
           <div className="social-onglets">
             <Bascule label="Vue" options={vues} valeur={vue} onChange={setVue} />
           </div>
-          {/* La mesure, sous les onglets, dans Partis et Candidats seulement :
-              des icônes, le nom complet de la mesure active à côté. */}
+          {/* Sous les onglets, dans Partis et Candidats seulement : une ligne de
+              groupes en icônes, chacun sous son en-tête (Indicateur · j'aime actif,
+              Graphique, Découpage) ; Candidats n'a que l'indicateur. */}
           {(vue === "partis" || vue === "candidats") && (
-            <div className="social-mesure">
-              <Bascule
-                label="Mesure affichée"
-                options={
-                  vue === "candidats" && !(data.audienceJour.length || data.audienceJourDispo) ? MESURES.slice(0, 1) : MESURES
-                }
-                valeur={m}
-                onChange={setMesure}
-                icone={(c) => <IconeMesure m={c} />}
-              />
-              <span className="social-mesure-nom" aria-hidden="true">
-                {MESURE[m].libelle}
-              </span>
-            </div>
-          )}
-
-          {graphique && (
             <div className="social-reglages">
-              {/* Comme la démo : la forme en haut à gauche, la découpe en haut à droite. */}
-              <Bascule
-                label="Forme"
-                options={FORMES}
-                valeur={formeEff}
-                onChange={setForme}
-                desactives={m === "abonnes" ? { temps: "Pas de série d’abonnés" } : undefined}
-                icone={(c) => <IconeForme f={c} />}
-              />
-              <Bascule
-                label="Découpe"
-                options={DECOUPES}
-                valeur={decoupe}
-                onChange={setDecoupe}
-                icone={(c) => <IconeDecoupe d={c} data={data} />}
-              />
+              <div className="social-reglage">
+                <span className="social-coches-titre" aria-hidden="true">
+                  Indicateur · {MESURE[m].libelle}
+                </span>
+                <Bascule
+                  label="Indicateur affiché"
+                  options={
+                    vue === "candidats" && !(data.audienceJour.length || data.audienceJourDispo) ? MESURES.slice(0, 1) : MESURES
+                  }
+                  valeur={m}
+                  onChange={setMesure}
+                  icone={(c) => <IconeMesure m={c} />}
+                />
+              </div>
+              {graphique && (
+                <>
+                  <span className="social-reglages-filet" aria-hidden="true" />
+                  <div className="social-reglage">
+                    <span className="social-coches-titre" aria-hidden="true">
+                      Type de graphique
+                    </span>
+                    <Bascule
+                      label="Type de graphique"
+                      options={FORMES}
+                      valeur={formeEff}
+                      onChange={setForme}
+                      desactives={m === "abonnes" ? { temps: "Pas de série d’abonnés" } : undefined}
+                      icone={(c) => <IconeForme f={c} />}
+                    />
+                  </div>
+                  <span className="social-reglages-filet" aria-hidden="true" />
+                  <div className="social-reglage">
+                    <span className="social-coches-titre" aria-hidden="true">
+                      Découpage
+                    </span>
+                    <Bascule
+                      label="Découpage"
+                      options={DECOUPES}
+                      valeur={decoupe}
+                      onChange={setDecoupe}
+                      icone={(c) => <IconeDecoupe d={c} data={data} />}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           )}
           <p className="social-sous-titre">{sousTitre}</p>
@@ -2071,34 +2445,27 @@ export function SocialClient({ data }: { data: SocialData }) {
             />
           )}
 
-          {/* Barres et parts côte à côte (même mesure, filtres et découpe) ; une
-              moyenne ne se découpe pas en parts : les barres seules. */}
+          {/* Barres et parts côte à côte (même mesure, filtres et découpe). */}
           {graphique &&
             formeEff === "barres" &&
             (() => {
               // Une paire barres + parts par panneau : chaque treemap garde la
               // hauteur de ses barres ; les barres gardent une échelle commune.
-              const blocs = parElement(data, rowsM, pans, m, nbJours);
+              const blocs = parElement(data, rowsM, pans, m);
               const maxCommun = Math.max(1e-9, ...blocs.flatMap((b) => b.valeurs.map((v) => v.valeur)));
               return (
                 <>
                   {pans.map((pan, i) => (
-                    <div key={pan.cle} className={`social-barres-parts${sansParts ? " seules" : ""}`}>
+                    <div key={pan.cle} className="social-barres-parts">
                       <Barres
                         data={data}
                         rows={rowsM}
                         pans={[pan]}
                         m={m}
-                        jours={nbJours}
                         maxCommun={pans.length > 1 ? maxCommun : undefined}
                         axe={i === pans.length - 1}
-                        legende={i === pans.length - 1 && decoupe !== "parti"}
                       />
-                      {sansParts ? (
-                        i === 0 && <p className="social-note social-sans-parts">Une moyenne ne se découpe pas en parts.</p>
-                      ) : (
-                        <Parts data={data} blocs={[blocs[i]]} m={m} rangs={pan.elements.length} />
-                      )}
+                      <Parts data={data} blocs={[blocs[i]]} m={m} rangs={pan.elements.length} />
                     </div>
                   ))}
                 </>
@@ -2135,7 +2502,9 @@ export function SocialClient({ data }: { data: SocialData }) {
               );
             })()}
 
-          {vue === "carte" && data.carte && <Carte data={data} plateformes={plateformes} partis={partis} />}
+          {vue === "carte" && data.carte && (
+            <Carte data={data} plateformes={plateformes} partis={partis} onRetirerFiltres={retirerFiltres} />
+          )}
 
           {vue === "palmares" && (
             <>

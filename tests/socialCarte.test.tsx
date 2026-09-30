@@ -284,11 +284,6 @@ describe("audience : classements sur la période", () => {
     expect(classementAudience(items, jours, "jaime", { ...f, d0: 5, d1: 5 }).map((x) => x.valeur)).toEqual([200, 1]);
     expect(classementAudience(items, jours, "commentaires", f).map((x) => x.valeur)).toEqual([3, 1]);
   });
-  it("moyennes : 5 publications au moins sur la période", () => {
-    expect(classementAudience(items, jours, "parPublication", f)).toEqual([{ item: items[1], valeur: 50 }]);
-    expect(classementAudience(items, jours, "parJour", f)).toEqual([{ item: items[1], valeur: 6 / 5 }]);
-    expect(classementAudience(items, jours, "parJour", { ...f, d0: 0, d1: 5 })).toEqual([{ item: items[1], valeur: 10 / 6 }]);
-  });
   it("40 comptes au plus", () => {
     const beaucoup = Array.from({ length: 80 }, (_, i) => ({ ...base, nom: `x${i}`, abonnes: i + 1 }));
     expect(classementAudience(beaucoup, [], "abonnes", f)).toHaveLength(40);
@@ -360,7 +355,7 @@ describe("audience : toutes les combinaisons de filtres", () => {
     }
   });
   const periodes = { "7 j": [N - 7, N - 1], "30 j": [N - 30, N - 1], campagne: [N - 34, N - 1], tout: [0, N - 1] } as const;
-  const mesures: MesureAudience[] = ["abonnes", "publications", "parJour", "jaime", "commentaires", "parPublication"];
+  const mesures: MesureAudience[] = ["abonnes", "publications", "jaime", "commentaires"];
   const sous = <T,>(l: readonly T[]) => Array.from({ length: 2 ** l.length - 1 }, (_, m) => l.filter((_, i) => (m + 1) & (1 << i)));
   // Sommes par compte, calculées une fois par période, indépendamment du module.
   const sommes = new Map<string, { p: number; l: number; k: number }[]>();
@@ -379,10 +374,7 @@ describe("audience : toutes les combinaisons de filtres", () => {
         mesure === "abonnes" ? a.abonnes
         : mesure === "publications" ? p
         : mesure === "jaime" ? l
-        : mesure === "commentaires" ? k
-        : p < 5 ? null
-        : mesure === "parPublication" ? l / p
-        : p / (f.d1 - f.d0 + 1);
+        : k;
       if (v != null && v > 0) vals.push(v);
     });
     return vals.sort((a, b) => b - a);
@@ -402,7 +394,7 @@ describe("audience : toutes les combinaisons de filtres", () => {
               expect(obtenu).toEqual(attendu.slice(0, 40));
               combinaisons++;
             }
-    expect(combinaisons).toBe(7 * 31 * 3 * 6 * 4);
+    expect(combinaisons).toBe(7 * 31 * 3 * 4 * 4);
   }, 60_000);
 });
 
@@ -470,10 +462,9 @@ describe("pages de circonscription : candidats officiels et cohérence", () => {
   });
 });
 
-describe("mesures communes : abonnés et par jour", () => {
-  it("par jour divise par la durée ; les abonnés viennent du dernier relevé", async () => {
-    const { valeur, lignesAbonnes, totaux } = await import("@/lib/data/social-calc");
-    expect(valeur({ publications: 70, jaime: 0, commentaires: 0 }, "parJour", 7)).toBe(10);
+describe("mesures communes : abonnés", () => {
+  it("les abonnés viennent du dernier relevé", async () => {
+    const { lignesAbonnes, totaux } = await import("@/lib/data/social-calc");
     const data = construireSocial(comptes, jours, [], null)!;
     const f = { d0: 0, d1: data.jours.length - 1, plateformes: ["facebook" as const, "instagram" as const, "tiktok" as const], partis: data.partis, types: ["candidat" as const, "parti" as const] };
     expect(totaux(lignesAbonnes(data, f)).publications).toBe(1200 + 300 + 900 + 99);
@@ -494,8 +485,12 @@ describe("cartes candidat : tri, pastille, chiffres", () => {
   const texte = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 
   it("classées par j'aime, sans compte à la fin dans l'ordre des partis", () => {
-    const ordre = [...html.matchAll(/class="social-nom">([^<]+)</g)].map((m) => m[1]);
+    const ordre = [...html.matchAll(/class="social-nom">(?:<a [^>]*>)?([^<]+)</g)].map((m) => m[1]);
     expect(ordre).toEqual(["CAQ Anjou", "QS Anjou", "PLQ Anjou", "PQ Anjou", "PCQ Anjou"]);
+  });
+  it("le nom de chaque candidat officiel mène à sa page", () => {
+    expect(html).toContain('<a href="/reseaux/candidats/caq-anjou-anjou-louis-riel/">CAQ Anjou</a>');
+    expect(html.match(/href="\/reseaux\/candidats\//g)).toHaveLength(5);
   });
   it("pastille de rang en j'aime, seulement pour les candidats avec des données", () => {
     expect(html).toContain('aria-label="1er sur 2 en j’aime depuis le déclenchement"');
