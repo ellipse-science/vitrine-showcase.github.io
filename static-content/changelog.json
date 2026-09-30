@@ -1,5 +1,11 @@
 [
   {
+    "pr": 900,
+    "date": "2026-09-30T19:20:40Z",
+    "note": "Dans le Polimètre+ en campagne, une promesse formulée plusieurs fois par un parti est désormais, dans la plupart des cas, regroupée en une seule entrée.",
+    "version": "2.49.0-beta.8"
+  },
+  {
     "pr": 898,
     "date": "2026-09-30T17:22:31Z",
     "note": "La page Équipe présente un nouveau professeur collaborateur, Benjamin Guinaudeau.",
