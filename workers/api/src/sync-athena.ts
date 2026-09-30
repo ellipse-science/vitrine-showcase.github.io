@@ -24,6 +24,7 @@
 import { Client } from '@neondatabase/serverless'
 import { AthenaClient } from './athena'
 import { EXTERNE_MS, PG_CONNEXION_MS, PG_FERMETURE_MS, PG_REQUETE_MS, avecDelai } from './delai'
+import { avecReconnexion } from './reconnexion'
 import { hasColumnTypes, putTableSnapshot, rowsToObjects, type SnapshotEnv } from './snapshot'
 import type { SnapshotTableEntry } from './snapshot-logic'
 import { TABLES, type TableSpec } from './tables'
@@ -302,8 +303,13 @@ export async function runAthenaSync(
     outputLocation: creds.outputLocation,
   })
 
-  const pg = new Client(env.DATABASE_URL)
-  await avecDelai(pg.connect(), PG_CONNEXION_MS, 'connexion Postgres')
+  // Une connexion PAR TABLE, ouverte après la lecture Athena (cf. reconnexion.ts).
+  const ouvrirPg = async (): Promise<Client> => {
+    const pg = new Client(env.DATABASE_URL)
+    await avecDelai(pg.connect(), PG_CONNEXION_MS, 'connexion Postgres')
+    return pg
+  }
+  const fermerPg = (pg: Client) => avecDelai(pg.end(), PG_FERMETURE_MS, 'fermeture Postgres')
 
   const synced: TableResult[] = []
   const failed: FailedTable[] = []
@@ -311,61 +317,57 @@ export async function runAthenaSync(
    *  échec de synchro (cf. le side-car plus bas) : une information, qui
    *  remonte jusqu'à Slack pour que la dérive ne s'installe pas en silence. */
   const snapshotSkipped: string[] = []
-  try {
-    for (const spec of specs) {
-      try {
-        const rows = await fetchTableRows(athena, spec)
-        const n = await writeTable(pg, spec, rows)
+  for (const spec of specs) {
+    try {
+      const rows = await fetchTableRows(athena, spec)
+      const n = await avecReconnexion(ouvrirPg, fermerPg, (pg) => writeTable(pg, spec, rows), spec.name)
 
-        // INSTANTANÉ R2, ÉCRIT AU PASSAGE. Les lignes sont déjà là, en
-        // mémoire : c'est précisément ce que le build allait sinon
-        // redemander à Postgres, table par table, à chaque build (incident
-        // du 2026-08-26, cf. l'en-tête de snapshot.ts). Le dépôt vient
-        // APRÈS le COMMIT, jamais avant : une table n'entre dans
-        // l'instantané que si elle est entrée dans la base.
-        //
-        // Une conversion qui échoue (colonne numérique polluée en amont)
-        // lève et fait ÉCHOUER la table — donc retient les hooks et
-        // préserve la donnée servie, comme la garde zéro-ligne ci-dessus.
-        // L'INSTANTANÉ EST UN SIDE-CAR : il ne peut JAMAIS faire échouer la
-        // synchro. Postgres a déjà commité à ce stade, et un échec ici
-        // remonterait dans `failed`, donc retiendrait les Deploy Hooks au
-        // titre du tout-ou-rien : le site cesserait de se rafraîchir pour
-        // protéger une copie dont il n'a pas besoin pour fonctionner. C'est
-        // l'inverse du bon compromis.
-        //
-        // Une table qui n'entre pas dans l'instantané en est simplement
-        // ABSENTE, donc absente du manifeste, donc lue par le build dans son
-        // fichier publié : le comportement d'avant cette PR. On perd
-        // l'économie sur cette table, jamais la justesse ni l'édition.
-        let snapshot: SnapshotTableEntry | undefined
-        if (cycle && env.ART_BUCKET) {
-          try {
-            if (!hasColumnTypes(spec.name)) {
-              throw new Error('types de colonnes inconnus (régénérer column-types.ts)')
-            }
-            const objects = rowsToObjects(spec.name, spec.cols, rows)
-            snapshot = await putTableSnapshot(env.ART_BUCKET, cycle, spec.name, objects)
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err)
-            console.warn(`${spec.name} : hors instantané (${message})`)
-            snapshotSkipped.push(`${spec.name} : ${message}`)
+      // INSTANTANÉ R2, ÉCRIT AU PASSAGE. Les lignes sont déjà là, en
+      // mémoire : c'est précisément ce que le build allait sinon
+      // redemander à Postgres, table par table, à chaque build (incident
+      // du 2026-08-26, cf. l'en-tête de snapshot.ts). Le dépôt vient
+      // APRÈS le COMMIT, jamais avant : une table n'entre dans
+      // l'instantané que si elle est entrée dans la base.
+      //
+      // Une conversion qui échoue (colonne numérique polluée en amont)
+      // lève et fait ÉCHOUER la table — donc retient les hooks et
+      // préserve la donnée servie, comme la garde zéro-ligne ci-dessus.
+      // L'INSTANTANÉ EST UN SIDE-CAR : il ne peut JAMAIS faire échouer la
+      // synchro. Postgres a déjà commité à ce stade, et un échec ici
+      // remonterait dans `failed`, donc retiendrait les Deploy Hooks au
+      // titre du tout-ou-rien : le site cesserait de se rafraîchir pour
+      // protéger une copie dont il n'a pas besoin pour fonctionner. C'est
+      // l'inverse du bon compromis.
+      //
+      // Une table qui n'entre pas dans l'instantané en est simplement
+      // ABSENTE, donc absente du manifeste, donc lue par le build dans son
+      // fichier publié : le comportement d'avant cette PR. On perd
+      // l'économie sur cette table, jamais la justesse ni l'édition.
+      let snapshot: SnapshotTableEntry | undefined
+      if (cycle && env.ART_BUCKET) {
+        try {
+          if (!hasColumnTypes(spec.name)) {
+            throw new Error('types de colonnes inconnus (régénérer column-types.ts)')
           }
+          const objects = rowsToObjects(spec.name, spec.cols, rows)
+          snapshot = await putTableSnapshot(env.ART_BUCKET, cycle, spec.name, objects)
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err)
+          console.warn(`${spec.name} : hors instantané (${message})`)
+          snapshotSkipped.push(`${spec.name} : ${message}`)
         }
-
-        console.log(
-          `${spec.name} : ${n} lignes (cf-athena)` +
-            (snapshot ? `, instantané ${Math.round(snapshot.bytes / 1024)} Ko` : ''),
-        )
-        synced.push({ table: spec.name, rows: n, snapshot })
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err)
-        console.error(`${spec.name} en échec :`, message)
-        failed.push({ table: spec.name, error: message })
       }
+
+      console.log(
+        `${spec.name} : ${n} lignes (cf-athena)` +
+          (snapshot ? `, instantané ${Math.round(snapshot.bytes / 1024)} Ko` : ''),
+      )
+      synced.push({ table: spec.name, rows: n, snapshot })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error(`${spec.name} en échec :`, message)
+      failed.push({ table: spec.name, error: message })
     }
-  } finally {
-    await avecDelai(pg.end(), PG_FERMETURE_MS, 'fermeture Postgres').catch(() => {})
   }
 
   // Ni Slack ni hooks ici : une TRANCHE ne connaît pas le sort de la passe.
