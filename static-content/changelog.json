@@ -1,5 +1,11 @@
 [
   {
+    "pr": 898,
+    "date": "2026-09-30T17:22:31Z",
+    "note": "La page Équipe présente un nouveau professeur collaborateur, Benjamin Guinaudeau.",
+    "version": null
+  },
+  {
     "pr": 897,
     "date": "2026-09-30T17:06:42Z",
     "note": "Sur le miroir de travail : chaque candidate et chaque candidat a sa page, et la liste des comptes se fouille par nom, avec les dernières publications au survol.",
