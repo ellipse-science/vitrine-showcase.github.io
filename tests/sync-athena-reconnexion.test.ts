@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 // reconnexion.ts n'a aucune dépendance : importable par la compilation de la
 // racine, comme delai.ts (cf. tests/sync-athena-delais.test.ts).
-import { avecReconnexion, estCoupureConnexion } from "@/workers/api/src/reconnexion";
+import { avecReconnexion, estCoupureConnexion, messageDe, resumerErreur } from "@/workers/api/src/reconnexion";
 
 /**
  * 30 septembre 2026, 8 h 10 : « Connection terminated unexpectedly » sur la
@@ -53,5 +53,35 @@ describe("sync-athena — connexion Postgres par table", () => {
     const fermer = vi.fn(async () => {});
     await avecReconnexion(async () => 7, fermer, async () => "ok", "t");
     expect(fermer).toHaveBeenCalledWith(7);
+  });
+  it("une donnée qui contient « connection error » n'est pas une coupure", () => {
+    expect(estCoupureConnexion(new Error('invalid input syntax for type integer: "connection error"'))).toBe(false);
+  });
+
+  it("un Event WebSocket (pas un Error) : lisible, et traité comme une coupure", () => {
+    const evenement = { type: "error" };
+    expect(messageDe(evenement)).toBe("événement « error » de la connexion");
+    expect(estCoupureConnexion(evenement)).toBe(true);
+  });
+
+  it("la réouverture échoue : chaque client est fermé exactement une fois, l'erreur de réouverture remonte", async () => {
+    const fermes: number[] = [];
+    let n = 0;
+    const ouvrir = vi.fn(async () => {
+      n += 1;
+      if (n === 2) throw new Error("connexion Postgres impossible : délai dépassé");
+      return n;
+    });
+    const travail = vi.fn(async () => { throw new Error("Connection terminated unexpectedly"); });
+    await expect(avecReconnexion(ouvrir, async (c: number) => { fermes.push(c); }, travail, "t"))
+      .rejects.toThrow("connexion Postgres impossible");
+    expect(fermes).toEqual([1]);
+  });
+
+  it("le message publié masque les chaînes de connexion et reste court", () => {
+    const m = resumerErreur("échec postgres://alice:secret@ep-x.neon.tech/db puis AKIAABCDEFGHIJKLMNOP " + "x".repeat(500));
+    expect(m).not.toContain("secret");
+    expect(m).not.toContain("AKIAABCDEFGHIJKLMNOP");
+    expect(m.length).toBeLessThanOrEqual(300);
   });
 });

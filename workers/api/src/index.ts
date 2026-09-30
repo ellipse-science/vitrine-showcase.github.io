@@ -369,7 +369,7 @@ export default {
           if (failed.length > 0) {
             await notifySlack(
               env,
-              `sync-athena : échec(s) : ${failed.join(', ')} ; builds NON déclenchés.`,
+              `sync-athena : échec(s) : ${failed.join(' ; ')} ; builds NON déclenchés.`,
             )
             return
           }
