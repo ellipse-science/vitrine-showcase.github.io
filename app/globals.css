@@ -11955,13 +11955,24 @@
 }
 .social-onglets::-webkit-scrollbar { display: none; }
 .social-onglets .social-bascule { display: flex; flex-wrap: nowrap; gap: 4px; width: 100%; }
+/* Style éditorial : titres en Playfair, sans cadre, sur un filet commun ;
+   l'onglet actif en encre avec un trait bordeaux dessous, les autres en gris. */
+.social-onglets .social-bascule { gap: 0; border-bottom: 0.5px solid var(--rule); }
 .social-onglets .social-bascule button {
-  flex: 1 0 auto; min-height: 52px; padding: 14px 24px;
-  font-size: 14.5px; letter-spacing: 0.16em; white-space: nowrap;
+  flex: 1 0 auto; min-height: 52px; padding: 14px 24px 12px;
+  font-family: 'Playfair Display', Georgia, serif; font-size: 19px; font-weight: 600;
+  letter-spacing: 0; text-transform: none; white-space: nowrap;
+  color: var(--ink-softer); background: transparent;
+  border: 0; border-bottom: 3px solid transparent; margin-bottom: -0.5px;
+  transition: color 0.15s, border-color 0.15s;
 }
+.social-onglets .social-bascule button:hover { color: var(--ink); border-bottom-color: var(--rule); }
+.social-onglets .social-bascule button.active {
+  color: var(--ink); background: transparent; border-color: transparent; border-bottom-color: var(--cordovan);
+}
+.social-onglets .social-bascule button:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; }
 @media (max-width: 640px) {
-  .social-onglets .social-bascule { gap: 3px; }
-  .social-onglets .social-bascule button { min-height: 44px; padding: 10px 5px; font-size: 12px; letter-spacing: 0.03em; }
+  .social-onglets .social-bascule button { min-height: 44px; padding: 10px 6px 8px; font-size: 15px; }
 }
 /* Mesure, Graphique, Découpage : toute la largeur du graphique, Mesure à
    gauche, Découpage à droite, Graphique au milieu, chacun sous son en-tête ;

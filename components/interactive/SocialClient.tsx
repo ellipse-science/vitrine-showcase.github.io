@@ -2339,10 +2339,10 @@ export function SocialClient({ data }: { data: SocialData }) {
                   <span className="social-reglages-filet" aria-hidden="true" />
                   <div className="social-reglage">
                     <span className="social-coches-titre" aria-hidden="true">
-                      Graphique
+                      Type de graphique
                     </span>
                     <Bascule
-                      label="Graphique"
+                      label="Type de graphique"
                       options={FORMES}
                       valeur={formeEff}
                       onChange={setForme}

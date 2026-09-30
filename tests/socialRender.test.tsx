@@ -68,9 +68,9 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
   it("Indicateur, Graphique, Découpage : une ligne de groupes, chacun sous son en-tête", () => {
     const reglages = html.slice(html.indexOf('class="social-reglages"'), html.indexOf('class="social-sous-titre"'));
     const entetes = [...reglages.matchAll(/class="social-coches-titre"[^>]*>([^<]+)</g)].map((x) => x[1].replace(/\s+/g, " "));
-    expect(entetes).toEqual(["Indicateur · J’aime", "Graphique", "Découpage"]);
+    expect(entetes).toEqual(["Indicateur · J’aime", "Type de graphique", "Découpage"]);
     const groupes = [...reglages.matchAll(/role="group" aria-label="([^"]+)"/g)].map((x) => x[1]);
-    expect(groupes).toEqual(["Indicateur affiché", "Graphique", "Découpage"]);
+    expect(groupes).toEqual(["Indicateur affiché", "Type de graphique", "Découpage"]);
     const mesure = reglages.slice(reglages.indexOf('aria-label="Indicateur affiché"'));
     expect(mesure.slice(0, mesure.indexOf("</div>")).match(/<button/g)).toHaveLength(4);
     for (const nom of ["Abonnés", "Publications", "J’aime", "Commentaires"]) expect(html).toContain(`aria-label="${nom}"`);
