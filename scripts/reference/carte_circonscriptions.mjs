@@ -22,7 +22,8 @@
  *      topologique à pas variable (50 m en ville, 250 m en région, 1,2 km dans
  *      le Nord) : les frontières communes restent communes ;
  *   2. ici : coordonnées en hectomètres entiers, y inversé, chemins SVG
- *      relatifs ; cadres des encarts Montréal et Québec.
+ *      relatifs ; cadrage initial (Québec méridional) et cadres des encarts
+ *      Montréal et Québec.
  *
  * Usage : node scripts/reference/carte_circonscriptions.mjs [geojson-source] [xlsx-regions]
  */
@@ -177,9 +178,14 @@ const sortie = {
   licence: "https://www.dgeq.org/licence.html",
   unite_m: UNITE,
   vue: [0, 0, px(x1), py(y0)],
+  // Cadrage initial : le Québec méridional (Abitibi et Outaouais entiers, le
+  // Bas-Saint-Laurent jusqu'à Rimouski, au-dessus du Lac-Saint-Jean, la
+  // frontière américaine avec une marge). Le dézoom montre toute la province.
+  sud: cadre(-79.6, 44.95, -67.5, 49.6),
+  // Encarts : l'île de Montréal et Laval avec la couronne proche ; Québec et Lévis.
   encarts: {
-    montreal: cadre(-74.25, 45.25, -73.15, 45.9),
-    quebec: cadre(-71.6, 46.66, -70.95, 47.0),
+    montreal: cadre(-74.0, 45.38, -73.33, 45.73),
+    quebec: cadre(-71.5, 46.72, -71.05, 46.92),
   },
   circonscriptions,
 };

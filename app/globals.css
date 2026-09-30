@@ -11840,7 +11840,17 @@
 
 /* ── Module « Les candidats sur les réseaux » (expérimental, dev seulement) ── */
 .social { margin: 18px 0 8px; }
-.social-tdb { display: grid; grid-template-columns: minmax(0, 1fr) 15rem; gap: 28px; }
+/* Deux colonnes : le tableau de bord à gauche, les filtres à droite sur toute
+   la hauteur, derrière un filet vertical. */
+.social-tdb {
+  display: grid; grid-template-columns: minmax(0, 1fr) 15rem; column-gap: 28px;
+  grid-template-areas: "entete entete" "haut filtres" "bas filtres"; grid-template-rows: auto auto 1fr;
+}
+.social-entete { grid-area: entete; }
+.social-haut { grid-area: haut; min-width: 0; }
+.social-bas { grid-area: bas; min-width: 0; }
+.social-filtres { grid-area: filtres; }
+.social-pied { text-align: right; }
 .social-coches-titre {
   display: block; font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500;
   letter-spacing: 0.3em; text-transform: uppercase; color: var(--cordovan); margin-bottom: 6px;
@@ -11883,26 +11893,70 @@
 }
 
 /* Tuiles */
-.social-tuiles { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 22px; margin: 18px 0 0; padding: 12px 0; border-top: 0.5px solid var(--rule); border-bottom: 0.5px solid var(--rule); }
+.social-tuiles { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 18px 0 0; padding: 12px 0; border-top: 0.5px solid var(--rule); border-bottom: 0.5px solid var(--rule); }
 .social-tuiles div { display: flex; align-items: baseline; gap: 8px; }
 .social-tuiles dt {
   order: 2; font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: 0.18em;
   text-transform: uppercase; color: var(--ink-softer);
 }
 .social-tuiles dd { order: 1; margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 22px; color: var(--ink); }
-/* Grand écran : les cinq chiffres sur une ligne, calés à droite ; un libellé
-   long passe sur deux lignes plutôt que la dernière tuile à la ligne. */
-@media (min-width: 901px) {
-  .social-tuiles { flex-wrap: nowrap; }
-  .social-tuiles div { align-items: center; }
-  .social-tuiles dt { max-width: 7.5rem; line-height: 1.35; letter-spacing: 0.14em; }
-}
 
 /* Filtres */
-.social-filtres { border-left: 0.5px solid var(--rule); padding-left: 18px; }
-.social-coches { margin-bottom: 14px; }
+.social-filtres { border-left: 0.5px solid var(--rule); padding-left: 22px; }
+.social-coches { margin-bottom: 18px; }
+/* Colonne de droite : trois groupes au même niveau (Filtres, Mesure, En
+   chiffres), séparés par le même filet appuyé ; Mesure absente, un seul filet. */
+.social-groupe + .social-groupe { margin-top: 34px; padding-top: 30px; border-top: 1px solid var(--rule); }
+.social-groupe-titre {
+  display: inline-block; margin: 0 0 14px; padding-bottom: 4px; border-bottom: 1.5px solid var(--cordovan);
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--cordovan);
+}
+/* Sélecteur de mesure sous les onglets : les icônes de la démo, le nom de la
+   mesure active à droite ; sur mobile, une ligne qui défile. */
+.social-mesure { display: flex; align-items: center; gap: 14px; margin: 0 0 8px; }
+.social-mesure .social-bascule { flex-wrap: nowrap; }
+.social-mesure-nom {
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-soft); white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .social-mesure { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
+  .social-mesure .social-bascule button { flex: none; }
+}
+.social-bascule button:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Partis : barres et parts côte à côte (55 / 45), les barres seules pour une moyenne. */
+.social-barres-parts { display: grid; grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); gap: 28px; align-items: start; }
+.social-barres-parts.seules { grid-template-columns: minmax(0, 1fr); }
+.social-sans-parts { font-style: italic; }
+/* Titres de panneau de même hauteur des deux côtés : barres et parts alignées. */
+.social-barres-parts .social-panneau-titre { display: flex; align-items: center; height: 24px; margin: 0; }
+/* Sous les barres, comme la démo : titre d'axe centré, légende des plateformes. */
+.social-axe-titre { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 14px 0 4px; }
+.social-axe-titre > span { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--ink); }
+.social-legende-pf { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; list-style: none; margin: 0; padding: 0; }
+.social-legende-pf li {
+  display: inline-flex; align-items: center; gap: 8px; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft);
+}
+.social-legende-pf i {
+  display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 16px;
+  border-radius: 2px; background-color: var(--ink-soft); color: #fff;
+}
+@media (max-width: 1023px) { .social-barres-parts { grid-template-columns: minmax(0, 1fr); } }
+.social-audience-nombre { margin-top: 10px; }
+/* « En chiffres » dans la colonne des filtres : empilés, filet entre les blocs. */
+.social-chiffres .social-tuiles { display: block; margin: 0; padding: 0; border: 0; }
+.social-chiffres .social-tuiles > div {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 0;
+  border-bottom: 0.5px solid var(--rule-faint);
+}
+.social-chiffres .social-tuiles > div:last-child { border-bottom: 0; }
+.social-chiffres .social-tuiles dd { order: 0; font-size: 24px; line-height: 1.1; }
+.social-chiffres .social-tuiles dt { order: 1; }
 .social-coches > div { display: flex; flex-wrap: wrap; gap: 4px; }
 .social-coches button.actif { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+.social-coches button .social-logo { vertical-align: -2px; margin-right: 2px; }
 
 /* Onglets, réglages, notes */
 .social-onglets { margin: 26px 0 8px; }
@@ -11911,6 +11965,7 @@
 .social-sous-titre, .social-note {
   font-family: "Source Serif 4", serif; font-size: 14px; color: var(--ink-softer); margin: 8px 0 14px;
 }
+.social-sous-titre { font-style: italic; }
 .social-note { font-size: 13px; }
 
 /* Panneaux */
@@ -11941,7 +11996,6 @@
 .social-barres li {
   display: grid; grid-template-columns: minmax(0, 4rem) 1fr 6rem;
   align-items: center; gap: 10px; padding: 5px 0;
-  border-bottom: 0.5px solid var(--rule-faint);
 }
 .social-audience li { grid-template-columns: minmax(0, 15rem) 1fr 5.5rem; }
 .social-nom { font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink); }
@@ -12000,14 +12054,22 @@
 /* Parts : treemap en tuiles */
 .social-treemap { position: relative; width: 100%; max-height: 360px; }
 .social-tuile { position: absolute; box-sizing: border-box; border: 2px solid var(--paper); overflow: hidden; }
-.social-tuile span {
-  position: absolute; left: 8px; right: 6px; top: 7px; color: var(--paper); white-space: nowrap;
-  font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px; line-height: 1.15;
+/* Étiquette de case : logo (ou sigle) puis pourcentage, sur une ligne, posés
+   sur une pastille de la couleur pleine du parti (lisible sur les textures). */
+.social-tuile-pastille {
+  position: absolute; left: 8px; top: 8px; display: inline-flex; align-items: center; gap: 6px;
+  max-width: calc(100% - 16px); padding: 3px 6px; border-radius: 2px; color: var(--paper); white-space: nowrap;
 }
-.social-tuile span b {
-  display: block; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 10px;
-  letter-spacing: 0.2em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis;
+.social-tuile-pastille .social-logo { display: block; flex: none; }
+.social-tuile-pastille b {
+  font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; overflow: hidden; text-overflow: ellipsis;
 }
+.social-tuile-pastille em { font-style: normal; font-family: "Playfair Display", serif; font-weight: 700; font-size: 15px; line-height: 1; }
+.social-tuile { container-type: size; }
+@container (max-width: 78px) { .social-tuile-pastille em { display: none; } }
+@container (max-width: 36px) { .social-tuile-pastille { display: none; } }
+@container (max-height: 30px) { .social-tuile-pastille { display: none; } }
 
 /* Courbes */
 .social-graphe { padding: 8px 84px 28px 48px; }
@@ -12055,7 +12117,166 @@
 .social-media-vide .social-lecture path { fill: var(--ink-soft); }
 .social-media:hover .social-lecture circle { fill: var(--cordovan); stroke: var(--cordovan); }
 .social-media:hover .social-media-vide .social-lecture path { fill: var(--paper); }
+button.social-media { padding: 0; cursor: pointer; font: inherit; }
+button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.social-lecteur { padding: 0; border: 0; background: transparent; max-width: 94vw; max-height: 94vh; overflow: visible; }
+.social-lecteur::backdrop { background: rgba(20, 18, 16, 0.72); }
+.social-lecteur-cadre { display: flex; flex-direction: column; background: var(--paper); border: 0.5px solid var(--rule); }
+.social-lecteur-cadre.portrait { width: min(360px, 92vw); }
+.social-lecteur-cadre.paysage { width: min(720px, 92vw); }
+.social-lecteur-tete {
+  display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px;
+  font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink);
+}
+.social-lecteur-tete .social-plateforme { margin: 0; }
+.social-lecteur-fermer {
+  margin-left: auto; min-width: 40px; min-height: 40px; border: 0.5px solid var(--rule); background: var(--paper);
+  font-size: 22px; line-height: 1; color: var(--ink); cursor: pointer;
+}
+.social-lecteur-fermer:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.social-lecteur iframe { display: block; width: 100%; border: 0; background: var(--paper-deep); }
+.social-lecteur-cadre.portrait iframe { height: min(640px, 72vh); }
+.social-lecteur-cadre.paysage iframe { aspect-ratio: 16 / 9; height: auto; }
+.social-lecteur-pied { margin: 0; padding: 8px 12px 10px; font-family: "Source Serif 4", serif; font-size: 12px; color: var(--ink-soft); }
+.social-lecteur-pied a { color: var(--cordovan); }
+.social-infobulle { max-height: min(78vh, 560px); overflow: hidden; }
+.social-infobulle.epinglee {
+  pointer-events: auto; display: flex; flex-direction: column; overflow: visible;
+  border-color: var(--ink-soft); box-shadow: 0 6px 22px rgba(0, 0, 0, 0.18);
+}
+.social-infobulle.epinglee .social-infobulle-fil { min-height: 0; overflow-y: auto; overscroll-behavior: contain; max-height: 16rem; }
+.social-infobulle.etroite { width: auto; max-width: none; max-height: 70vh; }
+.social-infobulle.etroite.epinglee .social-infobulle-fil { max-height: 38vh; }
+.social-infobulle-fermer {
+  position: absolute; top: 4px; right: 4px; min-width: 40px; min-height: 40px; border: 0; background: none;
+  font-size: 22px; line-height: 1; color: var(--ink-soft); cursor: pointer;
+}
+.social-infobulle-fermer:focus-visible, .social-infobulle-fiche:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+/* Lien pleine largeur, aligné sur le contenu, sous un filet fin ; hors de la
+   zone qui défile, il n'est jamais coupé. */
+.social-infobulle-fiche {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; flex: none;
+  margin-top: 8px; min-height: 40px; padding: 0; border-top: 0.5px solid var(--rule);
+  color: var(--cordovan); text-decoration: none; cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.social-infobulle-fiche:hover { text-decoration: underline; text-underline-offset: 3px; }
+.social-recherche { position: relative; max-width: 26rem; margin: 4px 0 10px; }
+.social-recherche input {
+  width: 100%; box-sizing: border-box; min-height: 40px; padding: 6px 10px; font: 15px "Source Serif 4", serif;
+  color: var(--ink); background: var(--paper); border: 0.5px solid var(--rule); border-radius: 2px;
+}
+.social-recherche input:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 1px; }
+.social-recherche ul {
+  position: absolute; z-index: 6; left: 0; right: 0; top: calc(100% + 2px); list-style: none; margin: 0; padding: 4px 0;
+  background: var(--paper); border: 0.5px solid var(--rule); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+.social-recherche li { display: flex; flex-direction: column; justify-content: center; min-height: 40px; padding: 3px 10px; cursor: pointer; }
+.social-recherche li span { font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink); }
+.social-recherche li small { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.08em; color: var(--ink-softer); }
+.social-recherche li.actif, .social-recherche li:hover { background: var(--paper-deep); }
+.social-infobulle-fil { display: grid; gap: 3px; margin-top: 8px; padding-top: 6px; border-top: 0.5px solid var(--rule-faint); }
+.social-infobulle-fil ol { list-style: none; margin: 0; padding: 0; border: 0; }
+.social-infobulle .social-infobulle-fil li {
+  display: grid; grid-template-columns: 12px 2.2rem 3.4rem minmax(0, 1fr) 2.8rem; align-items: center; gap: 5px;
+  padding: 1px 0; font-size: 12px; line-height: 1.3;
+}
+.social-infobulle-fil li .social-logo { color: var(--ink-soft); }
+.social-infobulle-fil b { font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; }
+.social-infobulle-date { font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--ink-softer); white-space: nowrap; }
+.social-infobulle-texte { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.social-infobulle-derniere { display: grid; gap: 2px; margin-top: 8px; padding-top: 6px; border-top: 0.5px solid var(--rule-faint); font-size: 12.5px; line-height: 1.35; }
+.social-infobulle-derniere b { font-weight: 600; }
 .social-fil { margin-top: 18px; }
+/* Pages de circonscription */
+.circo-retour {
+  display: inline-block; margin: 8px 0 12px; font-family: "IBM Plex Mono", monospace; font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--cordovan); text-decoration: none;
+}
+.circo-page .apropos-header { margin-bottom: 8px; }
+.circo-section { margin: 26px 0; }
+.circo-section-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+/* Une carte par candidat : un bloc net (cadre fin, liseré du parti à gauche),
+   3 colonnes, 2 sur tablette, 1 sur mobile ; hauteurs égales par rangée. */
+.circo-cartes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.circo-carte {
+  position: relative; display: flex; flex-direction: column; gap: 10px; padding: 18px 20px;
+  border: 1px solid var(--rule); border-left: 3px solid var(--rule); background: var(--paper);
+}
+.circo-vide { font-style: italic; }
+/* En-tête compact : total des abonnés et détail par compte sur une ligne. */
+.circo-abonnes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 2px; }
+.circo-grand { font-family: "Playfair Display", serif; font-weight: 700; font-size: 20px; line-height: 1; color: var(--ink); }
+.circo-comptes { list-style: none; margin: 0 0 0 4px; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.circo-abonnes a, .circo-comptes a { color: var(--ink-soft); text-decoration: none; }
+.circo-comptes a:hover { color: var(--cordovan); }
+/* Logo et chiffre centrés sur la ligne, écart fixe, quelle que soit la balise. */
+.circo-compte {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 28px; line-height: 1;
+  font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft);
+}
+.circo-compte .social-logo { display: block; flex: none; }
+.circo-chiffres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 12px; margin: 2px 0 0; }
+/* Pastille de rang en j'aime : 1er plein bordeaux, 2e-3e contour bordeaux, les autres gris. */
+.circo-pastille {
+  position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: flex-start; justify-content: center;
+  width: 34px; height: 34px; padding-top: 6px; box-sizing: border-box; border-radius: 50%;
+  border: 1.5px solid var(--rule); color: var(--ink-soft);
+}
+.circo-pastille b { font-family: "Playfair Display", serif; font-weight: 700; font-size: 15px; line-height: 1; }
+.circo-pastille sup { font-family: "IBM Plex Mono", monospace; font-size: 8px; line-height: 1; margin-left: 1px; }
+.circo-pastille.podium { border-color: var(--cordovan); color: var(--cordovan); }
+.circo-pastille.premier { border-color: var(--cordovan); background: var(--cordovan); color: var(--paper); }
+.circo-carte .social-fiche-tete { padding-right: 44px; }
+.circo-chiffres > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.circo-chiffres dd { margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px; line-height: 1.1; color: var(--ink); }
+.circo-chiffres dt {
+  font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-softer);
+}
+.circo-plateformes { display: flex; height: 14px; gap: 1px; margin-top: 4px; background: var(--rule-faint); }
+.circo-plateformes i { display: flex; align-items: center; justify-content: center; height: 100%; color: #fff; }
+.circo-meilleure a { color: var(--cordovan); }
+.circo-meilleure { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: start; margin-top: 4px; }
+.circo-meilleure .social-media { width: 64px; height: 64px; grid-row: auto; }
+.circo-meilleure p { margin: 2px 0; font-family: "Source Serif 4", serif; font-size: 13px; line-height: 1.35; color: var(--ink-soft); }
+.circo-serie { margin: auto 0 0; padding-top: 10px; }
+.circo-serie figcaption { text-align: right; margin-bottom: 2px; }
+@media (max-width: 1100px) { .circo-cartes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .circo-cartes { grid-template-columns: 1fr; }
+  .circo-comptes a, .circo-compte { min-height: 40px; }
+  .circo-carte { padding: 18px; }
+}
+.circo-serie svg { display: block; width: 100%; height: 56px; border-bottom: 0.5px solid var(--rule); }
+.circo-sigle {
+  padding: 0 5px; border-radius: 2px; color: var(--paper); font-family: "IBM Plex Mono", monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+}
+.circo-declenchement { stroke: var(--brass); stroke-width: 1px; stroke-dasharray: 3 3; }
+.circo-mois { position: relative; height: 16px; margin-top: 4px; }
+.circo-mois span {
+  position: absolute; font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-softer);
+}
+.circo-filtres { margin: 6px 0 4px; }
+.circo-filtres > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.circo-plus {
+  display: block; margin: 16px auto 0; min-height: 40px; padding: 0 18px; border: 0.5px solid var(--ink);
+  background: var(--paper); color: var(--ink); cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.circo-plus:hover { background: var(--ink); color: var(--paper); }
+.circo-plus:disabled { opacity: 0.5; cursor: wait; }
+.social-publication.compacte { grid-template-columns: 34px minmax(0, 1fr); }
+.social-media.social-media-pastille {
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--paper-deep); grid-row: 1 / span 3;
+}
+.social-nature { width: 17px; height: 17px; fill: var(--ink-soft); }
+.social-libelle { font-style: italic; color: var(--ink-softer); }
+.social-texte.repli { color: var(--ink-softer); }
+.social-repli { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-style: normal; }
 .social-fil h4 {
   margin: 0 0 4px; font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500;
   letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-softer);
@@ -12079,21 +12300,58 @@
   font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--ink-soft);
 }
 .social-carte-legende i { width: 12px; height: 12px; border-radius: 2px; }
-.social-carte-vues { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-.social-carte-province, .social-carte-encarts svg { display: block; width: 100%; height: auto; }
-.social-carte-province { max-height: 760px; }
+/* Carte principale (72 %) et, à sa droite, les encarts Montréal et Québec
+   empilés (28 %) ; sur mobile, les encarts passent dessous, côte à côte. */
+.social-carte-vues { display: grid; grid-template-columns: minmax(0, 72fr) minmax(0, 28fr); gap: 18px; align-items: start; }
+.social-carte-principale { position: relative; }
+.social-carte-encarts { display: grid; gap: 14px; }
+.social-carte-encarts figure { margin: 0; border: 0.5px solid var(--rule); }
+.social-carte-encarts svg { display: block; width: 100%; height: auto; }
+.social-carte-encarts use { stroke: var(--paper); stroke-width: 0.8px; cursor: pointer; }
+.social-carte-encarts use:hover { opacity: 0.8; }
+.social-carte-encarts use.social-carte-contour { fill: none; stroke: var(--ink); stroke-width: 2px; pointer-events: none; }
+.social-carte-encarts figcaption {
+  padding: 4px 8px; font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-softer); border-top: 0.5px solid var(--rule-faint);
+}
+.social-carte-cadre { fill: none; stroke: var(--ink-soft); stroke-width: 1px; stroke-dasharray: 4 3; pointer-events: none; }
+/* La carte occupe toute la largeur ; le viewBox (« meet ») centre la province
+   dans son cadre, au fond de la page, sans cadre ni fond propre. */
+.social-carte-province {
+  display: block; width: 100%; height: auto; max-height: 78vh;
+  touch-action: none; cursor: grab; background: none; border: 0;
+}
+.social-carte-province:active { cursor: grabbing; }
+.social-zoom { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
+.social-zoom button {
+  width: 40px; height: 40px; border: 0.5px solid var(--rule); background: var(--paper); color: var(--ink);
+  font-size: 20px; line-height: 1; cursor: pointer;
+}
+.social-zoom button:hover { background: var(--ink); color: var(--paper); }
+.social-zoom button:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.social-carte-legende-note { font-style: italic; letter-spacing: 0.04em !important; }
+/* Audience : deux colonnes de 10, pagination */
+/* Deux colonnes nettement séparées : une gouttière de 56 px coupée d'un filet ;
+   chaque chiffre reste collé à sa barre (colonne de valeurs à largeur fixe). */
+.social-audience-colonnes.deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.social-audience-colonnes.deux > ol + ol { margin-left: 28px; padding-left: 28px; border-left: 0.5px solid var(--rule); }
+.social-audience-colonnes .social-valeur { text-align: right; }
+.social-audience-colonnes .social-audience li { grid-template-columns: minmax(0, 13rem) 1fr 4.8rem; }
+.social-audience .social-nom { display: flex; align-items: center; gap: 4px; min-width: 0; white-space: nowrap; }
+.social-nom-texte { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.social-rang-petit { flex: none; width: 1.6rem; font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-softer); }
+.social-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0 4px; }
+.social-pagination button {
+  min-width: 40px; min-height: 36px; padding: 4px 10px; border: 0.5px solid var(--rule); background: transparent;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-soft); cursor: pointer;
+}
+.social-pagination button.actif { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.social-pagination button:disabled { opacity: 0.35; cursor: default; }
+.social-pagination .social-meta { margin-left: 8px; }
 .social-carte use { stroke: var(--paper); cursor: pointer; }
 .social-carte use { stroke-width: 0.6px; }
-.social-carte-encarts use { stroke-width: 1px; }
 .social-carte use:hover { opacity: 0.8; }
 .social-carte use.social-carte-contour { fill: none; stroke: var(--ink); stroke-width: 2.5px; pointer-events: none; }
-.social-carte-cadre { fill: none; stroke: var(--ink-soft); stroke-width: 1px; stroke-dasharray: 4 3; pointer-events: none; }
-.social-carte-encarts { display: grid; gap: 14px; }
-.social-carte-encarts figure { margin: 0; border: 0.5px solid var(--rule); background: var(--paper-deep); }
-.social-carte-encarts figcaption {
-  padding: 4px 8px; font-family: "IBM Plex Mono", monospace; font-size: 10px;
-  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-softer);
-}
 .social-fiche { margin: 18px 0 6px; padding-top: 12px; border-top: 0.5px solid var(--rule); }
 .social-fiche h3 { margin: 0 0 8px; font-family: "Playfair Display", serif; font-size: 22px; color: var(--ink); }
 .social-fiche ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0 28px; }
@@ -12111,7 +12369,7 @@
 .social-carte-province use:focus { outline: none; }
 .social-carte-province use:focus-visible { stroke: var(--cordovan); stroke-width: 3px; }
 .social-infobulle {
-  position: absolute; z-index: 5; width: 17rem; max-width: calc(100% - 32px); padding: 10px 12px;
+  position: absolute; z-index: 5; width: 21rem; max-width: calc(100% - 32px); padding: 10px 12px;
   pointer-events: none; background: var(--paper); border: 0.5px solid var(--rule);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); font-family: "Source Serif 4", serif; font-size: 14px; color: var(--ink);
 }
@@ -12119,24 +12377,31 @@
 .social-infobulle > .social-meta { display: block; margin-top: 2px; }
 .social-infobulle-tete { margin: 8px 0 6px; font-size: 13px; color: var(--ink-soft); }
 .social-infobulle ul { list-style: none; margin: 0; padding: 6px 0 0; border-top: 0.5px solid var(--rule-faint); }
-.social-infobulle li { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) auto 2.6rem; align-items: center; gap: 6px; padding: 2px 0; }
+/* Sigle, nom (tronqué), logos, valeur : colonnes auto, jamais de largeur
+   fixe pour les chiffres, qui ne débordent donc plus. */
+.social-infobulle li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 6px; padding: 2px 0; }
 .social-infobulle-sigle { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
-.social-infobulle-nom { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
-.social-infobulle-logos { display: inline-flex; gap: 3px; color: var(--ink-soft); }
-.social-infobulle-n { text-align: right; font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+.social-infobulle-nom { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
+.social-infobulle-logos { display: inline-flex; gap: 3px; margin-right: 2px; color: var(--ink-soft); }
+.social-infobulle-n {
+  text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;
+  font-family: "IBM Plex Mono", monospace; font-size: 12px;
+}
 .social-infobulle-pied {
   display: block; margin-top: 6px; text-align: right; font-family: "IBM Plex Mono", monospace;
   font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-softer);
 }
 
 @media (max-width: 900px) {
-  .social-tdb { grid-template-columns: 1fr; gap: 18px; }
-  .social-filtres { border-left: 0; padding-left: 0; order: -1; }
+  .social-tdb { grid-template-columns: 1fr; grid-template-areas: "entete" "haut" "filtres" "bas"; row-gap: 18px; }
+  .social-chiffres .social-tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .social-filtres { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 640px) {
   .social-raccourcis button, .social-coches button, .social-bascule button { min-height: 40px; min-width: 40px; padding: 8px 10px; }
-  .social-carte-vues { grid-template-columns: 1fr; }
+  .social-carte-vues { grid-template-columns: minmax(0, 1fr); }
   .social-carte-encarts { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .social-pagination button { min-height: 40px; }
   .social-carte-liste, .social-carte-liste select { width: 100%; max-width: none; }
   .social-carte-liste select { min-height: 40px; }
   .social-fiche-comptes a { min-height: 40px; }

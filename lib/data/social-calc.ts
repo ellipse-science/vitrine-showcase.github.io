@@ -10,6 +10,8 @@ import type { PartyKey } from "./parties";
 import {
   PLATEFORMES,
   TYPES,
+  type AudienceItem,
+  type AudienceJour,
   type CompteCirco,
   type CubeRow,
   type PalmaresItem,
@@ -18,7 +20,12 @@ import {
   type TypeCompte,
 } from "./social-meta";
 
-export type Mesure = "publications" | "jaime" | "commentaires" | "parPublication";
+/** Les mesures du module, communes aux onglets Partis et Candidats et aux
+ *  chiffres de la colonne de droite. Les abonnés sont au dernier relevé (la
+ *  période ne s'y applique pas) ; les autres portent sur la période. */
+export type Mesure = "abonnes" | "publications" | "parJour" | "jaime" | "commentaires" | "parPublication";
+/** Moyennes : pas de découpe en parts. */
+export const MOYENNES: readonly Mesure[] = ["parJour", "parPublication"];
 export type Decoupe = "ensemble" | "plateforme" | "parti";
 
 export type Filtres = {
@@ -42,9 +49,25 @@ const ajoute = (t: Totaux, r: CubeRow) => {
   t.commentaires += r[6];
 };
 
-export function valeur(t: Totaux, m: Mesure): number {
+/** Valeur d'une mesure pour des totaux. `jours` : la durée qu'ils couvrent
+ *  (pour « par jour »). Pour les abonnés, les lignes portent les abonnés dans
+ *  la case des publications (cf. lignesAbonnes). */
+export function valeur(t: Totaux, m: Mesure, jours = 1): number {
   if (m === "parPublication") return t.publications > 0 ? t.jaime / t.publications : 0;
+  if (m === "parJour") return t.publications / Math.max(1, jours);
+  if (m === "abonnes") return t.publications;
   return t[m];
+}
+
+/** Lignes « abonnés » : une par compte suivi, au dernier relevé, sur le
+ *  dernier jour de la période, abonnés dans la case des publications. Même
+ *  forme que le cube, pour réutiliser barres, parts et découpes. */
+export function lignesAbonnes(data: SocialData, f: Filtres): CubeRow[] {
+  return data.audience.flatMap((a) => {
+    if (a.abonnes == null || !f.plateformes.includes(a.plateforme) || !f.partis.includes(a.party) || !f.types.includes(a.type))
+      return [];
+    return [[f.d1, data.partis.indexOf(a.party), PLATEFORMES.indexOf(a.plateforme), TYPES.indexOf(a.type), a.abonnes, 0, 0] as CubeRow];
+  });
 }
 
 /** Lignes du cube qui passent les filtres (période comprise, sauf `sansPeriode`). */
@@ -100,13 +123,13 @@ const dans = (data: SocialData, r: CubeRow, pan: Panneau, el: Element) => {
 };
 
 /** Total d'une mesure par élément, pour chaque panneau (barres et parts). */
-export function parElement(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Mesure) {
+export function parElement(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Mesure, jours = 1) {
   return pans.map((pan) => ({
     panneau: pan,
     valeurs: pan.elements.map((el) => {
       const t = zero();
       for (const r of rows) if (dans(data, r, pan, el)) ajoute(t, r);
-      return { element: el, valeur: valeur(t, m) };
+      return { element: el, valeur: valeur(t, m, jours) };
     }),
   }));
 }
@@ -122,16 +145,17 @@ export function segments(
   pan: Panneau,
   el: Element,
   m: Mesure,
+  jours = 1,
 ): { plateforme: Plateforme | null; valeur: number }[] {
   if (m === "parPublication") {
     const t = zero();
     for (const r of rows) if (dans(data, r, pan, el)) ajoute(t, r);
-    return [{ plateforme: el.plateforme ?? pan.plateforme ?? null, valeur: valeur(t, m) }];
+    return [{ plateforme: el.plateforme ?? pan.plateforme ?? null, valeur: valeur(t, m, jours) }];
   }
   return PLATEFORMES.map((pl) => {
     const t = zero();
     for (const r of rows) if (PLATEFORMES[r[2]] === pl && dans(data, r, pan, el)) ajoute(t, r);
-    return { plateforme: pl, valeur: valeur(t, m) };
+    return { plateforme: pl, valeur: valeur(t, m, jours) };
   }).filter((sg) => sg.valeur > 0);
 }
 
@@ -156,7 +180,8 @@ export function series(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Me
       series: pan.elements.map((el) => {
         const t = debuts.map(zero);
         for (const r of rows) if (dans(data, r, pan, el)) ajoute(t[case_(r[0])], r);
-        return { element: el, valeurs: t.map((x) => valeur(x, m)) };
+        // « Par jour » : chaque case divisée par sa durée (7, ou moins en fin de période).
+        return { element: el, valeurs: t.map((x, i) => valeur(x, m, Math.min(hebdo ? 7 : 1, f.d1 - debuts[i] + 1))) };
       }),
     })),
   };
@@ -270,4 +295,79 @@ export function meneur(
   const egalite =
     premier && second && premier[1].publications === second[1].publications && premier[1].jaime === second[1].jaime;
   return { party: premier && !egalite ? premier[0] : null, publications: total, jaime: totalJaime, parParti };
+}
+
+// ── Lecteur intégré des plateformes ───────────────────────────────────────────
+export type Integration = { src: string; format: "portrait" | "paysage" };
+
+/** Adresse du lecteur OFFICIEL d'une vidéo (aucune vidéo n'est hébergée par
+ *  le site), tirée de l'adresse de la publication ; null si elle ne s'y prête
+ *  pas : le lien « Voir la publication » reste alors la seule voie. */
+export function integration(p: Plateforme, url: string | null | undefined): Integration | null {
+  if (!url) return null;
+  if (p === "tiktok") {
+    const id = url.match(/\/video\/(\d{6,25})/)?.[1];
+    return id ? { src: `https://www.tiktok.com/embed/v2/${id}`, format: "portrait" } : null;
+  }
+  if (p === "instagram") {
+    const m = url.match(/instagram\.com\/(?:[\w.]+\/)?(p|reel|tv)\/([\w-]{5,40})/);
+    return m ? { src: `https://www.instagram.com/${m[1] === "reel" ? "reel" : "p"}/${m[2]}/embed`, format: "portrait" } : null;
+  }
+  if (!/^https:\/\/(www\.|m\.|web\.)?facebook\.com\//.test(url)) return null;
+  const href = encodeURIComponent(url);
+  const reel = /\/reel\//.test(url);
+  const video = reel || /\/videos?\/|\/watch\/?\?|\/share\/v\//.test(url);
+  return video
+    ? { src: `https://www.facebook.com/plugins/video.php?href=${href}&show_text=false`, format: reel ? "portrait" : "paysage" }
+    : { src: `https://www.facebook.com/plugins/post.php?href=${href}&show_text=true`, format: "portrait" };
+}
+
+// ── Audience : classements ────────────────────────────────────────────────────
+/** Abonnés (dernier relevé), puis les cinq statistiques des tuiles du haut,
+ *  sur la période choisie, avec leur définition. */
+export type MesureAudience = Mesure;
+/** Sous ce nombre de publications sur la période, un compte n'entre pas aux
+ *  classements des moyennes : un seul billet très aimé les dominerait. */
+export const MIN_PUBLICATIONS_MOYENNE = 5;
+export const AUDIENCE_MAX = 40;
+
+/** Les comptes classés selon la mesure (40 au plus) ; un compte à 0, ou sans
+ *  valeur, n'y figure pas. Filtres Plateforme, Parti, Type ; période d0..d1
+ *  (hors abonnés). La somme sur les comptes recoupe les tuiles. */
+export function classementAudience(
+  items: readonly AudienceItem[],
+  jours: readonly AudienceJour[],
+  mesure: MesureAudience,
+  f: Pick<Filtres, "plateformes" | "partis" | "types" | "d0" | "d1">,
+): { item: AudienceItem; valeur: number }[] {
+  const somme = items.map(() => ({ publications: 0, jaime: 0, commentaires: 0 }));
+  if (mesure !== "abonnes") {
+    for (const [c, j, p, l, k] of jours) {
+      if (j < f.d0 || j > f.d1 || !somme[c]) continue;
+      somme[c].publications += p;
+      somme[c].jaime += l;
+      somme[c].commentaires += k;
+    }
+  }
+  const nbJours = f.d1 - f.d0 + 1;
+  const valeurDe = (a: AudienceItem, i: number): number | null => {
+    const s = somme[i];
+    if (mesure === "abonnes") return a.abonnes;
+    if (mesure === "parPublication")
+      return s.publications >= MIN_PUBLICATIONS_MOYENNE ? s.jaime / s.publications : null;
+    if (mesure === "parJour") return s.publications >= MIN_PUBLICATIONS_MOYENNE ? s.publications / nbJours : null;
+    return s[mesure];
+  };
+  return items
+    .map((item, i) => ({ item, valeur: valeurDe(item, i) }))
+    .filter(
+      (x): x is { item: AudienceItem; valeur: number } =>
+        x.valeur != null &&
+        x.valeur > 0 &&
+        f.plateformes.includes(x.item.plateforme) &&
+        f.partis.includes(x.item.party) &&
+        f.types.includes(x.item.type),
+    )
+    .sort((a, b) => b.valeur - a.valeur)
+    .slice(0, AUDIENCE_MAX);
 }

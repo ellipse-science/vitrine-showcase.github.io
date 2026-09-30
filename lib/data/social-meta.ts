@@ -5,6 +5,17 @@
  */
 import type { PartyKey } from "./parties";
 
+/** Nombre en français, milliers séparés par une espace fine insécable
+ *  (U+202F) : « 1 432 983 », jamais coupé, jamais trop espacé. */
+export const nombreFr = (n: number, dec = 0) =>
+  n
+    .toLocaleString("fr-CA", { maximumFractionDigits: dec, minimumFractionDigits: 0 })
+    .replace(/[\s\u00a0\u202f]/g, "\u202f");
+
+/** Les grands chiffres en Playfair : l'espace fine y est sans largeur
+ *  (« 1432983 ») ; une espace insécable ordinaire y reste lisible. */
+export const nombreGrand = (n: number, dec = 0) => nombreFr(n, dec).replace(/\u202f/g, "\u00a0");
+
 export const PLATEFORMES = ["facebook", "instagram", "tiktok"] as const;
 export type Plateforme = (typeof PLATEFORMES)[number];
 
@@ -45,8 +56,11 @@ export type AudienceItem = {
   party: PartyKey;
   plateforme: Plateforme;
   type: TypeCompte;
-  abonnes: number;
+  abonnes: number | null;
 };
+/** Activité d'un compte un jour : [compte (index dans `audience`), jour (index
+ *  dans `jours`), publications, j'aime, commentaires]. Additive, comme le cube. */
+export type AudienceJour = [number, number, number, number, number];
 export type PalmaresItem = {
   jour: string;
   nom: string;
@@ -61,6 +75,8 @@ export type PalmaresItem = {
   vignette: string | null;
   /** Vidéo, image ou texte seul (raffineur ; null avant #586). */
   media: TypeMedia | null;
+  nature?: Nature | null;
+  origine?: OrigineTexte | null;
 };
 
 /**
@@ -73,6 +89,13 @@ export type CubeRow = [number, number, number, number, number, number, number];
 
 export const TYPES_MEDIA = ["video", "image", "texte"] as const;
 export type TypeMedia = (typeof TYPES_MEDIA)[number];
+/** Nature d'une publication (raffineur, après aws-refiners#590). `partage` :
+ *  publication Facebook sans pièce jointe ni texte (événement, lien ou autre
+ *  publication partagés ; la collecte ne dit pas lequel). */
+export const NATURES = ["video", "photo", "carrousel", "texte", "partage"] as const;
+export type Nature = (typeof NATURES)[number];
+/** D'où vient le texte affiché : la publication, ou un repli. */
+export type OrigineTexte = "publication" | "description" | "autocollant";
 
 /** Une publication du fil d'une circonscription (fichier statique par
  *  circonscription, chargé à l'ouverture de sa fiche). */
@@ -87,6 +110,46 @@ export type FilItem = {
   commentaires: number;
   vignette: string | null;
   media: TypeMedia | null;
+  nature?: Nature | null;
+  origine?: OrigineTexte | null;
+};
+
+/** Page d'une circonscription (générée au build, une par circonscription). */
+export type SerieJour = { jour: string; publications: number; jaime: number };
+export type CandidatPage = {
+  nom: string;
+  party: PartyKey;
+  comptes: { plateforme: Plateforme; url: string | null; abonnes: number | null }[];
+  abonnes: number;
+  /** Depuis le déclenchement, jours complets (même source que la série). */
+  publications: number;
+  jaime: number;
+  commentaires: number;
+  parJour: number;
+  parPublication: number;
+  /** Publications depuis le déclenchement, par plateforme. */
+  parPlateforme: Record<Plateforme, number>;
+  /** Publications et j'aime par jour depuis le 1er août ; null sans la table. */
+  serie: SerieJour[] | null;
+  meilleure: FilItem | null;
+};
+export type PageCirco = {
+  slug: string;
+  nom: string;
+  region: string;
+  candidats: CandidatPage[];
+  /** Partis des cinq sans compte suivi dans la circonscription. */
+  sansCompte: PartyKey[];
+  /** Les 20 premières publications (le HTML de la page n'en porte pas plus). */
+  fil: FilItem[];
+  jours: string[];
+  campagne: string;
+  /** Code de la circonscription : son fil complet est reseaux/fil-complet/<code>.json. */
+  code?: number;
+  /** Nombre total de publications (fil complet), ou celles du fil court. */
+  total?: number;
+  /** Vrai si un fichier de fil complet existe et dépasse les 20 publications. */
+  complet?: boolean;
 };
 
 /** Un compte de candidat, dans la fiche de sa circonscription. */
@@ -105,15 +168,21 @@ export type CompteCirco = {
 /** Une circonscription : tracé (chemin SVG précalculé) et comptes suivis. */
 export type Circo = {
   code: number;
+  /** Adresse de sa page : /reseaux/circonscriptions/<slug>/. */
+  slug: string;
   nom: string;
   /** Région administrative (deux, séparées par « / », si elle chevauche). */
   region: string;
   d: string;
   comptes: CompteCirco[];
+  /** Dernière publication de ses candidats (tête du fil), pour l'infobulle. */
+  derniere: { jour: string; nom: string; party: PartyKey; plateforme: Plateforme; extrait: string } | null;
 };
 /** Fond de carte et fiches ; null si la géométrie ou les comptes manquent. */
 export type Carte = {
   vue: [number, number, number, number];
+  /** Cadrage initial : le Québec méridional (la province entière au dézoom). */
+  sud: [number, number, number, number];
   encarts: Record<"montreal" | "quebec", [number, number, number, number]>;
   circos: Circo[];
 };
@@ -133,4 +202,10 @@ export type SocialData = {
   /** Top 10 par jour et plateforme des 60 derniers jours (raffineur). */
   palmares: PalmaresItem[];
   carte: Carte | null;
+  /** Activité par compte et par jour (table social_comptes_jour) ; vide sans
+   *  elle, et l'Audience n'offre alors que les abonnés. */
+  audienceJour: AudienceJour[];
+  /** Vrai si le fichier reseaux/audience-jour.json porte cette activité (les
+   *  props la laissent vide pour rester légères). */
+  audienceJourDispo?: boolean;
 };

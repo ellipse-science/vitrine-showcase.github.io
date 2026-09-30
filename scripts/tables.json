@@ -666,6 +666,8 @@
         "jaime",
         "commentaires",
         "media_type",
+        "nature",
+        "texte_origine",
         "vignette"
       ],
       "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : publiée par le raffineur agora-social (aws-refiners) à partir de la collecte a-social-accounts d'aws-infra, remplacée à chaque passage.",
@@ -694,6 +696,8 @@
         "jaime",
         "commentaires",
         "media_type",
+        "nature",
+        "texte_origine",
         "vignette"
       ],
       "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : les 20 publications les plus récentes de chaque circonscription, publiées par le raffineur agora-social (aws-refiners), remplacée à chaque passage. Servie en un fichier statique par circonscription (app/reseaux/fil/[fichier]/route.ts), pas dans les props.",
@@ -703,6 +707,88 @@
       "api": false,
       "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
       "used_by": "lib/data/social.ts + app/reseaux/fil/[fichier]/route.ts"
+    },
+    {
+      "name": "agora_social_comptes_jour",
+      "athena": "agora_datamart-social_comptes_jour",
+      "out": "public/data/agora/agora_social_comptes_jour.json",
+      "cols": [
+        "compte",
+        "jour",
+        "publications",
+        "jaime",
+        "commentaires"
+      ],
+      "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : série de chaque compte par jour avec activité depuis le début de la collecte, pour l'Audience (classements sur la période) et les pages de circonscription ; publiée par le raffineur agora-social (aws-refiners#590), remplacée à chaque passage. Absente, les pages masquent leurs séries.",
+      "enabled": true,
+      "env": "DEV",
+      "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
+      "api": false,
+      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "used_by": "lib/data/social.ts + app/reseaux/circonscriptions/[slug]/page.tsx"
+    },
+    {
+      "name": "agora_social_candidats",
+      "athena": "agora_datamart-social_candidats",
+      "out": "public/data/agora/agora_social_candidats.json",
+      "cols": [
+        "circonscription",
+        "parti",
+        "candidat"
+      ],
+      "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : candidatures officielles des cinq partis (127 × 5, liste close du 25 septembre), publiées par le raffineur agora-social (aws-refiners#590), pour que chaque page de circonscription nomme ses candidats, même sans compte suivi.",
+      "enabled": true,
+      "env": "DEV",
+      "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
+      "api": false,
+      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "used_by": "lib/data/social.ts (loadPagesCirco)"
+    },
+    {
+      "name": "agora_social_fil_complet",
+      "athena": "agora_datamart-social_fil_complet",
+      "out": "public/data/agora/brut/agora_social_fil_complet.json",
+      "cols": [
+        "id",
+        "circonscription",
+        "jour",
+        "compte",
+        "candidat",
+        "parti",
+        "plateforme",
+        "pseudo",
+        "post_id",
+        "url",
+        "texte",
+        "media_type",
+        "nature",
+        "texte_origine",
+        "vignette"
+      ],
+      "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : CONTENU du fil complet des circonscriptions depuis le déclenchement (aws-refiners#590, ~35 000 lignes). Table brute écrite HORS du dépôt (.gitignore) ; le post-traitement social_fil_par_circo en tire un fichier par circonscription, déterministe, seul commité.",
+      "enabled": true,
+      "env": "DEV",
+      "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
+      "api": false,
+      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "used_by": "scripts/fetch_data.R (social_fil_par_circo)"
+    },
+    {
+      "name": "agora_social_fil_compteurs",
+      "athena": "agora_datamart-social_fil_compteurs",
+      "out": "public/data/agora/brut/agora_social_fil_compteurs.json",
+      "cols": [
+        "id",
+        "jaime",
+        "commentaires"
+      ],
+      "_note": "Module expérimental « Les candidats sur les réseaux » (dev seulement) : COMPTEURS du fil complet, qui changent à chaque passage (aws-refiners#590). Table brute hors du dépôt ; le post-traitement social_fil_compteurs en tire un petit fichier id -> [j'aime, commentaires], seul commité.",
+      "enabled": true,
+      "env": "DEV",
+      "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
+      "api": false,
+      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "used_by": "scripts/fetch_data.R (social_fil_compteurs)"
     }
   ],
   "post_process": [
@@ -719,6 +805,20 @@
       "out": "public/data/parole-en-chambre.json",
       "enabled": false,
       "used_by": null
+    },
+    {
+      "name": "social_fil_par_circo",
+      "source": "agora_social_fil_complet",
+      "out": "public/data/agora/fil",
+      "enabled": true,
+      "used_by": "lib/data/social.ts (loadFilComplet) + app/reseaux/fil-complet/[fichier]/route.ts"
+    },
+    {
+      "name": "social_fil_compteurs",
+      "source": "agora_social_fil_compteurs",
+      "out": "public/data/agora/fil-compteurs.json",
+      "enabled": true,
+      "used_by": "lib/data/social.ts (loadFilComplet)"
     }
   ]
 }

@@ -10,5 +10,9 @@ export async function SocialSection() {
   if (isProd) return null;
   const data = await loadSocial();
   if (!data) return null;
-  return <SocialClient data={data} />;
+  // L'activité par compte et par jour reste hors des props (fichier statique
+  // reseaux/audience-jour.json, chargé à la demande) ; le client sait seulement
+  // qu'elle existe.
+  const { audienceJour, ...reste } = data;
+  return <SocialClient data={{ ...reste, audienceJour: [], audienceJourDispo: audienceJour.length > 0 }} />;
 }
