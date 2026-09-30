@@ -1,5 +1,23 @@
 [
   {
+    "pr": 898,
+    "date": "2026-09-30T17:22:31Z",
+    "note": "La page Équipe présente un nouveau professeur collaborateur, Benjamin Guinaudeau.",
+    "version": null
+  },
+  {
+    "pr": 897,
+    "date": "2026-09-30T17:06:42Z",
+    "note": "Sur le miroir de travail : chaque candidate et chaque candidat a sa page, et la liste des comptes se fouille par nom, avec les dernières publications au survol.",
+    "version": null
+  },
+  {
+    "pr": 902,
+    "date": "2026-09-30T16:38:43Z",
+    "note": "La page Méthodologie décrit le nouveau module sur l'activité des candidates et des candidats sur les réseaux sociaux, affiché pour l'instant sur le miroir de travail seulement.",
+    "version": null
+  },
+  {
     "pr": 895,
     "date": "2026-09-30T01:34:01Z",
     "note": "Sur le miroir de travail : chaque circonscription a sa page, la carte se fouille et se zoome, et les vidéos se regardent sans quitter le site.",

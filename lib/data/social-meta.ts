@@ -57,7 +57,30 @@ export type AudienceItem = {
   plateforme: Plateforme;
   type: TypeCompte;
   abonnes: number | null;
+  /** Compte de candidat : code de sa circonscription (son fil est
+   *  reseaux/fil-complet/<code>.json) et adresse de sa page, s'il a une
+   *  candidature officielle. Absents pour les comptes de parti. */
+  code?: number;
+  fiche?: string;
 };
+/** Une candidature officielle, pour la recherche : [nom, parti (index dans
+ *  `partis`), code de la circonscription, nombre de comptes suivis]. */
+export type CandidatureItem = [string, number, number, number];
+
+/** Adresse d'une circonscription, comme la démo : sans accents, minuscules,
+ *  tout le reste en tirets (« Anjou–Louis-Riel » → « anjou-louis-riel »). */
+export const slugCirco = (nom: string) =>
+  nom
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+/** Adresse de la page d'un candidat : son nom puis sa circonscription
+ *  (« serge-bergeron-jonquiere ») ; deux homonymes ne se présentent pas dans la
+ *  même circonscription. Stable tant que la candidature ne change pas. */
+export const slugCandidat = (nom: string, circo: string) => `${slugCirco(nom)}-${slugCirco(circo)}`;
 /** Activité d'un compte un jour : [compte (index dans `audience`), jour (index
  *  dans `jours`), publications, j'aime, commentaires]. Additive, comme le cube. */
 export type AudienceJour = [number, number, number, number, number];
@@ -125,13 +148,38 @@ export type CandidatPage = {
   publications: number;
   jaime: number;
   commentaires: number;
-  parJour: number;
-  parPublication: number;
   /** Publications depuis le déclenchement, par plateforme. */
   parPlateforme: Record<Plateforme, number>;
   /** Publications et j'aime par jour depuis le 1er août ; null sans la table. */
   serie: SerieJour[] | null;
   meilleure: FilItem | null;
+  /** Adresse de sa page (candidature officielle), sinon absente. */
+  slug?: string;
+};
+
+/** Un candidat « actif » a un compte suivi et au moins une publication depuis
+ *  le déclenchement : lui seul entre au classement de sa circonscription. */
+export const candidatActif = (c: Pick<CandidatPage, "comptes" | "publications">) => c.comptes.length > 0 && c.publications > 0;
+/** Rang d'un candidat dans sa circonscription, en j'aime depuis le
+ *  déclenchement (ex æquo au même rang) ; null s'il n'est pas actif. */
+export function rangCandidat(c: CandidatPage, tous: CandidatPage[]): number | null {
+  return candidatActif(c) ? 1 + tous.filter((x) => candidatActif(x) && x.jaime > c.jaime).length : null;
+}
+
+/** Page d'un candidat (générée au build, une par candidature officielle). */
+export type PageCandidat = {
+  slug: string;
+  candidat: CandidatPage;
+  circo: { nom: string; slug: string; region: string; code: number };
+  /** Rang dans la circonscription, et nombre de candidats classés. */
+  rang: number | null;
+  nbActifs: number;
+  /** Ses 20 premières publications ; le reste se charge à la demande. */
+  fil: FilItem[];
+  total: number;
+  complet: boolean;
+  jours: string[];
+  campagne: string;
 };
 export type PageCirco = {
   slug: string;
@@ -208,4 +256,7 @@ export type SocialData = {
   /** Vrai si le fichier reseaux/audience-jour.json porte cette activité (les
    *  props la laissent vide pour rester légères). */
   audienceJourDispo?: boolean;
+  /** Les candidatures officielles (recherche de l'onglet Candidats) ; vide
+   *  sans la table social_candidats. */
+  candidatures?: CandidatureItem[];
 };

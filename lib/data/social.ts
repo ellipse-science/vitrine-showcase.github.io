@@ -21,7 +21,13 @@ import {
   type Nature,
   type OrigineTexte,
   type PageCirco,
+  type PageCandidat,
   type CandidatPage,
+  type CandidatureItem,
+  candidatActif,
+  rangCandidat,
+  slugCandidat,
+  slugCirco,
   type SerieJour,
   type CubeRow,
   type PalmaresItem,
@@ -202,16 +208,6 @@ const nature = (t: string | null | undefined): Nature | null =>
 const origine = (t: string | null | undefined): OrigineTexte | null =>
   t === "publication" || t === "description" || t === "autocollant" ? t : null;
 
-/** Adresse d'une circonscription, comme la démo : sans accents, minuscules,
- *  tout le reste en tirets (« Anjou–Louis-Riel » → « anjou-louis-riel »). */
-export const slugCirco = (nom: string) =>
-  nom
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
 /** Fil par circonscription, clé = cleCirco(nom). Pure, testée. */
 export function construireFil(
   rows: FilRow[],
@@ -333,8 +329,18 @@ export function construireSocial(
   vignetteDisponible: (cle: string) => boolean = () => false,
   fil: Map<string, FilItem[]> = new Map(),
   comptesJour: CompteJourRow[] | null = null,
+  officiels: CandidatRow[] | null = null,
 ): SocialData | null {
   if (comptes.length === 0 || jours.length === 0) return null;
+
+  // Candidatures officielles, par circonscription et parti (clé normalisée) ;
+  // codes des circonscriptions, par le même nom normalisé.
+  const codeDe = new Map((fond?.circonscriptions ?? []).map((c) => [cleCirco(c.nom), c.code]));
+  const officielDe = new Map<string, CandidatRow>();
+  for (const o of officiels ?? []) {
+    const k = partyKey(o.parti);
+    if (k && o.circonscription && o.candidat) officielDe.set(`${cleCirco(o.circonscription)}|${k}`, o);
+  }
 
   const partis = [...PARTY_KEYS];
 
@@ -373,12 +379,17 @@ export function construireSocial(
       const p = plateforme(r.plateforme);
       if (!k || !p) return [];
       const type = typeCompte(r.type);
+      const cle = type === "candidat" && r.circonscription ? cleCirco(r.circonscription) : null;
+      const code = cle ? codeDe.get(cle) : undefined;
+      const o = cle ? officielDe.get(`${cle}|${k}`) : undefined;
       return [{
         nom: type === "parti" ? PARTY_FULL_NAMES[k] : (r.candidat ?? r.pseudo ?? r.compte),
         party: k,
         plateforme: p,
         type,
         abonnes: r.abonnes,
+        ...(code != null ? { code } : {}),
+        ...(o ? { fiche: slugCandidat(o.candidat, o.circonscription) } : {}),
         compte: r.compte,
       }];
     })
@@ -451,6 +462,15 @@ export function construireSocial(
     cube,
     palmares: tops,
     carte: construireCarte(comptes, fond, fil),
+    candidatures: [...officielDe.entries()].flatMap(([cle, o]): CandidatureItem[] => {
+      const code = codeDe.get(cle.split("|")[0]);
+      const k = partyKey(o.parti)!;
+      if (code == null) return [];
+      const n = comptes.filter(
+        (r) => typeCompte(r.type) === "candidat" && r.circonscription && `${cleCirco(r.circonscription)}|${partyKey(r.parti)}` === cle,
+      ).length;
+      return [[o.candidat, partis.indexOf(k), code, n]];
+    }),
     audienceJour: (() => {
       const iCompte = new Map(audience.map((a, i) => [a.compte, i]));
       return (comptesJour ?? []).flatMap((r) => {
@@ -465,10 +485,11 @@ export function construireSocial(
 }
 
 export async function loadSocial(): Promise<SocialData | null> {
-  const [comptes, jours, palmares] = await Promise.all([
+  const [comptes, jours, palmares, officiels] = await Promise.all([
     lire<CompteRow>(SOCIAL_DATASETS.comptes),
     lire<JourRow>(SOCIAL_DATASETS.publicationsJour),
     lire<PalmaresRow>(SOCIAL_DATASETS.palmares),
+    lire<CandidatRow>(SOCIAL_DATASETS.candidats),
   ]);
   if (!comptes || !jours) return null;
   // Seule la tête de chaque fil entre dans les props (infobulle) ; le fil
@@ -481,6 +502,7 @@ export async function loadSocial(): Promise<SocialData | null> {
     vignetteSurDisque,
     await loadSocialFil(),
     await loadComptesJour(),
+    officiels,
   );
 }
 
@@ -564,15 +586,14 @@ export function construirePageCirco(
   }
   const jours = fin >= SERIES_DEBUT ? joursEntre(SERIES_DEBUT, fin) : [];
   const campagne = ELECTION_CALL_DATE ?? SERIES_DEBUT;
-  const joursCampagne = fin >= campagne ? joursEntre(campagne, fin).length : 0;
 
   // Qui figure sur la page : les officiels, sinon les noms des comptes suivis.
-  const noms: { party: PartyKey; nom: string }[] = [];
+  const noms: { party: PartyKey; nom: string; slug?: string }[] = [];
   const leursOfficiels = (officiels ?? []).filter((o) => cleCirco(o.circonscription) === cle);
   if (leursOfficiels.length) {
     for (const k of PARTY_KEYS) {
       const o = leursOfficiels.find((x) => partyKey(x.parti) === k);
-      if (o) noms.push({ party: k, nom: o.candidat });
+      if (o) noms.push({ party: k, nom: o.candidat, slug: slugCandidat(o.candidat, o.circonscription) });
     }
   } else {
     for (const k of PARTY_KEYS)
@@ -580,7 +601,7 @@ export function construirePageCirco(
         noms.push({ party: k, nom });
   }
 
-  const candidats: CandidatPage[] = noms.map(({ party: k, nom }) => {
+  const candidats: CandidatPage[] = noms.map(({ party: k, nom, slug }) => {
     // Un seul candidat par parti et circonscription : tous les comptes du parti sont les siens.
     const cs = siens.filter((r) => partyKey(r.parti) === k && (leursOfficiels.length || (r.candidat ?? r.pseudo ?? r.compte) === nom));
     const serie = comptesJour
@@ -629,11 +650,10 @@ export function construirePageCirco(
       publications,
       jaime,
       commentaires,
-      parJour: joursCampagne ? publications / joursCampagne : 0,
-      parPublication: publications ? jaime / publications : 0,
       parPlateforme,
       serie,
       meilleure,
+      ...(slug ? { slug } : {}),
     };
   });
   return {
@@ -648,10 +668,12 @@ export function construirePageCirco(
   };
 }
 
-let pagesMemo: Promise<Map<string, PageCirco>> | null = null;
-/** Toutes les pages, une lecture par build. Vide si le module n'a pas de données. */
-export function loadPagesCirco(): Promise<Map<string, PageCirco>> {
-  pagesMemo ??= (async () => {
+type BaseCirco = { code: number; page: PageCirco; tout: FilItem[] | null; connu: FilItem[] };
+let basesMemo: Promise<BaseCirco[]> | null = null;
+/** Les pages de circonscription avant découpe du fil (fil connu entier), une
+ *  lecture par build ; les pages de candidat en sont tirées. */
+function basesCirco(): Promise<BaseCirco[]> {
+  basesMemo ??= (async () => {
     const [comptes, jours, filRows, complet, comptesJour, officiels] = await Promise.all([
       lire<CompteRow>(SOCIAL_DATASETS.comptes),
       lire<JourRow>(SOCIAL_DATASETS.publicationsJour),
@@ -661,24 +683,70 @@ export function loadPagesCirco(): Promise<Map<string, PageCirco>> {
       lire<CandidatRow>(SOCIAL_DATASETS.candidats),
     ]);
     const fils = construireFil(filRows ?? [], vignetteSurDisque, TEXTE_PAGE);
-    const out = new Map<string, PageCirco>();
-    if (!comptes || comptes.length === 0 || !jours) return out;
+    if (!comptes || comptes.length === 0 || !jours) return [];
     const dernier = jours.reduce((m, r) => (r.jour > m ? r.jour : m), "");
     const fin = jourMoins(dernier, 1);
-    for (const c of (geo as FondCarte).circonscriptions) {
-      const tout = complet?.get(cleCirco(c.nom));
+    return (geo as FondCarte).circonscriptions.map((c) => {
+      const tout = complet?.get(cleCirco(c.nom)) ?? null;
       // La plus aimée : sur tout le fil connu ; la page n'en garde que 20.
       const connu = tout ?? fils.get(cleCirco(c.nom)) ?? [];
-      const page = construirePageCirco(c, comptes, connu, comptesJour, fin, officiels);
-      out.set(page.slug, {
-        ...page,
-        fil: connu.slice(0, FIL_PAGE),
-        code: c.code,
-        total: tout ? tout.length : Math.min(connu.length, FIL_PAGE),
-        complet: !!tout && tout.length > FIL_PAGE,
-      });
-    }
-    return out;
+      return { code: c.code, page: construirePageCirco(c, comptes, connu, comptesJour, fin, officiels), tout, connu };
+    });
   })();
+  return basesMemo;
+}
+
+let pagesMemo: Promise<Map<string, PageCirco>> | null = null;
+/** Toutes les pages, une lecture par build. Vide si le module n'a pas de données. */
+export function loadPagesCirco(): Promise<Map<string, PageCirco>> {
+  pagesMemo ??= basesCirco().then(
+    (bases) =>
+      new Map(
+        bases.map(({ code, page, tout, connu }) => [
+          page.slug,
+          {
+            ...page,
+            fil: connu.slice(0, FIL_PAGE),
+            code,
+            total: tout ? tout.length : Math.min(connu.length, FIL_PAGE),
+            complet: !!tout && tout.length > FIL_PAGE,
+          },
+        ]),
+      ),
+  );
   return pagesMemo;
+}
+
+/** La page d'un candidat, tirée de celle de sa circonscription. Pure, testée.
+ *  Son fil : celui de la circonscription restreint à son parti (un seul
+ *  candidat par parti et circonscription). */
+export function construirePageCandidat(
+  base: { code: number; page: PageCirco; tout: FilItem[] | null; connu: FilItem[] },
+  c: CandidatPage & { slug: string },
+): PageCandidat {
+  const siens = base.connu.filter((x) => x.party === c.party);
+  return {
+    slug: c.slug,
+    candidat: c,
+    circo: { nom: base.page.nom, slug: base.page.slug, region: base.page.region, code: base.code },
+    rang: rangCandidat(c, base.page.candidats),
+    nbActifs: base.page.candidats.filter(candidatActif).length,
+    fil: siens.slice(0, FIL_PAGE),
+    total: base.tout ? siens.length : Math.min(siens.length, FIL_PAGE),
+    complet: !!base.tout && siens.length > FIL_PAGE,
+    jours: base.page.jours,
+    campagne: base.page.campagne,
+  };
+}
+
+let candidatsMemo: Promise<Map<string, PageCandidat>> | null = null;
+/** Une page par candidature officielle (table social_candidats) ; vide sans elle. */
+export function loadPagesCandidats(): Promise<Map<string, PageCandidat>> {
+  candidatsMemo ??= basesCirco().then((bases) => {
+    const out = new Map<string, PageCandidat>();
+    for (const b of bases)
+      for (const c of b.page.candidats) if (c.slug) out.set(c.slug, construirePageCandidat(b, c as CandidatPage & { slug: string }));
+    return out;
+  });
+  return candidatsMemo;
 }
