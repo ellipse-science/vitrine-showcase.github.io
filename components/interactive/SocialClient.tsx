@@ -166,6 +166,10 @@ export function trouverCandidat(
   return { index: complet[r].index, rang: r + 1, dans, page: dans ? Math.floor(r / parPage) : null };
 }
 
+/** Adresse de la fiche d'un compte de candidat, ou null (compte de parti). */
+const ficheDe = (a: SocialData["audience"][number]) =>
+  a.type === "candidat" && a.fiche ? `${BASE_PATH}/reseaux/candidats/${a.fiche}/` : null;
+
 /** Position d'une infobulle de compte, relative au bloc du classement : sous la ligne. */
 type BulleCompte = { index: number; x: number; y: number; largeur: number };
 
@@ -209,7 +213,7 @@ export function InfobulleCompte({
           ×
         </button>
       )}
-      <strong>{a.nom}</strong>
+      <strong>{ficheDe(a) ? <a className="social-infobulle-nom-lien" href={ficheDe(a)!}>{a.nom}</a> : a.nom}</strong>
       <span className="social-meta">
         {data.partiInfo[a.party].sigle} · {a.type === "parti" ? `compte du parti sur ${nom}` : `${circo ? `${circo} · ` : ""}${nom}`}
       </span>
@@ -292,6 +296,7 @@ function Audience({
     const r = el.getBoundingClientRect();
     return { index, x: r.left - b.left, y: r.bottom - b.top, largeur: b.width };
   };
+  const toucher = useRef(false);
   const epingler = (index: number, el: HTMLElement) => {
     setSurvol(null);
     setEpingle((e) => (e?.index === index ? null : bulleDe(index, el)));
@@ -368,14 +373,28 @@ function Audience({
       className={cherche?.index === index ? "surligne" : undefined}
       tabIndex={0}
       aria-haspopup="dialog"
-      aria-label={`${rang}. ${a.nom}, ${data.partiInfo[a.party].sigle}, ${NOMS_PLATEFORMES[a.plateforme]}\u00a0: ${format(v)} ${MESURE[mesure].unite}. Entrée pour épingler ses dernières publications.`}
+      aria-label={`${rang}. ${a.nom}, ${data.partiInfo[a.party].sigle}, ${NOMS_PLATEFORMES[a.plateforme]}\u00a0: ${format(v)} ${MESURE[mesure].unite}. ${ficheDe(a) ? "Entrée pour ouvrir sa fiche, espace pour épingler ses dernières publications." : "Entrée pour épingler ses dernières publications."}`}
       onPointerEnter={(e) => e.pointerType !== "touch" && !epingle && setSurvol(bulleDe(index, e.currentTarget))}
       onPointerLeave={() => setSurvol((s) => (s?.index === index ? null : s))}
       onFocus={(e) => !epingle && setSurvol(bulleDe(index, e.currentTarget))}
       onBlur={() => setSurvol((s) => (s?.index === index ? null : s))}
-      onClick={(e) => epingler(index, e.currentTarget)}
+      // Un candidat : le clic ouvre sa fiche (au toucher, le premier tap épingle
+      // l'infobulle, qui porte le lien). Un compte de parti n'a pas de fiche :
+      // le clic épingle ses dernières publications.
+      onClick={(e) => {
+        const fiche = ficheDe(a);
+        if (fiche && !(toucher.current && epingle?.index !== index)) window.location.assign(fiche);
+        else epingler(index, e.currentTarget);
+      }}
+      onPointerDown={(e) => {
+        toucher.current = e.pointerType === "touch";
+      }}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        const fiche = ficheDe(a);
+        if (e.key === "Enter" && fiche) {
+          e.preventDefault();
+          window.location.assign(fiche);
+        } else if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           epingler(index, e.currentTarget);
         }

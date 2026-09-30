@@ -12194,6 +12194,8 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 .social-recherche li span { font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink); }
 .social-recherche li small { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.08em; color: var(--ink-softer); }
 .social-recherche li.actif, .social-recherche li:hover { background: var(--paper-deep); }
+.social-infobulle-nom-lien { color: inherit; text-decoration: none; }
+.social-infobulle-nom-lien:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .social-infobulle-entete { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .social-infobulle-fil { display: grid; gap: 3px; margin-top: 8px; padding-top: 6px; border-top: 0.5px solid var(--rule-faint); }
 .social-infobulle-fil ol { list-style: none; margin: 0; padding: 0; border: 0; }
