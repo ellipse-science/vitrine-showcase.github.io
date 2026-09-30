@@ -1,7 +1,9 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+  chargeFil,
   chargeFilComplet,
+  filtresModifies,
   Infobulle,
   InfobulleCompte,
   resumeFiltres,
@@ -217,5 +219,39 @@ describe("infobulle de la carte : filtres ou absence de compte", () => {
     expect(t).toContain("Aucun compte de candidat suivi");
     expect(t).not.toContain("ne correspond aux filtres");
     expect(rendu(vide, ["facebook", "instagram", "tiktok"])).toContain("Aucun compte de candidat suivi");
+  });
+});
+
+describe("fil des infobulles : toujours le plus récent, sans filtre", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it("carte : les 10 dernières publications, toutes plateformes et tous partis, même filtrée sur TikTok", async () => {
+    const circo = data.carte!.circos.find((c) => c.code === anjou.code)!;
+    const fil = [
+      pub("caq", "facebook", "2026-09-28", "caq-fb"),
+      pub("qs", "instagram", "2026-09-28", "qs-ig"),
+      pub("pq", "tiktok", "2026-09-27", "pq-tt"),
+    ];
+    vi.stubGlobal("fetch", async () => ({ ok: true, json: async () => fil }));
+    await chargeFil(anjou.code);
+    const html = renderToStaticMarkup(
+      <Infobulle data={data} circo={circo} m={meneur(circo.comptes, "7j", ["tiktok"], ["pq"])} periode="7j"
+        plateformes={["tiktok"]} partis={["pq"]} x={10} y={10} largeur={800} hauteur={600} epinglee onRetirerFiltres={() => {}} />,
+    );
+    const textes = [...html.matchAll(/class="social-infobulle-texte">([^<]+)</g)].map((m) => m[1]);
+    expect(textes).toEqual(["caq-fb", "qs-ig", "pq-tt"]);
+    expect(html.slice(html.indexOf("social-infobulle-fil"))).not.toContain("avec ces filtres");
+    // La liste des candidats, elle, suit les filtres.
+    expect(html).toContain("Aucun compte ne correspond aux filtres (TikTok · PQ)");
+  });
+});
+
+describe("bouton « Réinitialiser » des filtres", () => {
+  it("absent quand tout est coché, présent dès qu'un filtre diffère du défaut", () => {
+    const pf = ["facebook", "instagram", "tiktok"] as const;
+    const ty = ["candidat", "parti"] as const;
+    expect(filtresModifies(data, [...pf], data.partis, [...ty])).toBe(false);
+    expect(filtresModifies(data, ["tiktok"], data.partis, [...ty])).toBe(true);
+    expect(filtresModifies(data, [...pf], ["qs"], [...ty])).toBe(true);
+    expect(filtresModifies(data, [...pf], data.partis, ["candidat"])).toBe(true);
   });
 });

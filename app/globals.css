@@ -12460,3 +12460,8 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 .social-audience-apart .social-infobulle-fiche { margin-top: 4px; }
 .social-infobulle.compte { z-index: 6; }
 .social-infobulle.compte .social-infobulle-fil li { grid-template-columns: 12px 3.4rem minmax(0, 1fr) auto; }
+/* « Filtres » et, sur la même ligne, « Réinitialiser » dès qu'un filtre diffère du défaut. */
+.social-groupe-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.social-reinitialiser { min-height: 24px; text-decoration: none; }
+.social-reinitialiser:hover { text-decoration: underline; }
+.social-reinitialiser span { font-size: 13px; letter-spacing: 0; }

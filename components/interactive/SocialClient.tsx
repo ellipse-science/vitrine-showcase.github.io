@@ -189,6 +189,7 @@ export function InfobulleCompte({
   onFermer?: () => void;
 }) {
   const etat = useFilComplet(a.type === "candidat" ? a.code : undefined);
+  // Le compte lui-même (son parti, sa plateforme), jamais les filtres du module.
   const fil = (etat.fil ?? []).filter((x) => x.party === a.party && x.plateforme === a.plateforme).slice(0, 10);
   const circo = a.code != null ? data.carte?.circos.find((c) => c.code === a.code)?.nom : undefined;
   const aDroite = bulle.x + 352 > bulle.largeur;
@@ -1344,7 +1345,7 @@ export function CartePublication({
 // par visite et partagé entre l'infobulle (10 publications) et la fiche (20).
 const filLus = new Map<number, FilItem[] | null>();
 const filEnCours = new Map<number, Promise<void>>();
-function chargeFil(code: number) {
+export function chargeFil(code: number) {
   if (!filEnCours.has(code)) {
     filEnCours.set(
       code,
@@ -1423,6 +1424,12 @@ export function resumeFiltres(data: SocialData, plateformes: Plateforme[], parti
     .join(" · ");
 }
 
+/** Vrai si un filtre (Plateforme, Parti, Type de compte) diffère du défaut :
+ *  tout coché. Montre « Réinitialiser ». */
+export function filtresModifies(data: SocialData, plateformes: Plateforme[], partis: PartyKey[], types: TypeCompte[]): boolean {
+  return plateformes.length !== PLATEFORMES.length || partis.length !== data.partis.length || types.length !== TYPES.length;
+}
+
 /** Au survol ou au focus d'une circonscription : nom, région, parti en tête,
  *  et chaque candidat suivi avec les logos de ses comptes et ses publications
  *  de la période. Décorative pour les lecteurs d'écran (aria-hidden) : le
@@ -1462,7 +1469,10 @@ export function Infobulle({
   // Écran étroit : l'infobulle prend toute la largeur, jamais coupée.
   const etroit = largeur < 600;
   const etat = useFil(circo.code);
-  const fil = (etat.fil ?? []).filter((p) => plateformes.includes(p.plateforme) && partis.includes(p.party)).slice(0, 10);
+  // Le fil suit l'actualité, pas les filtres : les 10 dernières publications
+  // de la circonscription, toutes plateformes et tous partis. La couleur et la
+  // liste des candidats, elles, suivent les filtres.
+  const fil = (etat.fil ?? []).slice(0, 10);
   const lignes = data.partis
     .filter((k) => partis.includes(k))
     .map((k) => ({ k, comptes: circo.comptes.filter((c) => c.party === k && plateformes.includes(c.plateforme)) }))
@@ -1564,9 +1574,7 @@ export function Infobulle({
             <span className="social-meta">Chargement du fil…</span>
           )
         ) : fil.length === 0 ? (
-          <span className="social-meta">
-            {(etat.fil ?? []).length > 0 ? "Aucune publication récente avec ces filtres" : "Aucune publication récente"}
-          </span>
+          <span className="social-meta">Aucune publication récente</span>
         ) : (
           <ol>
             {fil.map((p, i) => (
@@ -2168,6 +2176,7 @@ export function SocialClient({ data }: { data: SocialData }) {
     setD0(a);
     setD1(b);
   };
+  const modifies = filtresModifies(data, plateformes, partis, types);
   const retirerFiltres = () => {
     setPlateformes([...PLATEFORMES]);
     setPartis([...data.partis]);
@@ -2246,7 +2255,14 @@ export function SocialClient({ data }: { data: SocialData }) {
 
           <aside className="social-filtres">
             <div className="social-groupe" role="group" aria-label="Filtres">
-            <h3 className="social-groupe-titre">Filtres</h3>
+            <div className="social-groupe-tete">
+              <h3 className="social-groupe-titre">Filtres</h3>
+              {modifies && (
+                <button type="button" className="social-lien social-reinitialiser" onClick={retirerFiltres} aria-label="Réinitialiser les filtres">
+                  <span aria-hidden="true">⟲</span> Réinitialiser
+                </button>
+              )}
+            </div>
             <Coches
               label="Plateforme"
               options={PLATEFORMES.map((p) => ({ cle: p, libelle: NOMS_PLATEFORMES[p] }))}

@@ -100,6 +100,11 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
     for (const p of ["Facebook", "Instagram", "TikTok"]) expect(h).toContain(`title="${p}\u00a0: 100 j’aime"`);
   });
 
+  it("filtres par défaut : pas de bouton « Réinitialiser »", () => {
+    expect(texte).toContain("Filtres");
+    expect(html).not.toContain('aria-label="Réinitialiser les filtres"');
+  });
+
   it("sans fond de carte, pas d'onglet Carte", () => {
     expect(texte).not.toContain("Carte");
   });
