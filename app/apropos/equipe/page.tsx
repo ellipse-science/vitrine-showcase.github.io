@@ -38,6 +38,12 @@ const GROUPES: { titre: string; membres: Membre[] }[] = [
     ],
   },
   {
+    titre: "Professeurs collaborateurs",
+    membres: [
+      { nom: "Benjamin Guinaudeau", titre: "Professeur collaborateur", universite: LAVAL, photo: "benjamin-guinaudeau" },
+    ],
+  },
+  {
     titre: "Scientifiques de données",
     membres: [
       { nom: "Adrien Cloutier", titre: "Scientifique de données", detail: "Doctorant", universite: LAVAL, photo: "adrien-cloutier" },
