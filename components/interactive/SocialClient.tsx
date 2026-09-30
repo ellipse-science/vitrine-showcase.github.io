@@ -863,7 +863,6 @@ function Barres({
   rows,
   pans,
   m,
-  legende = false,
   axe = true,
   maxCommun,
 }: {
@@ -871,8 +870,6 @@ function Barres({
   rows: CubeRow[];
   pans: Panneau[];
   m: Mesure;
-  /** La légende des plateformes de la démo, sous le titre d'axe. */
-  legende?: boolean;
   axe?: boolean;
   /** Échelle imposée (panneaux dessinés un à un, même échelle pour tous). */
   maxCommun?: number;
@@ -936,18 +933,6 @@ function Barres({
       {axe && (
       <div className="social-axe-titre">
         <span>{AXES[m]}</span>
-        {legende && (
-          <ul className="social-legende-pf" aria-label="Plateformes">
-            {PLATEFORMES.map((p) => (
-              <li key={p}>
-                <i className={texture(p).trim() || undefined}>
-                  <Logo p={p} taille={11} />
-                </i>
-                {NOMS_PLATEFORMES[p]}
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
       )}
     </div>
@@ -2439,7 +2424,6 @@ export function SocialClient({ data }: { data: SocialData }) {
                         m={m}
                         maxCommun={pans.length > 1 ? maxCommun : undefined}
                         axe={i === pans.length - 1}
-                        legende={i === pans.length - 1 && decoupe !== "parti"}
                       />
                       <Parts data={data} blocs={[blocs[i]]} m={m} rangs={pan.elements.length} />
                     </div>
