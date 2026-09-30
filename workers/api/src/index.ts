@@ -369,7 +369,7 @@ export default {
           if (failed.length > 0) {
             await notifySlack(
               env,
-              `sync-athena : échec(s) : ${failed.join(', ')} ; builds NON déclenchés.`,
+              `sync-athena : échec(s) : ${failed.join(' ; ')} ; builds NON déclenchés.`,
             )
             return
           }
@@ -565,7 +565,9 @@ export default {
           {
             synced: synced.length,
             tables: synced,
-            failed: failed.map((f) => f.table),
+            // Table ET cause : l'alerte Slack disait seulement « agora_decideurs_qc », la
+            // cause (« Connection terminated unexpectedly ») restait dans les journaux.
+            failed: failed.map((f) => `${f.table} (${f.error})`),
             snapshotSkipped,
             offset,
             total,
