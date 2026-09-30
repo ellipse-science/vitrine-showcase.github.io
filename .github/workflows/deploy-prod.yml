@@ -59,9 +59,23 @@ jobs:
       # mémoire utilisée toutes les 5 s pendant le build et on publie le pic
       # dans le résumé du run. `nohup … &` survit à la fin de l'étape ; le
       # runner nettoie les orphelins à la fin du job.
+      # SWAP (30 septembre 2026). Le pic mesuré frôlait les 16 Go du runner
+      # (15 650 à 15 812 Mo) ; ce jour-là, deux builds ont franchi la limite et
+      # le runner a été tué en plein build (« received a shutdown signal »),
+      # laissant le site public figé 11 h. 8 Go d'échange sur /mnt (disque
+      # temporaire du runner) : au-delà de la mémoire vive, le build ralentit au
+      # lieu de mourir. Filet, pas remède : la cause du pic reste à trouver.
+      - name: Ajouter 8 Go de mémoire d'échange
+        run: |
+          sudo fallocate -l 8G /mnt/swap-build
+          sudo chmod 600 /mnt/swap-build
+          sudo mkswap /mnt/swap-build >/dev/null
+          sudo swapon /mnt/swap-build
+          free -m
+
       - name: Démarrer la sonde mémoire
         run: |
-          nohup bash -c 'while true; do free -m | awk "NR==2 {print \$3}" >> "$RUNNER_TEMP/memoire.log"; sleep 5; done' >/dev/null 2>&1 &
+          nohup bash -c 'while true; do free -m | awk "NR==2 {u=\$3} NR==3 {s=\$3} END {print u \" \" s}" >> "$RUNNER_TEMP/memoire.log"; sleep 5; done' >/dev/null 2>&1 &
 
       - name: Build (Next.js static export + postbuild asset copy)
         run: npm run build
@@ -111,9 +125,10 @@ jobs:
         if: always()
         run: |
           if [ -s "$RUNNER_TEMP/memoire.log" ]; then
-            pic=$(sort -n "$RUNNER_TEMP/memoire.log" | tail -1)
+            pic=$(awk '{print $1}' "$RUNNER_TEMP/memoire.log" | sort -n | tail -1)
+            pic_swap=$(awk '{print $2}' "$RUNNER_TEMP/memoire.log" | sort -n | tail -1)
             total=$(free -m | awk 'NR==2 {print $2}')
-            echo "Pic mémoire du build : ${pic} Mo sur ${total} Mo" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "Pic mémoire du build : ${pic} Mo sur ${total} Mo ; échange utilisé au pic : ${pic_swap:-0} Mo" | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "Sonde mémoire : aucun échantillon" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
