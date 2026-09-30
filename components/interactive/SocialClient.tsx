@@ -243,7 +243,7 @@ export function InfobulleCompte({
           <span aria-hidden="true">→</span>
         </a>
       ) : a.type === "candidat" && !epinglee ? (
-        <span className="social-infobulle-pied">j’aime · cliquez pour épingler et faire défiler le fil</span>
+        <span className="social-infobulle-pied">cliquez pour épingler et faire défiler le fil</span>
       ) : null}
     </div>
   );
@@ -1601,7 +1601,7 @@ export function Infobulle({
           <span aria-hidden="true">→</span>
         </a>
       ) : (
-        <span className="social-infobulle-pied">j’aime · cliquez pour épingler et faire défiler le fil</span>
+        <span className="social-infobulle-pied">cliquez pour épingler et faire défiler le fil</span>
       )}
     </div>
   );
