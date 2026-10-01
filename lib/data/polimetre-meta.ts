@@ -74,11 +74,11 @@ export type PolimetreData = {
 };
 
 /* ========================================================================== *
- * MODE « promesses neuves » (#—)
+ * BLOC « promesses neuves » (#—)
  *
- * Deuxième source du même module : au lieu des ~150 promesses de la CAQ de
- * 2022, les promesses repérées dans les communiqués de presse des partis au fur
- * et à mesure qu'ils les formulent (raffineur `polimetre-promesses-neuves`).
+ * Deuxième source du même module, affichée AU-DESSUS des promesses de 2022 :
+ * les promesses repérées dans les communiqués de presse des partis au fur et à
+ * mesure qu'ils les formulent (raffineur `polimetre-promesses-neuves`).
  *
  * Deux choses changent, et elles se tiennent : la liste n'est plus fermée, donc
  * une promesse neuve n'a pas encore de VERDICT — le Polimètre ne se prononcera
@@ -86,21 +86,26 @@ export type PolimetreData = {
  * c'est QUI l'a formulée. La pastille porte donc le PARTI à la place du verdict.
  * ========================================================================== */
 
-export type ModeKey = "polimetre" | "neuves";
-
-export const MODE_LABELS: Record<ModeKey, string> = {
-  polimetre: "Promesses de 2022",
-  neuves: "Promesses de la campagne",
-};
-
-/** Onglets du mode « neuves ». Volontairement PAS de « mois » : une promesse
+/** Onglets du bloc « neuves ». Volontairement PAS de « mois » : une promesse
  *  neuve est un événement daté, et une fenêtre d'un mois noierait la nouveauté
- *  sous l'accumulé — ce que le mode « 2022 » fait déjà. */
-export type NeuveRangeKey = "day" | "week";
+ *  sous l'accumulé — ce que le mode « 2022 » fait déjà.
+ *
+ *  `campaign` n'est pas une fenêtre glissante mais une ORIGINE FIXE : le cumul
+ *  depuis le jour du bref (`ELECTION_CALL_DATE`, lib/election.ts), la même
+ *  période que les autres modules appellent « Campagne ». Elle ne dit pas « de
+ *  quoi parle-t-on cette semaine » mais « de quelles promesses a-t-on parlé
+ *  depuis le début ». Les trois sont emboîtées : day ⊂ week ⊂ campaign — c'est
+ *  ce qui permet à l'état vide de distinguer « aucune reprise » de « fenêtre
+ *  pas encore publiée » (cf. NeuvesView). L'ORDRE de ce tableau est celui des
+ *  onglets et de l'emboîtement, ne pas le changer. */
+export type NeuveRangeKey = "day" | "week" | "campaign";
+
+export const NEUVE_RANGE_ORDER: NeuveRangeKey[] = ["day", "week", "campaign"];
 
 export const NEUVE_RANGE_TAB_LABELS: Record<NeuveRangeKey, string> = {
   day: "Aujourd'hui",
   week: "Depuis une semaine",
+  campaign: "Campagne",
 };
 
 /** Clés de parti — les mêmes que PARTY_KEYS de lib/data/parties.ts, en

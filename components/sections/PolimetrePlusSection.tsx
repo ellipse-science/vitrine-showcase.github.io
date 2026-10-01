@@ -8,12 +8,13 @@ import { RawMaquette } from "@/components/sections/RawMaquette";
 // public/data), the loader returns null and we fall back to the static maquette
 // chunk so the section still appears.
 //
-// Le second mode (« promesses de la campagne », raffineur
-// `polimetre-promesses-neuves`) est OPTIONNEL et le reste : `loadPromessesNeuves`
-// renvoie null tant qu'aucune promesse n'a été repérée dans les communiqués — le
-// cas attendu hors campagne. Le module n'affiche alors pas d'inverseur de mode et
-// se comporte exactement comme avant. C'est aussi ce qui fait que le mode « 2022 »
-// ne dépend en rien du nouveau raffineur : si celui-ci tombe, rien ne bouge ici.
+// Le second bloc (« promesses de la campagne », raffineur
+// `polimetre-promesses-neuves`, empilé AU-DESSUS des promesses de 2022) est
+// OPTIONNEL et le reste : `loadPromessesNeuves` renvoie null tant qu'aucune
+// promesse n'a été repérée dans les communiqués — le cas attendu hors campagne.
+// Le module n'affiche alors que le bloc « 2022 » et se comporte exactement comme
+// avant. C'est aussi ce qui fait que le bloc « 2022 » ne dépend en rien du
+// nouveau raffineur : si celui-ci tombe, rien ne bouge ici.
 export async function PolimetrePlusSection({ asOfIso, editionKey }: { asOfIso?: string; editionKey?: string } = {}) {
   const [data, neuves] = await Promise.all([
     loadPolimetre(asOfIso),

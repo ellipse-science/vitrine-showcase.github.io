@@ -1,24 +1,25 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PolimetrePlusClient } from "@/components/interactive/PolimetrePlusClient";
+import { PolimetrePlusClient, messageEtatVide } from "@/components/interactive/PolimetrePlusClient";
 import type {
   PolimetreData,
   PromessesNeuvesData,
 } from "@/lib/data/polimetre-meta";
 
-// Ce que le mode « promesses de la campagne » AFFIRME tient dans son balisage,
+// Ce que le bloc « promesses de la campagne » AFFIRME tient dans son balisage,
 // pas dans son chargeur : la couleur d'une pastille est une classe CSS, l'absence
-// d'inverseur est une absence de nœud. Un test de chargeur ne verrait rien de
-// tout ça — d'où un test de rendu.
+// du bloc est une absence de nœud. Un test de chargeur ne verrait rien de tout
+// ça — d'où un test de rendu.
 //
 // Ce qu'il verrouille :
 //   - hors campagne (aucune promesse neuve), le module est EXACTEMENT celui
-//     d'avant : pas d'inverseur, donc aucun mode qui mène à une liste vide ;
+//     d'avant : un seul bloc, avec son h2, donc aucun bloc qui n'offre qu'une
+//     liste vide ;
 //   - la pastille porte le parti — et il n'y a que les cinq suivis à porter, le
 //     chargeur écartant les autres (cf. tests/promessesNeuves.test.ts) ;
-//   - le mode par défaut est le module historique, et l'inverseur le présente
-//     en premier — un inverseur qui ouvre sur un mode non affiché se lit comme
-//     un état incohérent.
+//   - dès qu'il y a des promesses neuves, les deux blocs sont empilés, campagne
+//     AU-DESSUS de 2022, et un seul h2 : celui du bloc du haut. Le bloc « 2022 »
+//     ne garde que son sous-titre (en h3) et son infobulle.
 
 const polimetre: PolimetreData = {
   weekEndDate: "2026-08-14",
@@ -64,54 +65,70 @@ const neuve = (o: Partial<Neuve> = {}): Neuve => ({
 const neuves: PromessesNeuvesData = {
   windowEnd: "2026-09-03",
   lastUpdated: "Dernière mise à jour : jeudi 3 septembre 2026",
-  ranges: { day: [neuve()], week: [neuve()] },
+  ranges: { day: [neuve()], week: [neuve()], campaign: [neuve()] },
 };
 
 const rendre = (n?: PromessesNeuvesData | null) =>
   renderToStaticMarkup(<PolimetrePlusClient data={polimetre} neuves={n} />);
 
-// Le mode « campagne » ne s'atteint autrement qu'au clic, donc jamais dans un
-// rendu statique — c'est ce trou qui a laissé passer un rail sans son filtre
-// d'enjeu jusqu'en revue humaine.
-const rendreCampagne = (n: PromessesNeuvesData = neuves) =>
-  renderToStaticMarkup(
-    <PolimetrePlusClient data={polimetre} neuves={n} defaultMode="neuves" />,
-  );
+// Le bloc « campagne » est dans le rendu statique dès qu'il y a des promesses
+// neuves : plus rien à forcer.
+const rendreCampagne = (n: PromessesNeuvesData = neuves) => rendre(n);
 
-describe("Polimètre+ — inverseur de mode", () => {
-  it("n'affiche aucun inverseur tant qu'aucune promesse neuve n'existe", () => {
+const H2_CAMPAGNE = "les promesses de la campagne</h2>";
+const H2_2022 = "promesses électorales à la Une</h2>";
+const SOUS_TITRE_2022 = "élections de 2022";
+
+describe("Polimètre+ — empilement des deux blocs", () => {
+  it("n'affiche que le bloc « 2022 », avec son h2, tant qu'aucune promesse neuve n'existe", () => {
     const html = rendre(null);
-    expect(html).not.toContain("ppl-mode-switch");
-    expect(html).not.toContain("Promesses de la campagne");
+    expect(html).not.toContain("les promesses de la campagne");
+    expect(html).not.toContain("ppl-sous-titre");
     // …et le module historique est intact.
-    expect(html).toContain("promesses électorales à la Une");
+    expect(html).toContain(H2_2022);
     expect(html).toContain("Depuis une semaine");
   });
 
-  it("n'affiche pas d'inverseur quand les deux fenêtres neuves sont vides", () => {
-    const html = rendre({ ...neuves, ranges: { day: [], week: [] } });
-    expect(html).not.toContain("ppl-mode-switch");
+  it("n'affiche pas le bloc « campagne » quand les trois fenêtres neuves sont vides", () => {
+    const html = rendre({ ...neuves, ranges: { day: [], week: [], campaign: [] } });
+    expect(html).not.toContain("les promesses de la campagne");
+    expect(html).toContain(H2_2022);
   });
 
-  it("offre l'inverseur dès qu'il y a des promesses neuves, mode historique par défaut", () => {
+  it("empile campagne AU-DESSUS de 2022 dès qu'une seule fenêtre neuve a des promesses", () => {
+    // Un run manuel peut publier `campaign` un jour où `day` n'a rien à dire.
+    const html = rendre({ ...neuves, ranges: { day: [], week: [], campaign: [neuve()] } });
+    expect(html).toContain(H2_CAMPAGNE);
+  });
+
+  it("empile campagne AU-DESSUS de 2022 dès qu'il y a des promesses neuves", () => {
     const html = rendre(neuves);
-    expect(html).toContain("ppl-mode-switch");
-    expect(html).toContain("Promesses de la campagne");
-    // Défaut = module historique : c'est SON titre qui sort.
-    expect(html).toContain("promesses électorales à la Une");
-    expect(html).not.toContain("les promesses de la campagne</h2>");
-    // L'ordre de l'inverseur suit le défaut : « 2022 » avant « campagne ».
-    expect(html.indexOf("Promesses de 2022")).toBeLessThan(
-      html.indexOf("Promesses de la campagne"),
-    );
+    expect(html).toContain(H2_CAMPAGNE);
+    expect(html.indexOf(H2_CAMPAGNE)).toBeLessThan(html.indexOf(SOUS_TITRE_2022));
+    // Les deux blocs gardent leurs onglets.
+    expect(html).toContain("Aujourd&#x27;hui");
+    expect(html).toContain("Depuis une semaine");
+    expect(html).toContain("Depuis un mois");
+  });
+
+  it("ne donne qu'un h2 : le bloc « 2022 » n'a que son sous-titre et son infobulle", () => {
+    const html = rendre(neuves);
+    expect(html.match(/<h2\b/g)).toHaveLength(1);
+    expect(html).not.toContain(H2_2022);
+    expect(html).toContain('<h3 class="period-subtitle ppl-sous-titre">');
+    expect(html).toContain(SOUS_TITRE_2022);
+    expect(html).toContain('aria-label="À propos du Polimètre+"');
+  });
+
+  it("ne donne qu'un lien « Méthodologie du Polimètre », dans le bloc « 2022 »", () => {
+    const html = rendre(neuves);
+    expect(html.match(/ppl-metho-rail/g)).toHaveLength(1);
+    expect(html.indexOf("ppl-metho-rail")).toBeGreaterThan(html.indexOf("ppl-sous-titre"));
   });
 });
 
-// Le mode « campagne » lui-même se rend via NeuvesView, atteignable seulement
-// après un clic. On le vérifie donc en rendant la vue à travers la coquille avec
-// un état initial forcé — impossible sans DOM — ou, plus simplement, en
-// vérifiant les pièces que la coquille lui transmet et que le CSS consomme.
-// Ci-dessous : le contrat de nommage entre le composant et globals.css.
+// Le bloc « campagne » se rend via NeuvesView. Ci-dessous : le contrat de
+// nommage entre le composant et globals.css.
 describe("Polimètre+ — contrat de nommage des pastilles de parti", () => {
   it("chaque parti suivi a sa classe de rang, de libellé et de badge dans le CSS", async () => {
     const fs = await import("node:fs/promises");
@@ -159,7 +176,11 @@ describe("Polimètre+ — enjeux du mode « campagne »", () => {
   it("n'affiche pas le filtre d'enjeu quand aucune promesse n'en porte", () => {
     const sans = {
       ...neuves,
-      ranges: { day: [neuve({ enjeu: null })], week: [neuve({ enjeu: null })] },
+      ranges: {
+        day: [neuve({ enjeu: null })],
+        week: [neuve({ enjeu: null })],
+        campaign: [neuve({ enjeu: null })],
+      },
     };
     const html = rendreCampagne(sans);
     // Le rail reste là, mais chaque option est grisée : aucune donnée à filtrer.
@@ -171,5 +192,51 @@ describe("Polimètre+ — enjeux du mode « campagne »", () => {
     const html = rendreCampagne();
     expect(html).toContain("Tous les partis");
     expect(html).toContain("Tous les enjeux");
+  });
+});
+
+describe("Polimètre+ — onglets de période du mode « campagne »", () => {
+  it("offre les trois onglets, dans l'ordre de l'emboîtement, sans « mois »", () => {
+    // Le bloc « 2022 » empilé en dessous a lui-même un onglet « Depuis un mois » :
+    // la vérification « sans mois » ne porte donc que sur le bloc campagne.
+    const html = rendreCampagne();
+    const blocCampagne = html.slice(0, html.indexOf("polimeter-plus--second"));
+    const auj = blocCampagne.indexOf("Aujourd&#x27;hui");
+    const sem = blocCampagne.indexOf("Depuis une semaine");
+    const camp = blocCampagne.indexOf(">Campagne<");
+    expect(auj).toBeGreaterThan(-1);
+    expect(sem).toBeGreaterThan(auj);
+    expect(camp).toBeGreaterThan(sem);
+    expect(blocCampagne).not.toContain("Depuis un mois");
+  });
+
+  // L'onglet ouvert au premier rendu est « Aujourd'hui » : c'est donc lui que
+  // le rendu statique laisse observer. Ce que les deux cas suivants prouvent
+  // vaut pour les trois onglets, la règle étant la même (messageEtatVide).
+  it("un onglet vide sans onglet plus court à le contredire dit « aucune reprise »", () => {
+    const html = rendreCampagne({ ...neuves, ranges: { day: [], week: [], campaign: [neuve()] } });
+    expect(html).toContain("n&#x27;a été reprise dans les Unes aujourd&#x27;hui");
+    expect(html).not.toContain("pas encore été publié");
+  });
+
+  it("un onglet vide n'affirme jamais « aucune reprise » sur une fenêtre pas publiée", () => {
+    // Le raffineur ne publie pas une fenêtre sans reprise : `campaign` vide
+    // alors que `day` est plein ne peut être qu'une fenêtre non calculée. Le
+    // rendu statique n'ouvre que « Aujourd'hui » ; on éprouve donc la règle sur
+    // la fonction elle-même, avec la donnée telle qu'elle est en production
+    // tant que la campagne n'est calculée que sur demande.
+    const ranges = { day: [neuve()], week: [], campaign: [] };
+    expect(messageEtatVide("campaign", ranges)).toBe(
+      "Le classement de cette période n'a pas encore été publié.",
+    );
+    expect(messageEtatVide("week", ranges)).toBe(
+      "Le classement de cette période n'a pas encore été publié.",
+    );
+    // Rien de plus court que « Aujourd'hui » : lui seul peut dire « aucune reprise ».
+    expect(messageEtatVide("day", ranges)).toContain("aujourd'hui");
+    // Et une campagne vide sous une semaine vide et un jour vide dit la vérité.
+    expect(messageEtatVide("campaign", { day: [], week: [], campaign: [] })).toContain(
+      "depuis le début de la campagne",
+    );
   });
 });
