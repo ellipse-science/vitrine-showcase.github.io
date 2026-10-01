@@ -23,7 +23,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
+import time
 import urllib.request
 
 API = os.environ.get("API", "https://api.vitrinedemocratique.com")
@@ -148,11 +150,61 @@ def comparer_selections() -> list:
     return out
 
 
+# Pages du site à sonder, et les six modules de l'accueil (ancres de
+# app/page.tsx). L'enveloppe <div id=…> est rendue même quand la section
+# répond null : un module absent se reconnaît à une enveloppe VIDE.
+SITE_PAGES = [p for p in os.environ.get("SITE_PAGES", "/ /edition/2026-09-26T23/ /edition/2026-09-26T19/").split() if p]
+MODULES = ["une-des-unes", "deux-solitudes", "enjeux-saillants", "partis-et-couverture", "polimetre-plus", "assemblee-nationale"]
+
+
+def get_html(url: str) -> tuple[int, str]:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Cache-Control": "no-cache",
+            "User-Agent": "vitrine-sonde/1.0 (+https://github.com/ellipse-science/vitrine-showcase.github.io)",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=60) as res:
+        return res.status, res.read().decode("utf-8", "replace")
+
+
+def sonder_modules_site() -> list:
+    """Les modules que le SITE sert vraiment, page par page — lus dans le HTML
+    servi, pas déduits des fichiers du dépôt (leçon du 27 septembre 2026 : un
+    accueil publié sans la Une ni Deux solitudes, fichiers et API complets)."""
+    out = ["### Modules servis par le site", ""]
+    try:
+        _, build = get_public(f"{SITE}/build-id.json")
+        out += [f"Build en ligne : `{json.dumps(build, ensure_ascii=False)}`", ""]
+    except Exception as exc:
+        out += [f"build-id.json illisible : {exc}", ""]
+    out += ["| Page | HTTP | octets | titre | " + " | ".join(MODULES) + " |", "|---|---|---|---|" + "---|" * len(MODULES)]
+    for page in SITE_PAGES:
+        try:
+            status, html = get_html(f"{SITE}{page}?sonde={int(time.time())}")
+        except Exception as exc:
+            out.append(f"| `{page}` | erreur {exc} | | |" + " |" * len(MODULES))
+            continue
+        cells = []
+        for mod in MODULES:
+            if f'id="{mod}"' not in html:
+                cells.append("absent")
+            elif re.search(rf'<div[^>]*id="{mod}"[^>]*></div>', html):
+                cells.append("VIDE")
+            else:
+                cells.append("ok")
+        titre = re.search(r"<title>([^<]*)</title>", html)
+        out.append(f"| `{page}` | {status} | {len(html)} | {(titre.group(1) if titre else '—')[:60]} | " + " | ".join(cells) + " |")
+    return out + [""]
+
+
 def main() -> int:
     if not KEY:
         print("VITRINE_API_KEY absente : rien à sonder.")
         return 1
     out = ["## Sonde API", ""]
+    out += sonder_modules_site()
     try:
         status, health = get("/v1/health")
         out += [f"### /v1/health (HTTP {status})", "", "```json", json.dumps(health, ensure_ascii=False, indent=2)[:6000], "```", ""]
