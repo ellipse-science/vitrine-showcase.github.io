@@ -155,12 +155,12 @@ function DossierBoard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeR
 
   const fiche = (d: DeputyRow) => (
     <DeputyFiche
-      key={d.name}
+      key={d.id}
       deputy={d}
       color={row.color}
       tier={deputyTier(d.wordsRaw, maxWords)}
-      expanded={expandedDeputy === d.name}
-      onToggle={() => setExpandedDeputy((cur) => (cur === d.name ? null : d.name))}
+      expanded={expandedDeputy === d.id}
+      onToggle={() => setExpandedDeputy((cur) => (cur === d.id ? null : d.id))}
     />
   );
 
