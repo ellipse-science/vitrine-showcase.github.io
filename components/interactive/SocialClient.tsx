@@ -2523,7 +2523,7 @@ export function SocialClient({ data }: { data: SocialData }) {
             <div className="title-block">
               <h2 className="partis-title">
                 La guerre des clics
-                {/* Texte PROPOSÉ, à valider par Adrien avant publication. */}
+                {/* Texte validé par Adrien le 2026-10-02 : ne pas le retoucher sans lui. */}
                 <InfoTip size="lg" label="À propos de La guerre des clics" dans=".social-ecran">
                   Ce module suit les comptes publics des personnes candidates aux élections québécoises de 2026 et les
                   comptes officiels des cinq partis, sur Facebook, Instagram et TikTok. On y compte leurs abonnés, leurs
