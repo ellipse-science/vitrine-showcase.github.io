@@ -14,10 +14,13 @@ export function InfoTip({
   children,
   label,
   size = "sm",
+  dans,
 }: {
   children: ReactNode;
   label: string;
   size?: "sm" | "lg";
+  /** Sélecteur d'un ancêtre dans lequel la bulle doit tenir (par défaut : la fenêtre). */
+  dans?: string;
 }) {
   const [open, setOpen]               = useState(false);
   const [bubbleStyle, setBubbleStyle] = useState<CSSProperties>({});
@@ -45,15 +48,18 @@ export function InfoTip({
     if (!open) return;
     if (!wrapRef.current) return;
     const wrap = wrapRef.current.getBoundingClientRect();
-    const vw   = window.innerWidth;
-    const w    = Math.min(300, vw - 16);
+    // Les bornes : la fenêtre, ou l'ancêtre demandé (l'écran d'un appareil dessiné).
+    const cadre  = dans ? wrapRef.current.closest(dans)?.getBoundingClientRect() : undefined;
+    const gauche = cadre ? cadre.left : 0;
+    const droite = cadre ? cadre.right : window.innerWidth;
+    const w    = Math.min(300, droite - gauche - 16);
     let left   = 0;
-    const overflowRight = (wrap.left + w) - (vw - 8);
+    const overflowRight = (wrap.left + w) - (droite - 8);
     if (overflowRight > 0) left = -overflowRight;
-    const overflowLeft = 8 - (wrap.left + left);
+    const overflowLeft = gauche + 8 - (wrap.left + left);
     if (overflowLeft > 0) left += overflowLeft;
     setBubbleStyle(left !== 0 ? { left: `${left}px`, width: `${w}px` } : {});
-  }, [open]);
+  }, [open, dans]);
 
   // Desktop : hover (souris uniquement via pointerType).
   const handlePointerEnter = (e: React.PointerEvent) => {

@@ -12396,7 +12396,10 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 .social-audience-colonnes.deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
 .social-audience-colonnes.deux > ol + ol { margin-left: 28px; padding-left: 28px; border-left: 0.5px solid var(--rule); }
 .social-audience-colonnes .social-valeur { text-align: right; }
-.social-audience-colonnes .social-audience li { grid-template-columns: minmax(0, 13rem) 1fr 4.8rem; }
+/* Le nom d'abord : il prend la plus grande part de la ligne, et passe sur deux
+   lignes plutôt que d'être coupé (tablette étroite, noms composés). */
+.social-audience-colonnes .social-audience li { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) 4.8rem; }
+.social-audience-colonnes .social-audience .social-nom-texte { white-space: normal; overflow: visible; line-height: 1.2; }
 .social-audience .social-nom { display: flex; align-items: center; gap: 4px; min-width: 0; white-space: nowrap; }
 .social-nom-texte { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .social-rang-petit { flex: none; width: 1.6rem; font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-softer); }
@@ -12702,6 +12705,10 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 @keyframes social-rebond { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
 .social-defilement > .social-tdb { padding: 0 26px 26px; }
 .social-entete.partis-title-row { margin-top: 0; padding-top: 0; }
+/* La bulle d'info à droite du titre : alignée sur lui, sans hériter de son gras. */
+.social .partis-title .saillance-info-tip { margin-left: 10px; vertical-align: middle; }
+.social .partis-title .saillance-info-bubble { font-weight: 400; z-index: 20; }
+.social .partis-title .saillance-info-bubble .tip-link { margin-top: 8px; }
 /* L'indicateur d'accueil, le trait du bas de l'écran. */
 .social-accueil {
   position: absolute; left: 50%; bottom: 5px; z-index: 530; width: 110px; height: 4px; margin-left: -55px;
@@ -12739,6 +12746,13 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
   .social-accueil { bottom: 6px; width: 100px; margin-left: -50px; }
 }
 
+/* Tablette étroite (fenêtre de 901 à 1200 px) : deux colonnes ne laissent pas
+   la place aux noms ; les 20 lignes passent en une colonne, qui défile dans
+   l'écran. */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .social-audience-colonnes.deux { grid-template-columns: minmax(0, 1fr); }
+  .social-audience-colonnes.deux > ol + ol { margin-left: 0; padding-left: 0; border-left: 0; }
+}
 /* Par candidat sur téléphone : une seule colonne de 20, le nom sur toute la
    largeur, la valeur à droite, la barre dessous. */
 @media (max-width: 900px) {

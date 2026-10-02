@@ -45,6 +45,7 @@ import {
   valeursComptes,
 } from "@/lib/data/social-calc";
 import { MONTHS_FR } from "@/lib/dates";
+import { InfoTip } from "@/components/interactive/InfoTip";
 
 type Vue = "partis" | "candidats" | "palmares" | "carte";
 /** « Barres et parts » côte à côte, ou « dans le temps ». */
@@ -2520,7 +2521,19 @@ export function SocialClient({ data }: { data: SocialData }) {
         <div className="social-tdb">
           <div className="social-entete partis-title-row">
             <div className="title-block">
-              <h2 className="partis-title">La guerre des clics</h2>
+              <h2 className="partis-title">
+                La guerre des clics
+                {/* Texte validé par Adrien le 2026-10-02 : ne pas le retoucher sans lui. */}
+                <InfoTip size="lg" label="À propos de La guerre des clics" dans=".social-ecran">
+                  Ce module suit les comptes publics des personnes candidates aux élections québécoises de 2026 et les
+                  comptes officiels des cinq partis, sur Facebook, Instagram et TikTok. On y compte leurs abonnés, leurs
+                  publications, et les j’aime et les commentaires reçus. Ces réactions en ligne ne mesurent pas un appui
+                  électoral.
+                  <a className="tip-link" href={`${BASE_PATH}/methodologie/#reseaux-sociaux`}>
+                    En savoir plus sur la méthodologie →
+                  </a>
+                </InfoTip>
+              </h2>
               <div className="period-subtitle">
                 Du {jourCourt(data.jours[d0])} au {jourCourt(data.jours[d1])} · {nombreFr(nbJours)}
                 {nbJours > 1 ? " jours" : " jour"}
