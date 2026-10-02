@@ -695,7 +695,7 @@ function cleElu(r: DeputyAgoraRow): string {
 // au changement de casier, React laissait alors traîner une carte de l'ancien
 // parti dans le nouveau. Une seule ligne par élu : mots et interventions
 // additionnés, ton et parts d'enjeux pondérés par les mots, mot distinctif et
-// variété lexicale de la ligne la plus bavarde (même règle que les cartes imprimées).
+// diversité lexicale de la ligne la plus bavarde (même règle que les cartes imprimées).
 function fusionnerLignesParElu(rows: DeputyAgoraRow[]): DeputyAgoraRow[] {
   const groupes = new Map<string, DeputyAgoraRow[]>();
   for (const r of rows) {
@@ -742,11 +742,11 @@ function lignesElusDeLaPeriode(deputyRows: DeputyAgoraRow[], period: PeriodKey, 
   );
 }
 
-function cleVariete(party: string, r: DeputyAgoraRow): string {
+function cleDiversite(party: string, r: DeputyAgoraRow): string {
   return `${party.toLowerCase()}|${cleElu(r)}`;
 }
 
-// VARIÉTÉ LEXICALE : UNE SEULE ÉCHELLE POUR TOUTE L'ASSEMBLÉE (2 oct. 2026).
+// DIVERSITÉ LEXICALE : UNE SEULE ÉCHELLE POUR TOUTE L'ASSEMBLÉE (2 oct. 2026).
 // Jusqu'ici l'échelle 1–5 était recalculée dans chaque parti (héritage du
 // tableau d'enquête de juillet 2026, où les élus n'apparaissaient qu'autour
 // de leur parti). Depuis que les cartes se comparent en main d'un parti à
@@ -759,7 +759,7 @@ function cleVariete(party: string, r: DeputyAgoraRow): string {
 // mais trois élus très bas écrasaient tout le monde au centre. Cinq points =
 // le cinquième de l'Assemblée au vocabulaire le plus varié. Le ton était déjà
 // situé sur toute la période : les deux mesures se lisent pareil.
-function niveauxVarieteElus(deputyRows: DeputyAgoraRow[], period: PeriodKey, endDate: string): Record<string, number> {
+function niveauxDiversiteElus(deputyRows: DeputyAgoraRow[], period: PeriodKey, endDate: string): Record<string, number> {
   const lignes = lignesElusDeLaPeriode(deputyRows, period, endDate);
   const parPartiEtElu = new Map<string, DeputyAgoraRow[]>();
   for (const r of lignes) {
@@ -768,7 +768,7 @@ function niveauxVarieteElus(deputyRows: DeputyAgoraRow[], period: PeriodKey, end
   }
   const mattrs: Record<string, number> = {};
   for (const [parti, rows] of parPartiEtElu) {
-    for (const r of fusionnerLignesParElu(rows)) mattrs[cleVariete(parti, r)] = Number(r.lexical_richness || 0);
+    for (const r of fusionnerLignesParElu(rows)) mattrs[cleDiversite(parti, r)] = Number(r.lexical_richness || 0);
   }
   return niveauxParQuintile(mattrs);
 }
@@ -781,7 +781,7 @@ function buildDeputyList(
   affiliations: AffiliationIndex,
   periodStart: string,
   endDate: string,
-  niveauxVariete: Record<string, number>,
+  niveauxDiversite: Record<string, number>,
 ): DeputyRow[] {
   const rows = lignesElusDeLaPeriode(deputyRows, period, endDate).filter(
     (r) => r.party.toLowerCase() === partyKey,
@@ -807,7 +807,7 @@ function buildDeputyList(
       name,
       wordsFormatted: fmtWords(r.word_count),
       wordsRaw: Number(r.word_count || 0),
-      richnessLevel: niveauxVariete[cleVariete(partyKey, r)] || 1,
+      richnessLevel: niveauxDiversite[cleDiversite(partyKey, r)] || 1,
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       signatureWord: cleanText(r.signature_word),
       signatureWordContext: citationExtrait(r.signature_word_context, r.signature_word),
@@ -904,7 +904,7 @@ function buildPeriodView(
     }
   }
   const richnessLevels = computeRichnessLevels(mattrs);
-  const niveauxVariete = niveauxVarieteElus(deputyRows, period, endDate);
+  const niveauxDiversite = niveauxDiversiteElus(deputyRows, period, endDate);
 
   const builtRows: AssembleeRow[] = sorted.map((item): AssembleeRow => {
     const isShadow = !(item.interventions > 0 && item.data);
@@ -939,7 +939,7 @@ function buildPeriodView(
         affiliations,
         rows[0]?.period_start_date ?? endDate,
         endDate,
-        niveauxVariete,
+        niveauxDiversite,
       ),
     };
   });

@@ -377,7 +377,7 @@ describe("buildPeriodView", () => {
     expect(caq.find((d) => d.id === "17929")?.wordsRaw).toBe(1000);
   });
 
-  it("situe la variété lexicale des élus sur toute l’Assemblée, pas dans chaque parti", () => {
+  it("situe la diversité lexicale des élus sur toute l’Assemblée, pas dans chaque parti", () => {
     const parti = (party: string) => ({
       period_type: "legislature", period_start_date: "2022-11-29", period_end_date: "2026-06-12",
       party, n_interventions: 20, word_count: 1200, lexical_richness: 0.82, tone_score: 0, editorial_angle: "x",
