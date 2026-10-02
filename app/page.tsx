@@ -40,10 +40,11 @@ export default async function Home() {
         <DeuxSolitudesSection />
       </div>
 
-      {/* Du plus général au plus spécifique : les enjeux dont on parle avant
-          les partis qui les portent, l'ensemble des promesses avant le détail
-          de la chambre. L'ordre d'affichage ne suit plus la numérotation des
-          modules, qui reste attachée à chaque bloc (labels de signalement). */}
+      {/* Du plus général au plus spécifique : les enjeux dont on parle, les
+          partis qui les portent dans les médias, puis sur les réseaux sociaux,
+          la chambre, et les promesses pour finir. L'ordre d'affichage ne suit
+          pas la numérotation des modules, qui reste attachée à chaque bloc
+          (labels de signalement). */}
       <div id="enjeux-saillants" data-section="Enjeux saillants">
         <TreemapSection />
       </div>
@@ -52,20 +53,22 @@ export default async function Home() {
         <PartisCouvertureSection />
       </div>
 
-      <div id="polimetre-plus" data-section="Polimètre+">
-        <PolimetrePlusSection />
-      </div>
-
-      <div id="assemblee-nationale" data-section="Assemblée nationale">
-        <AssembleeSection />
-      </div>
-
-      {/* Module expérimental, dev seulement (tables du datamart DEV). */}
+      {/* Les réseaux sociaux prennent la place du Polimètre+, qui ferme la
+          page. Module expérimental, dev seulement (tables du datamart DEV) :
+          en production, l'Assemblée suit donc directement les partis. */}
       {!isProd && (
         <div id="candidats-reseaux" data-section="Candidats sur les réseaux">
           <SocialSection />
         </div>
       )}
+
+      <div id="assemblee-nationale" data-section="Assemblée nationale">
+        <AssembleeSection />
+      </div>
+
+      <div id="polimetre-plus" data-section="Polimètre+">
+        <PolimetrePlusSection />
+      </div>
 
       <div data-section="Pied de page">
         <RawMaquette chunk="bottom" />
