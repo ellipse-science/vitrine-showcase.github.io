@@ -252,13 +252,34 @@ jobs:
         continue-on-error: true
         run: python scripts/build_deputy_cards.py --force
 
+      # LES TRAMES DES CARTES DU VESTIAIRE (vitrine#917) suivent les photos :
+      # le script ne recalcule que les portraits dont la source a changé
+      # (manifeste d'empreintes), soit rien la plupart des jours, et quelques
+      # secondes par nouveau visage. Sans cette étape, un nouvel élu aurait sa
+      # carte à la fleur de lys à la place du portrait — et le test
+      # tests/cartesSite.test.ts bloquerait la prochaine PR.
+      - name: Set up Node for the card portraits
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Node deps for the card portraits
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        run: npm ci
+      - name: Refresh card portraits (trame WebP, best-effort, non-blocking)
+        id: deputy_trames
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        continue-on-error: true
+        run: npx tsx scripts/social/portraits-trames.ts
+
       # Portrait erroné = mauvais visage sous un nom : plus proche d'une
       # erreur éditoriale que d'un aléa cosmétique. Reste néanmoins routé au
       # watchdog comme art/musique — même famille de défaillance (un
       # supplément visuel, pas le contenu de fond que sert la Une) — et la
       # fenêtre d'exposition réelle est bornée à un jour avant le prochain run.
       - name: Warn Slack if deputy-photo refresh failed
-        if: steps.photo_window.outputs.run == 'true' && (steps.deputy_photos.outcome == 'failure' || steps.deputy_cards.outcome == 'failure')
+        if: steps.photo_window.outputs.run == 'true' && (steps.deputy_photos.outcome == 'failure' || steps.deputy_cards.outcome == 'failure' || steps.deputy_trames.outcome == 'failure')
         run: |
           if [ -n "$SLACK_WEBHOOK_URL" ]; then
             RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
