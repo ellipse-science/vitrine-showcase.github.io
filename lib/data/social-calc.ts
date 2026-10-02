@@ -89,6 +89,14 @@ export function parJour(data: SocialData, f: Filtres): number[] {
   return out;
 }
 
+/** Publications par jour et par parti (filtres sans la période), pour la
+ *  frise empilée : valeurs[jour][index du parti dans `data.partis`]. */
+export function parJourParti(data: SocialData, f: Filtres): number[][] {
+  const out = data.jours.map(() => new Array(data.partis.length).fill(0) as number[]);
+  for (const r of lignes(data, f, true)) out[r[0]][r[1]] += r[4];
+  return out;
+}
+
 /** Un élément dessiné : un parti, ou une plateforme dans la découpe par parti. */
 export type Element = { cle: string; party?: PartyKey; plateforme?: Plateforme };
 export type Panneau = { cle: string; party?: PartyKey; plateforme?: Plateforme; elements: Element[] };
@@ -176,7 +184,12 @@ export function series(data: SocialData, rows: CubeRow[], pans: Panneau[], m: Me
 }
 
 /** Les plus aimées de la période et des filtres, tirées du top quotidien. */
-export function palmares(data: SocialData, f: Filtres): PalmaresItem[] {
+/** Ce qui classe le palmarès : les j'aime (défaut) ou les commentaires ;
+ *  abonnés et publications ne se comptent pas par publication. */
+export type MesurePalmares = "jaime" | "commentaires";
+export const mesurePalmares = (m: Mesure): MesurePalmares => (m === "commentaires" ? "commentaires" : "jaime");
+
+export function palmares(data: SocialData, f: Filtres, m: MesurePalmares = "jaime"): PalmaresItem[] {
   const du = data.jours[f.d0];
   const au = data.jours[f.d1];
   const pl = new Set(f.plateformes);
@@ -184,7 +197,7 @@ export function palmares(data: SocialData, f: Filtres): PalmaresItem[] {
   const ty = new Set(f.types);
   return data.palmares
     .filter((p) => p.jour >= du && p.jour <= au && pl.has(p.plateforme) && pa.has(p.party) && ty.has(p.type))
-    .sort((a, b) => b.jaime - a.jaime)
+    .sort((a, b) => b[m] - a[m] || b.jaime - a.jaime)
     .slice(0, PALMARES_N);
 }
 
@@ -244,45 +257,59 @@ export function treemap<T>(items: { item: T; valeur: number }[], ratio = 1): Tui
 // ── Carte des circonscriptions ────────────────────────────────────────────────
 /** Fenêtre de la carte : l'activité par compte est précalculée par le
  *  raffineur sur ces deux périodes seulement (la frise ne s'y applique pas). */
-export type PeriodeCarte = "7j" | "campagne";
+/** Valeur de chaque compte de `audience` (par index) pour un indicateur et
+ *  une fenêtre : les abonnés au dernier relevé, sinon la somme de la table
+ *  « compte par jour » entre d0 et d1. */
+export function valeursComptes(
+  items: readonly AudienceItem[],
+  jours: readonly AudienceJour[],
+  m: Mesure,
+  f: Pick<Filtres, "d0" | "d1">,
+): number[] {
+  if (m === "abonnes") return items.map((a) => a.abonnes ?? 0);
+  const out = items.map(() => 0);
+  const k = m === "publications" ? 2 : m === "jaime" ? 3 : 4;
+  for (const r of jours) if (r[1] >= f.d0 && r[1] <= f.d1 && r[0] < out.length) out[r[0]] += r[k];
+  return out;
+}
 
 export type Meneur = {
-  /** Parti qui reçoit le plus de j'aime, ou null : aucun j'aime, ou égalité parfaite. */
+  /** Parti en tête, ou null : rien du tout, ou égalité parfaite. */
   party: PartyKey | null;
-  publications: number;
-  jaime: number;
-  parParti: Partial<Record<PartyKey, { publications: number; jaime: number }>>;
+  /** Total de la circonscription (indicateur choisi, comptes qui passent les filtres). */
+  valeur: number;
+  parParti: Partial<Record<PartyKey, number>>;
 };
 
-/** Le parti en tête d'une circonscription : le plus de j'aime reçus sur la
- *  période, puis le plus de publications en cas d'égalité. Filtres Plateforme
- *  et Parti. */
-export function meneur(
-  comptes: CompteCirco[],
-  periode: PeriodeCarte,
+/** Le parti en tête de chaque circonscription (code → meneur) : la somme, par
+ *  parti, de la valeur des comptes de candidats qui passent les filtres. */
+export function meneursCarte(
+  items: readonly AudienceItem[],
+  valeurs: readonly number[],
   plateformes: readonly Plateforme[],
   partis: readonly PartyKey[],
-): Meneur {
-  const parParti: Meneur["parParti"] = {};
-  let total = 0;
-  let totalJaime = 0;
-  for (const c of comptes) {
-    if (!plateformes.includes(c.plateforme) || !partis.includes(c.party)) continue;
-    const pub = periode === "7j" ? c.publications7j : c.publicationsCampagne;
-    const jaime = periode === "7j" ? c.jaime7j : c.jaimeCampagne;
-    const acc = (parParti[c.party] ??= { publications: 0, jaime: 0 });
-    acc.publications += pub;
-    acc.jaime += jaime;
-    total += pub;
-    totalJaime += jaime;
+): Map<number, Meneur> {
+  const parCirco = new Map<number, Meneur["parParti"]>();
+  items.forEach((a, i) => {
+    if (a.code == null || a.type !== "candidat") return;
+    if (!plateformes.includes(a.plateforme) || !partis.includes(a.party)) return;
+    const v = valeurs[i] ?? 0;
+    const acc = parCirco.get(a.code) ?? {};
+    acc[a.party] = (acc[a.party] ?? 0) + v;
+    parCirco.set(a.code, acc);
+  });
+  const out = new Map<number, Meneur>();
+  for (const [code, parParti] of parCirco) {
+    const rang = (Object.entries(parParti) as [PartyKey, number][]).filter(([, v]) => v > 0).sort((x, y) => y[1] - x[1]);
+    const [premier, second] = rang;
+    const egalite = premier && second && premier[1] === second[1];
+    out.set(code, {
+      party: premier && !egalite ? premier[0] : null,
+      valeur: rang.reduce((t, [, v]) => t + v, 0),
+      parParti,
+    });
   }
-  const rang = (Object.entries(parParti) as [PartyKey, { publications: number; jaime: number }][])
-    .filter(([, v]) => v.jaime > 0)
-    .sort((a, b) => b[1].jaime - a[1].jaime || b[1].publications - a[1].publications);
-  const [premier, second] = rang;
-  const egalite =
-    premier && second && premier[1].publications === second[1].publications && premier[1].jaime === second[1].jaime;
-  return { party: premier && !egalite ? premier[0] : null, publications: total, jaime: totalJaime, parParti };
+  return out;
 }
 
 // ── Lecteur intégré des plateformes ───────────────────────────────────────────
@@ -313,7 +340,7 @@ export function integration(p: Plateforme, url: string | null | undefined): Inte
 // ── Audience : classements ────────────────────────────────────────────────────
 /** Abonnés (dernier relevé), puis les totaux de la période. */
 export type MesureAudience = Mesure;
-export const AUDIENCE_MAX = 40;
+export const AUDIENCE_MAX = 20;
 
 /** Les comptes classés selon la mesure (40 au plus, `max` pour le classement
  *  entier) ; un compte à 0, ou sans valeur, n'y figure pas. Filtres
