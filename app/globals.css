@@ -2997,7 +2997,6 @@
     border: 1px solid var(--rule);
     border-bottom: 3px solid var(--rule);
     background: var(--paper-deep);
-    perspective: 1500px;
   }
 
   /* LE VESTIAIRE PARLE COMME LES CARTES (2 oct. 2026). Même vocabulaire que
@@ -3024,6 +3023,11 @@
     border-left: 1px solid var(--rule);
     cursor: pointer;
     transform-style: preserve-3d;
+    /* La perspective de CHAQUE casier, centrée sur lui : calculée depuis le
+       milieu du banc, une porte du bord gauche, vue de très loin sur le côté,
+       s'écrasait contre sa charnière en s'ouvrant. */
+    perspective: 1100px;
+    perspective-origin: 50% 50%;
     text-align: left;
   }
   .casier:first-child { border-left: none; }
@@ -3189,9 +3193,22 @@
     transform: rotateY(-100deg);
     pointer-events: none;
   }
-  /* Une porte ouverte au premier casier sort du banc : elle est rognée au
-     bord du module plutôt que d'élargir la page. */
   .vestiaire { overflow-x: clip; }
+
+  /* LA PORTE DU BORD GAUCHE s'ouvre de l'autre côté. Charnières à gauche, le
+     premier casier n'a pas de voisin de ce côté : sa porte sortait du banc et
+     était rognée au bord du module. On le monte « à droite » — charnières à
+     droite, poignée à gauche — comme on le fait dans un vrai vestiaire. Sur
+     téléphone (deux colonnes), c'est toute la colonne de gauche. */
+  .casier:first-child .casier-porte { transform-origin: right center; }
+  .casier:first-child:hover .casier-porte { transform: rotateY(13deg); }
+  .casier.est-ouvert:first-child .casier-porte,
+  .casier.est-ouvert:first-child:hover .casier-porte { transform: rotateY(100deg); }
+  .casier:first-child .casier-charniere { left: auto; right: -3px; }
+  .casier:first-child .casier-poignee { right: auto; left: 7px; }
+  .casier:first-child .casier-face { padding: 12px 16px 10px 14px; }
+  .casier:first-child .casier-etiquette { margin: 0 4% 0 16px; }
+  .casier:first-child .casier-fiche { margin: 0 2% 0 14px; }
 
   .casier-charniere {
     position: absolute;
@@ -4094,6 +4111,17 @@
        Le 16 px codé en dur reprenait le dessus sur ce calcul et retronquait
        « 6 578 506 » d'un pixel. */
     .casier-face { padding: 9px 11px 8px 12px; gap: 7px; }
+    /* Deux colonnes : la colonne de gauche s'ouvre vers la droite. On annule
+       d'abord la règle du premier casier, puis on l'applique aux impairs. */
+    .casier:nth-child(odd) .casier-porte { transform-origin: right center; }
+    .casier:nth-child(odd):hover .casier-porte { transform: rotateY(13deg); }
+    .casier.est-ouvert:nth-child(odd) .casier-porte,
+    .casier.est-ouvert:nth-child(odd):hover .casier-porte { transform: rotateY(100deg); }
+    .casier:nth-child(odd) .casier-charniere { left: auto; right: -3px; }
+    .casier:nth-child(odd) .casier-poignee { right: auto; left: 7px; }
+    .casier:nth-child(odd) .casier-face { padding: 9px 12px 8px 11px; }
+    .casier:nth-child(odd) .casier-etiquette { margin: 0 4% 0 16px; }
+    .casier:nth-child(odd) .casier-fiche { margin: 0 2% 0 14px; }
     .casier-persiennes > i:nth-child(n + 4) { display: none; }
     /* Encoche masquée : sur une grille 2 × 2, elle ne peut désigner qu'une
        COLONNE. Un casier ouvert au premier rang verrait donc la flèche pointer
