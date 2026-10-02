@@ -43,6 +43,7 @@ import { TABLES } from './tables'
 import { authenticate, recordUsage } from './auth'
 import { handleAdmin } from './admin'
 import { handleArt, type ArtEnv } from './art'
+import { handleCartes } from './cartes'
 import { handleFlappy } from './flappy'
 import {
   cycleId,
@@ -432,10 +433,13 @@ export default {
     // la leçon du 2026-08-19, où le garde avalait POST /v1/sync-athena.
     const isSync = seg[0] === 'v1' && (seg[1] === 'sync' || seg[1] === 'sync-athena')
     const isArt = seg[0] === 'v1' && seg[1] === 'art'
+    // /v1/cartes accepte PUT (dépôt des cartes par Refresh Data) : même
+    // exemption que l'art. Cf. cartes.ts.
+    const isCartes = seg[0] === 'v1' && seg[1] === 'cartes'
     // /v1/flappy accepte POST (soumission de score, anonyme) : exempté du
     // garde 405 comme les routes de synchro et d'art.
     const isFlappy = seg[0] === 'v1' && seg[1] === 'flappy'
-    if (!isSync && !isArt && !isFlappy && request.method !== 'GET' && request.method !== 'HEAD') {
+    if (!isSync && !isArt && !isCartes && !isFlappy && request.method !== 'GET' && request.method !== 'HEAD') {
       return problem(405, 'Seules les requêtes GET sont acceptées.')
     }
 
@@ -584,6 +588,12 @@ export default {
       // publique cachée 60 s, soumission anonyme validée serveur. Cf. flappy.ts.
       if (segments[0] === 'v1' && segments[1] === 'flappy' && segments[2] === 'leaderboard') {
         return handleFlappy(request, ctx, sql)
+      }
+
+      // /v1/cartes/* — les cartes de député en haute résolution (R2, préfixe
+      // art/cartes/). Lecture publique en cache, dépôt sous clé. Cf. cartes.ts.
+      if (segments[0] === 'v1' && segments[1] === 'cartes') {
+        return handleCartes(request, env, ctx, sql, segments.slice(2).join('/'))
       }
 
       if (segments[0] === 'v1' && segments[1] === 'art') {

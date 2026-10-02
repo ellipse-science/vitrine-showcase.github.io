@@ -868,8 +868,12 @@ async function main() {
     // élu n'est pas rattrapable. Un échantillon ou une carte seule sort
     // directement : on la regarde justement pour décider.
     const cible = args.echantillon || typeof args.only === "string" || !!args.paquet;
+    // --sans-relecture : le RENDU AUTOMATISÉ des cartes à télécharger
+    // (workflow Refresh Data, vitrine#920). Ces PNG sont ce que le site
+    // affiche déjà ; personne ne les envoie à un élu. Le verrou reste la règle
+    // pour tout tirage fait à la main.
     if (args.png || impression) {
-      if (!cible) {
+      if (!cible && !args["sans-relecture"]) {
         const vue = await fs.readFile(planche, "utf8").catch(() => "");
         if (!vue.includes(`data-empreinte="${empreinte}"`)) {
           throw new Error(
@@ -903,6 +907,14 @@ async function main() {
         await page.screenshot({ path: path.join(dossierSortie, `${pages[i].slug}.png`), type: "png" });
       }, "images");
       console.log(`\n  ${cartes.length} cartes (recto + verso) → ${dossierSortie}${impression ? " (fond perdu 3 mm, 856 ppp)" : ""}`);
+      // MANIFESTE du tirage : ce que le site a besoin de savoir pour offrir le
+      // téléchargement — la date des données, celle du rendu, la liste des
+      // cartes (vitrine#920). Écrit avec les PNG, déposé avec eux.
+      await fs.writeFile(path.join(dossierSortie, "manifeste.json"), `${JSON.stringify({
+        periode, edition: cartes[0]?.edition ?? "", donneesAu: seance, rendu: new Date().toISOString(),
+        largeur: W * echelle, hauteur: H * echelle,
+        cartes: cartes.map((c) => ({ slug: c.slug, numero: `${c.numero}${c.variante}`, nom: nomImprime(c.deputy.name), circonscription: c.deputy.circonscription ?? null, parti: c.cle })),
+      }, null, 1)}\n`);
       rapporterDebordements(debordements);
       rapporterRetours();
       rapporterCoupes();

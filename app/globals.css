@@ -3578,6 +3578,26 @@
   .carte.carte--fabrique .carte-verso { background: none; padding: 0; border: 0; display: block; overflow: hidden; }
   .cd-boite { display: block; width: 100%; height: 100%; overflow: hidden; }
   .cd-hote { display: block; transform-origin: 0 0; }
+
+  /* TÉLÉCHARGER LA CARTE (vitrine#920) : un lien discret sous le carton, dans
+     la typographie des libellés du module ; grisé tant que le dépôt n'a pas
+     la carte de la période. */
+  .carte-telecharger {
+    display: block;
+    margin: 8px auto 0;
+    padding: 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-softer);
+    cursor: pointer;
+  }
+  .carte-telecharger:hover:not(:disabled) { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+  .carte-telecharger:disabled { cursor: progress; opacity: 0.7; }
+  .carte-telecharger.est-absente { border-bottom: none; opacity: 0.6; cursor: default; }
   .carte-pivot {
     position: relative;
     display: block;

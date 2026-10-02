@@ -357,6 +357,61 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # LES CARTES DE DÉPUTÉ À TÉLÉCHARGER (vitrine#920), rendues par le
+      # générateur (Chromium) puis déposées en R2 par l'API — seulement quand
+      # le fichier des députés a changé dans le commit qui précède, soit une
+      # fois par semaine (le raffineur agora tourne le mardi). Rendu à l'écran
+      # (`--style web`, 2 142 × 2 992), trois périodes, ≈ 6 min chacune, plus la
+      # trame des 129 portraits la première fois (≈ 25 min) : d'où le cache,
+      # clé = empreinte des photos sources. Non bloquant : un échec laisse les
+      # cartes de la semaine passée en ligne et prévient Slack.
+      - name: Did the deputy data change?
+        id: cartes_window
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          if git diff --name-only HEAD~1 HEAD -- public/data/agora/agora_decideurs_qc_deputes.json | grep -q .; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Set up Node for the cards
+        if: steps.cartes_window.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Node deps and Chromium for the cards
+        if: steps.cartes_window.outputs.run == 'true'
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps
+      - name: Restore the portrait halftone cache
+        if: steps.cartes_window.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: social-out/.cache-trames
+          key: cache-trames-${{ hashFiles('public/images/deputes/*.jpg', 'public/images/deputes/historique/*.jpg', 'lib/cartes/trame.ts') }}
+      - name: Render and deposit the downloadable cards (best-effort, non-blocking)
+        id: cartes_depot
+        if: steps.cartes_window.outputs.run == 'true'
+        continue-on-error: true
+        env:
+          VITRINE_API_KEY: ${{ secrets.VITRINE_API_KEY }}
+        run: |
+          for periode in legislature session last_pdq; do
+            npx tsx scripts/social/cartes-deputes.ts --style web --png --sans-relecture --sans-ouvrir \
+              --periode "$periode" --sortie "social-out/cartes-$periode"
+            npx tsx scripts/social/deposer-cartes.ts --periode "$periode" --dossier "social-out/cartes-$periode"
+          done
+      - name: Warn Slack if the downloadable cards failed
+        if: steps.cartes_window.outputs.run == 'true' && steps.cartes_depot.outcome == 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_VITRINE_SONAR_WEBHOOK_URL }}
+        run: |
+          [ -n "$SLACK_WEBHOOK_URL" ] && curl -fsS -X POST -H 'content-type: application/json' \
+            -d "{\"text\":\"⚠️ Refresh Data : le rendu ou le dépôt des cartes de député à télécharger a échoué (vitrine#920). Les cartes de la semaine passée restent en ligne. ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+            "$SLACK_WEBHOOK_URL" || true
+
       # Recharge Postgres AVANT de pousser sur `prod`.
       #
       # C'EST UNE QUESTION D'ORDRE, ET ELLE A DÉJÀ COÛTÉ UNE RÉGRESSION. La

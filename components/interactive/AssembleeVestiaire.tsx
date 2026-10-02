@@ -5,6 +5,7 @@ import type { AffiliationSegment, AssembleeRow, DeputyRow } from "@/lib/data/ass
 import { slugCirco } from "@/lib/cartes/fonctions";
 import type { CarteSite } from "@/lib/cartes/site";
 import { CarteDepute, carteComplete, type ContexteCartes } from "@/components/interactive/CarteDepute";
+import { TelechargerCarte } from "@/components/interactive/TelechargerCarte";
 import type { PartyKey } from "@/lib/data/parties";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 
@@ -281,6 +282,13 @@ function ToneScale({ score, maxAbs, compact }: {
 // indépendante garde la carte « Indépendant », comme sur le carton). Sans
 // fiche — un élu que la série ne connaîtrait pas — l'ancienne carte du site
 // sert de secours : une case vide dirait le contraire de ce qu'on veut dire.
+/** La fiche de carte d'un élu : par sa circonscription, et son parti quand la
+ *  même personne a deux lignes ; sinon la seule carte du siège. */
+function ficheDeCarte(deputy: DeputyRow, party: PartyKey, cartes: CarteSite[]): CarteSite | undefined {
+  const slug = slugCirco(deputy);
+  return cartes.find((c) => c.elu === slug && c.cle === party) ?? cartes.find((c) => c.elu === slug);
+}
+
 function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes, contexte }: {
   deputy: DeputyRow;
   party: PartyKey;
@@ -292,8 +300,7 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
   contexte: ContexteCartes | null;
 }) {
   const partyLabel = party.toUpperCase();
-  const slug = slugCirco(deputy);
-  const fiche = cartes.find((c) => c.elu === slug && c.cle === party) ?? cartes.find((c) => c.elu === slug);
+  const fiche = ficheDeCarte(deputy, party, cartes);
   const carte = fiche && contexte ? carteComplete(fiche, deputy, contexte) : null;
   if (carte && contexte) {
     return (
@@ -667,6 +674,9 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
                     cartes={cartes}
                     contexte={contexte}
                   />
+                  {contexte && ficheDeCarte(dep, openRow.key, cartes) && (
+                    <TelechargerCarte periode={contexte.periode} slug={ficheDeCarte(dep, openRow.key, cartes)!.slug} nom={dep.name} />
+                  )}
                   {dep.affiliationHistory && (
                     <ParliamentaryHistory segments={dep.affiliationHistory} />
                   )}
