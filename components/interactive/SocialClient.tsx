@@ -800,7 +800,7 @@ function Coches<T extends string>({
               style={on && couleur ? { background: couleur(o.cle), borderColor: couleur(o.cle) } : undefined}
               onClick={() => bascule(o.cle)}
               aria-label={icone ? o.libelle : undefined}
-              title={seule ? `${o.libelle} : seul choix affiché` : on ? `Masquer ${o.libelle}` : `Afficher ${o.libelle}`}
+              title={seule ? `${o.libelle}\u00a0: seul choix affiché` : on ? `Masquer ${o.libelle}` : `Afficher ${o.libelle}`}
             >
               {on && <span className="social-coche-marque" aria-hidden="true">✓</span>}
               {icone ? icone(o.cle) : o.libelle}
@@ -2619,7 +2619,7 @@ export function SocialClient({ data }: { data: SocialData }) {
                       </div>
                     ))}
                     <p className="social-note">
-                      {s.hebdo ? "Par semaine : la période dépasse 45 jours." : "Par jour."}
+                      {s.hebdo ? "Par semaine\u00a0: la période dépasse 45 jours." : "Par jour."}
                       {s.panneaux.length > 1 ? " Chaque panneau a sa propre échelle." : ""}
                     </p>
                   </div>
