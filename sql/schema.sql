@@ -43,8 +43,18 @@ CREATE TABLE IF NOT EXISTS vitrine."agora_decideurs_qc" (
   "culture_and_nationalism" double precision,
   "editorial_angle" text,
   "signature_word" text,
-  "signature_word_context" text
+  "signature_word_context" text,
+  "signature_word_date" text,
+  "signature_word_time" text,
+  "signature_word_url" text
 );
+-- Source de la citation de l'expression distinctive, ajoutée le 2026-09-25
+-- (aws-refiners#573). Même règle que `representative_url` : à appliquer à Neon
+-- AVANT de redéployer le Worker, sinon recordDefinition lève « colonnes absentes
+-- du schéma » et la table cesse de se synchroniser.
+ALTER TABLE vitrine."agora_decideurs_qc" ADD COLUMN IF NOT EXISTS "signature_word_date" text;
+ALTER TABLE vitrine."agora_decideurs_qc" ADD COLUMN IF NOT EXISTS "signature_word_time" text;
+ALTER TABLE vitrine."agora_decideurs_qc" ADD COLUMN IF NOT EXISTS "signature_word_url" text;
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_period_type_idx" ON vitrine."agora_decideurs_qc" ("period_type");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_period_start_date_idx" ON vitrine."agora_decideurs_qc" ("period_start_date");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_period_end_date_idx" ON vitrine."agora_decideurs_qc" ("period_end_date");
@@ -77,8 +87,18 @@ CREATE TABLE IF NOT EXISTS vitrine."agora_decideurs_qc_deputes" (
   "governments_and_governance" double precision,
   "culture_and_nationalism" double precision,
   "signature_word" text,
-  "signature_word_context" text
+  "signature_word_context" text,
+  "signature_word_date" text,
+  "signature_word_time" text,
+  "signature_word_url" text
 );
+-- Source de la citation de l'expression distinctive, ajoutée le 2026-09-25
+-- (aws-refiners#573). Même règle que `representative_url` : à appliquer à Neon
+-- AVANT de redéployer le Worker, sinon recordDefinition lève « colonnes absentes
+-- du schéma » et la table cesse de se synchroniser.
+ALTER TABLE vitrine."agora_decideurs_qc_deputes" ADD COLUMN IF NOT EXISTS "signature_word_date" text;
+ALTER TABLE vitrine."agora_decideurs_qc_deputes" ADD COLUMN IF NOT EXISTS "signature_word_time" text;
+ALTER TABLE vitrine."agora_decideurs_qc_deputes" ADD COLUMN IF NOT EXISTS "signature_word_url" text;
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_period_type_idx" ON vitrine."agora_decideurs_qc_deputes" ("period_type");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_period_start_date_idx" ON vitrine."agora_decideurs_qc_deputes" ("period_start_date");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_period_end_date_idx" ON vitrine."agora_decideurs_qc_deputes" ("period_end_date");

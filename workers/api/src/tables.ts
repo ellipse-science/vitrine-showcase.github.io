@@ -36,7 +36,10 @@ export const TABLES: TableSpec[] = [
       "culture_and_nationalism",
       "editorial_angle",
       "signature_word",
-      "signature_word_context"
+      "signature_word_context",
+      "signature_word_date",
+      "signature_word_time",
+      "signature_word_url"
     ],
     "filter": null
   },
@@ -66,7 +69,10 @@ export const TABLES: TableSpec[] = [
       "governments_and_governance",
       "culture_and_nationalism",
       "signature_word",
-      "signature_word_context"
+      "signature_word_context",
+      "signature_word_date",
+      "signature_word_time",
+      "signature_word_url"
     ],
     "filter": null
   },

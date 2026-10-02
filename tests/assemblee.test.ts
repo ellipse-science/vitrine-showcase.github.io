@@ -4,10 +4,30 @@ import { describe, it, expect } from "vitest";
 import { __test__ } from "@/lib/data/assemblee";
 
 const {
-  fmtDateFr, fmtWords, computeRichnessLevels, buildEnjeuStack, buildSubtitle,
+  sourceCitation, fmtDateFr, fmtWords, computeRichnessLevels, buildEnjeuStack, buildSubtitle,
   buildPeriodView, buildPortraitIndex, lookupPortrait, citationExtrait,
-  citationComplete, buildAffiliationIndex, affiliationHistoryFor,
+  citationComplete, CITATION_BUDGET_TIROIR, buildAffiliationIndex, affiliationHistoryFor,
 } = __test__;
+
+describe("sourceCitation", () => {
+  const brut = { signature_word_date: "2024-03-12", signature_word_time: "10:01",
+    signature_word_url: "https://www.assnat.qc.ca/fr/travaux-parlementaires/assemblee-nationale/43-1/journal-debats/20240312/372731.html" };
+
+  it("rend la séance, l'heure et la page du Journal des débats", () => {
+    expect(sourceCitation(brut, "Une citation.")).toEqual({ date: "2024-03-12", heure: "10:01", url: brut.signature_word_url });
+  });
+
+  it("ne source pas une citation qui n'est pas affichée", () => {
+    expect(sourceCitation(brut, undefined)).toBeUndefined();
+  });
+
+  it("ignore une date absente ou mal formée, une heure ou un lien inattendus", () => {
+    expect(sourceCitation({ ...brut, signature_word_date: "NA" }, "c")).toBeUndefined();
+    expect(sourceCitation({ ...brut, signature_word_date: "12 mars" }, "c")).toBeUndefined();
+    expect(sourceCitation({ ...brut, signature_word_time: "10h01", signature_word_url: "https://ailleurs.example/x" }, "c"))
+      .toEqual({ date: "2024-03-12", heure: undefined, url: undefined });
+  });
+});
 
 describe("citationExtrait", () => {
   it("ancre l'extrait sur le concept quand il se trouve après le budget", () => {
@@ -69,14 +89,13 @@ describe("citationExtrait", () => {
       const rows = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), file), "utf8"));
       for (const row of rows) {
         if (!row.signature_word || row.signature_word === "NA") continue;
-        const citation = file.endsWith("_deputes.json")
+        const deputes = file.endsWith("_deputes.json");
+        const citation = deputes
           ? citationExtrait(row.signature_word_context, row.signature_word)
-          : citationComplete(row.signature_word_context, row.signature_word);
+          : citationExtrait(row.signature_word_context, row.signature_word, CITATION_BUDGET_TIROIR);
         if (!citation) continue;
-        if (file.endsWith("_deputes.json")) {
-          expect(citation.length, `${file}: extrait trop long de ${row.deputy}`)
-            .toBeLessThanOrEqual(95);
-        }
+        expect(citation.length, `${file}: extrait trop long de ${row.deputy ?? row.party}`)
+          .toBeLessThanOrEqual(deputes ? 95 : CITATION_BUDGET_TIROIR);
         expect(
           citationComplete(citation, row.signature_word),
           `${file}: ${row.deputy ?? row.party} · ${row.signature_word}`,
@@ -286,6 +305,23 @@ describe("buildPeriodView", () => {
     const view = buildPeriodView(rows as never, "session");
 
     expect(view.rows.find((row) => row.key === "caq")?.signatureWordContext).toBe(contexte);
+  });
+
+  it("réduit à un extrait centré sur le concept une phrase entière trop longue pour le tiroir", () => {
+    // aws-refiners#573 publie la phrase entière, jusqu'à 1000 signes.
+    const contexte = `${"Mme la Présidente, je veux revenir sur ce que le gouvernement a dit hier à propos des régions. ".repeat(4)}Le troisième lien ne réglera pas la congestion, et tout le monde le sait ici.`;
+    const rows = [{
+      period_type: "session", period_start_date: "2026-01-01", period_end_date: "2026-06-10",
+      party: "plq", n_interventions: 50, word_count: 5000, lexical_richness: 0.6,
+      tone_score: 0.01, editorial_angle: "x", signature_word: "troisième lien",
+      signature_word_context: contexte,
+    }];
+
+    const citation = buildPeriodView(rows as never, "session").rows.find((row) => row.key === "plq")?.signatureWordContext;
+
+    expect(contexte.length).toBeGreaterThan(CITATION_BUDGET_TIROIR);
+    expect(citation?.length).toBeLessThanOrEqual(CITATION_BUDGET_TIROIR);
+    expect(citation).toContain("troisième lien");
   });
 
   it("sélectionne réellement la dernière journée de débats même si les lignes sont désordonnées", () => {
