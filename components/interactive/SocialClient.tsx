@@ -974,6 +974,26 @@ function Courbes({
     const plafond = i === fins.length - 1 ? 100 : fins[i + 1].y - 9;
     if (fins[i].y > plafond) fins[i].y = plafond;
   }
+  // Au survol : le jour sous le pointeur (repère vertical, valeur de chaque
+  // courbe dans une infobulle) et la courbe la plus proche, mise en avant.
+  const trace = useRef<HTMLDivElement>(null);
+  const [survol, setSurvol] = useState<{ i: number; cle: string | null } | null>(null);
+  const viser = (clientX: number, clientY: number) => {
+    const r = trace.current?.getBoundingClientRect();
+    if (!r || r.width === 0) return;
+    const i = n > 1 ? Math.max(0, Math.min(n - 1, Math.round(((clientX - r.left) / r.width) * (n - 1)))) : 0;
+    let cle: string | null = null;
+    let ecart = 26; // au-delà de 26 px d'une courbe, aucune n'est mise en avant
+    for (const c of s) {
+      const d = Math.abs((y(c.valeurs[i] ?? 0) / 100) * r.height - (clientY - r.top));
+      if (d < ecart) {
+        ecart = d;
+        cle = c.element.cle;
+      }
+    }
+    setSurvol((avant) => (avant?.i === i && avant.cle === cle ? avant : { i, cle }));
+  };
+  const classees = survol ? [...s].sort((a, b) => (b.valeurs[survol.i] ?? 0) - (a.valeurs[survol.i] ?? 0)) : [];
   // Dates de l'axe : cinq au plus, trois dans un panneau (début, milieu, fin).
   const reperes = compact
     ? [...new Set([0, Math.floor((n - 1) / 2), n - 1])]
@@ -981,7 +1001,13 @@ function Courbes({
 
   return (
     <div className="social-graphe" role="img" aria-label={`${NOMS_MESURES[m]} ${hebdo ? "par semaine" : "par jour"}`}>
-      <div className="social-trace">
+      <div
+        className="social-trace"
+        ref={trace}
+        onPointerMove={(e) => viser(e.clientX, e.clientY)}
+        onPointerDown={(e) => viser(e.clientX, e.clientY)}
+        onPointerLeave={(e) => e.pointerType !== "touch" && setSurvol(null)}
+      >
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           {graduations.map((v) => (
             <line
@@ -1003,13 +1029,57 @@ function Courbes({
                 fill="none"
                 stroke={couleurElement(data, c.element, panneau)}
                 strokeDasharray={c.element.plateforme && !c.element.party ? tirets[c.element.plateforme] : undefined}
-                strokeWidth={1.8}
+                strokeWidth={survol?.cle === c.element.cle ? 2.8 : 1.8}
+                strokeOpacity={survol?.cle && survol.cle !== c.element.cle ? 0.28 : 1}
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
               />
             ),
           )}
+          {survol && n > 1 && (
+            <line
+              x1={x(survol.i)}
+              x2={x(survol.i)}
+              y1={0}
+              y2={100}
+              stroke="var(--ink-soft)"
+              strokeWidth={1}
+              strokeDasharray="3 3"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
         </svg>
+        {survol &&
+          n > 1 &&
+          s.map((c) => (
+            <span
+              key={c.element.cle}
+              className={`social-point-survol${survol.cle && survol.cle !== c.element.cle ? " estompe" : ""}`}
+              style={{ left: `${x(survol.i)}%`, top: `${y(c.valeurs[survol.i] ?? 0)}%`, background: couleurElement(data, c.element, panneau) }}
+            />
+          ))}
+        {survol && (
+          <div
+            className="social-bulle-barre social-bulle-courbe"
+            role="presentation"
+            style={{ left: `${x(survol.i)}%`, transform: x(survol.i) > 55 ? "translateX(calc(-100% - 14px))" : "translateX(14px)" }}
+          >
+            <div className="social-bulle-courbe-date">
+              {hebdo ? `Semaine du ${jourCourt(jours[survol.i])}` : jourCourt(jours[survol.i])} · {NOMS_MESURES[m]}
+            </div>
+            <dl>
+              {classees.map((c) => (
+                <div key={c.element.cle} className={survol.cle === c.element.cle ? "active" : undefined}>
+                  <dt>
+                    <i style={{ background: couleurElement(data, c.element, panneau) }} />
+                    {nomElement(data, c.element)}
+                  </dt>
+                  <dd>{nombreFr(c.valeurs[survol.i] ?? 0)}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
         {n === 1 &&
           s.map((c) => (
             <span
@@ -1032,7 +1102,11 @@ function Courbes({
           <span
             key={f.c.element.cle}
             className="social-etiquette"
-            style={{ top: `${f.y}%`, color: couleurElement(data, f.c.element, panneau) }}
+            style={{
+              top: `${f.y}%`,
+              color: couleurElement(data, f.c.element, panneau),
+              opacity: survol?.cle && survol.cle !== f.c.element.cle ? 0.35 : 1,
+            }}
             title={nomElement(data, f.c.element)}
           >
             {f.c.element.plateforme && !f.c.element.party ? <Logo p={f.c.element.plateforme} /> : nomElement(data, f.c.element)}
