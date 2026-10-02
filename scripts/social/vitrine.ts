@@ -11,7 +11,7 @@
 // édition à l'autre et qu'aucun dessin ne se lise comme un résultat.
 //
 // Les phrases sur la collecte reprennent le pied de page du site
-// (static-content/bottom.html) et le rappel commun (lib/post.ts).
+// (static-content/bottom.html) et le rappel commun (lib/identite.ts).
 //
 // Gabarit commun : scripts/social/GABARIT.md (section 5).
 
@@ -23,9 +23,9 @@ import { MODULES, type CleModule } from "@/lib/modules";
 import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS } from "@/lib/data/parties";
 
 import { captionTypo } from "./lib/commun";
-import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
+import { HASHTAGS as HASHTAGS_UNE } from "./lib/identite";
 import {
-  COLORS, FIN_CSS, SALIENCE_COLORS, buildPage, celestial, chargerPartenaires, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, sceneFin, typo,
+  COLORS, FIN_CSS, SALIENCE_COLORS, buildPage, celestial, chargerPartenaires, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, RESERVE_BAS, sceneFin, typo,
   type Scene,
 } from "./lib/reel";
 
@@ -42,7 +42,7 @@ const ORDRE: CleModule[] = [
 const TEXTES: Record<CleModule, { question: string; site: string }> = {
   "une-des-unes": {
     question: "Quelle nouvelle domine l’actualité au Québec en ce moment?",
-    site: "Les nouvelles à la Une et leur saillance, de très faible à exceptionnelle.",
+    site: "Les nouvelles à la Une de l’actualité et leur saillance, de très faible à exceptionnelle.",
   },
   "deux-solitudes": {
     question: "Le Québec et le Canada anglais parlent-ils des mêmes sujets?",
@@ -54,7 +54,7 @@ const TEXTES: Record<CleModule, { question: string; site: string }> = {
   },
   "partis-et-couverture": {
     question: "De quel parti parle-t-on dans les médias, et sur quel ton?",
-    site: "Le vu-mètre des partis : leur temps en Une, et le ton des phrases qui les nomment.",
+    site: "Le vu-mètre des partis : leur temps en Une de l’actualité, et le ton des phrases qui les nomment.",
   },
   "polimetre-plus": {
     question: "Quelles promesses électorales font parler?",
@@ -193,7 +193,7 @@ const SCHEMAS: Record<CleModule, () => string> = {
  *   3. les bandes s'effacent, le logo et « 6 modules pour mieux comprendre la
  *      démocratie au Québec » arrivent, soulignés par les six encres. */
 const QUESTIONS: Record<CleModule, string> = {
-  "une-des-unes": "Qu’est-ce qui fait la Une?",
+  "une-des-unes": "Qu’est-ce qui fait la Une de l’actualité?",
   "deux-solitudes": "Québec, Canada : mêmes sujets?",
   "enjeux-saillants": "Quels enjeux dominent?",
   "partis-et-couverture": "De quel parti parle-t-on?",
@@ -234,7 +234,7 @@ function sceneSources(): Scene {
   // (Jules Piral, 2026-09-17 : parler aussi des promesses électorales, mettre
   // l'emphase sur les modèles LOCAUX plutôt que sur « l'IA »).
   const lignes = [
-    `<b class="disp">13</b><div><p class="pf">médias québécois et canadiens</p><small>leurs Unes, six fois par jour</small><div class="heures">${heures}</div></div>`,
+    `<b class="disp">13</b><div><p class="pf">médias québécois et canadiens</p><small>leurs Unes de l’actualité, six fois par jour</small><div class="heures">${heures}</div></div>`,
     `<b class="disp">${fleur(MODULES["assemblee-nationale"].accent, 84)}</b><div><p class="pf">l’Assemblée nationale</p><small>ses débats, chaque jour de débat</small></div>`,
     `<b class="disp coche" style="color:${MODULES["polimetre-plus"].accent}">✓</b><div><p class="pf">les promesses électorales</p><small>leur écho dans les médias, avec le Polimètre</small></div>`,
   ].map((l, i) => `<div class="ligne" style="${anim("fadeUp", .5, .6 + i * .55)}">${l}</div>`).join("");
@@ -316,7 +316,7 @@ const CSS = `
 #sources .local{position:absolute;top:1125px;left:180px;right:180px;text-align:left;background:var(--ink);color:var(--paper);padding:22px 30px 26px}
 #sources .local .mono{font-size:28px;letter-spacing:.14em;opacity:.8}
 #sources .local p{font-size:46px;line-height:1.04;margin-top:8px}
-#sources .gratuit{position:absolute;top:1435px;left:180px;right:180px;font-size:34px;font-style:italic}
+#sources .gratuit{position:absolute;bottom:${RESERVE_BAS}px;left:180px;right:180px;font-size:34px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
 .scene .rang{display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
@@ -374,7 +374,7 @@ const CSS = `
 .schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center}
 
 #recap h2{position:absolute;top:292px;left:180px;right:180px;font-size:76px;line-height:1.02}
-#recap ul{position:absolute;top:700px;left:180px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
+#recap ul{position:absolute;top:660px;bottom:${RESERVE_BAS + 70}px;left:180px;right:180px;list-style:none;display:flex;flex-direction:column;justify-content:space-between;gap:14px}
 #recap li{display:flex;align-items:center;gap:26px;min-height:100px;text-align:left;padding:12px 26px;border-left:14px solid}
 #recap li b{font-size:64px;width:44px}
 #recap li span{font-size:50px;line-height:1}
@@ -399,7 +399,7 @@ function caption(): string {
   const hashtags = ["#VitrineDémocratique", ...HASHTAGS_UNE.filter((h) => h !== "#LaUnedesUnes")];
   return captionTypo([
     "La Vitrine démocratique, c’est 6 modules pour mieux comprendre la démocratie au Québec.",
-    "Nous suivons les Unes de 13 médias québécois et canadiens six fois par jour, les débats de l’Assemblée nationale chaque jour de débat, et l’écho médiatique des promesses électorales. Les analyses viennent de modèles locaux, entraînés, validés et conservés à l’Université Laval.",
+    "Nous suivons les Unes de l’actualité de 13 médias québécois et canadiens six fois par jour, les débats de l’Assemblée nationale chaque jour de débat, et l’écho médiatique des promesses électorales. Les analyses viennent de modèles locaux, entraînés, validés et conservés à l’Université Laval.",
     modules.join("\n"),
     "Gratuit, sans publicité, méthodologie publique : vitrinedemocratique.com",
     hashtags.join(" "),
@@ -415,14 +415,14 @@ async function main() {
     ...ORDRE.map((k, i) => sceneModule(k, i)),
     sceneRecap(),
     // pubHour -1 : aucune édition en surbrillance, ce reel n'appartient à aucune.
-    sceneFin({ pubHour: -1, signature: "6 modules pour mieux comprendre la démocratie au Québec", logo: logos.vitrine, accent: COLORS.ink, partenaires: await chargerPartenaires() }),
+    sceneFin({ pubHour: -1, logo: logos.vitrine, accent: COLORS.ink, partenaires: await chargerPartenaires() }),
   ];
 
   const html = buildPage({
     title: "La Vitrine démocratique · 6 modules",
     css: CSS + FIN_CSS, scenes, script: SCRIPT,
     footerLeft: "La Vitrine démocratique",
-    footerRight: "",
+    date: "",
     theme: { paper: COLORS.paper, accent: COLORS.ink },
     logos,
   });

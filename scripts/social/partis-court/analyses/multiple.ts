@@ -35,10 +35,10 @@ export const multiple: Analyse = {
 #plan .mult .moy span{position:absolute;right:0;top:12px;font-size:28px;letter-spacing:.04em;background:var(--paper);padding:2px 8px}
 #plan .mult .lab{position:absolute;left:60px;width:300px;bottom:0;height:56px;line-height:56px;text-align:center;color:#fff;font-size:40px}`,
       phrases: [
-        { a: `D’habitude, dans les Unes, ${SIGLE_ARTICLE[lead.key]} c’est`, b: `${moi.sovPct} % du temps consacré aux partis`, debut: .15, fin: 3.0 },
+        { a: `D’habitude, dans les Unes de l’actualité, ${SIGLE_ARTICLE[lead.key]} c’est`, b: `${moi.sovPct} % du temps consacré aux partis`, debut: .15, fin: 3.0 },
         { a: "Aujourd’hui :", b: `${lead.sovPct} %, ${x} plus`, couleur: lead.color, debut: 3.2 },
       ],
-      legende: `Depuis le début de la campagne, ${SIGLE_ARTICLE[lead.key]} occupe en moyenne ${moi.sovPct} % du temps que les Unes consacrent aux partis. Depuis minuit : ${lead.sovPct} %, ${x} plus.`,
+      legende: `Depuis le début de la campagne, ${SIGLE_ARTICLE[lead.key]} occupe en moyenne ${moi.sovPct} % du temps que les Unes de l’actualité consacrent aux partis. Depuis minuit : ${lead.sovPct} %, ${x} plus.`,
     };
   },
 };

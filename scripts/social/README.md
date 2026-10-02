@@ -69,6 +69,14 @@ Sortie dans `social-out/` (ignoré par Git — **on ne pousse jamais de MP4**) :
 | `…_tiktok.txt` | Jules |
 | `…_commentaire.txt` (articles + signatures de la nouvelle n°1) | en premier commentaire, partout |
 
+**Un fichier par réseau, aussi dans le code** : [`reseaux/`](./reseaux/) tient un
+fichier par plateforme (`linkedin.ts`, `x.ts`, `facebook.ts`, `instagram.ts`,
+`tiktok.ts`). Retoucher LinkedIn ne peut pas changer un post Instagram. Ce qui
+doit rester identique partout est ailleurs, et à deux niveaux : l'identité
+**visuelle** dans [`GABARIT.md`](./GABARIT.md) §0 (palette, accroche, fin, zone
+sûre), l'identité **éditoriale** dans [`lib/identite.ts`](./lib/identite.ts)
+(émojis, rappel, mots-clics, comptes). Voir [`reseaux/README.md`](./reseaux/README.md).
+
 Pour produire, adapter ou créer un reel, le skill **`reel-vitrine`**
 (`.claude/skills/reel-vitrine/`) tient la marche à suivre et les pièges.
 
