@@ -43,3 +43,23 @@ describe("preparerCartesSite", () => {
     }
   }, 60_000);
 });
+
+describe("portraits tramés", () => {
+  it("chaque photo de public/images/deputes a sa trame WebP (scripts/social/portraits-trames.ts)", async () => {
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    const racine = path.resolve(process.cwd(), "public/images/deputes");
+    const photos = (await fs.readdir(racine)).filter((f) => f.endsWith(".jpg")).map((f) => f.slice(0, -4));
+    const anciens = (await fs.readdir(path.join(racine, "historique")).catch(() => [] as string[]))
+      .filter((f) => f.endsWith(".jpg")).map((f) => `historique/${f.slice(0, -4)}`);
+    const sansTrame: string[] = [];
+    for (const asset of [...photos, ...anciens]) {
+      const ok = await fs.access(path.join(racine, "cartes/trame", `${asset}.webp`)).then(() => true, () => false);
+      if (!ok) sansTrame.push(asset);
+    }
+    // Une photo ajoutée sans sa trame donnerait une carte à la fleur de lys :
+    // lancer `npx tsx scripts/social/portraits-trames.ts` et commettre le WebP.
+    expect(sansTrame).toEqual([]);
+    expect(photos.length).toBeGreaterThan(100);
+  });
+});
