@@ -13,7 +13,7 @@ import {
   urlCompte,
   type FondCarte,
 } from "@/lib/data/social";
-import { classementAudience, integration, meneur, type MesureAudience } from "@/lib/data/social-calc";
+import { classementAudience, integration, meneursCarte, valeursComptes, type MesureAudience } from "@/lib/data/social-calc";
 import { nombreFr, nombreGrand } from "@/lib/data/social-meta";
 import { CandidatsCirco } from "@/components/interactive/CircoPage";
 import fond from "@/lib/geo/circonscriptions-2026.json";
@@ -73,21 +73,41 @@ describe("fiches et parti en tête", () => {
     expect(carte.circos.flatMap((c) => c.comptes).some((c) => c.party === "pq")).toBe(false);
   });
 
-  it("le parti en tête est celui qui reçoit le plus de j'aime, pas celui qui publie le plus", () => {
+  it("le parti en tête suit l'indicateur et la fenêtre : la somme des comptes de candidats qui passent les filtres", () => {
     const tous = ["facebook", "instagram", "tiktok"] as const;
     const partis = ["qs", "caq", "pq", "plq", "pcq"] as const;
-    // 7 jours : QS publie plus (6 contre 2) mais la CAQ reçoit plus de j'aime (900 contre 90)
-    expect(meneur(anjou.comptes, "7j", tous, partis).party).toBe("caq");
-    // sur Instagram seul, QS (40 j'aime) ; la période change les totaux
-    expect(meneur(anjou.comptes, "7j", ["instagram"], partis).party).toBe("qs");
-    expect(meneur(anjou.comptes, "campagne", tous, partis).jaime).toBe(2180);
+    const data = construireSocial(comptes, jours, [], fond as FondCarte)!;
+    const idx = (party: string, pf: string) =>
+      data.audience.findIndex((a) => a.code === anjou.code && a.party === party && a.plateforme === pf);
+    // Table « compte par jour » : jour 0, QS Facebook 10 j'aime et 6 publications ;
+    // jour 1, CAQ Facebook 900 j'aime, QS Instagram 40.
+    const parJour = [
+      [idx("qs", "facebook"), 0, 6, 10, 1],
+      [idx("caq", "facebook"), 1, 2, 900, 0],
+      [idx("qs", "instagram"), 1, 1, 40, 0],
+    ] as [number, number, number, number, number][];
+    const v = (m: MesureAudience, d0: number, d1: number) => valeursComptes(data.audience, parJour, m, { d0, d1 });
+    // J'aime sur les deux jours : la CAQ (900) devant QS (50) ; en publications, QS (7 contre 2).
+    expect(meneursCarte(data.audience, v("jaime", 0, 1), tous, partis).get(anjou.code)!.party).toBe("caq");
+    expect(meneursCarte(data.audience, v("publications", 0, 1), tous, partis).get(anjou.code)!.party).toBe("qs");
+    // Sur Instagram seul : QS ; la fenêtre réduite au jour 0 : QS seul.
+    expect(meneursCarte(data.audience, v("jaime", 0, 1), ["instagram"], partis).get(anjou.code)!.party).toBe("qs");
+    expect(meneursCarte(data.audience, v("jaime", 0, 0), tous, partis).get(anjou.code)!.party).toBe("qs");
+    expect(meneursCarte(data.audience, v("jaime", 0, 1), tous, partis).get(anjou.code)!.valeur).toBe(950);
+    // Abonnés : le dernier relevé des comptes, sans la table par jour.
+    const ab = valeursComptes(data.audience, [], "abonnes", { d0: 0, d1: 0 });
+    expect(ab[idx("caq", "facebook")]).toBe(data.audience[idx("caq", "facebook")].abonnes);
   });
 
   it("et les filtres : sans la CAQ, QS mène ; égalité parfaite ou rien, pas de meneur", () => {
-    expect(meneur(anjou.comptes, "campagne", ["facebook", "instagram", "tiktok"], ["qs", "pq"]).party).toBe("qs");
-    expect(meneur(anjou.comptes, "7j", ["tiktok"], ["qs", "caq"]).party).toBeNull();
-    const egal = anjou.comptes.map((c) => ({ ...c, publications7j: 1, jaime7j: 5 })).filter((c) => c.plateforme === "facebook");
-    expect(meneur(egal, "7j", ["facebook"], ["qs", "caq"]).party).toBeNull();
+    const data = construireSocial(comptes, jours, [], fond as FondCarte)!;
+    const tous = ["facebook", "instagram", "tiktok"] as const;
+    const v = data.audience.map((a) => (a.code === anjou.code ? (a.party === "caq" ? 900 : 50) : 0));
+    expect(meneursCarte(data.audience, v, tous, ["qs", "pq"]).get(anjou.code)!.party).toBe("qs");
+    // TikTok seul : aucun compte d'Anjou, donc pas d'entrée du tout.
+    expect(meneursCarte(data.audience, v, ["tiktok"], ["qs", "caq"]).get(anjou.code)).toBeUndefined();
+    const egal = data.audience.map((a) => (a.code === anjou.code && a.plateforme === "facebook" ? 5 : 0));
+    expect(meneursCarte(data.audience, egal, ["facebook"], ["qs", "caq"]).get(anjou.code)!.party).toBeNull();
   });
 
   it("rend null sans fond de carte ou sans compte de candidat", () => {
@@ -98,7 +118,7 @@ describe("fiches et parti en tête", () => {
   it("la fiche nomme les candidats suivis, les comptes et la source, sans valeur vide", () => {
     const data = construireSocial(comptes, jours, [], fond as FondCarte)!;
     const html = renderToStaticMarkup(
-      <Carte data={data} plateformes={["facebook", "instagram", "tiktok"]} partis={data.partis} />,
+      <Carte data={data} m="jaime" d0={0} d1={data.jours.length - 1} plateformes={["facebook", "instagram", "tiktok"]} partis={data.partis} />,
     );
     expect(html).toContain('id="sc-circo-');
     expect(html).toContain('role="combobox"');
@@ -284,9 +304,9 @@ describe("audience : classements sur la période", () => {
     expect(classementAudience(items, jours, "jaime", { ...f, d0: 5, d1: 5 }).map((x) => x.valeur)).toEqual([200, 1]);
     expect(classementAudience(items, jours, "commentaires", f).map((x) => x.valeur)).toEqual([3, 1]);
   });
-  it("40 comptes au plus", () => {
+  it("20 comptes au plus", () => {
     const beaucoup = Array.from({ length: 80 }, (_, i) => ({ ...base, nom: `x${i}`, abonnes: i + 1 }));
-    expect(classementAudience(beaucoup, [], "abonnes", f)).toHaveLength(40);
+    expect(classementAudience(beaucoup, [], "abonnes", f)).toHaveLength(20);
   });
 });
 
@@ -380,7 +400,7 @@ describe("audience : toutes les combinaisons de filtres", () => {
     return vals.sort((a, b) => b - a);
   };
 
-  it("affiche min(40, comptes éligibles), dans l'ordre, pour chaque combinaison", () => {
+  it("affiche min(20, comptes éligibles), dans l'ordre, pour chaque combinaison", () => {
     let combinaisons = 0;
     for (const plateformes of sous(PF))
       for (const partis of sous(PA))
@@ -390,8 +410,8 @@ describe("audience : toutes les combinaisons de filtres", () => {
               const f = { plateformes: [...plateformes], partis: [...partis], types: [...types], d0, d1 };
               const attendu = naif(mesure, f);
               const obtenu = classementAudience(comptes, jours, mesure, f as never).map((x) => x.valeur);
-              expect(obtenu.length).toBe(Math.min(40, attendu.length));
-              expect(obtenu).toEqual(attendu.slice(0, 40));
+              expect(obtenu.length).toBe(Math.min(20, attendu.length));
+              expect(obtenu).toEqual(attendu.slice(0, 20));
               combinaisons++;
             }
     expect(combinaisons).toBe(7 * 31 * 3 * 4 * 4);
@@ -401,15 +421,20 @@ describe("audience : toutes les combinaisons de filtres", () => {
 describe("infobulle : grands nombres et noms longs", () => {
   it("espace fine insécable entre les milliers, nom long tronqué par la mise en page", () => {
     expect(nombreFr(1432983)).toBe("1\u202f432\u202f983");
-    const data = construireSocial(comptes, jours, [], fond as FondCarte)!;
-    const circo = {
-      ...data.carte!.circos.find((c) => c.comptes.length > 0)!,
-      comptes: [{ nom: "Marie-Ève Laflamme-Beauchemin de la Rivière-du-Loup", party: "pcq" as const, plateforme: "facebook" as const,
-        url: null, abonnes: 10, publications7j: 3, jaime7j: 1432983, publicationsCampagne: 3, jaimeCampagne: 1432983 }],
+    const base = construireSocial(comptes, jours, [], fond as FondCarte)!;
+    const circo = base.carte!.circos.find((c) => c.comptes.length > 0)!;
+    // Le premier compte de la circonscription prend un nom long et 1 432 983 j'aime.
+    const premier = base.audience.findIndex((a) => a.code === circo.code);
+    const data = {
+      ...base,
+      audience: base.audience.map((a, i) => (i === premier ? { ...a, nom: "Marie-Ève Laflamme-Beauchemin de la Rivière-du-Loup" } : a)),
     };
+    const valeurs = data.audience.map((_, i) => (i === premier ? 1432983 : 0));
+    const pf = ["facebook", "instagram", "tiktok"] as const;
     const html = renderToStaticMarkup(
-      <Infobulle data={data} circo={circo} m={meneur(circo.comptes, "7j", ["facebook"], ["pcq"])} periode="7j"
-        plateformes={["facebook", "instagram", "tiktok"]} partis={data.partis} x={10} y={10} largeur={800} hauteur={600} />,
+      <Infobulle data={data} circo={circo} m={meneursCarte(data.audience, valeurs, pf, data.partis).get(circo.code)!}
+        unite="j’aime" periodeTexte="sur la période" valeurs={valeurs}
+        plateformes={[...pf]} partis={data.partis} x={10} y={10} largeur={800} hauteur={600} />,
     );
     expect(html).toContain("1\u202f432\u202f983");
     expect(html).toContain('class="social-infobulle-nom"');

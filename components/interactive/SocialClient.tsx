@@ -6,7 +6,6 @@ import {
   COULEURS_PLATEFORMES,
   LOGOS_PLATEFORMES,
   NOMS_PLATEFORMES,
-  NOMS_TYPES,
   nombreFr,
   nombreGrand,
   PLATEFORMES,
@@ -27,48 +26,49 @@ import {
   integration,
   lignes,
   lignesAbonnes,
-  meneur,
+  meneursCarte,
+  mesurePalmares,
   palmares,
   palmaresApproche,
   panneaux,
   parElement,
-  parJour,
+  parJourParti,
   segments,
   series,
   totaux,
-  treemap,
-  type Decoupe,
   type Element,
   type Filtres,
   type Mesure,
   type Panneau,
   type MesureAudience,
-  type PeriodeCarte,
+  type Meneur,
+  valeursComptes,
 } from "@/lib/data/social-calc";
 import { MONTHS_FR } from "@/lib/dates";
 
-type Vue = "presence" | "partis" | "candidats" | "palmares" | "carte";
+type Vue = "partis" | "candidats" | "palmares" | "carte";
 /** « Barres et parts » côte à côte, ou « dans le temps ». */
 type Forme = "barres" | "temps";
 
-const VUES: { cle: Vue; libelle: string }[] = [
-  { cle: "presence", libelle: "Présence" },
-  { cle: "partis", libelle: "Partis" },
-  { cle: "candidats", libelle: "Candidats" },
-  { cle: "palmares", libelle: "Palmarès" },
-  { cle: "carte", libelle: "Carte" },
+/** Les vues : « compté par quoi ? ». `court` sert à la barre du téléphone. */
+const VUES: { cle: Vue; libelle: string; court: string }[] = [
+  { cle: "partis", libelle: "Par parti", court: "Partis" },
+  { cle: "candidats", libelle: "Par candidat", court: "Candidats" },
+  { cle: "palmares", libelle: "Par publication", court: "Palmarès" },
+  { cle: "carte", libelle: "Par circonscription", court: "Carte" },
 ];
 /** LA liste des mesures du module : onglets Partis et Candidats, chiffres de
  *  la colonne de droite. Libellé complet, libellé court (bouton), unité, et la
  *  définition d'où viennent les sous-titres. */
-const MESURES: { cle: Mesure; libelle: string; court: string; unite: string; definition: string }[] = [
+const MESURES: { cle: Mesure; libelle: string; court: string; unite: string; definition: string; question: string }[] = [
+  { cle: "jaime", libelle: "J’aime", court: "J’aime", unite: "j’aime", definition: "Total des j’aime de la période.", question: "Qui fait réagir" },
   {
     cle: "abonnes", libelle: "Abonnés", court: "Abonnés", unite: "abonnés",
     definition: "Total des abonnés des comptes suivis, au dernier relevé\u00a0: la période ne s’applique pas.",
+    question: "Qui est le plus suivi",
   },
-  { cle: "publications", libelle: "Publications", court: "Publications", unite: "publications", definition: "Total des publications de la période." },
-  { cle: "jaime", libelle: "J’aime", court: "J’aime", unite: "j’aime", definition: "Total des j’aime de la période." },
-  { cle: "commentaires", libelle: "Commentaires", court: "Commentaires", unite: "commentaires", definition: "Total des commentaires de la période." },
+  { cle: "publications", libelle: "Publications", court: "Publications", unite: "publications", definition: "Total des publications de la période.", question: "Qui publie le plus" },
+  { cle: "commentaires", libelle: "Commentaires", court: "Commentaires", unite: "commentaires", definition: "Total des commentaires de la période.", question: "Qui fait discuter" },
 ];
 const MESURE = Object.fromEntries(MESURES.map((x) => [x.cle, x])) as Record<Mesure, (typeof MESURES)[number]>;
 /** Titre d'axe des barres, comme la démo (« Nombre de publications »). */
@@ -82,6 +82,9 @@ const AXES: Record<Mesure, string> = {
  *  le treemap voisin en tire sa hauteur, pour finir avec la dernière barre. */
 const RANGEE = { normale: 44, compacte: 36, marge: 7 };
 
+
+/** Mois abrégés (frise étroite), à la québécoise : « sept. », « juil. ». */
+const MOIS_COURTS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 
 /** Vrai sous une largeur d'écran (côté client ; faux au rendu serveur). */
 function useEtroit(max = 640) {
@@ -233,7 +236,13 @@ export function InfobulleCompte({
                 <li key={`${x.url ?? ""}-${i}`}>
                   <Logo p={x.plateforme} taille={11} />
                   <span className="social-infobulle-date">{jourBref(x.jour)}</span>
-                  <span className="social-infobulle-texte">{x.texte || "(sans texte)"}</span>
+                  {x.url ? (
+                    <a className="social-infobulle-texte" href={x.url} target="_blank" rel="noopener noreferrer">
+                      {x.texte || "(sans texte)"}
+                    </a>
+                  ) : (
+                    <span className="social-infobulle-texte">{x.texte || "(sans texte)"}</span>
+                  )}
                   <span className="social-infobulle-n">{nombreFr(x.jaime)}</span>
                 </li>
               ))}
@@ -499,13 +508,8 @@ function Audience({
 }
 
 const FORMES: { cle: Forme; libelle: string }[] = [
-  { cle: "barres", libelle: "Barres et parts" },
-  { cle: "temps", libelle: "Dans le temps" },
-];
-const DECOUPES: { cle: Decoupe; libelle: string }[] = [
-  { cle: "ensemble", libelle: "Ensemble" },
-  { cle: "plateforme", libelle: "Par plateforme" },
-  { cle: "parti", libelle: "Par parti" },
+  { cle: "barres", libelle: "Total" },
+  { cle: "temps", libelle: "Évolution" },
 ];
 const NOMS_MESURES = Object.fromEntries(MESURES.map((x) => [x.cle, x.unite])) as Record<Mesure, string>;
 
@@ -519,20 +523,27 @@ const jourCourt = (iso: string) => {
 // ── Frise : histogramme des publications et fenêtre de période ────────────────
 function Frise({
   jours,
-  valeurs,
+  piles,
+  couleurs,
   d0,
   d1,
   campagne,
   onChange,
 }: {
   jours: string[];
-  valeurs: number[];
+  /** Publications du jour, empilées par parti (ordre de `couleurs`). */
+  piles: number[][];
+  couleurs: string[];
   d0: number;
   d1: number;
   campagne: number;
   onChange: (d0: number, d1: number) => void;
 }) {
   const n = jours.length;
+  const valeurs = piles.map((p) => p.reduce((a, b) => a + b, 0));
+  // Frise étroite : les noms de mois entiers se chevauchent (« septembre »
+  // touche « octobre ») ; on les abrège.
+  const etroit = useEtroit();
   const max = Math.max(1, ...valeurs);
   const zone = useRef<HTMLDivElement>(null);
   const geste = useRef<{ mode: "debut" | "fin" | "fenetre" | "nouvelle"; origine: number; d0: number; d1: number } | null>(
@@ -600,20 +611,31 @@ function Frise({
         onPointerCancel={finit}
       >
         <svg viewBox={`0 0 ${n} 100`} preserveAspectRatio="none" aria-hidden="true">
-          {valeurs.map((v, i) => (
-            <rect
-              key={i}
-              x={i + 0.12}
-              width={0.76}
-              y={100 - (100 * v) / max}
-              height={(100 * v) / max}
-              className={i >= d0 && i <= d1 ? "dans" : "hors"}
-            />
-          ))}
+          {/* Une pile par jour : chaque parti dans sa couleur, du bas vers le
+              haut ; hors de la période, la pile pâlit. */}
+          {piles.map((pile, i) => {
+            let cumul = 0;
+            return pile.map((v, k) => {
+              if (v <= 0) return null;
+              const h = (100 * v) / max;
+              cumul += h;
+              return (
+                <rect
+                  key={`${i}-${k}`}
+                  x={i + 0.12}
+                  width={0.76}
+                  y={100 - cumul}
+                  height={h}
+                  fill={couleurs[k]}
+                  className={i >= d0 && i <= d1 ? "dans" : "hors"}
+                />
+              );
+            });
+          })}
         </svg>
         {campagne > 0 && (
           <span className="social-frise-repere" style={{ left: `${pct(campagne)}%` }}>
-            <span className="social-frise-repere-libelle">déclenchement</span>
+            <span className="social-frise-repere-libelle">Lancement de la campagne électorale</span>
           </span>
         )}
         <div
@@ -656,9 +678,11 @@ function Frise({
         </div>
       </div>
       <div className="social-frise-mois" aria-hidden="true">
+        {/* Un mois qui commence tout au bout de l'axe s'écrit à gauche de son
+            repère, sinon il dépasse de la frise. */}
         {mois.map(({ j, i }) => (
-          <span key={j} style={{ left: `${pct(i)}%` }}>
-            {MONTHS_FR[Number(j.slice(5, 7)) - 1]}
+          <span key={j} className={pct(i) > 90 ? "fin" : undefined} style={{ left: `${pct(i)}%` }}>
+            {(etroit ? MOIS_COURTS : MONTHS_FR)[Number(j.slice(5, 7)) - 1]}
           </span>
         ))}
       </div>
@@ -673,6 +697,7 @@ function Bascule<T extends string>({
   onChange,
   label,
   icone,
+  prefixe,
   court,
   desactives,
   classe,
@@ -683,6 +708,8 @@ function Bascule<T extends string>({
   label: string;
   /** Boutons en icônes, comme la démo : le libellé passe en aria-label et en infobulle. */
   icone?: (cle: T) => ReactNode;
+  /** Une icône devant le libellé (le libellé reste visible). */
+  prefixe?: (cle: T) => ReactNode;
   /** Libellé court dans le bouton, le complet en aria-label et en infobulle. */
   court?: (cle: T) => string;
   /** Boutons grisés (pas masqués), avec la raison en infobulle. */
@@ -705,6 +732,7 @@ function Bascule<T extends string>({
             disabled={!!raison}
             onClick={() => onChange(o.cle)}
           >
+            {prefixe && prefixe(o.cle)}
             {icone ? icone(o.cle) : court ? court(o.cle) : o.libelle}
           </button>
         );
@@ -732,80 +760,6 @@ export function Plateforme_({ p, taille = 13 }: { p: Plateforme; taille?: number
   );
 }
 
-/** Icônes des formes et des découpes, reprises de la démo. */
-function IconeForme({ f }: { f: Forme }) {
-  // Barres et parts côte à côte : les deux icônes de la démo dans un bouton.
-  if (f === "barres")
-    return (
-      <svg viewBox="0 0 34 24" aria-hidden="true">
-        <rect x="2" y="4" width="10" height="4" />
-        <rect x="2" y="10" width="14" height="4" />
-        <rect x="2" y="16" width="7" height="4" />
-        <rect x="19" y="4" width="8" height="9" />
-        <rect x="28.5" y="4" width="4" height="5" />
-        <rect x="28.5" y="10.5" width="4" height="9.5" />
-        <rect x="19" y="14.5" width="8" height="5.5" />
-      </svg>
-    );
-  return (
-    <svg viewBox="0 0 34 24" aria-hidden="true" className="trait">
-      <polyline points="3,19 11,12 18,15 31,5" />
-      <polyline points="3,21 12,17 20,19 31,12" opacity="0.5" />
-    </svg>
-  );
-}
-/** Icônes des mesures, au trait, au format des boutons de réglage de la démo. */
-function IconeMesure({ m }: { m: Mesure }) {
-  const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  const coeur = (x: number, y: number, k: number) =>
-    `M${x} ${y + 3 * k}c${-2.5 * k} ${-2.6 * k} ${-5 * k} ${-4.4 * k} ${-5 * k} ${-6.8 * k}a${2.6 * k} ${2.6 * k} 0 0 1 ${5 * k} ${-1.2 * k}a${2.6 * k} ${2.6 * k} 0 0 1 ${5 * k} ${1.2 * k}c0 ${2.4 * k} ${-2.5 * k} ${4.2 * k} ${-5 * k} ${6.8 * k}z`;
-  return (
-    <svg viewBox="0 0 34 24" aria-hidden="true" className="trait">
-      {m === "abonnes" && (
-        <g {...trait}>
-          <circle cx="13" cy="8" r="3.2" />
-          <path d="M6.5 20c.6-3.8 3.2-5.8 6.5-5.8s5.9 2 6.5 5.8" />
-          <circle cx="22.5" cy="9" r="2.6" />
-          <path d="M21.5 14.6c2.8-.4 5.4 1.2 6 5.4" />
-        </g>
-      )}
-      {m === "publications" && (
-        <g {...trait}>
-          <rect x="10" y="3" width="14" height="18" rx="1.5" />
-          <path d="M13.5 8h7M13.5 12h7M13.5 16h4.5" />
-        </g>
-      )}
-      {m === "jaime" && <path d={coeur(17, 15.5, 1.35)} {...trait} />}
-      {m === "commentaires" && (
-        <path d="M8 6h18a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H15l-5 3.5V18H8a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 8 6z" {...trait} />
-      )}
-    </svg>
-  );
-}
-
-function IconeDecoupe({ d, data }: { d: Decoupe; data: SocialData }) {
-  if (d === "ensemble")
-    return (
-      <svg viewBox="0 0 34 24" aria-hidden="true">
-        <rect x="4" y="5" width="26" height="14" />
-      </svg>
-    );
-  if (d === "plateforme")
-    return (
-      <span className="social-icone-logos" aria-hidden="true">
-        {PLATEFORMES.map((p) => (
-          <Logo key={p} p={p} taille={11} />
-        ))}
-      </span>
-    );
-  return (
-    <svg viewBox="0 0 34 24" aria-hidden="true">
-      {data.partis.map((k, i) => (
-        <circle key={k} cx={4 + i * 6.5} cy={12} r={2.9} style={{ fill: data.partiInfo[k].couleur }} />
-      ))}
-    </svg>
-  );
-}
 
 /** Boutons à cocher : au moins un reste actif. */
 function Coches<T extends string>({
@@ -834,6 +788,9 @@ function Coches<T extends string>({
       <div>
         {options.map((o) => {
           const on = actifs.includes(o.cle);
+          // Une pastille se lit comme une case à cocher : coche quand elle
+          // est active, contour pâle sinon ; l'infobulle dit ce qu'un clic fait.
+          const seule = on && actifs.length === 1;
           return (
             <button
               type="button"
@@ -843,8 +800,9 @@ function Coches<T extends string>({
               style={on && couleur ? { background: couleur(o.cle), borderColor: couleur(o.cle) } : undefined}
               onClick={() => bascule(o.cle)}
               aria-label={icone ? o.libelle : undefined}
-              title={icone ? o.libelle : undefined}
+              title={seule ? `${o.libelle}\u00a0: seul choix affiché` : on ? `Masquer ${o.libelle}` : `Afficher ${o.libelle}`}
             >
+              {on && <span className="social-coche-marque" aria-hidden="true">✓</span>}
               {icone ? icone(o.cle) : o.libelle}
             </button>
           );
@@ -880,6 +838,8 @@ type Blocs = ReturnType<typeof parElement>;
  * logo dans le segment quand il y tient), total au bout. Sans légende : les
  * logos la portent.
  */
+type SurvolBarre = { cle: string; plateforme: Plateforme | null; x: number; y: number };
+
 function Barres({
   data,
   rows,
@@ -900,32 +860,58 @@ function Barres({
     panneau: pan,
     barres: pan.elements.map((el) => {
       const sg = segments(data, rows, pan, el, m);
-      return { element: el, segments: sg, total: sg.reduce((a, b) => a + b.valeur, 0) };
+      return { cle: `${pan.cle}/${el.cle}`, element: el, segments: sg, total: sg.reduce((a, b) => a + b.valeur, 0) };
     }),
   }));
   const max = maxCommun ?? Math.max(1e-9, ...blocs.flatMap((b) => b.barres.map((x) => x.total)));
   const multiples = blocs.length > 1;
   const seuilLogo = multiples ? 9 : 5; // % de la piste sous lequel le logo ne tient pas
+
+  // Au survol (ou au focus) d'une barre : le total et le détail par réseau
+  // dans une infobulle, le segment survolé mis en évidence.
+  const cadre = useRef<HTMLDivElement>(null);
+  const [survol, setSurvol] = useState<SurvolBarre | null>(null);
+  const poser = (cle: string, plateforme: Plateforme | null, clientX: number, cible: HTMLElement) => {
+    const c = cadre.current?.getBoundingClientRect();
+    if (!c) return;
+    const r = cible.getBoundingClientRect();
+    setSurvol({ cle, plateforme, x: clientX - c.left, y: r.bottom - c.top });
+  };
+  const barre = survol ? blocs.flatMap((bl) => bl.barres.map((x) => ({ x, pan: bl.panneau }))).find(({ x }) => x.cle === survol.cle) : undefined;
+  const largeur = cadre.current?.clientWidth ?? 0;
+
   return (
-    <div className={`social-panneaux${multiples ? " multiples" : ""}`}>
+    <div className={`social-panneaux${multiples ? " multiples" : ""}`} ref={cadre}>
       {blocs.map((b) => (
         <div key={b.panneau.cle} className="social-panneau">
           {titrePanneau(data, b.panneau) && <div className="social-panneau-titre">{titrePanneau(data, b.panneau)}</div>}
-          <ol className={`social-barres social-barres-empilees${multiples ? " compactes" : ""}`}>
+          <ol className={`social-barres social-barres-empilees${multiples ? " compactes" : ""}`} onPointerLeave={() => setSurvol(null)}>
             {b.barres.map((x) => {
               const couleur = couleurElement(data, x.element, b.panneau);
               const detail = x.segments
                 .map((sg) => `${sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] : ""} ${nombreFr(sg.valeur)}`.trim())
                 .join(" · ");
+              const actif = survol?.cle === x.cle;
               return (
-                <li key={x.element.cle}>
+                <li key={x.cle} className={actif ? "survolee" : undefined}>
                   <span className="social-nom">
                     {x.element.plateforme && !x.element.party ? <Logo p={x.element.plateforme} /> : nomElement(data, x.element)}
                   </span>
                   <span
                     className="social-piste"
                     role="img"
+                    tabIndex={0}
                     aria-label={`${nomElement(data, x.element)}\u00a0: ${nombreFr(x.total)} ${NOMS_MESURES[m]}${detail ? ` (${detail})` : ""}`}
+                    onPointerMove={(e) => {
+                      // Le segment sous le pointeur dit le réseau ; hors segment, toute la barre.
+                      const seg = (e.target as HTMLElement).closest("i");
+                      poser(x.cle, (seg?.dataset.plateforme as Plateforme | undefined) ?? null, e.clientX, e.currentTarget);
+                    }}
+                    onFocus={(e) => {
+                      const r = e.currentTarget.getBoundingClientRect();
+                      poser(x.cle, null, r.left + r.width / 2, e.currentTarget);
+                    }}
+                    onBlur={() => setSurvol(null)}
                   >
                     {/* La barre occupe sa part de la piste, total réservé au bout. */}
                     <span className="social-segments" style={{ width: `calc((100% - 5rem) * ${x.total / max})` }}>
@@ -935,9 +921,9 @@ function Barres({
                           <i
                             key={sg.plateforme ?? k}
                             // Texture seulement là où des plateformes se côtoient dans la barre.
-                            className={x.segments.length > 1 ? texture(sg.plateforme) : undefined}
+                            className={`${x.segments.length > 1 ? texture(sg.plateforme) ?? "" : ""}${actif && survol?.plateforme && survol.plateforme !== sg.plateforme ? " estompe" : ""}`.trim() || undefined}
                             style={{ width: `${100 * part}%`, background: couleur }}
-                            title={`${sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] + "\u00a0: " : ""}${nombreFr(sg.valeur)} ${NOMS_MESURES[m]}`}
+                            data-plateforme={sg.plateforme ?? undefined}
                           >
                             {sg.plateforme && (100 * sg.valeur) / max >= seuilLogo && <Logo p={sg.plateforme} />}
                           </i>
@@ -952,91 +938,36 @@ function Barres({
           </ol>
         </div>
       ))}
+      {/* Seulement ce que la barre ne dit pas déjà : la part du réseau sous le
+          pointeur (ou de chacun, hors segment). Rien pour un seul réseau. */}
+      {survol && barre && barre.x.segments.length > 1 && (
+        <div
+          className="social-bulle-barre"
+          role="presentation"
+          style={{ left: Math.max(130, Math.min(Math.max(130, largeur - 130), survol.x)), top: survol.y + 6 }}
+        >
+          <dl>
+            {barre.x.segments.filter((sg) => !survol.plateforme || sg.plateforme === survol.plateforme).map((sg) => (
+              <div key={sg.plateforme ?? "?"} className={survol.plateforme === sg.plateforme ? "active" : undefined}>
+                <dt>
+                  {sg.plateforme && <Logo p={sg.plateforme} taille={12} />} {sg.plateforme ? NOMS_PLATEFORMES[sg.plateforme] : "Autre"}
+                </dt>
+                <dd>{nombreFr(sg.valeur)}</dd>
+                <dd className="social-bulle-barre-part">{barre.x.total > 0 ? `${Math.round((100 * sg.valeur) / barre.x.total)}\u00a0%` : ""}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
       {axe && (
-      <div className="social-axe-titre">
-        <span>{AXES[m]}</span>
-      </div>
+        <div className="social-axe-titre">
+          <span>{AXES[m]}</span>
+        </div>
       )}
     </div>
   );
 }
 
-/**
- * Parts : un treemap en tuiles par panneau, comme la démo. Aire proportionnelle
- * à la part, couleur du parti (ou de la plateforme), étiquette dans la tuile
- * quand elle y tient, infobulle avec le nombre.
- */
-function Parts({ data, blocs, m, rangs }: { data: SocialData; blocs: Blocs; m: Mesure; rangs?: number }) {
-  const multiples = blocs.length > 1;
-  const ratio = multiples ? 1.6 : rangs ? 1.4 : 2.6; // largeur / hauteur du cadre (CSS)
-  // À côté des barres : la hauteur du bloc de barres, du haut de la première
-  // au bas de la dernière (nombre de rangées × hauteur d'une rangée).
-  const pas = multiples ? RANGEE.compacte : RANGEE.normale;
-  const cadre = rangs
-    ? { height: `${rangs * pas - 2 * RANGEE.marge}px`, marginTop: `${RANGEE.marge}px` }
-    : { aspectRatio: String(ratio) };
-  return (
-    <div className={`social-panneaux${multiples ? " multiples" : ""}`}>
-      {blocs.map((b) => {
-        const total = b.valeurs.reduce((s, v) => s + v.valeur, 0);
-        const tuiles = treemap(
-          b.valeurs.map((v) => ({ item: v.element, valeur: v.valeur })),
-          ratio,
-        );
-        return (
-          <div key={b.panneau.cle} className="social-panneau">
-            {titrePanneau(data, b.panneau) && <div className="social-panneau-titre">{titrePanneau(data, b.panneau)}</div>}
-            {total === 0 ? (
-              <p className="social-vide">Aucune donnée dans cette sélection.</p>
-            ) : (
-              <div className="social-treemap" role="list" style={cadre}>
-                {tuiles.map((t) => {
-                  const part = Math.round((100 * t.valeur) / total);
-                  const nom = nomElement(data, t.item);
-                  // La case décide, à sa taille réelle (requêtes de conteneur, CSS) :
-                  // logo (ou sigle) et pourcentage, le seul logo, ou rien.
-                  const logo = t.item.plateforme && !t.item.party ? t.item.plateforme : null;
-                  const detail = `${nom}\u00a0: ${part}\u00a0% · ${nombreFr(t.valeur)} ${NOMS_MESURES[m]}`;
-                  return (
-                    <div
-                      key={t.item.cle}
-                      role="listitem"
-                      aria-label={detail}
-                      title={detail}
-                      className={`social-tuile${texture(t.item.plateforme)}`}
-                      style={{
-                        left: `${100 * t.x0}%`,
-                        top: `${100 * t.y0}%`,
-                        width: `${100 * (t.x1 - t.x0)}%`,
-                        height: `${100 * (t.y1 - t.y0)}%`,
-                        background: couleurElement(data, t.item, b.panneau),
-                      }}
-                    >
-                      <span
-                        className="social-tuile-pastille"
-                        aria-hidden="true"
-                        style={{ background: b.panneau.party ? data.partiInfo[b.panneau.party].couleur : couleurElement(data, t.item) }}
-                      >
-                        {logo ? <Logo p={logo} taille={14} /> : <b>{nom}</b>}
-                        <em>{part}&nbsp;%</em>
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/**
- * Courbes, même technique que le graphique « Palmares » du module Partis : le
- * SVG est étiré (traits à épaisseur fixe) et le texte est en HTML positionné en
- * pourcentage, lisible à toutes les largeurs.
- */
 function Courbes({
   data,
   jours,
@@ -1445,7 +1376,9 @@ export function Infobulle({
   data,
   circo,
   m,
-  periode,
+  unite,
+  periodeTexte,
+  valeurs,
   plateformes,
   partis,
   x,
@@ -1462,8 +1395,12 @@ export function Infobulle({
   onRetirerFiltres?: () => void;
   data: SocialData;
   circo: Circo;
-  m: ReturnType<typeof meneur>;
-  periode: PeriodeCarte;
+  m: Meneur;
+  /** Unité de l'indicateur (« j’aime », « abonnés »…) et sa période (« sur la période »). */
+  unite: string;
+  periodeTexte: string;
+  /** Valeur de chaque compte de `data.audience`, par index. */
+  valeurs: readonly number[];
   plateformes: Plateforme[];
   partis: PartyKey[];
   x: number;
@@ -1480,15 +1417,18 @@ export function Infobulle({
   // de la circonscription, toutes plateformes et tous partis. La couleur et la
   // liste des candidats, elles, suivent les filtres.
   const fil = (etat.fil ?? []).slice(0, 10);
+  // Les comptes de candidats de la circonscription, avec leur valeur sur la
+  // fenêtre (même source que la couleur de la carte).
+  const comptesCirco = data.audience.map((a, i) => ({ ...a, i })).filter((a) => a.code === circo.code && a.type === "candidat");
   const lignes = data.partis
     .filter((k) => partis.includes(k))
-    .map((k) => ({ k, comptes: circo.comptes.filter((c) => c.party === k && plateformes.includes(c.plateforme)) }))
+    .map((k) => ({ k, comptes: comptesCirco.filter((c) => c.party === k && plateformes.includes(c.plateforme)) }))
     .filter((l) => l.comptes.length > 0);
   // Les plateformes présentes dans la circonscription : une colonne chacune,
   // pour aligner les logos sans réserver de place aux plateformes absentes.
   const pfPresentes = PLATEFORMES.filter((pf) => lignes.some((l) => l.comptes.some((c) => c.plateforme === pf)));
   // Des comptes suivis, tous écartés par les filtres : le dire, et non « aucun compte ».
-  const filtresVides = lignes.length === 0 && circo.comptes.length > 0;
+  const filtresVides = lignes.length === 0 && comptesCirco.length > 0;
   const filtresActifs = resumeFiltres(data, plateformes, partis);
   return (
     <div
@@ -1518,16 +1458,14 @@ export function Infobulle({
             <span className="social-fiche-parti" style={{ background: data.partiInfo[m.party].couleur }}>
               {data.partiInfo[m.party].sigle}
             </span>{" "}
-            en tête ces 7 derniers jours
+            en tête {periodeTexte}
           </>
-        ) : m.jaime > 0 ? (
+        ) : m.valeur > 0 ? (
           "Égalité entre partis"
-        ) : m.publications > 0 ? (
-          "Aucun j’aime sur la période"
         ) : filtresVides ? (
-          "Aucune publication avec ces filtres"
+          "Rien avec ces filtres"
         ) : (
-          "Aucune publication sur la période"
+          `Aucun ${unite} ${periodeTexte}`
         )}
       </div>
       {filtresVides ? (
@@ -1547,11 +1485,11 @@ export function Infobulle({
         <>
         <span className="social-infobulle-entete">
           <span className="social-meta">Candidats</span>
-          <span className="social-meta">{periode === "7j" ? "J’aime · 7 jours" : "J’aime"}</span>
+          <span className="social-meta">{unite.charAt(0).toUpperCase() + unite.slice(1)}</span>
         </span>
         <ul>
           {lignes.map(({ k, comptes }) => {
-            const n = comptes.reduce((s, c) => s + (periode === "7j" ? c.jaime7j : c.jaimeCampagne), 0);
+            const n = comptes.reduce((s, c) => s + (valeurs[c.i] ?? 0), 0);
             return (
               <li key={k}>
                 <span className="social-infobulle-sigle" style={{ color: data.partiInfo[k].couleur }}>
@@ -1607,21 +1545,20 @@ export function Infobulle({
                 <Logo p={p.plateforme} taille={11} />
                 <b style={{ color: data.partiInfo[p.party].couleur }}>{data.partiInfo[p.party].sigle}</b>
                 <span className="social-infobulle-date">{jourBref(p.jour)}</span>
-                <span className="social-infobulle-texte">{p.texte || "(sans texte)"}</span>
+                {p.url ? (
+                  <a className="social-infobulle-texte" href={p.url} target="_blank" rel="noopener noreferrer">
+                    {p.texte || "(sans texte)"}
+                  </a>
+                ) : (
+                  <span className="social-infobulle-texte">{p.texte || "(sans texte)"}</span>
+                )}
                 <span className="social-infobulle-n">{nombreFr(p.jaime)}</span>
               </li>
             ))}
           </ol>
         )}
       </div>
-      {epinglee ? (
-        <a className="social-infobulle-fiche" href={`${BASE_PATH}/reseaux/circonscriptions/${circo.slug}/`}>
-          <span>Voir la page de la circonscription</span>
-          <span aria-hidden="true">→</span>
-        </a>
-      ) : (
-        <span className="social-infobulle-pied">cliquez pour épingler et faire défiler le fil</span>
-      )}
+      {!epinglee && <span className="social-infobulle-pied">cliquez pour épingler, faire défiler le fil et ouvrir une publication</span>}
     </div>
   );
 }
@@ -1795,30 +1732,38 @@ function Recherche({ data, onChoisir }: { data: SocialData; onChoisir: (code: nu
 
 export function Carte({
   data,
+  m: mesure,
+  d0,
+  d1,
   plateformes,
   partis,
   onRetirerFiltres,
 }: {
   data: SocialData;
+  /** L'indicateur et la fenêtre choisis : la carte les suit comme les autres vues. */
+  m: Mesure;
+  d0: number;
+  d1: number;
   plateformes: Plateforme[];
   partis: PartyKey[];
   onRetirerFiltres?: () => void;
 }) {
   const carte = data.carte!;
+  const unite = NOMS_MESURES[mesure];
+  const periodeTexte = mesure === "abonnes" ? "au dernier relevé" : "sur la période";
   const [W, H] = [carte.vue[2], carte.vue[3]];
   // Le viewBox est le Québec méridional : la vue identité le montre, ⟲ y
   // revient ; le dézoom descend jusqu'à la province entière.
   const [sx, sy, sw, sh] = carte.sud;
   const kMin = Math.min(sw / W, sh / H);
-  // La carte porte sur les 7 derniers jours, indépendamment de la frise.
-  const periode: PeriodeCarte = "7j";
   const [choix, setChoix] = useState<number | null>(null);
-  const meneurs = useMemo(
-    () => new Map(carte.circos.map((c) => [c.code, meneur(c.comptes, periode, plateformes, partis)])),
-    [carte, periode, plateformes, partis],
-  );
-  // Opacité : 0,25 + 0,7 × √(j'aime / maximum), comme la démo.
-  const maxJaime = useMemo(() => Math.max(1, ...[...meneurs.values()].map((m) => m.jaime)), [meneurs]);
+  // La valeur de chaque compte sur la fenêtre (table « compte par jour »,
+  // chargée à la demande ; les abonnés viennent du dernier relevé).
+  const activite = useAudienceJour(data, mesure !== "abonnes");
+  const valeurs = useMemo(() => valeursComptes(data.audience, activite.jours, mesure, { d0, d1 }), [data.audience, activite.jours, mesure, d0, d1]);
+  const meneurs = useMemo(() => meneursCarte(data.audience, valeurs, plateformes, partis), [data.audience, valeurs, plateformes, partis]);
+  // Opacité : 0,25 + 0,7 × √(valeur / maximum), comme la démo.
+  const maxValeur = useMemo(() => Math.max(1, ...[...meneurs.values()].map((m) => m.valeur)), [meneurs]);
   const cadres = useMemo(() => new Map(carte.circos.map((c) => [c.code, cadreChemin(c.d)])), [carte]);
   // Ordre du clavier : par région, puis par nom.
   const ordre = useMemo(
@@ -2016,13 +1961,13 @@ export function Carte({
   const remplissage = (code: number) => {
     const m = meneurs.get(code);
     if (!m?.party) return { fill: "var(--social-carte-vide)", fillOpacity: 1 };
-    return { fill: data.partiInfo[m.party].couleur, fillOpacity: 0.25 + 0.7 * Math.sqrt(m.jaime / maxJaime) };
+    return { fill: data.partiInfo[m.party].couleur, fillOpacity: 0.25 + 0.7 * Math.sqrt(m.valeur / maxValeur) };
   };
   const titre = (code: number, nom: string) => {
     const m = meneurs.get(code);
     return m?.party
-      ? `${nom} : ${data.partiInfo[m.party].sigle} en tête, ${nombreFr(m.parParti[m.party]!.jaime)} j’aime`
-      : `${nom} : ${m && m.jaime > 0 ? "égalité" : "aucun j’aime"}`;
+      ? `${nom} : ${data.partiInfo[m.party].sigle} en tête, ${nombreFr(m.parParti[m.party]!)} ${unite}`
+      : `${nom} : ${m && m.valeur > 0 ? "égalité" : `aucun ${unite}`}`;
   };
   const circo = carte.circos.find((c) => c.code === choix) ?? null;
   const bulle = epingle ?? survol;
@@ -2030,7 +1975,7 @@ export function Carte({
   return (
     <div className="social-carte">
       <Recherche data={data} onChoisir={trouver} />
-      <ul className="social-carte-legende" aria-label="Parti qui reçoit le plus de j’aime">
+      <ul className="social-carte-legende" aria-label={`Parti en tête, en ${unite}`}>
         {data.partis
           .filter((k) => partis.includes(k))
           .map((k) => (
@@ -2041,9 +1986,11 @@ export function Carte({
           ))}
         <li>
           <i style={{ background: "var(--social-carte-vide)" }} />
-          Aucun j’aime
+          Sans {unite}
         </li>
-        <li className="social-carte-legende-note">plus la couleur est soutenue, plus il y a de j’aime</li>
+        <li className="social-carte-legende-note">
+          {activite.charge ? "chargement de l’activité par jour…" : "plus la couleur est soutenue, plus le total est élevé"}
+        </li>
       </ul>
 
       <div className="social-carte-vues" ref={vuesRef}>
@@ -2150,7 +2097,9 @@ export function Carte({
             data={data}
             circo={carte.circos.find((c) => c.code === bulle.code)!}
             m={meneurs.get(bulle.code)!}
-            periode={periode}
+            unite={unite}
+            periodeTexte={periodeTexte}
+            valeurs={valeurs}
             plateformes={plateformes}
             partis={partis}
             x={bulle.x}
@@ -2181,44 +2130,281 @@ export function Carte({
 }
 
 // ── Le tableau de bord ────────────────────────────────────────────────────────
+/** Icônes des vues (barre d'onglets mobile) : traits simples sur 24 x 24. */
+function IconeVue({ v }: { v: Vue }) {
+  const trait = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="social-icone-vue">
+      {/* Un parti : un groupe ; un candidat : une personne seule. */}
+      {v === "partis" && (
+        <g {...trait}>
+          <circle cx="12" cy="7.5" r="3" />
+          <path d="M6.5 19c.6-3.4 3-5.3 5.5-5.3s4.9 1.9 5.5 5.3" />
+          <circle cx="5" cy="9.5" r="2.2" />
+          <path d="M1.5 18c.4-2.6 1.9-4.2 3.9-4.3" />
+          <circle cx="19" cy="9.5" r="2.2" />
+          <path d="M22.5 18c-.4-2.6-1.9-4.2-3.9-4.3" />
+        </g>
+      )}
+      {v === "candidats" && (
+        <g {...trait}>
+          <circle cx="12" cy="8" r="3.6" />
+          <path d="M5 20c.7-4 3.6-6.2 7-6.2s6.3 2.2 7 6.2" />
+        </g>
+      )}
+      {v === "palmares" && (
+        <g {...trait}>
+          <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
+          <path d="M7 6H4.5a2.5 2.5 0 0 0 2.5 4M17 6h2.5a2.5 2.5 0 0 1-2.5 4M12 13v4M8.5 20h7" />
+        </g>
+      )}
+      {v === "carte" && (
+        <g {...trait}>
+          <path d="M12 21s-6-5.6-6-10.5a6 6 0 0 1 12 0C18 15.4 12 21 12 21z" />
+          <circle cx="12" cy="10.5" r="2.2" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
+/** Barre d'état de l'appareil : signal, wifi, batterie. Décor seulement. */
+function StatutGlyphes() {
+  const trait = { fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round" as const };
+  return (
+    <span className="social-statut-glyphes">
+      <svg viewBox="0 0 16 10" aria-hidden="true">
+        <rect x="0" y="6" width="2.5" height="4" fill="currentColor" />
+        <rect x="4.5" y="4" width="2.5" height="6" fill="currentColor" />
+        <rect x="9" y="2" width="2.5" height="8" fill="currentColor" />
+        <rect x="13.5" y="0" width="2.5" height="10" fill="currentColor" />
+      </svg>
+      <svg viewBox="0 0 14 10" aria-hidden="true">
+        <path d="M1 3.5a9 9 0 0 1 12 0M3.2 6a6 6 0 0 1 7.6 0M5.4 8.3a3 3 0 0 1 3.2 0" {...trait} />
+      </svg>
+      <svg viewBox="0 0 24 10" aria-hidden="true">
+        <rect x="0.7" y="0.7" width="19.6" height="8.6" rx="2" {...trait} />
+        <rect x="2.5" y="2.5" width="13" height="5" rx="1" fill="currentColor" />
+        <path d="M22 3.5v3" {...trait} />
+      </svg>
+    </span>
+  );
+}
+
+function IconeFiltres() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="social-icone-vue">
+      <path d="M4 5h16l-6.2 7.4V19l-3.6-1.8v-4.8L4 5z" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Icônes de Total (barres) et d'Évolution (courbe), devant leur mot. */
+function IconeForme({ f }: { f: Forme }) {
+  const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return (
+    <svg viewBox="0 0 34 24" aria-hidden="true" className="trait">
+      {f === "barres" ? (
+        <path d="M6 6h18M6 12h22M6 18h12" {...trait} strokeWidth={3} />
+      ) : (
+        <path d="M5 18l7-7 5 4 6-8 6 3" {...trait} />
+      )}
+    </svg>
+  );
+}
+
+/** Icônes des indicateurs : abonnés, publications, j'aime, commentaires. */
+function IconeMesure({ m }: { m: Mesure }) {
+  const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const coeur = (x: number, y: number, k: number) =>
+    `M${x} ${y + 3 * k}c${-2.5 * k} ${-2.6 * k} ${-5 * k} ${-4.4 * k} ${-5 * k} ${-6.8 * k}a${2.6 * k} ${2.6 * k} 0 0 1 ${5 * k} ${-1.2 * k}a${2.6 * k} ${2.6 * k} 0 0 1 ${5 * k} ${1.2 * k}c0 ${2.4 * k} ${-2.5 * k} ${4.2 * k} ${-5 * k} ${6.8 * k}z`;
+  return (
+    <svg viewBox="0 0 34 24" aria-hidden="true" className="trait">
+      {m === "abonnes" && (
+        <g {...trait}>
+          <circle cx="13" cy="8" r="3.2" />
+          <path d="M6.5 20c.6-3.8 3.2-5.8 6.5-5.8s5.9 2 6.5 5.8" />
+          <circle cx="22.5" cy="9" r="2.6" />
+          <path d="M21.5 14.6c2.8-.4 5.4 1.2 6 5.4" />
+        </g>
+      )}
+      {m === "publications" && (
+        <g {...trait}>
+          <rect x="10" y="3" width="14" height="18" rx="1.5" />
+          <path d="M13.5 8h7M13.5 12h7M13.5 16h4.5" />
+        </g>
+      )}
+      {m === "jaime" && <path d={coeur(17, 15.5, 1.35)} {...trait} />}
+      {m === "commentaires" && (
+        <path d="M8 6h18a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H15l-5 3.5V18H8a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 8 6z" {...trait} />
+      )}
+    </svg>
+  );
+}
+
+/** L'indicateur du graphique (Partis) ou du classement (Candidats) : une
+ *  rangée de boutons, celui qui est enfoncé est l'indicateur affiché. */
+function Indicateurs({
+  active,
+  onChoisir,
+  indisponible,
+}: {
+  active: Mesure;
+  onChoisir: (m: Mesure) => void;
+  /** Pourquoi un indicateur est grisé dans la vue courante, sinon null. */
+  indisponible: (m: Mesure) => string | null;
+}) {
+  return (
+    <div className="social-bascule social-indicateurs" role="group" aria-label="Indicateur affiché">
+      {MESURES.map((x) => {
+        const on = x.cle === active;
+        const raison = indisponible(x.cle);
+        return (
+          <button
+            type="button"
+            key={x.cle}
+            className={on ? "active" : undefined}
+            aria-pressed={on}
+            disabled={!!raison}
+            title={raison ?? undefined}
+            onClick={() => onChoisir(x.cle)}
+          >
+            <IconeMesure m={x.cle} />
+            {x.libelle}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Les trois groupes de filtres, dans la colonne de droite (grand écran) ou
+ *  dans le tiroir (mobile). */
+function GroupeFiltres({
+  data,
+  plateformes,
+  partis,
+  setPlateformes,
+  setPartis,
+}: {
+  data: SocialData;
+  plateformes: Plateforme[];
+  partis: PartyKey[];
+  setPlateformes: (v: Plateforme[]) => void;
+  setPartis: (v: PartyKey[]) => void;
+}) {
+  return (
+    <>
+      <Coches
+        label="Plateforme"
+        options={PLATEFORMES.map((p) => ({ cle: p, libelle: NOMS_PLATEFORMES[p] }))}
+        actifs={plateformes}
+        onChange={setPlateformes}
+        couleur={(p) => COULEURS_PLATEFORMES[p]}
+        icone={(p) => <Logo p={p} taille={15} />}
+      />
+      <Coches
+        label="Parti"
+        options={data.partis.map((p) => ({ cle: p, libelle: data.partiInfo[p].sigle }))}
+        actifs={partis}
+        onChange={setPartis}
+        couleur={(p) => data.partiInfo[p].couleur}
+      />
+    </>
+  );
+}
+
 export function SocialClient({ data }: { data: SocialData }) {
   const n = data.jours.length;
-  const [d0, setD0] = useState(Math.max(0, n - 7));
+  // À l'arrivée : toute la campagne, du déclenchement au dernier jour complet.
+  const [d0, setD0] = useState(data.campagne);
   const [d1, setD1] = useState(n - 1);
   const [plateformes, setPlateformes] = useState<Plateforme[]>([...PLATEFORMES]);
   const [partis, setPartis] = useState<PartyKey[]>([...data.partis]);
-  const [types, setTypes] = useState<TypeCompte[]>([...TYPES]);
   const [vue, setVue] = useState<Vue>("partis");
   const vues = data.carte ? VUES : VUES.filter((v) => v.cle !== "carte");
   const [forme, setForme] = useState<Forme>("barres");
-  const [decoupe, setDecoupe] = useState<Decoupe>("ensemble");
-  // Une seule mesure, partagée par Partis et Candidats : j'aime à l'arrivée
-  // (onglet Partis, barres et parts, ensemble).
+  // Une seule mesure, partagée par Partis et Candidats : j'aime à l'arrivée.
   const [m, setMesure] = useState<Mesure>("jaime");
+  // Mobile : le tiroir des filtres, ouvert depuis la barre du bas.
+  const [tiroir, setTiroir] = useState(false);
+  // Grand écran : la tablette garde sa taille et défile à l'intérieur ; une
+  // flèche en bas de l'écran dit qu'il reste du contenu, tant qu'il en reste.
+  const defileur = useRef<HTMLDivElement>(null);
+  const [resteADefiler, setResteADefiler] = useState(false);
+  useEffect(() => {
+    const el = defileur.current;
+    if (!el) return;
+    const maj = () => setResteADefiler(el.scrollHeight - el.clientHeight - el.scrollTop > 12);
+    maj();
+    el.addEventListener("scroll", maj, { passive: true });
+    const ro = new ResizeObserver(maj);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener("scroll", maj);
+      ro.disconnect();
+    };
+  }, []);
+  useEffect(() => {
+    defileur.current?.scrollTo({ top: 0 });
+  }, [vue]);
+  useEffect(() => {
+    if (!tiroir) return;
+    const esc = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setTiroir(false);
+    };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [tiroir]);
 
+  // Le type de compte n'est pas un filtre : l'onglet Candidats ne classe que
+  // des comptes de candidats, les autres vues prennent tout (partis officiels
+  // et candidats).
+  const types: TypeCompte[] = useMemo(() => (vue === "candidats" ? ["candidat"] : [...TYPES]), [vue]);
   const f: Filtres = useMemo(() => ({ d0, d1, plateformes, partis, types }), [d0, d1, plateformes, partis, types]);
   const periode = (a: number, b: number) => {
     setD0(a);
     setD1(b);
   };
-  const modifies = filtresModifies(data, plateformes, partis, types);
+  const modifies = filtresModifies(data, plateformes, partis, [...TYPES]);
   const retirerFiltres = () => {
     setPlateformes([...PLATEFORMES]);
     setPartis([...data.partis]);
-    setTypes([...TYPES]);
   };
+  // Nombre d'options écartées : le badge du bouton « Filtres ».
+  const nbFiltres = PLATEFORMES.length - plateformes.length + (data.partis.length - partis.length);
 
-  const frise = useMemo(() => parJour(data, f), [data, f]);
+  const frise = useMemo(() => parJourParti(data, f), [data, f]);
+  const couleursPartis = useMemo(() => data.partis.map((p) => data.partiInfo[p].couleur), [data]);
   const rows = useMemo(() => lignes(data, f), [data, f]);
   const t = totaux(rows);
   const nbJours = d1 - d0 + 1;
 
   // Pas de série d'abonnés par jour : « dans le temps » est grisé pour eux.
   const formeEff: Forme = m === "abonnes" ? "barres" : forme;
-  const pans = panneaux(decoupe, f);
+  // Un seul découpage : les partis côte à côte, chaque barre empilée par
+  // réseau (le survol donne le détail).
+  const pans = panneaux("ensemble", f);
   const graphique = vue === "partis";
   const rowsM = useMemo(() => (m === "abonnes" ? lignesAbonnes(data, f) : rows), [m, data, f, rows]);
   const abonnes = useMemo(() => totaux(lignesAbonnes(data, f)).publications, [data, f]);
+
+  // Les tuiles choisissent l'indicateur ; hors de Partis et Candidats, en
+  // choisir un ramène à Partis. Sans l'activité par compte et par jour,
+  // Candidats ne classe qu'en abonnés : un autre indicateur ramène aussi à Partis.
+  const candidatsAbonnesSeulement = !(data.audienceJour.length || data.audienceJourDispo);
+  const choisirMesure = (cle: Mesure) => {
+    setMesure(cle);
+    if ((vue === "candidats" || vue === "carte") && candidatsAbonnesSeulement && cle !== "abonnes") setVue("partis");
+  };
+  /** Par publication : abonnés et publications ne se comptent pas par publication. */
+  const indisponible = (cle: Mesure): string | null =>
+    vue === "palmares" && (cle === "abonnes" || cle === "publications") ? "Ne se compte pas par publication" : null;
+  /** La case enfoncée : l'indicateur, ou ce qui classe les publications. */
+  const mActive: Mesure = vue === "palmares" ? mesurePalmares(m) : m;
+  // Le total de l'indicateur, pour le sous-titre de l'onglet Partis.
+  const totalM = m === "abonnes" ? abonnes : m === "publications" ? t.publications : m === "jaime" ? t.jaime : t.commentaires;
 
   const raccourcis: { libelle: string; a: number }[] = [
     { libelle: "7 j", a: Math.max(0, n - 7) },
@@ -2227,35 +2413,102 @@ export function SocialClient({ data }: { data: SocialData }) {
     { libelle: "Tout", a: 0 },
   ];
 
-  const tops = vue === "palmares" ? palmares(data, f) : [];
+  // Par publication : les 10 en tête, par j'aime ou par commentaires selon la
+  // case enfoncée.
+  const mP = mesurePalmares(m);
+  const tops = vue === "palmares" ? palmares(data, f, mP) : [];
 
   const sousTitre =
-    vue === "presence"
-      ? "Part des candidatures de chaque parti dont au moins un compte est suivi. Dernier relevé : la période ne s’applique pas."
-      : vue === "candidats"
+    vue === "candidats"
         ? m === "abonnes"
-          ? `Les ${AUDIENCE_MAX} comptes les plus suivis, en abonnés. Dernier relevé\u00a0: la période ne s’applique pas.`
-          : `Les ${AUDIENCE_MAX} comptes en tête sur la période, en ${MESURE[m].unite}.`
+          ? `Les ${AUDIENCE_MAX} comptes de candidats les plus suivis, en abonnés. Dernier relevé : la période ne s’applique pas.`
+          : `Les ${AUDIENCE_MAX} comptes de candidats en tête sur la période, en ${MESURE[m].unite}.`
         : vue === "palmares"
-          ? "Les 10 publications les plus aimées de la période."
+          ? `Les 10 publications les plus ${mP === "commentaires" ? "commentées" : "aimées"} de la période.`
           : vue === "carte"
-            ? "Chaque circonscription prend la couleur du parti dont les candidats y reçoivent le plus de j’aime ces 7 derniers jours."
-          : MESURE[m].definition;
+            ? m === "abonnes"
+              ? "Chaque circonscription prend la couleur du parti dont les candidats comptent le plus d’abonnés, au dernier relevé."
+              : m === "publications"
+                ? "Chaque circonscription prend la couleur du parti dont les candidats y publient le plus sur la période."
+                : `Chaque circonscription prend la couleur du parti dont les candidats y reçoivent le plus de ${MESURE[m].unite} sur la période.`
+            : m === "abonnes"
+              ? `${nombreFr(totalM)} abonnés au dernier relevé (la période ne s’applique pas).`
+              : `${nombreFr(totalM)} ${MESURE[m].unite} sur la période.`;
+
+  const filtres = (
+    <GroupeFiltres
+      data={data}
+      plateformes={plateformes}
+      partis={partis}
+      setPlateformes={setPlateformes}
+      setPartis={setPartis}
+    />
+  );
 
   return (
     <>
       <section className="social">
-        {/* Deux colonnes sur grand écran : tout le tableau de bord à gauche,
-            les filtres à droite derrière un filet. Sur mobile, les filtres
-            passent entre les chiffres et le graphique. */}
+        {/* Le module vit dans un appareil : un téléphone sur téléphone, une
+            tablette sur grand écran (le CSS choisit). L'écran a une hauteur
+            fixe et défile à l'intérieur ; la barre d'onglets (mobile) et le
+            tiroir des filtres restent dans l'écran. Grand écran : le tableau
+            de bord à gauche, les filtres à droite derrière un filet. */}
+        <div className="social-appareil">
+          <div className="social-ecran">
+            <div className="social-statut" aria-hidden="true">
+              <span className="social-statut-long">La Vitrine démocratique</span>
+              <span className="social-statut-court">Vitrine</span>
+              <StatutGlyphes />
+            </div>
+            <div className="social-defilement" ref={defileur}>
         <div className="social-tdb">
           <div className="social-entete partis-title-row">
             <div className="title-block">
-              <h2 className="partis-title">Les candidats sur les réseaux</h2>
+              <h2 className="partis-title">La guerre des clics</h2>
               <div className="period-subtitle">
                 Du {jourCourt(data.jours[d0])} au {jourCourt(data.jours[d1])} · {nombreFr(nbJours)}
-                {nbJours > 1 ? " jours" : " jour"}
+                {nbJours > 1 ? " jours" : " jour"}
               </div>
+            </div>
+            {/* Grand écran : les filtres à droite du titre (sur mobile, le tiroir). */}
+            <div className="control-block social-filtres-rangee" role="group" aria-label="Filtres">
+              <span className="social-filtrer" aria-hidden="true">
+                <IconeFiltres /> Filtrer
+              </span>
+              {filtres}
+              {modifies && (
+                <button type="button" className="social-lien social-reinitialiser" onClick={retirerFiltres} aria-label="Réinitialiser les filtres">
+                  <span aria-hidden="true">⟲</span> Réinitialiser
+                </button>
+              )}
+            </div>
+          </div>
+          {/* Sous le titre : la vue. Sur mobile, la barre du bas la remplace. */}
+          <div className="social-premiers">
+            {/* Grand écran : l'indicateur en grandes cases, avec sa question ;
+                celle qui est enfoncée est l'indicateur affiché. */}
+            <div className="social-vues social-onglets-haut" role="group" aria-label="Indicateur affiché">
+              {MESURES.map((x) => {
+                const on = x.cle === mActive;
+                const raison = indisponible(x.cle);
+                return (
+                  <button
+                    type="button"
+                    key={x.cle}
+                    className={`social-vue${on ? " active" : ""}`}
+                    aria-pressed={on}
+                    disabled={!!raison}
+                    title={raison ?? undefined}
+                    onClick={() => choisirMesure(x.cle)}
+                  >
+                    <span className="social-vue-mot">
+                      <IconeMesure m={x.cle} />
+                      {x.libelle}
+                    </span>
+                    <small>{x.question}</small>
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div className="social-haut">
@@ -2274,257 +2527,191 @@ export function SocialClient({ data }: { data: SocialData }) {
                   </button>
                 ))}
               </div>
-              <Frise jours={data.jours} valeurs={frise} d0={d0} d1={d1} campagne={data.campagne} onChange={periode} />
+              <Frise
+                jours={data.jours}
+                piles={frise}
+                couleurs={couleursPartis}
+                d0={d0}
+                d1={d1}
+                campagne={data.campagne}
+                onChange={periode}
+              />
             </div>
           </div>
-
-          <aside className="social-filtres">
-            <div className="social-groupe" role="group" aria-label="Filtres">
-            <div className="social-groupe-tete">
-              <h3 className="social-groupe-titre">Filtres</h3>
-              {modifies && (
-                <button type="button" className="social-lien social-reinitialiser" onClick={retirerFiltres} aria-label="Réinitialiser les filtres">
-                  <span aria-hidden="true">⟲</span> Réinitialiser
-                </button>
-              )}
-            </div>
-            <Coches
-              label="Plateforme"
-              options={PLATEFORMES.map((p) => ({ cle: p, libelle: NOMS_PLATEFORMES[p] }))}
-              actifs={plateformes}
-              onChange={setPlateformes}
-              couleur={(p) => COULEURS_PLATEFORMES[p]}
-              icone={(p) => <Logo p={p} taille={15} />}
-            />
-            <Coches
-              label="Parti"
-              options={data.partis.map((p) => ({ cle: p, libelle: data.partiInfo[p].sigle }))}
-              actifs={partis}
-              onChange={setPartis}
-              couleur={(p) => data.partiInfo[p].couleur}
-            />
-            <Coches
-              label="Type de compte"
-              options={TYPES.map((c) => ({ cle: c, libelle: NOMS_TYPES[c] }))}
-              actifs={types}
-              onChange={setTypes}
-            />
-            </div>
-            {/* Les chiffres de la période : un résultat, pas un contrôle. */}
-            <section className="social-groupe social-chiffres" aria-label="En chiffres">
-              <h3 className="social-groupe-titre">
-                En chiffres · {nombreFr(nbJours)}&nbsp;{nbJours > 1 ? "jours" : "jour"}
-              </h3>
-              <dl className="social-tuiles">
-                <div>
-                  <dt>Abonnés, dernier relevé</dt>
-                  <dd>{nombreGrand(abonnes)}</dd>
-                </div>
-                <div>
-                  <dt>Publications</dt>
-                  <dd>{nombreGrand(t.publications)}</dd>
-                </div>
-                <div>
-                  <dt>J’aime</dt>
-                  <dd>{nombreGrand(t.jaime)}</dd>
-                </div>
-                <div>
-                  <dt>Commentaires</dt>
-                  <dd>{nombreGrand(t.commentaires)}</dd>
-                </div>
-              </dl>
-            </section>
-          </aside>
 
           <div className="social-bas">
-          <div className="social-onglets">
-            <Bascule label="Vue" options={vues} valeur={vue} onChange={setVue} />
-          </div>
-          {/* Sous les onglets, dans Partis et Candidats seulement : une ligne de
-              groupes en icônes, chacun sous son en-tête (Indicateur · j'aime actif,
-              Graphique, Découpage) ; Candidats n'a que l'indicateur. */}
-          {(vue === "partis" || vue === "candidats") && (
+            {/* Sous les onglets, dans Partis seulement : la forme du graphique et
+                son découpage, en icônes ; l'indicateur se choisit par les tuiles. */}
             <div className="social-reglages">
-              <div className="social-reglage">
-                <span className="social-coches-titre" aria-hidden="true">
-                  Indicateur · {MESURE[m].libelle}
-                </span>
-                <Bascule
-                  label="Indicateur affiché"
-                  options={
-                    vue === "candidats" && !(data.audienceJour.length || data.audienceJourDispo) ? MESURES.slice(0, 1) : MESURES
-                  }
-                  valeur={m}
-                  onChange={setMesure}
-                  icone={(c) => <IconeMesure m={c} />}
-                />
+              {/* Grand écran : la vue en boutons sobres ; téléphone : la barre du
+                  bas la porte, et c'est l'indicateur qui prend cette place. */}
+              <div className="social-reglage social-reglage-vues">
+                <Bascule label="Vue" options={vues} valeur={vue} onChange={setVue} prefixe={(c) => <IconeVue v={c} />} />
+              </div>
+              <div className="social-reglage social-reglage-indicateur">
+                <Indicateurs active={mActive} onChoisir={choisirMesure} indisponible={indisponible} />
               </div>
               {graphique && (
                 <>
                   <span className="social-reglages-filet" aria-hidden="true" />
                   <div className="social-reglage">
-                    <span className="social-coches-titre" aria-hidden="true">
-                      Type de graphique
-                    </span>
                     <Bascule
                       label="Type de graphique"
                       options={FORMES}
                       valeur={formeEff}
                       onChange={setForme}
                       desactives={m === "abonnes" ? { temps: "Pas de série d’abonnés" } : undefined}
-                      icone={(c) => <IconeForme f={c} />}
-                    />
-                  </div>
-                  <span className="social-reglages-filet" aria-hidden="true" />
-                  <div className="social-reglage">
-                    <span className="social-coches-titre" aria-hidden="true">
-                      Découpage
-                    </span>
-                    <Bascule
-                      label="Découpage"
-                      options={DECOUPES}
-                      valeur={decoupe}
-                      onChange={setDecoupe}
-                      icone={(c) => <IconeDecoupe d={c} data={data} />}
+                      prefixe={(c) => <IconeForme f={c} />}
                     />
                   </div>
                 </>
               )}
             </div>
-          )}
-          <p className="social-sous-titre">{sousTitre}</p>
+            <p className="social-sous-titre">{sousTitre}</p>
 
-          {vue === "presence" && (
-            <table className="social-presence">
-              <thead>
-                <tr>
-                  <th scope="col" />
-                  {PLATEFORMES.map((p) => (
-                    <th key={p} scope="col">
-                      <Plateforme_ p={p} taille={18} />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data.partis.map((k) => (
-                  <tr key={k}>
-                    <th scope="row" title={data.partiInfo[k].nom}>
-                      {data.partiInfo[k].sigle}
-                    </th>
-                    {PLATEFORMES.map((p) => {
-                      const c = data.presence[k][p];
-                      return (
-                        <td
-                          key={p}
-                          style={{
-                            background: `color-mix(in srgb, ${data.partiInfo[k].couleur} ${Math.round(15 + 85 * c.part)}%, transparent)`,
-                          }}
-                          className={c.part > 0.5 ? "fonce" : undefined}
-                          title={`${c.avecCompte} sur ${c.candidats} candidatures`}
-                        >
-                          {Math.round(100 * c.part)}&nbsp;%
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+            {vue === "candidats" && (
+              <Audience data={data} mesure={m} plateformes={plateformes} partis={partis} types={types} d0={d0} d1={d1} />
+            )}
 
-          {vue === "candidats" && (
-            <Audience
-              data={data}
-              mesure={m}
-              plateformes={plateformes}
-              partis={partis}
-              types={types}
-              d0={d0}
-              d1={d1}
-            />
-          )}
+            {/* Barres et parts côte à côte (même mesure, filtres et découpe). */}
+            {graphique &&
+              formeEff === "barres" &&
+              (() => {
+                // Un panneau de barres par découpe, à échelle commune.
+                const blocs = parElement(data, rowsM, pans, m);
+                const maxCommun = Math.max(1e-9, ...blocs.flatMap((b) => b.valeurs.map((v) => v.valeur)));
+                return (
+                  <>
+                    {pans.map((pan, i) => (
+                      <div key={pan.cle} className="social-barres-seules">
+                        <Barres
+                          data={data}
+                          rows={rowsM}
+                          pans={[pan]}
+                          m={m}
+                          maxCommun={pans.length > 1 ? maxCommun : undefined}
+                          axe={i === pans.length - 1}
+                        />
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
+            {graphique &&
+              formeEff === "temps" &&
+              (() => {
+                const s = series(data, rowsM, pans, m, f);
+                const libelles = s.debuts.map((i) => data.jours[i]);
+                return (
+                  <div className={`social-panneaux${s.panneaux.length > 1 ? " multiples" : ""}`}>
+                    {s.panneaux.map((p) => (
+                      <div key={p.panneau.cle} className="social-panneau">
+                        {titrePanneau(data, p.panneau) && <div className="social-panneau-titre">{titrePanneau(data, p.panneau)}</div>}
+                        <Courbes
+                          data={data}
+                          jours={libelles}
+                          hebdo={s.hebdo}
+                          s={p.series}
+                          m={m}
+                          panneau={p.panneau}
+                          compact={s.panneaux.length > 1}
+                        />
+                      </div>
+                    ))}
+                    <p className="social-note">
+                      {s.hebdo ? "Par semaine\u00a0: la période dépasse 45 jours." : "Par jour."}
+                      {s.panneaux.length > 1 ? " Chaque panneau a sa propre échelle." : ""}
+                    </p>
+                  </div>
+                );
+              })()}
 
-          {/* Barres et parts côte à côte (même mesure, filtres et découpe). */}
-          {graphique &&
-            formeEff === "barres" &&
-            (() => {
-              // Une paire barres + parts par panneau : chaque treemap garde la
-              // hauteur de ses barres ; les barres gardent une échelle commune.
-              const blocs = parElement(data, rowsM, pans, m);
-              const maxCommun = Math.max(1e-9, ...blocs.flatMap((b) => b.valeurs.map((v) => v.valeur)));
-              return (
-                <>
-                  {pans.map((pan, i) => (
-                    <div key={pan.cle} className="social-barres-parts">
-                      <Barres
-                        data={data}
-                        rows={rowsM}
-                        pans={[pan]}
-                        m={m}
-                        maxCommun={pans.length > 1 ? maxCommun : undefined}
-                        axe={i === pans.length - 1}
-                      />
-                      <Parts data={data} blocs={[blocs[i]]} m={m} rangs={pan.elements.length} />
-                    </div>
+            {vue === "carte" && data.carte && (
+              <Carte data={data} m={m} d0={d0} d1={d1} plateformes={plateformes} partis={partis} onRetirerFiltres={retirerFiltres} />
+            )}
+
+            {vue === "palmares" && (
+              <>
+                <ol className="social-palmares">
+                  {tops.length === 0 && <li className="social-vide">Aucune publication dans cette sélection.</li>}
+                  {tops.map((p, i) => (
+                    <CartePublication key={`${p.url ?? ""}-${i}`} partiInfo={data.partiInfo} p={p} rang={i + 1} />
                   ))}
-                </>
-              );
-            })()}
-          {graphique &&
-            formeEff === "temps" &&
-            (() => {
-              const s = series(data, rowsM, pans, m, f);
-              const libelles = s.debuts.map((i) => data.jours[i]);
-              return (
-                <div className={`social-panneaux${s.panneaux.length > 1 ? " multiples" : ""}`}>
-                  {s.panneaux.map((p) => (
-                    <div key={p.panneau.cle} className="social-panneau">
-                      {titrePanneau(data, p.panneau) && (
-                        <div className="social-panneau-titre">{titrePanneau(data, p.panneau)}</div>
-                      )}
-                      <Courbes
-                        data={data}
-                        jours={libelles}
-                        hebdo={s.hebdo}
-                        s={p.series}
-                        m={m}
-                        panneau={p.panneau}
-                        compact={s.panneaux.length > 1}
-                      />
-                    </div>
-                  ))}
+                </ol>
+                {palmaresApproche(data, f) && (
                   <p className="social-note">
-                    {s.hebdo ? "Par semaine : la période dépasse 45 jours." : "Par jour."}
-                    {s.panneaux.length > 1 ? " Chaque panneau a sa propre échelle." : ""}
+                    Classement approché&nbsp;: il est tiré des 10 publications les plus aimées de chaque jour et de chaque
+                    plateforme, sur les 60 derniers jours.
+                    {mP === "commentaires" ? " Une publication très commentée mais peu aimée peut y manquer." : ""}
                   </p>
-                </div>
-              );
-            })()}
+                )}
+              </>
+            )}
+          </div>
 
-          {vue === "carte" && data.carte && (
-            <Carte data={data} plateformes={plateformes} partis={partis} onRetirerFiltres={retirerFiltres} />
-          )}
-
-          {vue === "palmares" && (
-            <>
-              <ol className="social-palmares">
-                {tops.length === 0 && <li className="social-vide">Aucune publication dans cette sélection.</li>}
-                {tops.map((p, i) => (
-                  <CartePublication key={`${p.url ?? ""}-${i}`} partiInfo={data.partiInfo} p={p} rang={i + 1} />
-                ))}
-              </ol>
-              {palmaresApproche(data, f) && (
-                <p className="social-note">
-                  Classement approché&nbsp;: il est tiré des 10 publications les plus aimées de chaque jour et de chaque
-                  plateforme, sur les 60 derniers jours.
-                </p>
-              )}
-            </>
-          )}
+          {/* Mobile : la barre d'onglets, collée au bas de l'écran tant que le
+              module est visible, avec le bouton des filtres et son badge. */}
+          <nav className="social-barre" aria-label="Vues du module">
+            {vues.map((v) => (
+              <button type="button" key={v.cle} className={v.cle === vue ? "active" : undefined} aria-pressed={v.cle === vue} onClick={() => setVue(v.cle)}>
+                <IconeVue v={v.cle} />
+                <span>{v.court}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              className="social-barre-filtres"
+              aria-haspopup="dialog"
+              aria-expanded={tiroir}
+              onClick={() => setTiroir(true)}
+            >
+              <IconeFiltres />
+              <span>Filtres</span>
+              {nbFiltres > 0 && <b className="social-badge">{nbFiltres}</b>}
+            </button>
+          </nav>
+        </div>
+            </div>
+            {resteADefiler && (
+              <button
+                type="button"
+                className="social-indice-defiler"
+                aria-label="Voir la suite"
+                onClick={() => defileur.current?.scrollBy({ top: Math.round((defileur.current.clientHeight || 400) * 0.6), behavior: "smooth" })}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+            <span className="social-accueil" aria-hidden="true" />
           </div>
         </div>
       </section>
+
+      {tiroir && (
+        <div className="social-tiroir-fond" onClick={() => setTiroir(false)}>
+          <div className="social-tiroir" role="dialog" aria-modal="true" aria-label="Filtres" onClick={(e) => e.stopPropagation()}>
+            <div className="social-tiroir-tete">
+              <span className="social-tiroir-poignee" aria-hidden="true" />
+              <h3>Filtres</h3>
+              <button type="button" className="social-tiroir-fermer" aria-label="Fermer les filtres" onClick={() => setTiroir(false)}>
+                ×
+              </button>
+            </div>
+            <div className="social-tiroir-corps">{filtres}</div>
+            <div className="social-tiroir-pied">
+              <button type="button" className="social-tiroir-remettre" onClick={retirerFiltres} disabled={!modifies}>
+                Tout remettre
+              </button>
+              <button type="button" className="social-tiroir-voir" onClick={() => setTiroir(false)}>
+                Voir {nombreFr(t.publications)} publication{t.publications > 1 ? "s" : ""}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="module-last-updated social-pied">
         {data.lastUpdated} · Module expérimental, visible sur le miroir de travail seulement.
       </div>

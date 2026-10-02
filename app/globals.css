@@ -11869,8 +11869,7 @@
 .social-frise { position: relative; padding: 0 8px 20px; }
 .social-frise-zone { position: relative; height: 64px; touch-action: none; cursor: crosshair; border-bottom: 0.5px solid var(--rule); }
 .social-frise-zone svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.social-frise-zone rect.dans { fill: var(--ink-soft); }
-.social-frise-zone rect.hors { fill: var(--rule); }
+.social-frise-zone rect.hors { opacity: 0.3; }
 .social-frise-repere { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--brass); pointer-events: none; }
 .social-frise-fenetre {
   position: absolute; top: 0; bottom: 0; cursor: grab;
@@ -11887,19 +11886,11 @@
   position: absolute; top: 4px; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-softer); white-space: nowrap;
 }
+.social-frise-mois span.fin { transform: translateX(-100%); padding-right: 2px; }
 .social-frise-repere-libelle {
   position: absolute; top: 0; right: 4px; font-family: "IBM Plex Mono", monospace; font-size: 9px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber-encre); white-space: nowrap;
 }
-
-/* Tuiles */
-.social-tuiles { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 18px 0 0; padding: 12px 0; border-top: 0.5px solid var(--rule); border-bottom: 0.5px solid var(--rule); }
-.social-tuiles div { display: flex; align-items: baseline; gap: 8px; }
-.social-tuiles dt {
-  order: 2; font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: 0.18em;
-  text-transform: uppercase; color: var(--ink-softer);
-}
-.social-tuiles dd { order: 1; margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 22px; color: var(--ink); }
 
 /* Filtres */
 .social-filtres { border-left: 0.5px solid var(--rule); padding-left: 22px; }
@@ -11913,24 +11904,44 @@
   text-transform: uppercase; color: var(--cordovan);
 }
 .social-bascule button:disabled { opacity: 0.35; cursor: not-allowed; }
-/* Partis : barres et parts côte à côte (55 / 45), les barres seules pour une moyenne. */
-.social-barres-parts { display: grid; grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); gap: 28px; align-items: start; }
-/* Titres de panneau de même hauteur des deux côtés : barres et parts alignées. */
-.social-barres-parts .social-panneau-titre { display: flex; align-items: center; height: 24px; margin: 0; }
+/* Partis : les barres seules, sur une largeur de lecture. */
+.social-barres-seules { max-width: none; }
+.social-panneaux { position: relative; }
+.social-barres-empilees .social-piste { cursor: default; outline: none; }
+.social-barres-empilees .social-piste:focus-visible .social-segments { outline: 2px solid var(--social-accent); outline-offset: 3px; }
+.social-barres-empilees .social-piste i { transition: opacity 0.12s, box-shadow 0.12s; }
+.social-barres-empilees .social-piste i:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8); }
+.social-barres-empilees .social-piste i.estompe { opacity: 0.45; }
+/* L'infobulle d'une barre : total, puis une ligne par réseau. */
+.social-bulle-barre {
+  position: absolute; z-index: 8; transform: translateX(-50%); min-width: 200px; max-width: 300px;
+  padding: 9px 13px 8px; background: var(--ink); color: var(--paper); border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(28, 25, 23, 0.3); pointer-events: none;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.04em;
+}
+.social-bulle-barre-titre { font-family: "Source Serif 4", serif; font-size: 13px; letter-spacing: 0; color: color-mix(in srgb, var(--paper) 80%, transparent); }
+.social-bulle-barre-total { margin: 2px 0 6px; font-family: "Playfair Display", serif; font-weight: 700; font-size: 20px; letter-spacing: -0.3px; }
+.social-bulle-barre-total span { font-family: "IBM Plex Mono", monospace; font-weight: 400; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--paper) 70%, transparent); }
+.social-bulle-barre dl { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 12px; margin: 0; padding: 0; }
+.social-bulle-barre dl > div { display: contents; }
+.social-bulle-barre dt, .social-bulle-barre dd { margin: 0; color: color-mix(in srgb, var(--paper) 78%, transparent); white-space: nowrap; }
+.social-bulle-barre dt { display: flex; align-items: center; gap: 6px; }
+.social-bulle-barre dd { text-align: right; }
+.social-bulle-barre .social-bulle-barre-part { color: color-mix(in srgb, var(--paper) 55%, transparent); }
+.social-bulle-barre dl > div.active dt, .social-bulle-barre dl > div.active dd { color: var(--paper); font-weight: 600; }
+/* La rangée de filtres se lit comme telle : une amorce « Filtrer » en tête,
+   une coche sur chaque pastille active, un contour pâle sur les écartées. */
+.social-filtrer { display: inline-flex; align-items: center; gap: 6px; font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-softer); }
+.social-filtrer .social-icone-vue { width: 14px; height: 14px; }
+.social-coches button { display: inline-flex; align-items: center; gap: 5px; }
+.social-coche-marque { font-size: 10px; line-height: 1; }
+.social-filtres-rangee .social-coches button:not(.actif) { color: var(--ink-softer); border-style: dashed; }
+.social-filtres-rangee .social-coches button:not(.actif):hover { color: var(--ink); border-color: var(--ink); }
+.social-barres-seules .social-panneau-titre { display: flex; align-items: center; height: 24px; margin: 0; }
 /* Sous les barres, comme la démo : titre d'axe centré, légende des plateformes. */
 .social-axe-titre { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 14px 0 4px; }
 .social-axe-titre > span { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--ink); }
-@media (max-width: 1023px) { .social-barres-parts { grid-template-columns: minmax(0, 1fr); } }
 .social-audience-nombre { margin-top: 10px; }
-/* « En chiffres » dans la colonne des filtres : empilés, filet entre les blocs. */
-.social-chiffres .social-tuiles { display: block; margin: 0; padding: 0; border: 0; }
-.social-chiffres .social-tuiles > div {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 0;
-  border-bottom: 0.5px solid var(--rule-faint);
-}
-.social-chiffres .social-tuiles > div:last-child { border-bottom: 0; }
-.social-chiffres .social-tuiles dd { order: 0; font-size: 24px; line-height: 1.1; }
-.social-chiffres .social-tuiles dt { order: 1; }
 .social-coches > div { display: flex; flex-wrap: wrap; gap: 4px; }
 .social-coches button.actif { color: var(--paper); background: var(--ink); border-color: var(--ink); }
 .social-coches button .social-logo { vertical-align: -2px; margin-right: 2px; }
@@ -11971,13 +11982,19 @@
    sont des éléments de la ligne, space-between les centre. Sur mobile, les
    groupes s'empilent et les filets deviennent horizontaux. */
 .social-reglages {
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
-  gap: 12px 16px; margin: 10px 0 8px;
+  display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: flex-end;
+  gap: 12px 20px; margin: 18px 0 8px;
 }
 .social-reglages-filet { align-self: stretch; width: 0; border-left: 0.5px solid var(--rule); }
+/* Sur l'écran du téléphone, Graphique et Découpage tiennent côte à côte
+   (2 + 4 boutons de 40 px) : on garde la ligne, le filet vertical entre eux. */
 @media (max-width: 640px) {
-  .social-reglages { flex-direction: column; align-items: stretch; gap: 10px; }
-  .social-reglages-filet { width: auto; height: 0; border-left: 0; border-top: 0.5px solid var(--rule); }
+  .social-reglages { gap: 10px 8px; }
+  .social-reglages .social-bascule.icones { gap: 4px; }
+  .social-reglages .social-icone-logos { gap: 1px; }
+  .social-reglages .social-bascule.icones button { min-width: 36px; min-height: 38px; padding: 6px 8px; }
+  .social-reglages .social-bascule.icones button svg { width: 26px; height: 18px; }
+  .social-reglages .social-icone-logos svg { width: 16px; height: 16px; }
 }
 .social-reglage { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
 .social-reglage .social-bascule { flex-wrap: nowrap; }
@@ -12092,7 +12109,10 @@
 
 /* Courbes */
 .social-graphe { padding: 8px 84px 28px 48px; }
-.social-trace { position: relative; height: 260px; }
+/* Même hauteur que le bloc des barres (5 rangées + titre d'axe) : l'appareil
+   ne change pas de taille quand on passe de « Total » à « Évolution ». */
+.social-trace { position: relative; height: 190px; }
+.social-panneaux > .social-note { margin-bottom: 4px; }
 .social-panneaux.multiples .social-trace { height: 170px; }
 .social-trace svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .social-axe {
@@ -12207,6 +12227,9 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 .social-infobulle-fil b { font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; }
 .social-infobulle-date { font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--ink-softer); white-space: nowrap; }
 .social-infobulle-texte { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* Une publication se clique : elle s'ouvre sur son réseau. */
+a.social-infobulle-texte { color: inherit; text-decoration: none; border-bottom: 0.5px solid var(--rule); }
+a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: var(--cordovan); border-bottom-color: var(--cordovan); outline: none; }
 .social-infobulle-derniere { display: grid; gap: 2px; margin-top: 8px; padding-top: 6px; border-top: 0.5px solid var(--rule-faint); font-size: 12.5px; line-height: 1.35; }
 .social-infobulle-derniere b { font-weight: 600; }
 .social-fil { margin-top: 18px; }
@@ -12417,7 +12440,6 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 
 @media (max-width: 900px) {
   .social-tdb { grid-template-columns: 1fr; grid-template-areas: "entete" "haut" "filtres" "bas"; row-gap: 18px; }
-  .social-chiffres .social-tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
   .social-filtres { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 640px) {
@@ -12440,8 +12462,6 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
   .social-graphe { padding: 8px 76px 28px 40px; }
   .social-audience li { grid-template-columns: minmax(0, 1fr) 4.5rem; }
   .social-audience .social-piste { grid-column: 1 / -1; order: 3; }
-  .social-tuiles dd { font-size: 19px; }
-  .social-tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
 }
 .social-infobulle-filtres { display: grid; justify-items: start; gap: 2px; }
 .social-lien {
@@ -12490,3 +12510,244 @@ button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-
 .social-reinitialiser { min-height: 24px; text-decoration: none; }
 .social-reinitialiser:hover { text-decoration: underline; }
 .social-reinitialiser span { font-size: 13px; letter-spacing: 0; }
+
+/* ── Premier jet « une appli dans le journal » (2026-10-02) ──────────────────
+   Grand écran : page de journal, filtres dans la colonne de droite. Mobile :
+   grammaire d'appli — tuiles qui défilent, barre d'onglets collée au bas de
+   l'écran, tiroir de filtres. L'accent du module est le bleu réservé aux
+   modules de campagne (chantier des palettes par module). */
+.social { --social-accent: var(--bleu); }
+.social-tdb {
+  grid-template-columns: minmax(0, 1fr); grid-template-areas: "entete" "premiers" "haut" "bas" "barre";
+  grid-template-rows: auto auto auto auto auto;
+}
+/* Les premiers choix, sous le titre : la rangée de pastilles (plateforme,
+   parti, type) puis les onglets, sur un filet commun. */
+.social-premiers { grid-area: premiers; margin-top: 6px; }
+.social-filtres-rangee { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; margin: 0; padding: 0; }
+/* À droite du titre : alignée sur sa ligne de base, calée à droite. */
+.social-entete .control-block.social-filtres-rangee {
+  flex: 1 1 auto; width: auto; max-width: none; flex-direction: row; flex-wrap: wrap; align-items: center;
+  justify-content: flex-end; align-self: flex-end; gap: 8px 14px; padding-bottom: 6px;
+}
+.social-entete.partis-title-row { margin-top: 0; }
+.social-premiers .social-onglets { margin: 4px 0 0; }
+.social-haut { margin-top: 22px; }
+/* Sans étiquettes (les logos, les sigles et les mots parlent d'eux-mêmes) :
+   un filet fin sépare les trois groupes ; le nom du groupe reste pour les
+   lecteurs d'écran (aria-label). */
+.social-filtres-rangee { gap: 10px 14px; }
+.social-filtres-rangee .social-coches { display: flex; align-items: center; margin: 0; }
+.social-filtres-rangee .social-coches + .social-coches { padding-left: 14px; border-left: 0.5px solid var(--rule); }
+.social-filtres-rangee .social-coches-titre { display: none; }
+/* « Réinitialiser » se pose au-dessus de la rangée, à droite, sans rien
+   déplacer quand il apparaît ou disparaît. */
+.social-filtres-rangee { position: relative; }
+.social-filtres-rangee .social-reinitialiser { position: absolute; right: 0; bottom: 100%; margin: 0 0 2px; min-height: 22px; white-space: nowrap; }
+.social-barre { grid-area: barre; display: none; }
+
+/* Les quatre vues : de grandes cases encadrées, celle qui est enfoncée est
+   la vue affichée ; une ligne dit ce qu'on y voit. */
+.social-vues { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0 0; }
+.social-vue {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-height: 72px; padding: 11px 14px 10px;
+  text-align: left; cursor: pointer; background: var(--paper-deep); color: var(--ink);
+  border: 0.5px solid var(--rule); border-radius: 0; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.social-vue-mot { display: inline-flex; align-items: center; gap: 9px; font-family: "Playfair Display", serif; font-weight: 700; font-size: 22px; line-height: 1.1; letter-spacing: -0.3px; }
+.social-vue-mot .social-icone-vue { width: 22px; height: 22px; flex: none; }
+.social-vue-mot svg.trait { width: 28px; height: 20px; flex: none; fill: none; stroke: currentColor; }
+.social-reglages .social-bascule button .social-icone-vue { width: 15px; height: 15px; }
+/* La rangée des vues n'existe que sur grand écran ; celle de l'indicateur, que sur téléphone. */
+.social-reglage-indicateur { display: none; }
+.social-vue small { font-family: "Source Serif 4", serif; font-style: italic; font-size: 12.5px; color: var(--ink-softer); }
+.social-vue:hover { border-color: var(--ink); }
+.social-vue.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.social-vue.active small { color: color-mix(in srgb, var(--paper) 78%, transparent); }
+.social-vue:focus-visible { outline: 2px solid var(--social-accent); outline-offset: 2px; }
+/* Par publication : abonnés et publications ne s'y comptent pas, les cases se grisent. */
+.social-vue:disabled { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+.social-vue:disabled:hover { border-color: var(--rule); }
+.social-indicateurs button:disabled { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+/* L'indicateur : des boutons sobres, comme Total | Évolution, chacun avec
+   son icône devant le mot ; la rangée passe sur deux lignes dans le téléphone. */
+.social-reglage .social-indicateurs { flex-wrap: wrap; }
+.social-reglages .social-bascule button { display: inline-flex; align-items: center; gap: 6px; }
+.social-reglages .social-bascule button svg.trait { width: 20px; height: 14px; fill: none; stroke: currentColor; flex: none; }
+.social-chiffres { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; }
+.social-chiffre {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 86px; padding: 12px 14px 10px;
+  text-align: left; cursor: pointer; background: var(--paper-deep); color: var(--ink);
+  border: 0.5px solid var(--rule); border-radius: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+/* Le mot en gros (c'est le filtre), le chiffre en petit dessous. */
+.social-chiffre-mot { font-family: "Playfair Display", serif; font-weight: 700; font-size: 22px; line-height: 1.1; letter-spacing: -0.3px; }
+.social-chiffre-nombre {
+  margin-top: 6px; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 13px; letter-spacing: 0.06em; color: var(--ink-soft);
+}
+.social-chiffre small { font-family: "Source Serif 4", serif; font-style: italic; font-size: 12px; color: var(--ink-softer); }
+.social-chiffre:hover { border-color: var(--ink); }
+.social-chiffre.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.social-chiffre.active .social-chiffre-nombre, .social-chiffre.active small { color: color-mix(in srgb, var(--paper) 78%, transparent); }
+.social-chiffre:focus-visible { outline: 2px solid var(--social-accent); outline-offset: 2px; }
+
+/* L'accent du module : fenêtre de la frise, trait de l'onglet actif. */
+.social .social-frise-fenetre { background: color-mix(in srgb, var(--social-accent) 12%, transparent); border-color: var(--social-accent); }
+.social .social-frise-poignee::after { background: var(--social-accent); }
+.social .social-frise-fenetre:focus-visible, .social .social-frise-poignee:focus-visible { outline-color: var(--social-accent); }
+.social .social-onglets .social-bascule button.active { border-bottom-color: var(--social-accent); }
+.social-onglets { margin-top: 22px; }
+.social-icone-vue { width: 22px; height: 22px; display: block; }
+
+/* La période : sur grand écran, la frise seule (on y trace la fenêtre) ; sur
+   téléphone, les raccourcis seuls (7 j, 30 j, campagne, tout). */
+@media (min-width: 901px) {
+  .social-raccourcis { display: none; }
+  /* Les barres remplissent l'écran de la tablette (808 px) : rangées de 64 px,
+     et le graphique d'évolution garde la même hauteur que le bloc des barres. */
+  .social-barres-empilees li { padding: 9px 0; }
+  .social-barres-empilees .social-piste { height: 46px; }
+  .social-barres-empilees .social-valeur { font-size: 15px; }
+  .social-trace { height: 290px; }
+}
+@media (max-width: 900px) {
+  .social-tdb { grid-template-areas: "entete" "haut" "bas" "barre"; grid-template-rows: auto auto auto auto; row-gap: 18px; }
+  .social-premiers, .social-filtres-rangee, .social-onglets-haut, .social-frise, .social-reglage-vues { display: none; }
+  .social-entete .control-block.social-filtres-rangee { display: none; } /* le tiroir prend le relais */
+  .social-reglage-indicateur { display: flex; }
+  .social-haut { margin-top: 0; }
+  .social-raccourcis { margin-bottom: 0; }
+  .social-reglages { margin-top: 4px; }
+  /* La barre d'onglets, collée au bas de l'écran tant que le module est
+     visible ; elle passe devant le bouton « Signaler » (500) et le personnage
+     Datagotchi (400), qui reviennent dès qu'on quitte le module. */
+  .social-barre {
+    display: flex; position: sticky; bottom: 0; z-index: 520; margin-top: 8px;
+    padding: 6px max(4px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+    background: var(--paper); border-top: 1px solid var(--ink); box-shadow: 0 -6px 18px rgba(28, 25, 23, 0.08);
+  }
+  .social-barre button {
+    position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    min-height: 50px; padding: 5px 2px 3px; border: 0; background: transparent; cursor: pointer; color: var(--ink-softer);
+    font-family: "IBM Plex Mono", monospace; font-size: 8px; letter-spacing: 0.02em; text-transform: uppercase;
+  }
+  /* « Par candidat » tient sur deux lignes plutôt que d'être tronqué. */
+  .social-barre button span { max-width: 100%; line-height: 1.15; text-align: center; }
+  .social-barre button.active { color: var(--ink); }
+  .social-barre button.active .social-icone-vue { color: var(--social-accent); }
+  .social-barre button:focus-visible { outline: 2px solid var(--social-accent); outline-offset: -2px; }
+  .social-barre .social-barre-filtres { border-left: 0.5px solid var(--rule); color: var(--ink); }
+  .social-badge {
+    position: absolute; top: 2px; right: 4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
+    background: var(--cordovan); color: var(--paper); font-size: 9px; font-weight: 600; line-height: 16px; text-align: center;
+  }
+}
+
+/* ── L'appareil : une tablette (paysage) sur grand écran, un téléphone sur
+   téléphone. Cadre en encre, écran en papier à hauteur fixe qui défile à
+   l'intérieur ; la barre d'état en haut est un décor. ───────────────────── */
+.social-appareil {
+  position: relative; margin: 10px auto 0; max-width: 1180px;
+  background: var(--ink); border-radius: 28px; padding: 18px 20px;
+  box-shadow: 0 24px 48px -14px rgba(28, 25, 23, 0.4), inset 0 0 0 1.5px #4a4540;
+}
+/* Caméra frontale, sur le long côté (tablette en paysage). */
+.social-appareil::before {
+  content: ""; position: absolute; top: 6px; left: 50%; width: 6px; height: 6px; margin-left: -3px;
+  border-radius: 50%; background: #0b0a09; box-shadow: inset 0 0 0 1.5px #2f2b27, 0 0 0 1px #3d3833;
+}
+.social-ecran {
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  height: 808px; /* toujours la même : la vue Par parti y tient sans défiler */
+  background: var(--paper); border-radius: 14px;
+}
+.social-statut {
+  flex: none; display: flex; justify-content: space-between; align-items: center; height: 26px; padding: 0 18px;
+  font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-softer);
+}
+.social-statut-court { display: none; }
+.social-statut-glyphes { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-soft); }
+.social-statut-glyphes svg { display: block; height: 10px; width: auto; }
+.social-defilement {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
+}
+/* La flèche « voir la suite » : un voile de papier au bas de l'écran et un
+   chevron qui respire, tant qu'il reste du contenu sous le bord. */
+.social-indice-defiler {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; height: 72px; border: 0; cursor: pointer;
+  display: flex; align-items: flex-end; justify-content: center; padding: 0 0 18px;
+  background: linear-gradient(to bottom, transparent, var(--paper) 65%); color: var(--ink);
+}
+.social-indice-defiler svg { width: 28px; height: 28px; animation: social-rebond 1.6s ease-in-out infinite; }
+.social-indice-defiler:focus-visible { outline: 2px solid var(--social-accent); outline-offset: -4px; }
+@keyframes social-rebond { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+.social-defilement > .social-tdb { padding: 0 26px 26px; }
+.social-entete.partis-title-row { margin-top: 0; padding-top: 0; }
+/* L'indicateur d'accueil, le trait du bas de l'écran. */
+.social-accueil {
+  position: absolute; left: 50%; bottom: 5px; z-index: 530; width: 110px; height: 4px; margin-left: -55px;
+  border-radius: 2px; background: color-mix(in srgb, var(--ink) 35%, transparent); pointer-events: none;
+}
+@media (max-width: 900px) {
+  .social-appareil { max-width: 430px; padding: 10px; border-radius: 48px; }
+  /* Boutons latéraux ; l'îlot est dans l'écran. */
+  .social-appareil::before {
+    top: 110px; left: -3px; width: 3px; height: 54px; margin: 0; border-radius: 2px 0 0 2px;
+    background: #2a2724; box-shadow: none;
+  }
+  .social-appareil::after {
+    content: ""; position: absolute; top: 160px; right: -3px; width: 3px; height: 76px;
+    border-radius: 0 2px 2px 0; background: #2a2724;
+  }
+  .social-ecran { border-radius: 38px; height: auto; overflow: clip; }
+  .social-defilement { flex: none; overflow: visible; }
+  .social-indice-defiler { display: none; }
+  .social-ecran::before {
+    content: ""; position: absolute; top: 9px; left: 50%; z-index: 540; width: 104px; height: 28px; margin-left: -52px;
+    border-radius: 14px; background: var(--ink);
+  }
+  .social-statut { height: 46px; padding: 12px 26px 0; }
+  .social-statut-long { display: none; }
+  .social-statut-court { display: inline; }
+  .social-defilement > .social-tdb { padding: 0 14px 10px; }
+  /* Écran de 300 px : les quatre raccourcis tiennent sur une ligne sans leur
+     étiquette (le groupe garde son nom accessible). */
+  .social-raccourcis .social-coches-titre { display: none; }
+  .social-raccourcis button { padding: 8px 9px; letter-spacing: 0.12em; }
+  .social-barre { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .social-accueil { bottom: 6px; width: 100px; margin-left: -50px; }
+}
+
+/* Le tiroir des filtres (mobile) : par-dessus l'écran, depuis le bas. */
+.social-tiroir-fond {
+  position: fixed; inset: 0; z-index: 600; background: rgba(28, 25, 23, 0.42);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.social-tiroir {
+  width: 100%; max-width: 410px; max-height: 86vh; display: flex; flex-direction: column;
+  background: var(--paper); border-radius: 18px 18px 0 0; box-shadow: 0 -10px 40px rgba(28, 25, 23, 0.3);
+  animation: social-monter 0.22s ease-out;
+}
+@keyframes social-monter { from { opacity: 0; } to { opacity: 1; } }
+.social-tiroir-tete { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 6px; }
+.social-tiroir-poignee { position: absolute; top: 7px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: var(--rule); }
+.social-tiroir-tete h3 { margin: 0; font-family: "Playfair Display", serif; font-size: 22px; font-weight: 700; color: var(--ink); }
+.social-tiroir-fermer {
+  width: 36px; height: 36px; border-radius: 50%; border: 0.5px solid var(--rule); background: transparent;
+  font-size: 22px; line-height: 1; color: var(--ink-soft); cursor: pointer;
+}
+.social-tiroir-corps { padding: 8px 20px 4px; overflow-y: auto; }
+.social-tiroir-corps .social-coches { margin-bottom: 16px; }
+.social-tiroir-corps .social-coches-titre { color: var(--ink-softer); }
+.social-tiroir-corps .social-coches > div { gap: 6px; }
+.social-tiroir-corps .social-coches button { border-radius: 999px; padding: 8px 14px; min-height: 40px; font-size: 10.5px; }
+.social-tiroir-pied { display: flex; gap: 10px; padding: 12px 20px max(16px, env(safe-area-inset-bottom)); border-top: 0.5px solid var(--rule); }
+.social-tiroir-pied button {
+  flex: 1 1 0; min-height: 48px; border-radius: 999px; cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.social-tiroir-remettre { background: transparent; border: 0.5px solid var(--ink); color: var(--ink); }
+.social-tiroir-remettre:disabled { opacity: 0.4; cursor: default; }
+.social-tiroir-voir { flex-grow: 1.6; background: var(--ink); border: 1px solid var(--ink); color: var(--paper); }

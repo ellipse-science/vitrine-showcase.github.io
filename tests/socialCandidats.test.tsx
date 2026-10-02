@@ -19,7 +19,7 @@ import {
   type FilItem,
   type FondCarte,
 } from "@/lib/data/social";
-import { AUDIENCE_MAX, classementAudience, meneur } from "@/lib/data/social-calc";
+import { AUDIENCE_MAX, classementAudience, meneursCarte, valeursComptes } from "@/lib/data/social-calc";
 import fond from "@/lib/geo/circonscriptions-2026.json";
 
 // Pages de candidat, infobulle et recherche de l'onglet Candidats, libellés de
@@ -130,17 +130,18 @@ describe("recherche de l'onglet Candidats", () => {
     expect(e.comptes).toBe(0);
     expect(e.sous).toContain("aucun compte suivi");
   });
-  it("dans les 40 : sa page de pagination ; au-delà : son rang réel, à part", () => {
+  it("dans les 20 : sa page de pagination ; au-delà : son rang réel, à part", () => {
     const items = Array.from({ length: 60 }, (_, i) => ({
       nom: `c${i}`, party: "qs" as const, plateforme: "facebook" as const, type: "candidat" as const, abonnes: 1000 - i, code: i,
     }));
     const complet = classementAudience(items, [], "abonnes", { plateformes: ["facebook"], partis: ["qs"], types: ["candidat"], d0: 0, d1: 0 }, Infinity);
     expect(complet).toHaveLength(60);
-    expect(trouverCandidat(complet, { code: 25, party: "qs" }, 20)).toEqual({ index: 25, rang: 26, dans: true, page: 1 });
-    expect(trouverCandidat(complet, { code: 25, party: "qs" }, 10)).toMatchObject({ page: 2 });
+    expect(trouverCandidat(complet, { code: 15, party: "qs" }, 20)).toEqual({ index: 15, rang: 16, dans: true, page: 0 });
+    expect(trouverCandidat(complet, { code: 15, party: "qs" }, 10)).toMatchObject({ page: 1 });
+    expect(trouverCandidat(complet, { code: 25, party: "qs" }, 20)).toEqual({ index: 25, rang: 26, dans: false, page: null });
     expect(trouverCandidat(complet, { code: 52, party: "qs" }, 20)).toEqual({ index: 52, rang: 53, dans: false, page: null });
     expect(trouverCandidat(complet, { code: 52, party: "caq" }, 20)).toMatchObject({ rang: null, dans: false });
-    expect(AUDIENCE_MAX).toBe(40);
+    expect(AUDIENCE_MAX).toBe(20);
   });
 });
 
@@ -198,9 +199,12 @@ describe("infobulle d'un compte (onglet Candidats)", () => {
 
 describe("infobulle de la carte : filtres ou absence de compte", () => {
   const avecComptes = data.carte!.circos.find((c) => c.code === anjou.code)!;
+  const abonnes = valeursComptes(data.audience, [], "abonnes", { d0: 0, d1: 0 });
+  const vide = { party: null, valeur: 0, parParti: {} };
   const rendu = (circo: typeof avecComptes, plateformes: ("facebook" | "instagram" | "tiktok")[]) =>
     renderToStaticMarkup(
-      <Infobulle data={data} circo={circo} m={meneur(circo.comptes, "7j", plateformes, data.partis)} periode="7j"
+      <Infobulle data={data} circo={circo} m={meneursCarte(data.audience, abonnes, plateformes, data.partis).get(circo.code) ?? vide}
+        unite="abonnés" periodeTexte="au dernier relevé" valeurs={abonnes}
         plateformes={plateformes} partis={data.partis} x={10} y={10} largeur={800} hauteur={600} epinglee
         onRetirerFiltres={() => {}} />,
     ).replace(/<[^>]+>/g, " ").replace(/[\s ]+/g, " ");
@@ -234,7 +238,8 @@ describe("fil des infobulles : toujours le plus récent, sans filtre", () => {
     vi.stubGlobal("fetch", async () => ({ ok: true, json: async () => fil }));
     await chargeFil(anjou.code);
     const html = renderToStaticMarkup(
-      <Infobulle data={data} circo={circo} m={meneur(circo.comptes, "7j", ["tiktok"], ["pq"])} periode="7j"
+      <Infobulle data={data} circo={circo} m={{ party: null, valeur: 0, parParti: {} }} unite="j’aime" periodeTexte="sur la période"
+        valeurs={data.audience.map(() => 0)}
         plateformes={["tiktok"]} partis={["pq"]} x={10} y={10} largeur={800} hauteur={600} epinglee onRetirerFiltres={() => {}} />,
     );
     const textes = [...html.matchAll(/class="social-infobulle-texte">([^<]+)</g)].map((m) => m[1]);
