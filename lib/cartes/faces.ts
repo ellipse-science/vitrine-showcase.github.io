@@ -28,7 +28,18 @@ export type Rendu = {
   glyphe: Glyphe;
   /** Logo de l'Université Laval (URL ou data:), à côté du CAPP. */
   logoUlaval: string | null;
+  /** Période des chiffres du bloc « Fiche à l'Assemblée » ; la législature
+   *  par défaut (carton imprimé). */
+  periodeFiche?: PeriodKey;
 };
+
+/** La feuille des rectos. Oswald y figure depuis le 2 oct. 2026 : le code de
+ *  fonction (.code-fonction) la demande depuis le 22-09, mais la feuille ne la
+ *  déclarait pas, et le générateur rendait ces lettres dans la police de
+ *  secours du système. Le site, qui charge Oswald pour le verso, l'aurait
+ *  montrée au recto de toute façon : on aligne le carton sur l'intention. Les
+ *  cartes imprimées avant cette date portent le code en police de secours. */
+const POLICES_RECTO = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Oswald:wght@700&display=block";
 
 /** Une face rendue : la feuille Google Fonts à charger, le CSS (qui cible
  *  `body`), les attributs du <body> et le balisage du corps. */
@@ -52,7 +63,7 @@ export function rectoLegendaire(c: Carte, portrait: string | null, ecusson: stri
   const parti = c.couleur;
   const fleurs = Array.from({ length: FLEURS_PAR_RARETE[c.rarete ?? "legendaire"] }, () => fleur(COLORS.paper, 26)).join("");
   return {
-    polices: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=block",
+    polices: POLICES_RECTO,
     css: `
   *{box-sizing:border-box;margin:0;padding:0}
   body{width:${W}px;height:${H}px;background:${parti};color:${COLORS.paper};
@@ -156,7 +167,7 @@ export function recto(
   const fonc = FONCTION[c.rarete ?? "commune"];
 
   return {
-    polices: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=block",
+    polices: POLICES_RECTO,
     css: `
   *{box-sizing:border-box;margin:0;padding:0}
   body{width:${W}px;height:${H}px;background:${COLORS.paper};color:${COLORS.ink};
@@ -518,7 +529,12 @@ export function verso(
   // éditions en ligne, décision du 22-09), donc plus de tableau à une rangée. Comme au dos d'une
   // carte de baseball : libellé en haut, chiffre en gros dessous, en entier
   // (« Diversité lexicale », pas « Diversité »).
-  const rFiche = fiche.legislature;
+  // La période de la fiche : la législature sur le carton imprimé ; sur le
+  // site, celle de l'onglet ouvert — un casier « cette session » qui montrait
+  // des totaux de législature au verso se contredisait lui-même (2 oct.). Le
+  // titre du bloc le dit dès qu'on quitte la législature.
+  const periodeFiche: PeriodKey = rendu.periodeFiche ?? "legislature";
+  const rFiche = fiche[periodeFiche];
   const statsFiche = rFiche
     ? grilleStats([
         // Quatre libellés sur UN rang (Jules, 28-09 : « Interventions » était
@@ -527,7 +543,7 @@ export function verso(
         { l: "Mots prononcés", v: txt(rFiche.wordsFormatted) },
         { l: "Diversité lexicale", v: `<span class="points">${Array.from({ length: 5 }, (_, i) =>
           `<i class="${i < rFiche.richnessLevel ? "plein" : ""}"></i>`).join("")}</span>` },
-        { l: "Ton", v: `<span class="ton" title="${txt(toneWording(rFiche.toneScore, maxAbs.legislature))}"><span class="piste"><i class="neutre"></i><i class="repere" style="left:${toneScalePct(rFiche.toneScore, maxAbs.legislature)}%;background:${rFiche.toneScore >= 0 ? TONE.positive : TONE.negative}"></i></span></span>` },
+        { l: "Ton", v: `<span class="ton" title="${txt(toneWording(rFiche.toneScore, maxAbs[periodeFiche]))}"><span class="piste"><i class="neutre"></i><i class="repere" style="left:${toneScalePct(rFiche.toneScore, maxAbs[periodeFiche])}%;background:${rFiche.toneScore >= 0 ? TONE.positive : TONE.negative}"></i></span></span>` },
       ], "repeat(4,auto)")
     : `<p class="stats-vide">Aucune intervention</p>`;
 
@@ -745,7 +761,7 @@ export function verso(
     ${blocElection}
 
     <div class="bloc fiche">
-      <p class="rubrique">Fiche à l'Assemblée</p>
+      <p class="rubrique">Fiche à l'Assemblée${periodeFiche === "legislature" ? "" : ` &middot; ${txt(libelles[periodeFiche].type)}`}</p>
       ${statsFiche}
     </div>
 

@@ -3,7 +3,7 @@
 // ce module s'exécute aussi bien au build du site que dans le navigateur.
 // Origine : scripts/social/cartes-deputes.ts (extraction du 2 oct. 2026).
 import type { DeputyRow } from "@/lib/data/assemblee";
-import { PARTY_FULL_NAMES, type PartyKey } from "@/lib/data/parties";
+import { PARTY_FULL_NAMES, type PartyKey } from "@/lib/data/partis-constantes";
 import type { Carte, Carriere, Genre, Mandat, Mandats, Rarete, Titre } from "./types";
 
 /** Encre des élus sans parti : un gris d'ardoise, lisible sous le papier et

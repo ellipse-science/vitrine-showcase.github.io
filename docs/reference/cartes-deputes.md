@@ -9,8 +9,9 @@ méthodologique**, sa source et ses limites, pour qu'on puisse le défendre,
 le refaire ou le changer en connaissance de cause. Rédigé le 23 septembre 2026.
 Si un choix change dans le code, cette page change dans le même commit.
 
-La page Méthodologie publique n'en parle pas encore : elle sera à écrire au
-moment de publier les cartes sur le site (voir la dernière section).
+La page Méthodologie publique décrit les cartes depuis leur arrivée dans le
+vestiaire du site (2 octobre 2026, sous-section « Les cartes de député » du
+§ Assemblée) ; ce document reste la référence détaillée.
 
 ## Où vit le code (depuis le 2 octobre 2026)
 
@@ -29,6 +30,9 @@ tirage imprimé (trame des portraits, capture Chromium, planche, paquet).
 | `lib/cartes/ajustements.ts` | mesures et concessions dans la page (nom trop long, verso qui déborde, texte coupé) ; une `racine` optionnelle pour tourner dans l'ombre d'un élément sur le site |
 | `lib/cartes/donnees.ts` | lecture des sources sur disque (`scripts/social/donnees/`), au build ; retraits d'expressions |
 | `lib/cartes/jeu.ts` | `construireJeu()` : la série entière — numéros, rareté, fonctions, fiche électorale, parcours |
+| `lib/cartes/trame.ts` | la trame quadrichromique des portraits (sharp) ; `scripts/social/portraits-trames.ts` en tire les WebP du site et les accessoires (logos rognés, écussons carrés, autographes) commis dans `public/images/` |
+| `lib/cartes/site.ts` | `preparerCartesSite()` : au build, la série de chaque période sans les DeputyRow, pour le vestiaire |
+| `components/interactive/CarteDepute.tsx` | la face rendue dans l'ombre d'un élément (shadow DOM), réduite par `transform: scale()`, ajustements après chargement des polices |
 
 Vérification de l'extraction (2 oct. 2026) : sur un échantillon de 6 cartes
 rendues avant et après, en web et en impression, les 12 rectos sont

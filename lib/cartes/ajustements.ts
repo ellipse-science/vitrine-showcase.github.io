@@ -30,15 +30,12 @@ export function mesurerCoupes(racine?: ParentNode): string[] {
     if (e.closest("svg") || e.tagName === "SCRIPT" || e.tagName === "STYLE") continue;
     const t = (e.textContent || "").trim();
     if (!t) continue;
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    if (e.style.display === "none" && !e.classList.contains("parti-long")) { out.push(`masqué : ${t.slice(0, 60)}`); continue; }
+    if (e.style.display === "none" && !e.classList.contains("parti-long")) { out.push(`masqué : ${t.slice(0, 60)}`); continue; } // garde-redaction: ok (diagnostic de console, jamais affiché)
     const cs = getComputedStyle(e);
     if (cs.display === "none") continue;
     const cache = cs.overflowX === "hidden" || cs.textOverflow === "ellipsis";
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    if (cache && e.scrollWidth > e.clientWidth + 1) out.push(`coupé : ${t.slice(0, 60)}`);
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    else if (e.classList.contains("citation") && e.scrollHeight > e.clientHeight + 1) out.push(`citation rognée : ${t.slice(0, 60)}`);
+    if (cache && e.scrollWidth > e.clientWidth + 1) out.push(`coupé : ${t.slice(0, 60)}`); // garde-redaction: ok (diagnostic de console, jamais affiché)
+    else if (e.classList.contains("citation") && e.scrollHeight > e.clientHeight + 1) out.push(`citation rognée : ${t.slice(0, 60)}`); // garde-redaction: ok (diagnostic de console, jamais affiché)
   }
   return out;
 }
@@ -68,8 +65,7 @@ export function mesurerRetours(racine?: ParentNode): string[] {
   // règle d'abréviation (titreCourt) doit le résoudre, pas la taille du texte.
   const legendes = r.querySelectorAll<HTMLElement>(".legende-parcours .ft");
   for (let i = 0; i < legendes.length; i++) {
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    if (legendes[i].style.fontSize) coupees.push(`rapetissé à ${legendes[i].style.fontSize} : ${(legendes[i].textContent || "").trim().slice(0, 60)}`);
+    if (legendes[i].style.fontSize) coupees.push(`rapetissé à ${legendes[i].style.fontSize} : ${(legendes[i].textContent || "").trim().slice(0, 60)}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
   }
   // Une ligne de statistiques plus large que son encadré (colonnes à la
   // mesure du contenu) déborderait sur le côté sans passer à la ligne.
@@ -82,8 +78,7 @@ export function mesurerRetours(racine?: ParentNode): string[] {
   }
   const grilles = r.querySelectorAll<HTMLElement>(".stats, .rubrique, .paie");
   for (let i = 0; i < grilles.length; i++) {
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    if (grilles[i].scrollWidth > grilles[i].clientWidth + 1) coupees.push(`grille trop large : ${(grilles[i].textContent || "").trim().slice(0, 40)}`);
+    if (grilles[i].scrollWidth > grilles[i].clientWidth + 1) coupees.push(`grille trop large : ${(grilles[i].textContent || "").trim().slice(0, 40)}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
   }
   return coupees;
 }
