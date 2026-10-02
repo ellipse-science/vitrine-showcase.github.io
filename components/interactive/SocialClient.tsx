@@ -201,7 +201,7 @@ export function InfobulleCompte({
   const nom = NOMS_PLATEFORMES[a.plateforme];
   return (
     <div
-      className={`social-infobulle compte${epinglee ? " epinglee social-fiche" : ""}${etroit ? " etroite" : ""}`}
+      className={`social-infobulle compte${epinglee ? " epinglee social-feuille" : ""}${etroit ? " etroite" : ""}`}
       {...(epinglee
         ? { role: "dialog", "aria-modal": true, "aria-label": `${a.nom}\u00a0: dernières publications` }
         : { "aria-hidden": true })}
@@ -1490,7 +1490,7 @@ export function Infobulle({
   const filtresActifs = resumeFiltres(data, plateformes, partis);
   return (
     <div
-      className={`social-infobulle${epinglee ? " epinglee social-fiche circo" : ""}${etroit && !epinglee ? " etroite" : ""}`}
+      className={`social-infobulle${epinglee ? " epinglee social-feuille circo" : ""}${etroit && !epinglee ? " etroite" : ""}`}
       {...(epinglee
         ? { role: "dialog", "aria-modal": true, "aria-label": `${circo.nom}\u00a0: candidats et dernières publications` }
         : { "aria-hidden": true })}
