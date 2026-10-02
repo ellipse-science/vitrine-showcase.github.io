@@ -1,5 +1,11 @@
 [
   {
+    "pr": 911,
+    "date": "2026-10-02T16:57:12Z",
+    "note": "Le module des réseaux sociaux, visible sur le miroir de travail seulement, change de visage : les indicateurs en grand, une vue par parti, par candidat, par publication ou par circonscription, et une carte qui suit l'indicateur et la période choisis.",
+    "version": null
+  },
+  {
     "pr": 900,
     "date": "2026-09-30T19:20:40Z",
     "note": "Dans le Polimètre+ en campagne, une promesse formulée plusieurs fois par un parti est désormais, dans la plupart des cas, regroupée en une seule entrée.",
