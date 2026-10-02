@@ -1,5 +1,11 @@
 [
   {
+    "pr": 916,
+    "date": "2026-10-02T18:19:57Z",
+    "note": "Dans le module des réseaux sociaux (miroir de travail seulement), la fiche d'une circonscription s'ouvre maintenant au centre de l'écran.",
+    "version": null
+  },
+  {
     "pr": 915,
     "date": "2026-10-02T18:12:10Z",
     "note": "Le module des réseaux sociaux (miroir de travail seulement) gagne une bulle d'explication à côté de son titre, et sa section de la Méthodologie décrit son nouvel affichage.",
