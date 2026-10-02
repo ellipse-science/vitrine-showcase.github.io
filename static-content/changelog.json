@@ -1,5 +1,11 @@
 [
   {
+    "pr": 914,
+    "date": "2026-10-02T17:54:28Z",
+    "note": "Sur l'accueil, le Polimètre+ passe à la fin de la page, après l'Assemblée nationale.",
+    "version": "2.49.0-beta.9"
+  },
+  {
     "pr": 913,
     "date": "2026-10-02T17:49:45Z",
     "note": "Dans le module des réseaux sociaux (miroir de travail seulement), tout se passe désormais dans l'appareil : plus de pages à part pour les candidats et les circonscriptions, et le téléphone garde sa taille.",
