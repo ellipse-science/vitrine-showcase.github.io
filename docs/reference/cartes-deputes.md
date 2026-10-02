@@ -12,6 +12,31 @@ Si un choix change dans le code, cette page change dans le même commit.
 La page Méthodologie publique n'en parle pas encore : elle sera à écrire au
 moment de publier les cartes sur le site (voir la dernière section).
 
+## Où vit le code (depuis le 2 octobre 2026)
+
+Le générateur et le site doivent produire **la même carte au pixel près**.
+Tout ce qui définit une carte est donc dans `lib/cartes/`, partagé ; le
+script `scripts/social/cartes-deputes.ts` ne garde que ce qui est propre au
+tirage imprimé (trame des portraits, capture Chromium, planche, paquet).
+
+| Module | Contenu |
+|---|---|
+| `lib/cartes/types.ts` | types `Carte`, `Rarete`, fiches, mandats, série |
+| `lib/cartes/dessin.ts` | palette, fleur de lys, échappement, typographie (ré-exportés par `scripts/social/lib/reel.ts`) |
+| `lib/cartes/fonctions.ts` | règles de contenu : codes de fonction, intitulés courts, dates, appariements, graphies imprimées, chefs saisis à la main |
+| `lib/cartes/gabarit.ts` | géométrie (1071 × 1496), tracés SVG des cadres, CSS d'impression, logos des institutions |
+| `lib/cartes/faces.ts` | recto, recto légendaire, verso : HTML + CSS d'une face, et `documentHTML()` pour en faire une page |
+| `lib/cartes/ajustements.ts` | mesures et concessions dans la page (nom trop long, verso qui déborde, texte coupé) ; une `racine` optionnelle pour tourner dans l'ombre d'un élément sur le site |
+| `lib/cartes/donnees.ts` | lecture des sources sur disque (`scripts/social/donnees/`), au build ; retraits d'expressions |
+| `lib/cartes/jeu.ts` | `construireJeu()` : la série entière — numéros, rareté, fonctions, fiche électorale, parcours |
+
+Vérification de l'extraction (2 oct. 2026) : sur un échantillon de 6 cartes
+rendues avant et après, en web et en impression, les 12 rectos sont
+identiques au pixel près (au plus 437 px d'anticrénelage sur 6,4 millions),
+et les 12 versos ne diffèrent que par le libellé « Diversité lexicale » (qui
+remplace « Richesse lexicale », décision du même jour, et décale les quatre
+colonnes de la fiche) et la phrase de la note de méthode qui le définit.
+
 ## Périmètre
 
 | | |
@@ -56,8 +81,11 @@ PCQ et Nichols au PLQ : elles gardent la carte de ce parti.
 - **Une seule ligne : la législature.** Ce sont des cartes de législature ; la
   session et la dernière séance appartiendront aux éditions de session, en
   ligne. La ligne porte « Législature 2022-2026 ».
-- Interventions, mots prononcés, richesse lexicale (MATTR, 5 niveaux relatifs
-  aux élus de la même période) et ton : repris tels que le site les calcule.
+- Interventions, mots prononcés, diversité lexicale (MATTR ; 5 niveaux, par
+  quintile sur l'ensemble des élus de la période depuis vitrine#910 — avant le
+  2 octobre 2026, min–max dans chaque parti) et ton : repris tels que le site
+  les calcule. Le libellé était « richesse lexicale » jusqu'à cette date : la
+  mesure compte des mots différents, elle ne juge pas la langue.
 
 ### Enjeux : deux catégories écartées
 
@@ -318,7 +346,7 @@ Grille du 23 septembre 2026 (décision de Jules).
 ### Note de méthode (verso)
 
 Chaque élément visuel de la carte, recto compris, y est nommé et justifié en
-une phrase : sources, richesse lexicale, ton, frise, rémunération, parts,
+une phrase : sources, diversité lexicale, ton, frise, rémunération, parts,
 mot signature, sigle, filet de l'enjeu, fleurs de lys et règle de rareté. Une
 phrase ne paraît que si son élément paraît sur la carte. Corps de 15 px :
 à 17 px, onze versos débordaient. « Relu à la main » n'est vrai que parce
