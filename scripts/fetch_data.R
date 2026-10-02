@@ -420,7 +420,64 @@ build_headline_of_headlines_rich <- function(source_path, out_path) {
 }
 
 # Dispatcher — looks up a builder by post-process entry name.
+# ── Fil complet des circonscriptions (module « Les candidats sur les réseaux ») ──
+# Le raffineur agora-social publie le CONTENU du fil (stable) et ses COMPTEURS
+# (qui bougent à chaque passage) en deux tables ; les tables brutes sont écrites
+# hors du dépôt (.gitignore). Ce qui est commité est découpé pour que Git ne
+# voie que de petits deltas :
+#   - un fichier par circonscription, trié (date décroissante, puis id), UNE
+#     publication par ligne, clés toujours dans le même ordre, sans horodatage :
+#     un rafraîchissement n'ajoute que des lignes ;
+#   - un seul petit fichier de compteurs, id -> [j'aime, commentaires].
+# Le nom du fichier n'engage rien : la Vitrine lit la circonscription dans le
+# contenu (lib/data/social.ts).
+FIL_CHAMPS <- c("id", "circonscription", "jour", "candidat", "parti", "plateforme",
+                "url", "texte", "nature", "media_type", "texte_origine", "vignette")
+
+slug_simple <- function(x) {
+  x <- tolower(x)
+  x <- chartr("àâäáãåçéèêëíìîïñóòôöõúùûüýÿœæ", "aaaaaaceeeeiiiinooooouuuuyyoa", x)
+  gsub("^-+|-+$", "", gsub("[^a-z0-9]+", "-", x))
+}
+
+ligne_json <- function(df) {
+  vapply(seq_len(nrow(df)), function(i)
+    as.character(jsonlite::toJSON(as.list(df[i, , drop = FALSE]), auto_unbox = TRUE,
+                                  na = "null", digits = NA)), character(1))
+}
+
+build_social_fil_par_circo <- function(source_path, out_dir) {
+  df <- jsonlite::fromJSON(source_path)
+  if (!is.data.frame(df) || nrow(df) == 0L) stop("fil complet vide")
+  for (col in setdiff(FIL_CHAMPS, names(df))) df[[col]] <- NA
+  df <- df[, FIL_CHAMPS]
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  ecrits <- character(0)
+  for (circo in sort(unique(df$circonscription))) {
+    d <- df[df$circonscription == circo, , drop = FALSE]
+    d <- d[order(-as.numeric(as.Date(d$jour)), d$id, method = "radix"), , drop = FALSE]
+    chemin <- file.path(out_dir, paste0(slug_simple(circo), ".json"))
+    writeLines(c("[", paste0(ligne_json(d), c(rep(",", nrow(d) - 1L), "")), "]"), chemin, useBytes = TRUE)
+    ecrits <- c(ecrits, chemin)
+  }
+  # Une circonscription disparue ne laisse pas de fichier périmé.
+  unlink(setdiff(list.files(out_dir, pattern = "\\.json$", full.names = TRUE), ecrits))
+  message("  -> fil complet : ", length(ecrits), " circonscriptions, ", nrow(df), " publications -> ", out_dir)
+}
+
+build_social_fil_compteurs <- function(source_path, out_path) {
+  df <- jsonlite::fromJSON(source_path)
+  if (!is.data.frame(df) || nrow(df) == 0L) stop("compteurs vides")
+  df <- df[order(df$id, method = "radix"), , drop = FALSE]
+  n <- function(v) ifelse(is.na(v), "0", format(v, scientific = FALSE, trim = TRUE))
+  lignes <- sprintf("\"%s\":[%s,%s]", df$id, n(df$jaime), n(df$commentaires))
+  writeLines(c("{", paste0(lignes, c(rep(",", length(lignes) - 1L), "")), "}"), out_path, useBytes = TRUE)
+  message("  -> compteurs du fil : ", nrow(df), " publications -> ", out_path)
+}
+
 POST_PROCESSORS <- list(
+  social_fil_par_circo       = build_social_fil_par_circo,
+  social_fil_compteurs       = build_social_fil_compteurs,
   parole_en_chambre          = build_parole_en_chambre,
   headline_of_headlines_rich = build_headline_of_headlines_rich
 )

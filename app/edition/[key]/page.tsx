@@ -134,12 +134,13 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
         <PartisCouvertureSection asOfIso={edition.navDateIso} editionKey={edition.key} />
       </div>
 
-      <div id="polimetre-plus" data-section="Polimètre+">
-        <PolimetrePlusSection asOfIso={edition.navDateIso} editionKey={edition.key} />
-      </div>
-
+      {/* Même ordre que la page d'accueil : le Polimètre+ ferme la page. */}
       <div id="assemblee-nationale" data-section="Assemblée nationale">
         <AssembleeSection asOfIso={edition.navDateIso} editionKey={edition.key} />
+      </div>
+
+      <div id="polimetre-plus" data-section="Polimètre+">
+        <PolimetrePlusSection asOfIso={edition.navDateIso} editionKey={edition.key} />
       </div>
 
       <nav className="archive-pager" aria-label="Naviguer entre les éditions">

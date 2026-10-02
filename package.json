@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/fetch_art.mjs && tsx scripts/ensure_art.ts",
+    "prebuild": "node scripts/fetch_art.mjs && node scripts/fetch_social_vignettes.mjs && tsx scripts/ensure_art.ts",
     "build": "next build",
     "postbuild": "node scripts/postbuild.mjs",
     "start": "next start",

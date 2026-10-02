@@ -65,7 +65,16 @@ _worktrees/
 # pochettes de scripts/make_pochettes_fixtures.mjs — raison de plus pour qu'il
 # ne parte jamais dans un commit.
 /public/data/generated-art/partis/
+# Vignettes du palmarès des réseaux : rapatriées au build par
+# scripts/fetch_social_vignettes.mjs (raffineur agora-social -> R2 -> API).
+/public/data/generated-art/social/
 /public/data/partis-selection.json
 
 # Reels et légendes produits par scripts/social/ : livrables à publier, pas du code.
 /social-out/
+
+# Tables brutes du fil complet des circonscriptions (aws-refiners#590) : écrites
+# par fetch_data.R, JAMAIS commitées (réécrites en entier à chaque passage) ;
+# seuls leurs découpages déterministes le sont (public/data/agora/fil/ et
+# fil-compteurs.json, cf. post-traitements social_fil_*).
+/public/data/agora/brut/
