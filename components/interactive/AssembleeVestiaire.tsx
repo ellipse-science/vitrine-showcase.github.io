@@ -554,34 +554,40 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
         </span>
       </span>
 
-      {/* LES PORTES SONT DES CARTONS (2 oct. 2026) : encre du parti, grain
-          de carton, filet de papier en retrait comme le cadre des cartes,
-          écusson du parti dans le coin, sigle en Oswald. Les chiffres vivent
-          sur un panneau de papier, en ligne de statistiques comme la « Fiche
-          à l'Assemblée » du verso : libellé en haut, chiffre en gros. */}
-      <span className="casier-battant gauche">
-        <span className="casier-filet" aria-hidden="true" />
-        <span className="casier-plaque">
+      {/* LA PORTE (2 oct. 2026) : un casier de vestiaire a UNE porte sur
+          charnières, des persiennes d'aération, un porte-étiquette où glisse
+          un carton au nom du propriétaire, une poignée à moraillon pour le
+          cadenas. La tôle est peinte à l'encre du parti et grenée comme le
+          carton des cartes ; l'étiquette est un morceau de ce carton. Les
+          chiffres vivent sur une fiche de papier, en ligne de statistiques
+          comme la « Fiche à l'Assemblée » du verso. */}
+      <span className="casier-porte">
+        {/* Deux faces : l'extérieur peint, l'intérieur en tôle nue, qu'on voit
+            quand la porte est grande ouverte. */}
+        <span className="casier-dos" aria-hidden="true"><span className="casier-persiennes"><i /><i /><i /><i /><i /></span><span className="casier-persiennes bas"><i /><i /><i /></span></span>
+        <span className="casier-face">
+        <span className="casier-charniere haut" aria-hidden="true" />
+        <span className="casier-charniere bas" aria-hidden="true" />
+        <span className="casier-persiennes" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+        <span className="casier-etiquette">
           <span className="casier-sigle">{row.label}</span>
+          {ECUSSONS.has(row.key) && (
+            <span className="casier-ecusson" aria-hidden="true" style={{ ["--ecusson" as string]: `url(${BASE_PATH}/images/cartes/ecusson-${row.key}.png)` }} />
+          )}
         </span>
-        <span className="casier-panneau">
-          <i>Mots</i>
-          <b>{row.wordsFormatted}</b>
+        <span className="casier-fiche">
+          <span className="casier-stats">
+            <i>Mots</i><i>Député·es</i>
+            <b>{row.wordsFormatted}</b><b>{nb}</b>
+          </span>
+          <span className="casier-ton">
+            <i>Ton</i>
+            <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
+          </span>
         </span>
-      </span>
-
-      <span className="casier-battant droite">
-        <span className="casier-filet" aria-hidden="true" />
-        {ECUSSONS.has(row.key) && (
-          <span className="casier-ecusson" aria-hidden="true" style={{ ["--ecusson" as string]: `url(${BASE_PATH}/images/cartes/ecusson-${row.key}.png)` }} />
-        )}
-        <span className="casier-panneau">
-          <i>Député·es</i>
-          <b>{nb}</b>
-          <i>Ton</i>
-          <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
+        <span className="casier-persiennes bas" aria-hidden="true"><i /><i /><i /></span>
+        <span className="casier-poignee" aria-hidden="true"><span className="casier-cadenas" /></span>
         </span>
-        <span className="casier-poignee" aria-hidden="true" />
       </span>
     </button>
   );

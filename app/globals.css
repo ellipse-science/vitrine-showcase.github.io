@@ -3010,8 +3010,8 @@
   .vestiaire {
     --carton-papier: #F3ECDD;
     --carton-encre: #1C1917;
-    --carton-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .2 .2 .2 0 -.08'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
-    --carton-mouchete: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='0.045' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .16 .15 .15 0 -.18'/></filter><rect width='100%' height='100%' filter='url(%23m)'/></svg>");
+    --carton-grain: url("/images/cartes/grain.webp");
+    --carton-mouchete: url("/images/cartes/mouchete.webp");
   }
 
   .casier {
@@ -3034,8 +3034,8 @@
     position: absolute;
     inset: 0;
     background:
-      var(--carton-mouchete),
-      var(--carton-grain),
+      var(--carton-mouchete) 0 0 / 512px 512px,
+      var(--carton-grain) 0 0 / 256px 256px,
       color-mix(in srgb, var(--pc) 82%, #000);
   }
   .casier-cloison { display: none; }
@@ -3123,90 +3123,186 @@
     margin-top: 1px;
   }
 
-  /* LES BATTANTS : deux moitiés de carton à l'encre du parti. */
-  .casier-battant {
+  /* LE CADRE DU CASIER : la tôle du meuble, plus sombre, autour de la porte.
+     La porte s'y loge en retrait de 4 px : c'est ce jour, et l'ombre qu'il
+     porte, qui fait lire « casier » et non « panneau ». */
+  .casier { background: color-mix(in srgb, var(--pc) 55%, #000); }
+  .casier-fond { inset: 4px; border-radius: 2px; }
+  .casier-dedans { inset: 12px 11px; }
+
+  /* LA PORTE : une seule, sur charnières à gauche, à DEUX FACES — l'extérieur
+     peint (.casier-face) et l'intérieur en tôle nue (.casier-dos), chacune
+     invisible de dos. Calque graphique à part (will-change) : la rotation ne
+     repeint ni le grain ni les textes. */
+  .casier-porte {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 50%;
+    inset: 4px;
+    transform-style: preserve-3d;
+    transform-origin: left center;
+    transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.3, 1);
+    will-change: transform;
+  }
+  .casier-face,
+  .casier-dos {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 14px 11px 12px;
-    background:
-      var(--carton-mouchete),
-      var(--carton-grain),
-      var(--pc);
-    border: 1px solid color-mix(in srgb, var(--pc) 72%, #000);
-    color: var(--carton-papier);
-    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+    gap: 9px;
+    border-radius: 2px;
     backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
-  .casier-battant.gauche { left: 0;  transform-origin: left center; }
-  .casier-battant.droite { right: 0; transform-origin: right center; align-items: flex-end; text-align: right; }
-  .casier:hover .casier-battant.gauche { transform: rotateY(-11deg); }
-  .casier:hover .casier-battant.droite { transform: rotateY(11deg); }
-  .casier.est-ouvert .casier-battant.gauche,
-  .casier.est-ouvert:hover .casier-battant.gauche { transform: rotateY(-115deg); }
-  .casier.est-ouvert .casier-battant.droite,
-  .casier.est-ouvert:hover .casier-battant.droite { transform: rotateY(115deg); }
-
-  /* Le filet de papier en retrait : le cadre du carton. Sur une porte, il
-     ne fait que trois côtés : le quatrième est la fente entre les battants. */
-  .casier-filet {
-    position: absolute;
-    top: 6px;
-    bottom: 6px;
-    border: 1.5px solid color-mix(in srgb, var(--carton-papier) 70%, transparent);
+  .casier-face {
+    padding: 12px 14px 10px 16px;
+    background:
+      var(--carton-mouchete) 0 0 / 512px 512px,
+      var(--carton-grain) 0 0 / 256px 256px,
+      var(--pc);
+    color: var(--carton-papier);
+    /* Tôle emboutie : un liseré clair en haut à gauche, une ombre en bas à
+       droite, et le jour sombre tout autour. */
+    box-shadow:
+      inset 1px 1px 0 color-mix(in srgb, #fff 22%, transparent),
+      inset -1px -1px 0 color-mix(in srgb, #000 30%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--pc) 45%, #000);
+    transition: box-shadow 0.6s ease;
+  }
+  /* L'intérieur de la porte : la même tôle, plus sombre et sans peinture
+     d'apparat ; on y devine le revers des persiennes. */
+  .casier-dos {
+    transform: rotateY(180deg);
+    padding: 12px 16px 10px 14px;
+    background:
+      var(--carton-grain) 0 0 / 256px 256px,
+      linear-gradient(90deg, color-mix(in srgb, var(--pc) 50%, #000), color-mix(in srgb, var(--pc) 68%, #000));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 35%, transparent);
+  }
+  .casier:hover .casier-porte { transform: rotateY(-13deg); }
+  .casier:hover .casier-face { box-shadow: inset 1px 1px 0 color-mix(in srgb, #fff 22%, transparent), inset -1px -1px 0 color-mix(in srgb, #000 30%, transparent), 6px 0 10px -4px rgba(0,0,0,.45); }
+  /* Ouverte : au-delà de l'équerre, comme une vraie porte de casier. Elle se
+     rabat sur le casier voisin, intérieur visible, au-dessus de lui ; elle ne
+     capte plus le clic (c'est le casier qui se referme). */
+  .casier.est-ouvert { z-index: 2; }
+  .casier.est-ouvert .casier-porte,
+  .casier.est-ouvert:hover .casier-porte {
+    transform: rotateY(-100deg);
     pointer-events: none;
   }
-  .casier-battant.gauche .casier-filet { left: 6px; right: 0; border-right: none; border-radius: 9px 0 0 9px; }
-  .casier-battant.droite .casier-filet { right: 6px; left: 0; border-left: none; border-radius: 0 9px 9px 0; }
-  .casier-fentes { display: none; }
+  /* Une porte ouverte au premier casier sort du banc : elle est rognée au
+     bord du module plutôt que d'élargir la page. */
+  .vestiaire { overflow-x: clip; }
 
-  .casier-plaque { display: block; padding: 0; border: none; }
+  .casier-charniere {
+    position: absolute;
+    left: -3px;
+    width: 6px;
+    height: 22px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #8b8578, #d9d2c2 45%, #7a7468);
+    box-shadow: 0 1px 1px rgba(0,0,0,.4);
+  }
+  .casier-charniere.haut { top: 20px; }
+  .casier-charniere.bas { bottom: 20px; }
+
+  /* Persiennes : des fentes embouties, ombre dessus, lumière dessous. */
+  .casier-persiennes {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 18%;
+  }
+  .casier-persiennes > i {
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--pc) 40%, #000);
+    box-shadow: 0 1px 0 color-mix(in srgb, #fff 25%, transparent), inset 0 1px 1px rgba(0,0,0,.5);
+  }
+  .casier-persiennes.bas { margin-top: auto; }
+
+  /* Le porte-étiquette : un cadre de métal, et dedans un morceau de carton
+     au nom du propriétaire. */
+  .casier-etiquette {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin: 0 16px 0 4%;
+    padding: 4px 9px 4px 10px;
+    background: var(--carton-papier);
+    color: var(--pc);
+    border-radius: 3px;
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, #c9c2b2 85%, var(--pc)),
+      0 0 0 3px color-mix(in srgb, #000 35%, transparent),
+      inset 0 1px 2px rgba(0,0,0,.18);
+  }
   .casier-sigle {
     font-family: 'Oswald', 'Arial Narrow', sans-serif;
     font-weight: 700;
-    font-size: 30px;
+    font-size: 26px;
     line-height: 1;
     letter-spacing: 0.01em;
     text-transform: uppercase;
-    color: var(--carton-papier);
   }
-  /* L'écusson du parti, à l'encre du papier, en haut de la porte droite —
-     la place qu'il occupe sur le carton. */
   .casier-ecusson {
     display: block;
-    width: 34px;
-    height: 34px;
-    background: var(--carton-papier);
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    background: var(--pc);
     -webkit-mask: var(--ecusson) center / contain no-repeat;
     mask: var(--ecusson) center / contain no-repeat;
-    opacity: 0.92;
   }
 
-  /* LE PANNEAU DES CHIFFRES : la « Fiche à l'Assemblée » du verso, en
-     miniature. Le nombre se dimensionne sur la largeur réelle du panneau
-     (cinq partis sur un écran étroit : « 6 578 506 » doit tenir). */
-  .casier-panneau {
-    margin-top: auto;
-    align-self: stretch;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  /* La fiche des chiffres : la « Fiche à l'Assemblée » du verso, en
+     miniature — deux colonnes séparées d'un filet, libellés en haut. */
+  .casier-fiche {
+    display: block;
+    margin: 0 14px 0 2%;
     background: var(--carton-papier);
     color: var(--pc);
-    border-radius: 10px;
-    padding: 6px 6px 7px;
-    min-height: 92px;
-    justify-content: center;
+    border-radius: 9px;
+    padding: 6px 8px 7px;
     container-type: inline-size;
   }
-  .casier-battant.gauche .casier-panneau { margin-left: 4px; margin-right: 2px; }
-  .casier-battant.droite .casier-panneau { margin-right: 4px; margin-left: 2px; }
-  .casier-panneau > i {
-    display: block;
+  .casier-stats {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+  .casier-stats > i {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+    opacity: 0.85;
+  }
+  .casier-stats > b {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    font-size: clamp(11px, 11cqw, 19px);
+    line-height: 1;
+    text-align: center;
+    padding-top: 4px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .casier-stats > :nth-child(2), .casier-stats > :nth-child(4) { border-left: 1px solid currentColor; }
+  .casier-ton {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px solid currentColor;
+  }
+  .casier-ton > i {
     font-family: 'Oswald', 'Arial Narrow', sans-serif;
     font-style: normal;
     font-weight: 500;
@@ -3214,51 +3310,38 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     opacity: 0.85;
-    border-bottom: 1px solid currentColor;
-    padding-bottom: 2px;
-    align-self: stretch;
-    text-align: center;
   }
-  .casier-panneau > i + b + i { margin-top: 5px; }
-  .casier-panneau > b {
-    display: block;
-    font-family: 'Oswald', 'Arial Narrow', sans-serif;
-    font-weight: 700;
-    font-size: clamp(11px, 19cqw, 20px);
-    line-height: 1;
-    padding-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  /* Le ton sur le panneau : la règle du verso — piste à 20 % de l'encre,
-     repère vert ou rouge selon le sens. */
-  .casier-panneau .ton-echelle { width: 100%; margin-top: 5px; }
-  .casier-panneau .ton-piste { background: color-mix(in srgb, currentColor 20%, transparent); }
-  .casier-panneau .ton-bornes { display: none; }
-  .casier-panneau .ton-echelle.compacte { margin-top: 7px; }
-  .casier-panneau .ton-echelle.compacte::before { display: none; }
-  .casier-panneau .ton-echelle .ton-piste { height: 6px; border: none; }
-  .casier-panneau .ton-echelle .ton-neutre { background: currentColor; opacity: 0.4; width: 2px; }
-  .casier-panneau .ton-echelle .ton-repere {
-    top: -4px;
-    width: 4px;
-    height: 14px;
-    margin-left: -2px;
-    border: none;
-    transform: none;
-  }
-  .casier-panneau .ton-echelle .ton-repere.est-favorable { background: #4E7A43; }
-  .casier-panneau .ton-echelle .ton-repere.est-defavorable { background: #B0473A; }
+  .casier-ton .ton-echelle.compacte { flex: 1; margin-top: 0; }
+  .casier-ton .ton-echelle.compacte::before { display: none; }
+  .casier-ton .ton-echelle .ton-bornes { display: none; }
+  .casier-ton .ton-echelle .ton-piste { height: 6px; border: none; background: color-mix(in srgb, currentColor 20%, transparent); }
+  .casier-ton .ton-echelle .ton-neutre { background: currentColor; opacity: 0.4; width: 2px; }
+  .casier-ton .ton-echelle .ton-repere { top: -4px; width: 4px; height: 14px; margin-left: -2px; border: none; transform: none; }
+  .casier-ton .ton-echelle .ton-repere.est-favorable { background: #4E7A43; }
+  .casier-ton .ton-echelle .ton-repere.est-defavorable { background: #B0473A; }
+
+  /* La poignée à moraillon, sur le bord libre, avec l'anneau du cadenas. */
   .casier-poignee {
     position: absolute;
-    left: -3px;
+    right: 7px;
     top: 50%;
-    width: 6px;
-    height: 40px;
-    margin-top: -20px;
-    background: var(--carton-papier);
-    border: 1px solid color-mix(in srgb, var(--pc) 60%, #000);
+    width: 7px;
+    height: 46px;
+    margin-top: -23px;
     border-radius: 3px;
-    opacity: 0.85;
+    background: linear-gradient(90deg, #7a7468, #e3dccc 40%, #8b8578);
+    box-shadow: 0 1px 2px rgba(0,0,0,.45);
+  }
+  .casier-cadenas {
+    position: absolute;
+    left: 50%;
+    top: 30px;
+    width: 9px;
+    height: 9px;
+    margin-left: -4.5px;
+    border-radius: 50%;
+    border: 2px solid #b9b1a0;
+    background: color-mix(in srgb, var(--pc) 40%, #000);
   }
 
   /* --- Le tiroir : le présentoir de cartes du casier ouvert --------------- */
@@ -3334,7 +3417,7 @@
     padding: 6px;
     margin-bottom: 14px;
     border-radius: 16px;
-    background: var(--carton-mouchete), var(--carton-grain), var(--pc);
+    background: var(--carton-mouchete) 0 0 / 512px 512px, var(--carton-grain) 0 0 / 256px 256px, var(--pc);
   }
   .tiroir-panneaux > :only-child { grid-column: 1 / -1; }
   @media (max-width: 760px) { .tiroir-panneaux { grid-template-columns: 1fr; } }
@@ -3984,7 +4067,8 @@
   .ton-echelle.compacte .ton-bornes { color: rgba(243,236,221,.75); font-size: 7px; }
 
   @media (prefers-reduced-motion: reduce) {
-    .casier-battant,
+    .casier-porte,
+    .casier-face,
     .carte-pivot { transition: none; }
   }
 
@@ -4001,15 +4085,16 @@
     /* L'intérieur déborde de 16 px sur un casier de 214 px : on ne garde que
        les deux blocs qui portent vraiment de l'information, et deux enjeux. */
     .casier { height: 232px; }
-    .casier-dedans { inset: 13px 11px; gap: 9px; }
-    .casier-dedans .bloc-chiffre,
-    .casier-dedans .dedans-enjeu:nth-of-type(3) { display: none; }
-    .dedans-vedette { font-size: 14px; }
+    .casier-dedans { inset: 10px 9px; gap: 5px; }
+    /* Le nombre d'interventions cède la place : la part des interventions et
+       « A le plus parlé » portent l'essentiel. */
+    .casier-dedans > .dedans-bloc:first-child { display: none; }
     /* Plus de corps fixe ici : le nombre se dimensionne d'après la largeur du
        bilan (voir `clamp(... 20cqw ...)`), ce qui couvre aussi la grille 2 × 2.
        Le 16 px codé en dur reprenait le dessus sur ce calcul et retronquait
        « 6 578 506 » d'un pixel. */
-    .casier-battant { padding: 9px 8px; }
+    .casier-face { padding: 9px 11px 8px 12px; gap: 7px; }
+    .casier-persiennes > i:nth-child(n + 4) { display: none; }
     /* Encoche masquée : sur une grille 2 × 2, elle ne peut désigner qu'une
        COLONNE. Un casier ouvert au premier rang verrait donc la flèche pointer
        le casier du second rang, juste en dessous — pire que pas de flèche du
