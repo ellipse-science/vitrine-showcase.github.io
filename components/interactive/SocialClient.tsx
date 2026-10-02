@@ -1421,10 +1421,11 @@ export function filtresModifies(data: SocialData, plateformes: Plateforme[], par
   return plateformes.length !== PLATEFORMES.length || partis.length !== data.partis.length || types.length !== TYPES.length;
 }
 
-/** Au survol ou au focus d'une circonscription : nom, région, parti en tête,
- *  et chaque candidat suivi avec les logos de ses comptes et ses publications
- *  de la période. Décorative pour les lecteurs d'écran (aria-hidden) : le
- *  libellé de la forme et la fiche portent la même information. */
+/** Une circonscription. Au survol ou au focus : une infobulle compacte près du
+ *  pointeur (nom, région, parti en tête, candidats et leurs comptes),
+ *  décorative pour les lecteurs d'écran (aria-hidden). Au clic (`epinglee`) :
+ *  la fiche, posée au centre de l'écran de l'appareil, avec en plus les 10
+ *  dernières publications, chacune un lien vers son réseau. */
 export function Infobulle({
   data,
   circo,
@@ -1438,10 +1439,13 @@ export function Infobulle({
   y,
   largeur,
   hauteur,
+  versLeHaut,
   epinglee = false,
   onFermer,
   onRetirerFiltres,
 }: {
+  /** Au survol : ouvrir au-dessus du pointeur (bas de l'écran visible). Par défaut, selon la moitié de la carte. */
+  versLeHaut?: boolean;
   epinglee?: boolean;
   onFermer?: () => void;
   /** Remet les filtres par défaut (lien « Retirer les filtres »). */
@@ -1462,10 +1466,11 @@ export function Infobulle({
   hauteur: number;
 }) {
   const aGauche = x > largeur - 360;
-  const enHaut = y > hauteur * 0.5;
+  const enHaut = versLeHaut ?? y > hauteur * 0.5;
   // Écran étroit : l'infobulle prend toute la largeur, jamais coupée.
   const etroit = largeur < 600;
-  const etat = useFil(circo.code);
+  // Le fil ne se charge que pour la fiche : le survol reste léger.
+  const etat = useFil(epinglee ? circo.code : null);
   // Le fil suit l'actualité, pas les filtres : les 10 dernières publications
   // de la circonscription, toutes plateformes et tous partis. La couleur et la
   // liste des candidats, elles, suivent les filtres.
@@ -1485,10 +1490,14 @@ export function Infobulle({
   const filtresActifs = resumeFiltres(data, plateformes, partis);
   return (
     <div
-      className={`social-infobulle${epinglee ? " epinglee" : ""}${etroit ? " etroite" : ""}`}
-      {...(epinglee ? { role: "dialog", "aria-label": `${circo.nom}\u00a0: dernières publications` } : { "aria-hidden": true })}
+      className={`social-infobulle${epinglee ? " epinglee social-fiche circo" : ""}${etroit && !epinglee ? " etroite" : ""}`}
+      {...(epinglee
+        ? { role: "dialog", "aria-modal": true, "aria-label": `${circo.nom}\u00a0: candidats et dernières publications` }
+        : { "aria-hidden": true })}
       style={
-        etroit
+        epinglee
+          ? undefined
+          : etroit
           ? { left: 0, right: 0, top: enHaut ? undefined : y + 16, bottom: enHaut ? hauteur - y + 16 : undefined }
           : {
               left: aGauche ? undefined : x + 16,
@@ -1499,7 +1508,7 @@ export function Infobulle({
       }
     >
       {epinglee && (
-        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer l’infobulle">
+        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer la fiche" autoFocus>
           ×
         </button>
       )}
@@ -1567,6 +1576,7 @@ export function Infobulle({
         </ul>
         </>
       )}
+      {epinglee && (
       <div className="social-infobulle-fil">
         <span className="social-infobulle-entete">
           <span className="social-meta">Dernières publications</span>
@@ -1611,7 +1621,8 @@ export function Infobulle({
           </ol>
         )}
       </div>
-      {!epinglee && <span className="social-infobulle-pied">cliquez pour épingler, faire défiler le fil et ouvrir une publication</span>}
+      )}
+      {!epinglee && <span className="social-infobulle-pied">cliquez pour voir les dernières publications</span>}
     </div>
   );
 }
@@ -1790,12 +1801,15 @@ export function Carte({
   plateformes,
   partis,
   onRetirerFiltres,
+  couche = null,
 }: {
   data: SocialData;
   /** L'indicateur et la fenêtre choisis : la carte les suit comme les autres vues. */
   m: Mesure;
   d0: number;
   d1: number;
+  /** La couche de l'écran de l'appareil où se pose la fiche d'une circonscription. */
+  couche?: HTMLElement | null;
   plateformes: Plateforme[];
   partis: PartyKey[];
   onRetirerFiltres?: () => void;
@@ -1933,7 +1947,7 @@ export function Carte({
   };
 
   // ── Infobulle : survol, focus, épingle ─────────────────────────────────────
-  type Survol = { code: number; x: number; y: number; par: "souris" | "clavier" };
+  type Survol = { code: number; x: number; y: number; par: "souris" | "clavier"; haut?: boolean };
   const [survol, setSurvol] = useState<Survol | null>(null);
   const [epingle, setEpingle] = useState<{ code: number; x: number; y: number } | null>(null);
   const relatif = (x: number, y: number) => {
@@ -1942,7 +1956,9 @@ export function Carte({
   };
   const place = (code: number, x: number, y: number, par: Survol["par"]) => {
     const p = relatif(x, y);
-    if (p) setSurvol({ code, ...p, par });
+    // Dans la moitié basse de l'écran visible, l'infobulle s'ouvre vers le haut.
+    const z = vuesRef.current?.closest(".social-zone")?.getBoundingClientRect();
+    if (p) setSurvol({ code, ...p, par, haut: z ? y > z.top + z.height * 0.5 : undefined });
   };
   const efface = (par: Survol["par"]) => setSurvol((s) => (s?.par === par ? null : s));
   const centreForme = (code: number) => {
@@ -2083,7 +2099,7 @@ export function Carte({
                 // Un seul arrêt de tabulation, les flèches font le reste.
                 tabIndex={c.code === actif ? 0 : -1}
                 role="button"
-                aria-label={`${titre(c.code, c.nom)}. Entrée pour épingler son infobulle.`}
+                aria-label={`${titre(c.code, c.nom)}. Entrée pour ouvrir sa fiche.`}
                 onFocus={(e: FocusEvent<SVGUseElement>) => {
                   setActif(c.code);
                   if (epingle) return;
@@ -2143,33 +2159,41 @@ export function Carte({
             </figure>
           ))}
         </div>
-        {bulle && (
-          <Infobulle
-            key={epingle ? `e${bulle.code}` : "survol"}
-            data={data}
-            circo={carte.circos.find((c) => c.code === bulle.code)!}
-            m={meneurs.get(bulle.code)!}
-            unite={unite}
-            periodeTexte={periodeTexte}
-            valeurs={valeurs}
-            plateformes={plateformes}
-            partis={partis}
-            x={bulle.x}
-            y={bulle.y}
-            largeur={vuesRef.current?.clientWidth ?? 0}
-            hauteur={vuesRef.current?.clientHeight ?? 0}
-            epinglee={!!epingle}
-            onFermer={() => {
-              setEpingle(null);
-              setChoix(null);
-            }}
-            onRetirerFiltres={onRetirerFiltres}
-          />
-        )}
+        {/* Au survol : l'infobulle compacte, près du pointeur. Au clic : la
+            fiche, posée au centre de l'écran de l'appareil (portail), jamais
+            coupée ; sans couche (rendu isolé), elle reste sur la carte. */}
+        {bulle &&
+          (() => {
+            const fiche = (
+              <Infobulle
+                key={epingle ? `e${bulle.code}` : "survol"}
+                data={data}
+                circo={carte.circos.find((c) => c.code === bulle.code)!}
+                m={meneurs.get(bulle.code) ?? { party: null, valeur: 0, parParti: {} }}
+                unite={unite}
+                periodeTexte={periodeTexte}
+                valeurs={valeurs}
+                plateformes={plateformes}
+                partis={partis}
+                x={bulle.x}
+                y={bulle.y}
+                largeur={vuesRef.current?.clientWidth ?? 0}
+                hauteur={vuesRef.current?.clientHeight ?? 0}
+                versLeHaut={epingle ? undefined : survol?.haut}
+                epinglee={!!epingle}
+                onFermer={() => {
+                  setEpingle(null);
+                  setChoix(null);
+                }}
+                onRetirerFiltres={onRetirerFiltres}
+              />
+            );
+            return epingle && couche ? createPortal(<div className="social-fiche-fond">{fiche}</div>, couche) : fiche;
+          })()}
       </div>
 
       <p className="social-note">
-        Comptes de candidats seulement ; la période choisie en haut ne s’applique pas à la carte. Comprend des données
+        Comptes de candidats seulement. Comprend des données
         ouvertes octroyées sous la{" "}
         <a href="https://www.dgeq.org/licence.html" target="_blank" rel="noopener noreferrer">
           licence d’utilisation des données ouvertes du directeur général des élections
@@ -2696,7 +2720,7 @@ export function SocialClient({ data }: { data: SocialData }) {
               })()}
 
             {vue === "carte" && data.carte && (
-              <Carte data={data} m={m} d0={d0} d1={d1} plateformes={plateformes} partis={partis} onRetirerFiltres={retirerFiltres} />
+              <Carte data={data} m={m} d0={d0} d1={d1} plateformes={plateformes} partis={partis} onRetirerFiltres={retirerFiltres} couche={couche} />
             )}
 
             {vue === "palmares" && (

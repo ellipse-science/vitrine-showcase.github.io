@@ -12792,6 +12792,18 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
   padding: 10px 0; border-bottom: 0.5px solid var(--rule-faint);
 }
 .social-fiche .social-infobulle-fil li:last-child { border-bottom: 0; }
+/* Fiche d'une circonscription : ses candidats d'abord, bien lisibles, puis le
+   fil (logo, parti, date, texte sur deux lignes, j'aime). */
+.social-fiche.circo .social-infobulle-tete { margin: 12px 0 10px; font-size: 15px; }
+.social-fiche.circo > ul { padding-top: 8px; }
+.social-fiche.circo > ul li { grid-template-columns: 3.6em minmax(0, 1fr) auto 5.6em; padding: 5px 0; }
+.social-fiche.circo .social-infobulle-nom { font-size: 15px; white-space: normal; overflow: visible; }
+.social-fiche.circo .social-infobulle-sigle { font-size: 12px; }
+.social-infobulle.social-fiche.circo .social-infobulle-fil li {
+  grid-template-columns: 16px 2.8rem 4.4rem minmax(0, 1fr) auto; column-gap: 10px; align-items: start;
+  padding: 10px 0; border-bottom: 0.5px solid var(--rule-faint);
+}
+.social-fiche.circo .social-infobulle-fil b { padding-top: 3px; }
 .social-fiche .social-infobulle-fil li .social-logo { margin-top: 3px; }
 .social-fiche .social-infobulle-date { font-size: 11px; padding-top: 2px; }
 .social-fiche .social-infobulle-texte {
@@ -12805,6 +12817,7 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
   .social-infobulle.social-fiche { width: 100%; max-height: 88%; border-radius: 18px 18px 0 0; padding: 22px 18px 24px; }
   .social-fiche strong { font-size: 22px; }
   .social-infobulle.compte.social-fiche .social-infobulle-fil li { grid-template-columns: 14px 3.6rem minmax(0, 1fr) auto; column-gap: 8px; }
+  .social-infobulle.social-fiche.circo .social-infobulle-fil li { grid-template-columns: 14px 2.4rem 3.6rem minmax(0, 1fr) auto; column-gap: 7px; }
 }
 
 /* Le tiroir des filtres (mobile) : dans l'écran du téléphone, depuis le bas. */
