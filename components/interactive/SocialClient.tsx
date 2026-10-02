@@ -16,7 +16,6 @@ import {
   type FilItem,
   type CubeRow,
   type Plateforme,
-  slugCandidat,
   type SocialData,
   type TypeCompte,
 } from "@/lib/data/social-meta";
@@ -169,10 +168,6 @@ export function trouverCandidat(
   return { index: complet[r].index, rang: r + 1, dans, page: dans ? Math.floor(r / parPage) : null };
 }
 
-/** Adresse de la fiche d'un compte de candidat, ou null (compte de parti). */
-const ficheDe = (a: SocialData["audience"][number]) =>
-  a.type === "candidat" && a.fiche ? `${BASE_PATH}/reseaux/candidats/${a.fiche}/` : null;
-
 /** Position d'une infobulle de compte, relative au bloc du classement : sous la ligne. */
 type BulleCompte = { index: number; x: number; y: number; largeur: number };
 
@@ -216,7 +211,7 @@ export function InfobulleCompte({
           ×
         </button>
       )}
-      <strong>{ficheDe(a) ? <a className="social-infobulle-nom-lien" href={ficheDe(a)!}>{a.nom}</a> : a.nom}</strong>
+      <strong>{a.nom}</strong>
       <span className="social-meta">
         {data.partiInfo[a.party].sigle} · {a.type === "parti" ? `compte du parti sur ${nom}` : `${circo ? `${circo} · ` : ""}${nom}`}
       </span>
@@ -250,14 +245,9 @@ export function InfobulleCompte({
           )}
         </div>
       )}
-      {a.fiche && epinglee ? (
-        <a className="social-infobulle-fiche" href={`${BASE_PATH}/reseaux/candidats/${a.fiche}/`}>
-          <span>Voir la fiche du candidat</span>
-          <span aria-hidden="true">→</span>
-        </a>
-      ) : a.type === "candidat" && !epinglee ? (
-        <span className="social-infobulle-pied">cliquez pour épingler et faire défiler le fil</span>
-      ) : null}
+      {a.type === "candidat" && !epinglee && (
+        <span className="social-infobulle-pied">cliquez pour épingler, faire défiler le fil et ouvrir une publication</span>
+      )}
     </div>
   );
 }
@@ -305,7 +295,6 @@ function Audience({
     const r = el.getBoundingClientRect();
     return { index, x: r.left - b.left, y: r.bottom - b.top, largeur: b.width };
   };
-  const toucher = useRef(false);
   const epingler = (index: number, el: HTMLElement) => {
     setSurvol(null);
     setEpingle((e) => (e?.index === index ? null : bulleDe(index, el)));
@@ -334,11 +323,8 @@ function Audience({
     };
   }, [epingle]);
   const choisirCandidat = (sg: SuggestionCandidat) => {
-    // Sans compte suivi : rien à classer, direction sa page.
-    if (!sg.comptes) {
-      window.location.assign(`${BASE_PATH}/reseaux/candidats/${sg.fiche}/`);
-      return;
-    }
+    // Tout se passe dans le module : la ligne du candidat, ou un mot qui dit
+    // pourquoi il n'y est pas (aucun compte suivi, ou écarté par les filtres).
     const t = trouverCandidat(complet, sg, parPage);
     setSurvol(null);
     setEpingle(null);
@@ -382,28 +368,16 @@ function Audience({
       className={cherche?.index === index ? "surligne" : undefined}
       tabIndex={0}
       aria-haspopup="dialog"
-      aria-label={`${rang}. ${a.nom}, ${data.partiInfo[a.party].sigle}, ${NOMS_PLATEFORMES[a.plateforme]}\u00a0: ${format(v)} ${MESURE[mesure].unite}. ${ficheDe(a) ? "Entrée pour ouvrir sa fiche, espace pour épingler ses dernières publications." : "Entrée pour épingler ses dernières publications."}`}
+      aria-label={`${rang}. ${a.nom}, ${data.partiInfo[a.party].sigle}, ${NOMS_PLATEFORMES[a.plateforme]}\u00a0: ${format(v)} ${MESURE[mesure].unite}. Entrée pour épingler ses dernières publications.`}
       onPointerEnter={(e) => e.pointerType !== "touch" && !epingle && setSurvol(bulleDe(index, e.currentTarget))}
       onPointerLeave={() => setSurvol((s) => (s?.index === index ? null : s))}
       onFocus={(e) => !epingle && setSurvol(bulleDe(index, e.currentTarget))}
       onBlur={() => setSurvol((s) => (s?.index === index ? null : s))}
-      // Un candidat : le clic ouvre sa fiche (au toucher, le premier tap épingle
-      // l'infobulle, qui porte le lien). Un compte de parti n'a pas de fiche :
-      // le clic épingle ses dernières publications.
-      onClick={(e) => {
-        const fiche = ficheDe(a);
-        if (fiche && !(toucher.current && epingle?.index !== index)) window.location.assign(fiche);
-        else epingler(index, e.currentTarget);
-      }}
-      onPointerDown={(e) => {
-        toucher.current = e.pointerType === "touch";
-      }}
+      // Le clic (ou Entrée, ou espace) épingle les dernières publications du
+      // compte ; chacune s'ouvre sur son réseau. Aucune page secondaire.
+      onClick={(e) => epingler(index, e.currentTarget)}
       onKeyDown={(e) => {
-        const fiche = ficheDe(a);
-        if (e.key === "Enter" && fiche) {
-          e.preventDefault();
-          window.location.assign(fiche);
-        } else if (e.key === "Enter" || e.key === " ") {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           epingler(index, e.currentTarget);
         }
@@ -438,17 +412,14 @@ function Audience({
           <p className="social-meta">
             {cherche.rang
               ? `${cherche.sg.nom}\u00a0: hors des ${AUDIENCE_MAX} premiers, rang ${nombreFr(cherche.rang)}`
-              : `${cherche.sg.nom}\u00a0: aucun compte dans ce classement avec ces filtres`}
+              : cherche.sg.comptes
+                ? `${cherche.sg.nom}\u00a0: aucun compte dans ce classement avec ces filtres`
+                : `${cherche.sg.nom}\u00a0: aucun compte suivi sur Facebook, Instagram ou TikTok`}
           </p>
-          {cherche.rang ? (
+          {cherche.rang && (
             <ol className="social-barres social-audience" start={cherche.rang}>
               {ligne(complet[cherche.rang - 1], cherche.rang)}
             </ol>
-          ) : (
-            <a className="social-infobulle-fiche" href={`${BASE_PATH}/reseaux/candidats/${cherche.sg.fiche}/`}>
-              <span>Voir la fiche du candidat</span>
-              <span aria-hidden="true">→</span>
-            </a>
           )}
         </div>
       )}
@@ -1605,7 +1576,7 @@ function rangSuggestion(nom: string, q: string) {
 }
 
 /** Une candidature proposée par la recherche de l'onglet Candidats. */
-export type SuggestionCandidat = { cle: string; nom: string; sous: string; party: PartyKey; code: number; comptes: number; fiche: string };
+export type SuggestionCandidat = { cle: string; nom: string; sous: string; party: PartyKey; code: number; comptes: number };
 
 /** Les candidatures officielles (635), pour la recherche de l'onglet
  *  Candidats : mêmes règles que la recherche de la carte. */
@@ -1626,7 +1597,6 @@ export function suggestionsCandidats(data: SocialData, requete: string, max = 8)
         party,
         code,
         comptes,
-        fiche: slugCandidat(nom, circo),
         sous: `${circo} · ${data.partiInfo[party].sigle}${comptes ? "" : " · aucun compte suivi"}`,
       };
     });
@@ -2460,6 +2430,9 @@ export function SocialClient({ data }: { data: SocialData }) {
               <span className="social-statut-court">Vitrine</span>
               <StatutGlyphes />
             </div>
+            {/* L'écran : barre d'état, zone qui défile (avec sa flèche), puis la
+                barre d'onglets du téléphone. L'appareil ne change jamais de taille. */}
+            <div className="social-zone">
             <div className="social-defilement" ref={defileur}>
         <div className="social-tdb">
           <div className="social-entete partis-title-row">
@@ -2648,9 +2621,23 @@ export function SocialClient({ data }: { data: SocialData }) {
               </>
             )}
           </div>
-
-          {/* Mobile : la barre d'onglets, collée au bas de l'écran tant que le
-              module est visible, avec le bouton des filtres et son badge. */}
+        </div>
+            </div>
+            {resteADefiler && (
+              <button
+                type="button"
+                className="social-indice-defiler"
+                aria-label="Voir la suite"
+                onClick={() => defileur.current?.scrollBy({ top: Math.round((defileur.current.clientHeight || 400) * 0.6), behavior: "smooth" })}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+            </div>
+          {/* Mobile : la barre d'onglets, au bas de l'écran du téléphone (hors du
+              défilement), avec le bouton des filtres et son badge. */}
           <nav className="social-barre" aria-label="Vues du module">
             {vues.map((v) => (
               <button type="button" key={v.cle} className={v.cle === vue ? "active" : undefined} aria-pressed={v.cle === vue} onClick={() => setVue(v.cle)}>
@@ -2670,25 +2657,6 @@ export function SocialClient({ data }: { data: SocialData }) {
               {nbFiltres > 0 && <b className="social-badge">{nbFiltres}</b>}
             </button>
           </nav>
-        </div>
-            </div>
-            {resteADefiler && (
-              <button
-                type="button"
-                className="social-indice-defiler"
-                aria-label="Voir la suite"
-                onClick={() => defileur.current?.scrollBy({ top: Math.round((defileur.current.clientHeight || 400) * 0.6), behavior: "smooth" })}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )}
-            <span className="social-accueil" aria-hidden="true" />
-          </div>
-        </div>
-      </section>
-
       {tiroir && (
         <div className="social-tiroir-fond" onClick={() => setTiroir(false)}>
           <div className="social-tiroir" role="dialog" aria-modal="true" aria-label="Filtres" onClick={(e) => e.stopPropagation()}>
@@ -2711,6 +2679,10 @@ export function SocialClient({ data }: { data: SocialData }) {
           </div>
         </div>
       )}
+            <span className="social-accueil" aria-hidden="true" />
+          </div>
+        </div>
+      </section>
 
       <div className="module-last-updated social-pied">
         {data.lastUpdated} · Module expérimental, visible sur le miroir de travail seulement.

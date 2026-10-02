@@ -12518,8 +12518,8 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
    modules de campagne (chantier des palettes par module). */
 .social { --social-accent: var(--bleu); }
 .social-tdb {
-  grid-template-columns: minmax(0, 1fr); grid-template-areas: "entete" "premiers" "haut" "bas" "barre";
-  grid-template-rows: auto auto auto auto auto;
+  grid-template-columns: minmax(0, 1fr); grid-template-areas: "entete" "premiers" "haut" "bas";
+  grid-template-rows: auto auto auto auto;
 }
 /* Les premiers choix, sous le titre : la rangée de pastilles (plateforme,
    parti, type) puis les onglets, sur un filet commun. */
@@ -12544,7 +12544,7 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
    déplacer quand il apparaît ou disparaît. */
 .social-filtres-rangee { position: relative; }
 .social-filtres-rangee .social-reinitialiser { position: absolute; right: 0; bottom: 100%; margin: 0 0 2px; min-height: 22px; white-space: nowrap; }
-.social-barre { grid-area: barre; display: none; }
+.social-barre { display: none; }
 
 /* Les quatre vues : de grandes cases encadrées, celle qui est enfoncée est
    la vue affichée ; une ligne dit ce qu'on y voit. */
@@ -12612,18 +12612,17 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
   .social-trace { height: 290px; }
 }
 @media (max-width: 900px) {
-  .social-tdb { grid-template-areas: "entete" "haut" "bas" "barre"; grid-template-rows: auto auto auto auto; row-gap: 18px; }
+  .social-tdb { grid-template-areas: "entete" "haut" "bas"; grid-template-rows: auto auto auto; row-gap: 18px; }
   .social-premiers, .social-filtres-rangee, .social-onglets-haut, .social-frise, .social-reglage-vues { display: none; }
   .social-entete .control-block.social-filtres-rangee { display: none; } /* le tiroir prend le relais */
   .social-reglage-indicateur { display: flex; }
   .social-haut { margin-top: 0; }
   .social-raccourcis { margin-bottom: 0; }
   .social-reglages { margin-top: 4px; }
-  /* La barre d'onglets, collée au bas de l'écran tant que le module est
-     visible ; elle passe devant le bouton « Signaler » (500) et le personnage
-     Datagotchi (400), qui reviennent dès qu'on quitte le module. */
+  /* La barre d'onglets : dernière rangée de l'écran du téléphone, sous la
+     zone qui défile. */
   .social-barre {
-    display: flex; position: sticky; bottom: 0; z-index: 520; margin-top: 8px;
+    display: flex; position: relative; flex: none; z-index: 2;
     padding: 6px max(4px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
     background: var(--paper); border-top: 1px solid var(--ink); box-shadow: 0 -6px 18px rgba(28, 25, 23, 0.08);
   }
@@ -12669,6 +12668,7 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 .social-statut-court { display: none; }
 .social-statut-glyphes { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-soft); }
 .social-statut-glyphes svg { display: block; height: 10px; width: auto; }
+.social-zone { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .social-defilement {
   flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
   scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
@@ -12701,9 +12701,11 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
     content: ""; position: absolute; top: 160px; right: -3px; width: 3px; height: 76px;
     border-radius: 0 2px 2px 0; background: #2a2724;
   }
-  .social-ecran { border-radius: 38px; height: auto; overflow: clip; }
-  .social-defilement { flex: none; overflow: visible; }
-  .social-indice-defiler { display: none; }
+  /* Le téléphone garde sa taille : il tient dans la fenêtre et défile à
+     l'intérieur, comme la tablette. */
+  .social-ecran { border-radius: 38px; height: min(720px, calc(100vh - 28px)); height: min(720px, calc(100svh - 28px)); }
+  .social-indice-defiler { height: 52px; padding-bottom: 6px; }
+  .social-indice-defiler svg { width: 24px; height: 24px; }
   .social-ecran::before {
     content: ""; position: absolute; top: 9px; left: 50%; z-index: 540; width: 104px; height: 28px; margin-left: -52px;
     border-radius: 14px; background: var(--ink);
@@ -12720,13 +12722,13 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
   .social-accueil { bottom: 6px; width: 100px; margin-left: -50px; }
 }
 
-/* Le tiroir des filtres (mobile) : par-dessus l'écran, depuis le bas. */
+/* Le tiroir des filtres (mobile) : dans l'écran du téléphone, depuis le bas. */
 .social-tiroir-fond {
-  position: fixed; inset: 0; z-index: 600; background: rgba(28, 25, 23, 0.42);
+  position: absolute; inset: 0; z-index: 600; background: rgba(28, 25, 23, 0.42);
   display: flex; align-items: flex-end; justify-content: center;
 }
 .social-tiroir {
-  width: 100%; max-width: 410px; max-height: 86vh; display: flex; flex-direction: column;
+  width: 100%; max-height: 88%; display: flex; flex-direction: column;
   background: var(--paper); border-radius: 18px 18px 0 0; box-shadow: 0 -10px 40px rgba(28, 25, 23, 0.3);
   animation: social-monter 0.22s ease-out;
 }
