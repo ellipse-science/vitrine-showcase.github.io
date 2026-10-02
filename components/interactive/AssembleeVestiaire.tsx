@@ -263,7 +263,7 @@ function ToneScale({ score, maxAbs, compact }: {
     >
       <span className="ton-piste" aria-hidden="true">
         <span className="ton-neutre" />
-        <span className="ton-repere" style={{ left: `${pct}%` }} />
+        <span className={`ton-repere${score >= 0 ? " est-favorable" : " est-defavorable"}`} style={{ left: `${pct}%` }} />
       </span>
       <span className="ton-bornes" aria-hidden="true">
         <i>défavorable</i>
@@ -463,6 +463,9 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
 const DeputyCardMemo = memo(DeputyCard);
 
 // Porte de casier : reste toujours à sa place et à sa taille dans le banc.
+/** Partis dont l'écusson est préparé (public/images/cartes/ecusson-<clé>.png). */
+const ECUSSONS = new Set<string>(["caq", "plq", "qs", "pq", "pcq"]);
+
 function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   row: AssembleeRow;
   open: boolean;
@@ -495,64 +498,89 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
       <span className="casier-fond">
         <span className="casier-cloison" aria-hidden="true" />
         <span className="casier-dedans">
-          <span className="dedans-bloc bloc-chiffre">
+          {/* L'INTÉRIEUR PARLE COMME LE VERSO DES CARTES (2 oct. 2026) : des
+              panneaux de papier arrondis sur le carton, titres en Oswald
+              capitales, la répartition en barre empilée tramée à l'encre du
+              parti, pictogramme dans le segment — exactement « Part de ses
+              interventions ». */}
+          <span className="dedans-bloc">
             <span className="dedans-titre">Interventions</span>
-            <span className="dedans-vedette">{row.interventions ?? 0}</span>
+            <span className="dedans-chiffre">{(row.interventions ?? 0).toLocaleString("fr-CA")}</span>
           </span>
 
-          {row.enjeuStack && row.enjeuStack.length > 0 && (
-            <span className="dedans-bloc bloc-enjeux">
-              <span className="dedans-titre">Sujets abordés</span>
-              {row.enjeuStack.filter((s) => !s.isReste).slice(0, 3).map((seg) => (
-                <span key={seg.label} className="dedans-enjeu" title={seg.title}>
-                  <i className="dedans-lbl">
-                    <SymboleEnjeu cle={seg.cle} className="assemblee-symbole" />
-                    {seg.label}
-                  </i>
-                  <i className="dedans-piste">
-                    <i style={{ width: `${seg.widthPct}%`, background: seg.color }} />
-                  </i>
-                  <i className="dedans-pct">{seg.widthPct}&nbsp;%</i>
+          {row.enjeuStack && row.enjeuStack.length > 0 && (() => {
+            const nommes = row.enjeuStack.filter((s) => !s.isReste && s.cle).slice(0, 3);
+            const autres = Math.max(0, 100 - nommes.reduce((t, x) => t + x.widthPct, 0));
+            const TRAMES = [100, 68, 42];
+            return (
+              <span className="dedans-bloc">
+                <span className="dedans-titre">Part des interventions</span>
+                <span className="dedans-empilee">
+                  {nommes.map((seg, rang) => (
+                    <i
+                      key={seg.label}
+                      title={seg.title}
+                      style={{ width: `${seg.widthPct}%`, background: `color-mix(in srgb, var(--pc) ${TRAMES[rang]}%, var(--carton-papier))` }}
+                    >
+                      {seg.widthPct >= 9 && (
+                        <SymboleEnjeu cle={seg.cle} className="dedans-picto" style={{ color: rang < 2 ? "var(--carton-papier)" : "var(--pc)" }} />
+                      )}
+                    </i>
+                  ))}
+                  <i style={{ flex: "1 1 0", background: "color-mix(in srgb, var(--pc) 16%, var(--carton-papier))" }} />
                 </span>
-              ))}
-            </span>
-          )}
+                <span className="dedans-legende">
+                  {nommes.map((seg) => (
+                    <i key={seg.label}>
+                      <SymboleEnjeu cle={seg.cle} className="dedans-picto" />
+                      {seg.label}&nbsp;<b>{seg.widthPct}&nbsp;%</b>
+                    </i>
+                  ))}
+                  <i className="reste">Autres&nbsp;<b>{autres}&nbsp;%</b></i>
+                </span>
+              </span>
+            );
+          })()}
 
-          {/* Qui a le plus parlé : une mesure directe, contrairement au
-              concept, et c'est déjà l'ordre du présentoir. */}
+          {/* Qui a le plus parlé : une mesure directe, et c'est déjà l'ordre
+              du présentoir. */}
           {plusLoquace && (
-            <span className="dedans-bloc bloc-vedette">
+            <span className="dedans-bloc">
               <span className="dedans-titre">A le plus parlé</span>
-              <span className="dedans-vedette">{plusLoquace.name}</span>
-              <span className="dedans-vedette-mots">{plusLoquace.wordsFormatted} mots</span>
+              <span className="dedans-nom">{plusLoquace.name}</span>
+              <span className="dedans-sous">{plusLoquace.wordsFormatted} mots</span>
             </span>
           )}
-
         </span>
       </span>
 
+      {/* LES PORTES SONT DES CARTONS (2 oct. 2026) : encre du parti, grain
+          de carton, filet de papier en retrait comme le cadre des cartes,
+          écusson du parti dans le coin, sigle en Oswald. Les chiffres vivent
+          sur un panneau de papier, en ligne de statistiques comme la « Fiche
+          à l'Assemblée » du verso : libellé en haut, chiffre en gros. */}
       <span className="casier-battant gauche">
-        <span className="casier-fentes" aria-hidden="true" />
+        <span className="casier-filet" aria-hidden="true" />
         <span className="casier-plaque">
           <span className="casier-sigle">{row.label}</span>
         </span>
-        <span className="casier-bilan">
-          <span>
-            <b>{row.wordsFormatted}</b>
-            <i>mots</i>
-          </span>
+        <span className="casier-panneau">
+          <i>Mots</i>
+          <b>{row.wordsFormatted}</b>
         </span>
       </span>
 
       <span className="casier-battant droite">
-        <span className="casier-fentes" aria-hidden="true" />
-        <span className="casier-bilan">
-          <span>
-            <b>{nb}</b>
-            <i>député.es</i>
-          </span>
+        <span className="casier-filet" aria-hidden="true" />
+        {ECUSSONS.has(row.key) && (
+          <span className="casier-ecusson" aria-hidden="true" style={{ ["--ecusson" as string]: `url(${BASE_PATH}/images/cartes/ecusson-${row.key}.png)` }} />
+        )}
+        <span className="casier-panneau">
+          <i>Député·es</i>
+          <b>{nb}</b>
+          <i>Ton</i>
+          <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
         </span>
-        <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
         <span className="casier-poignee" aria-hidden="true" />
       </span>
     </button>
@@ -639,7 +667,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
           <div className="tiroir-tete">
             <span className="tiroir-parti">{openRow.label}</span>
             <span className="tiroir-compte">
-              {deputies.length} député.es qui ont pris la parole
+              {deputies.length} député·es qui ont pris la parole
             </span>
             <button type="button" className="tiroir-refermer" onClick={() => toggle(openRow.key)}>
               Refermer
@@ -648,22 +676,27 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
 
           {/* L'angle éditorial du parti : une phrase a besoin de largeur, donc
               elle vit dans le tiroir et non sur une porte de casier. */}
+          <div className="tiroir-panneaux">
           {openRow.editorialAngle && (
-            <p className="tiroir-angle">{openRow.editorialAngle}</p>
+            <div className="tiroir-panneau">
+              <p className="tiroir-rubrique">Angle éditorial</p>
+              <p className="tiroir-angle">{openRow.editorialAngle}</p>
+            </div>
           )}
 
           {/* Concept distinctif agrégé au niveau du parti (TF-IDF inter-partis,
               cf. AssembleeRow.signatureWord) — distinct du concept par député,
               qui compare chaque élu.e au reste de l'Assemblée. */}
-          <p className="tiroir-concept">
-            <span className="tiroir-concept-titre">Concept distinctif du parti</span>
+          <div className="tiroir-panneau tiroir-concept">
+            <p className="tiroir-rubrique">Concept distinctif du parti</p>
             <ConceptBloc
               concept={partyConcept}
               glose={conceptGlose("party")}
               absence={conceptAbsent("party")}
               citation={openRow.signatureWordContext}
             />
-          </p>
+          </div>
+          </div>
 
           {deputies.length > 0 ? (
             <div className="tiroir-presentoir">
