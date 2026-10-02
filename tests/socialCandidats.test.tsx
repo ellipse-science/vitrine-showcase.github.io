@@ -93,39 +93,16 @@ describe("pages de candidat", () => {
   });
 });
 
-describe("routes : 635 pages en dev, aucune en prod", () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.resetModules();
-  });
-  it("dev : une page par candidature officielle publiée par le raffineur", async () => {
-    vi.resetModules();
-    const { generateStaticParams } = await import("@/app/reseaux/candidats/[slug]/page");
-    const brut = (await import("@/public/data/agora/agora_social_candidats.json")).default as unknown[];
-    const params = await generateStaticParams();
-    expect(params).toHaveLength(brut.length);
-    expect(brut.length).toBe(635);
-    expect(new Set(params.map((p) => p.slug)).size).toBe(635);
-    expect(params.every((p) => /^[a-z0-9]+(-[a-z0-9]+)+$/.test(p.slug))).toBe(true);
-  }, 60_000);
-  it("prod : la seule sentinelle, qui rend une 404", async () => {
-    vi.stubEnv("NEXT_PUBLIC_SITE_ENV", "prod");
-    vi.resetModules();
-    const { generateStaticParams } = await import("@/app/reseaux/candidats/[slug]/page");
-    expect(await generateStaticParams()).toEqual([{ slug: "indisponible" }]);
-  });
-});
-
 describe("recherche de l'onglet Candidats", () => {
   it("porte sur les 635 candidatures, insensible aux accents et à la casse", () => {
     const r = suggestionsCandidats(data, "ELISE");
     expect(r.map((x) => x.nom)).toEqual(["Élise PCQ", "Élise PLQ", "Élise PQ"]);
     expect(suggestionsCandidats(data, "plq de")).toHaveLength(8); // 126 candidatures, 8 suggestions au plus
     expect(suggestionsCandidats(data, "plq de trois rivieres")[0].nom).toBe("PLQ de Trois-Rivières");
-    expect(suggestionsCandidats(data, "alice")[0]).toMatchObject({ nom: "Alice", party: "qs", comptes: 2, fiche: "alice-anjou-louis-riel" });
+    expect(suggestionsCandidats(data, "alice")[0]).toMatchObject({ nom: "Alice", party: "qs", comptes: 2 });
     expect(suggestionsCandidats(data, "a")).toEqual([]);
   });
-  it("un candidat sans compte le dit, pour mener droit à sa page", () => {
+  it("un candidat sans compte le dit, sans mener à une page secondaire", () => {
     const e = suggestionsCandidats(data, "elise pq").find((x) => x.code === anjou.code)!;
     expect(e.comptes).toBe(0);
     expect(e.sous).toContain("aucun compte suivi");
@@ -167,8 +144,10 @@ describe("infobulle d'un compte (onglet Candidats)", () => {
     const html = renderToStaticMarkup(<InfobulleCompte data={data} a={alice} bulle={bulle} epinglee />);
     const textes = [...html.matchAll(/class="social-infobulle-texte">([^<]+)</g)].map((m) => m[1]);
     expect(textes).toEqual(Array.from({ length: 10 }, (_, i) => `fb${i}`));
-    expect(html).toContain('href="/reseaux/candidats/alice-anjou-louis-riel/"');
-    expect(html).toContain("Voir la fiche du candidat");
+    // Aucune page secondaire : ni fiche de candidat, ni page de circonscription.
+    expect(html).not.toContain("/reseaux/candidats/");
+    expect(html).not.toContain("/reseaux/circonscriptions/");
+    expect(html).not.toContain("Voir la fiche");
     expect(html).toContain('role="dialog"');
   });
 

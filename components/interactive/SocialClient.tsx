@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { PartyKey } from "@/lib/data/parties";
 import {
   COULEURS_PLATEFORMES,
@@ -16,7 +17,6 @@ import {
   type FilItem,
   type CubeRow,
   type Plateforme,
-  slugCandidat,
   type SocialData,
   type TypeCompte,
 } from "@/lib/data/social-meta";
@@ -169,17 +169,14 @@ export function trouverCandidat(
   return { index: complet[r].index, rang: r + 1, dans, page: dans ? Math.floor(r / parPage) : null };
 }
 
-/** Adresse de la fiche d'un compte de candidat, ou null (compte de parti). */
-const ficheDe = (a: SocialData["audience"][number]) =>
-  a.type === "candidat" && a.fiche ? `${BASE_PATH}/reseaux/candidats/${a.fiche}/` : null;
-
 /** Position d'une infobulle de compte, relative au bloc du classement : sous la ligne. */
 type BulleCompte = { index: number; x: number; y: number; largeur: number };
 
-/** Au survol ou au focus d'une ligne de l'onglet Candidats : les 10 dernières
- *  publications du compte (date, logo, extrait, j'aime), et le lien vers la
- *  page du candidat une fois épinglée. Les comptes de parti n'ont pas de
- *  circonscription, donc pas de fichier de fil publié : leur nom complet seul. */
+/** Au clic sur une ligne de Par candidat : la fiche du compte, posée dans
+ *  l'écran de l'appareil (jamais coupée) : son nom, puis ses 10 dernières
+ *  publications (date, logo, extrait, j'aime), chacune un lien vers son
+ *  réseau. Les comptes de parti n'ont pas de circonscription, donc pas de
+ *  fichier de fil publié : leur nom complet seul. */
 export function InfobulleCompte({
   data,
   a,
@@ -203,20 +200,24 @@ export function InfobulleCompte({
   const nom = NOMS_PLATEFORMES[a.plateforme];
   return (
     <div
-      className={`social-infobulle compte${epinglee ? " epinglee" : ""}${etroit ? " etroite" : ""}`}
-      {...(epinglee ? { role: "dialog", "aria-label": `${a.nom}\u00a0: dernières publications` } : { "aria-hidden": true })}
+      className={`social-infobulle compte${epinglee ? " epinglee social-fiche" : ""}${etroit ? " etroite" : ""}`}
+      {...(epinglee
+        ? { role: "dialog", "aria-modal": true, "aria-label": `${a.nom}\u00a0: dernières publications` }
+        : { "aria-hidden": true })}
       style={
-        etroit
-          ? { left: 0, right: 0, top: bulle.y + 4 }
-          : { left: aDroite ? undefined : bulle.x, right: aDroite ? 0 : undefined, top: bulle.y + 4 }
+        epinglee
+          ? undefined
+          : etroit
+            ? { left: 0, right: 0, top: bulle.y + 4 }
+            : { left: aDroite ? undefined : bulle.x, right: aDroite ? 0 : undefined, top: bulle.y + 4 }
       }
     >
       {epinglee && (
-        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer l’infobulle">
+        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer la fiche" autoFocus>
           ×
         </button>
       )}
-      <strong>{ficheDe(a) ? <a className="social-infobulle-nom-lien" href={ficheDe(a)!}>{a.nom}</a> : a.nom}</strong>
+      <strong>{a.nom}</strong>
       <span className="social-meta">
         {data.partiInfo[a.party].sigle} · {a.type === "parti" ? `compte du parti sur ${nom}` : `${circo ? `${circo} · ` : ""}${nom}`}
       </span>
@@ -250,14 +251,9 @@ export function InfobulleCompte({
           )}
         </div>
       )}
-      {a.fiche && epinglee ? (
-        <a className="social-infobulle-fiche" href={`${BASE_PATH}/reseaux/candidats/${a.fiche}/`}>
-          <span>Voir la fiche du candidat</span>
-          <span aria-hidden="true">→</span>
-        </a>
-      ) : a.type === "candidat" && !epinglee ? (
-        <span className="social-infobulle-pied">cliquez pour épingler et faire défiler le fil</span>
-      ) : null}
+      {a.type === "candidat" && !epinglee && (
+        <span className="social-infobulle-pied">cliquez pour épingler, faire défiler le fil et ouvrir une publication</span>
+      )}
     </div>
   );
 }
@@ -272,6 +268,7 @@ function Audience({
   types,
   d0,
   d1,
+  couche = null,
 }: {
   data: SocialData;
   mesure: MesureAudience;
@@ -280,9 +277,12 @@ function Audience({
   types: TypeCompte[];
   d0: number;
   d1: number;
+  /** La couche de l'écran de l'appareil où se pose la fiche d'un compte. */
+  couche?: HTMLElement | null;
 }) {
-  const etroit = useEtroit();
-  const parPage = etroit ? 10 : 20;
+  // Une seule page : les 20 premiers, en deux colonnes de 10 que le CSS empile
+  // sur téléphone (pas de bascule en JavaScript, donc pas d'éclair au chargement).
+  const parPage = AUDIENCE_MAX;
   const [page, setPage] = useState(0);
   const activite = useAudienceJour(data, mesure !== "abonnes");
   // Le classement entier (la recherche donne le rang réel), les 40 premiers affichés.
@@ -292,9 +292,8 @@ function Audience({
   );
   const classement = useMemo(() => complet.slice(0, AUDIENCE_MAX), [complet]);
 
-  // ── Infobulle d'un compte : survol, focus, épingle (comme sur la carte) ────
+  // ── Fiche d'un compte : au clic (ou Entrée), dans l'écran de l'appareil ────
   const blocRef = useRef<HTMLDivElement>(null);
-  const [survol, setSurvol] = useState<BulleCompte | null>(null);
   const [epingle, setEpingle] = useState<BulleCompte | null>(null);
   // Candidat choisi dans la recherche : sa ligne est surlignée ; hors des 40,
   // elle s'affiche à part au-dessus de la liste.
@@ -305,16 +304,13 @@ function Audience({
     const r = el.getBoundingClientRect();
     return { index, x: r.left - b.left, y: r.bottom - b.top, largeur: b.width };
   };
-  const toucher = useRef(false);
   const epingler = (index: number, el: HTMLElement) => {
-    setSurvol(null);
     setEpingle((e) => (e?.index === index ? null : bulleDe(index, el)));
   };
   // Un filtre, une mesure, la période ou la taille des pages change : retour à
   // la page 1, sans infobulle ni recherche en cours.
   useEffect(() => {
     setPage(0);
-    setSurvol(null);
     setEpingle(null);
     setCherche(null);
   }, [mesure, plateformes, partis, types, d0, d1, parPage]);
@@ -334,13 +330,9 @@ function Audience({
     };
   }, [epingle]);
   const choisirCandidat = (sg: SuggestionCandidat) => {
-    // Sans compte suivi : rien à classer, direction sa page.
-    if (!sg.comptes) {
-      window.location.assign(`${BASE_PATH}/reseaux/candidats/${sg.fiche}/`);
-      return;
-    }
+    // Tout se passe dans le module : la ligne du candidat, ou un mot qui dit
+    // pourquoi il n'y est pas (aucun compte suivi, ou écarté par les filtres).
     const t = trouverCandidat(complet, sg, parPage);
-    setSurvol(null);
     setEpingle(null);
     if (t.page != null) setPage(t.page);
     setCherche({ index: t.index, rang: t.rang, dans: t.dans, sg });
@@ -353,7 +345,6 @@ function Audience({
     const doux = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     el.scrollIntoView?.({ block: "center", behavior: doux ? "smooth" : "auto" });
     el.focus({ preventScroll: true });
-    setSurvol(null);
     setEpingle(bulleDe(cherche.index, el));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cherche, page]);
@@ -365,7 +356,7 @@ function Audience({
   const max = classement[0]?.valeur ?? 1;
   // Valeurs en Playfair : séparateur de milliers visible (nombreGrand).
   const format = (v: number) => nombreGrand(v);
-  const colonnes = etroit ? [vus] : [vus.slice(0, 10), vus.slice(10, 20)].filter((c) => c.length > 0);
+  const colonnes = [vus.slice(0, 10), vus.slice(10, 20)].filter((c) => c.length > 0);
   const recherche = data.candidatures?.length ? (
     <Combobox
       id="social-recherche-candidat"
@@ -382,28 +373,12 @@ function Audience({
       className={cherche?.index === index ? "surligne" : undefined}
       tabIndex={0}
       aria-haspopup="dialog"
-      aria-label={`${rang}. ${a.nom}, ${data.partiInfo[a.party].sigle}, ${NOMS_PLATEFORMES[a.plateforme]}\u00a0: ${format(v)} ${MESURE[mesure].unite}. ${ficheDe(a) ? "Entrée pour ouvrir sa fiche, espace pour épingler ses dernières publications." : "Entrée pour épingler ses dernières publications."}`}
-      onPointerEnter={(e) => e.pointerType !== "touch" && !epingle && setSurvol(bulleDe(index, e.currentTarget))}
-      onPointerLeave={() => setSurvol((s) => (s?.index === index ? null : s))}
-      onFocus={(e) => !epingle && setSurvol(bulleDe(index, e.currentTarget))}
-      onBlur={() => setSurvol((s) => (s?.index === index ? null : s))}
-      // Un candidat : le clic ouvre sa fiche (au toucher, le premier tap épingle
-      // l'infobulle, qui porte le lien). Un compte de parti n'a pas de fiche :
-      // le clic épingle ses dernières publications.
-      onClick={(e) => {
-        const fiche = ficheDe(a);
-        if (fiche && !(toucher.current && epingle?.index !== index)) window.location.assign(fiche);
-        else epingler(index, e.currentTarget);
-      }}
-      onPointerDown={(e) => {
-        toucher.current = e.pointerType === "touch";
-      }}
+      aria-label={`${rang}. ${a.nom}, ${data.partiInfo[a.party].sigle}, ${NOMS_PLATEFORMES[a.plateforme]}\u00a0: ${format(v)} ${MESURE[mesure].unite}. Entrée pour voir ses dernières publications.`}
+      // Le clic (ou Entrée, ou espace) ouvre la fiche du compte dans l'écran :
+      // ses dernières publications, chacune un lien vers son réseau.
+      onClick={(e) => epingler(index, e.currentTarget)}
       onKeyDown={(e) => {
-        const fiche = ficheDe(a);
-        if (e.key === "Enter" && fiche) {
-          e.preventDefault();
-          window.location.assign(fiche);
-        } else if (e.key === "Enter" || e.key === " ") {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           epingler(index, e.currentTarget);
         }
@@ -421,7 +396,6 @@ function Audience({
       <span className="social-valeur">{format(v)}</span>
     </li>
   );
-  const bulle = epingle ?? survol;
   if (activite.charge) return <p className="social-note">Chargement de l’activité des comptes…</p>;
   if (classement.length === 0)
     return (
@@ -438,17 +412,14 @@ function Audience({
           <p className="social-meta">
             {cherche.rang
               ? `${cherche.sg.nom}\u00a0: hors des ${AUDIENCE_MAX} premiers, rang ${nombreFr(cherche.rang)}`
-              : `${cherche.sg.nom}\u00a0: aucun compte dans ce classement avec ces filtres`}
+              : cherche.sg.comptes
+                ? `${cherche.sg.nom}\u00a0: aucun compte dans ce classement avec ces filtres`
+                : `${cherche.sg.nom}\u00a0: aucun compte suivi sur Facebook, Instagram ou TikTok`}
           </p>
-          {cherche.rang ? (
+          {cherche.rang && (
             <ol className="social-barres social-audience" start={cherche.rang}>
               {ligne(complet[cherche.rang - 1], cherche.rang)}
             </ol>
-          ) : (
-            <a className="social-infobulle-fiche" href={`${BASE_PATH}/reseaux/candidats/${cherche.sg.fiche}/`}>
-              <span>Voir la fiche du candidat</span>
-              <span aria-hidden="true">→</span>
-            </a>
           )}
         </div>
       )}
@@ -459,17 +430,24 @@ function Audience({
           </ol>
         ))}
       </div>
-      {bulle && data.audience[bulle.index] && (
-        <InfobulleCompte
-          key={epingle ? `e${bulle.index}` : "survol"}
-          data={data}
-          a={data.audience[bulle.index]}
-          bulle={bulle}
-          etroit={etroit}
-          epinglee={!!epingle}
-          onFermer={() => setEpingle(null)}
-        />
-      )}
+      {/* La fiche se pose dans la couche de l'écran (portail) : centrée sur
+          la tablette, en tiroir sur le téléphone, jamais coupée par le bas. */}
+      {epingle &&
+        data.audience[epingle.index] &&
+        couche &&
+        createPortal(
+          <div className="social-fiche-fond">
+            <InfobulleCompte
+              key={`e${epingle.index}`}
+              data={data}
+              a={data.audience[epingle.index]}
+              bulle={epingle}
+              epinglee
+              onFermer={() => setEpingle(null)}
+            />
+          </div>,
+          couche,
+        )}
       {pages === 1 && (
         <p className="social-meta social-audience-nombre">
           {classement.length}&nbsp;{classement.length > 1 ? "comptes" : "compte"}
@@ -1003,6 +981,26 @@ function Courbes({
     const plafond = i === fins.length - 1 ? 100 : fins[i + 1].y - 9;
     if (fins[i].y > plafond) fins[i].y = plafond;
   }
+  // Au survol : le jour sous le pointeur (repère vertical, valeur de chaque
+  // courbe dans une infobulle) et la courbe la plus proche, mise en avant.
+  const trace = useRef<HTMLDivElement>(null);
+  const [survol, setSurvol] = useState<{ i: number; cle: string | null } | null>(null);
+  const viser = (clientX: number, clientY: number) => {
+    const r = trace.current?.getBoundingClientRect();
+    if (!r || r.width === 0) return;
+    const i = n > 1 ? Math.max(0, Math.min(n - 1, Math.round(((clientX - r.left) / r.width) * (n - 1)))) : 0;
+    let cle: string | null = null;
+    let ecart = 26; // au-delà de 26 px d'une courbe, aucune n'est mise en avant
+    for (const c of s) {
+      const d = Math.abs((y(c.valeurs[i] ?? 0) / 100) * r.height - (clientY - r.top));
+      if (d < ecart) {
+        ecart = d;
+        cle = c.element.cle;
+      }
+    }
+    setSurvol((avant) => (avant?.i === i && avant.cle === cle ? avant : { i, cle }));
+  };
+  const classees = survol ? [...s].sort((a, b) => (b.valeurs[survol.i] ?? 0) - (a.valeurs[survol.i] ?? 0)) : [];
   // Dates de l'axe : cinq au plus, trois dans un panneau (début, milieu, fin).
   const reperes = compact
     ? [...new Set([0, Math.floor((n - 1) / 2), n - 1])]
@@ -1010,7 +1008,13 @@ function Courbes({
 
   return (
     <div className="social-graphe" role="img" aria-label={`${NOMS_MESURES[m]} ${hebdo ? "par semaine" : "par jour"}`}>
-      <div className="social-trace">
+      <div
+        className="social-trace"
+        ref={trace}
+        onPointerMove={(e) => viser(e.clientX, e.clientY)}
+        onPointerDown={(e) => viser(e.clientX, e.clientY)}
+        onPointerLeave={(e) => e.pointerType !== "touch" && setSurvol(null)}
+      >
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           {graduations.map((v) => (
             <line
@@ -1032,13 +1036,57 @@ function Courbes({
                 fill="none"
                 stroke={couleurElement(data, c.element, panneau)}
                 strokeDasharray={c.element.plateforme && !c.element.party ? tirets[c.element.plateforme] : undefined}
-                strokeWidth={1.8}
+                strokeWidth={survol?.cle === c.element.cle ? 2.8 : 1.8}
+                strokeOpacity={survol?.cle && survol.cle !== c.element.cle ? 0.28 : 1}
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
               />
             ),
           )}
+          {survol && n > 1 && (
+            <line
+              x1={x(survol.i)}
+              x2={x(survol.i)}
+              y1={0}
+              y2={100}
+              stroke="var(--ink-soft)"
+              strokeWidth={1}
+              strokeDasharray="3 3"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
         </svg>
+        {survol &&
+          n > 1 &&
+          s.map((c) => (
+            <span
+              key={c.element.cle}
+              className={`social-point-survol${survol.cle && survol.cle !== c.element.cle ? " estompe" : ""}`}
+              style={{ left: `${x(survol.i)}%`, top: `${y(c.valeurs[survol.i] ?? 0)}%`, background: couleurElement(data, c.element, panneau) }}
+            />
+          ))}
+        {survol && (
+          <div
+            className="social-bulle-barre social-bulle-courbe"
+            role="presentation"
+            style={{ left: `${x(survol.i)}%`, transform: x(survol.i) > 55 ? "translateX(calc(-100% - 14px))" : "translateX(14px)" }}
+          >
+            <div className="social-bulle-courbe-date">
+              {hebdo ? `Semaine du ${jourCourt(jours[survol.i])}` : jourCourt(jours[survol.i])} · {NOMS_MESURES[m]}
+            </div>
+            <dl>
+              {classees.map((c) => (
+                <div key={c.element.cle} className={survol.cle === c.element.cle ? "active" : undefined}>
+                  <dt>
+                    <i style={{ background: couleurElement(data, c.element, panneau) }} />
+                    {nomElement(data, c.element)}
+                  </dt>
+                  <dd>{nombreFr(c.valeurs[survol.i] ?? 0)}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
         {n === 1 &&
           s.map((c) => (
             <span
@@ -1061,7 +1109,11 @@ function Courbes({
           <span
             key={f.c.element.cle}
             className="social-etiquette"
-            style={{ top: `${f.y}%`, color: couleurElement(data, f.c.element, panneau) }}
+            style={{
+              top: `${f.y}%`,
+              color: couleurElement(data, f.c.element, panneau),
+              opacity: survol?.cle && survol.cle !== f.c.element.cle ? 0.35 : 1,
+            }}
             title={nomElement(data, f.c.element)}
           >
             {f.c.element.plateforme && !f.c.element.party ? <Logo p={f.c.element.plateforme} /> : nomElement(data, f.c.element)}
@@ -1605,7 +1657,7 @@ function rangSuggestion(nom: string, q: string) {
 }
 
 /** Une candidature proposée par la recherche de l'onglet Candidats. */
-export type SuggestionCandidat = { cle: string; nom: string; sous: string; party: PartyKey; code: number; comptes: number; fiche: string };
+export type SuggestionCandidat = { cle: string; nom: string; sous: string; party: PartyKey; code: number; comptes: number };
 
 /** Les candidatures officielles (635), pour la recherche de l'onglet
  *  Candidats : mêmes règles que la recherche de la carte. */
@@ -1626,7 +1678,6 @@ export function suggestionsCandidats(data: SocialData, requete: string, max = 8)
         party,
         code,
         comptes,
-        fiche: slugCandidat(nom, circo),
         sous: `${circo} · ${data.partiInfo[party].sigle}${comptes ? "" : " · aucun compte suivi"}`,
       };
     });
@@ -2328,6 +2379,8 @@ export function SocialClient({ data }: { data: SocialData }) {
   const [m, setMesure] = useState<Mesure>("jaime");
   // Mobile : le tiroir des filtres, ouvert depuis la barre du bas.
   const [tiroir, setTiroir] = useState(false);
+  // La couche de l'écran, par-dessus la zone qui défile : la fiche d'un compte s'y pose.
+  const [couche, setCouche] = useState<HTMLDivElement | null>(null);
   // Grand écran : la tablette garde sa taille et défile à l'intérieur ; une
   // flèche en bas de l'écran dit qu'il reste du contenu, tant qu'il en reste.
   const defileur = useRef<HTMLDivElement>(null);
@@ -2460,6 +2513,9 @@ export function SocialClient({ data }: { data: SocialData }) {
               <span className="social-statut-court">Vitrine</span>
               <StatutGlyphes />
             </div>
+            {/* L'écran : barre d'état, zone qui défile (avec sa flèche), puis la
+                barre d'onglets du téléphone. L'appareil ne change jamais de taille. */}
+            <div className="social-zone">
             <div className="social-defilement" ref={defileur}>
         <div className="social-tdb">
           <div className="social-entete partis-title-row">
@@ -2570,7 +2626,7 @@ export function SocialClient({ data }: { data: SocialData }) {
             <p className="social-sous-titre">{sousTitre}</p>
 
             {vue === "candidats" && (
-              <Audience data={data} mesure={m} plateformes={plateformes} partis={partis} types={types} d0={d0} d1={d1} />
+              <Audience data={data} mesure={m} plateformes={plateformes} partis={partis} types={types} d0={d0} d1={d1} couche={couche} />
             )}
 
             {/* Barres et parts côte à côte (même mesure, filtres et découpe). */}
@@ -2648,9 +2704,23 @@ export function SocialClient({ data }: { data: SocialData }) {
               </>
             )}
           </div>
-
-          {/* Mobile : la barre d'onglets, collée au bas de l'écran tant que le
-              module est visible, avec le bouton des filtres et son badge. */}
+        </div>
+            </div>
+            {resteADefiler && (
+              <button
+                type="button"
+                className="social-indice-defiler"
+                aria-label="Voir la suite"
+                onClick={() => defileur.current?.scrollBy({ top: Math.round((defileur.current.clientHeight || 400) * 0.6), behavior: "smooth" })}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+            </div>
+          {/* Mobile : la barre d'onglets, au bas de l'écran du téléphone (hors du
+              défilement), avec le bouton des filtres et son badge. */}
           <nav className="social-barre" aria-label="Vues du module">
             {vues.map((v) => (
               <button type="button" key={v.cle} className={v.cle === vue ? "active" : undefined} aria-pressed={v.cle === vue} onClick={() => setVue(v.cle)}>
@@ -2670,25 +2740,7 @@ export function SocialClient({ data }: { data: SocialData }) {
               {nbFiltres > 0 && <b className="social-badge">{nbFiltres}</b>}
             </button>
           </nav>
-        </div>
-            </div>
-            {resteADefiler && (
-              <button
-                type="button"
-                className="social-indice-defiler"
-                aria-label="Voir la suite"
-                onClick={() => defileur.current?.scrollBy({ top: Math.round((defileur.current.clientHeight || 400) * 0.6), behavior: "smooth" })}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )}
-            <span className="social-accueil" aria-hidden="true" />
-          </div>
-        </div>
-      </section>
-
+            <div className="social-couche" ref={setCouche} />
       {tiroir && (
         <div className="social-tiroir-fond" onClick={() => setTiroir(false)}>
           <div className="social-tiroir" role="dialog" aria-modal="true" aria-label="Filtres" onClick={(e) => e.stopPropagation()}>
@@ -2711,9 +2763,13 @@ export function SocialClient({ data }: { data: SocialData }) {
           </div>
         </div>
       )}
+            <span className="social-accueil" aria-hidden="true" />
+          </div>
+        </div>
+      </section>
 
       <div className="module-last-updated social-pied">
-        {data.lastUpdated} · Module expérimental, visible sur le miroir de travail seulement.
+        {data.lastUpdated} · Module expérimental
       </div>
     </>
   );
