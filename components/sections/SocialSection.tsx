@@ -1,13 +1,11 @@
 import { loadSocial } from "@/lib/data/social";
 import { SocialClient } from "@/components/interactive/SocialClient";
 
-// Module EXPÉRIMENTAL, dev seulement : ses tables n'existent que dans le
-// datamart DEV (raffineur agora-social). La section se garde elle-même en
-// prod, et app/page.tsx retire aussi son enveloppe.
-const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
-
+// Module expérimental « La guerre des clics », affiché en dev comme en prod.
+// Ses tables n'existent que dans le datamart DEV (raffineur agora-social) : le
+// chargeur lit donc toujours les fichiers publiés du dépôt, jamais l'API. Sans
+// fichier, il rend `null` et la section ne s'affiche pas.
 export async function SocialSection() {
-  if (isProd) return null;
   const data = await loadSocial();
   if (!data) return null;
   // L'activité par compte et par jour reste hors des props (fichier statique

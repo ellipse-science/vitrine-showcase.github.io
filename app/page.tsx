@@ -54,13 +54,10 @@ export default async function Home() {
       </div>
 
       {/* Les réseaux sociaux prennent la place du Polimètre+, qui ferme la
-          page. Module expérimental, dev seulement (tables du datamart DEV) :
-          en production, l'Assemblée suit donc directement les partis. */}
-      {!isProd && (
-        <div id="candidats-reseaux" data-section="Candidats sur les réseaux">
-          <SocialSection />
-        </div>
-      )}
+          page. Module expérimental, lu dans les tables du datamart DEV. */}
+      <div id="candidats-reseaux" data-section="Candidats sur les réseaux">
+        <SocialSection />
+      </div>
 
       <div id="assemblee-nationale" data-section="Assemblée nationale">
         <AssembleeSection />
