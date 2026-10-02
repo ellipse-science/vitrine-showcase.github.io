@@ -1,5 +1,11 @@
 [
   {
+    "pr": 918,
+    "date": "2026-10-02T18:39:48Z",
+    "note": "Dans le module des réseaux sociaux (miroir de travail seulement), la fiche d'une circonscription affiche ses candidats un par ligne.",
+    "version": null
+  },
+  {
     "pr": 916,
     "date": "2026-10-02T18:19:57Z",
     "note": "Dans le module des réseaux sociaux (miroir de travail seulement), la fiche d'une circonscription s'ouvre maintenant au centre de l'écran.",
