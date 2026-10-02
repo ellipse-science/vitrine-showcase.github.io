@@ -1109,9 +1109,14 @@ const TRAME_VERSION = "1";
 // 150 x 200 px : une trame grosse cache ce manque de détail, et à 8 px elle
 // fait environ 82 lignes par pouce sur la carte, loin des 150 à 175 de la trame
 // de l'imprimeur, donc sans moiré. Fait partie de la clé du cache des trames.
+// STYLE « courriel » (Jules, 29-09) : la carte envoyée à l'élu par courriel.
+// La MISE EN PAGE est celle de la carte imprimée, mais l'image est faite pour
+// l'écran : ni fond perdu, ni réduction, ni traits de coupe, et une trame
+// plus fine, dont la rosette ne se voit plus à la taille d'un écran.
 const STYLES = {
-  impression: { cellule: 8, echelle: 2, impression: true },
-  web: { cellule: 4, echelle: 2, impression: false },
+  impression: { cellule: 8, echelle: 2, impression: true, fondPerdu: true },
+  courriel: { cellule: 3, echelle: 2, impression: true, fondPerdu: false },
+  web: { cellule: 4, echelle: 2, impression: false, fondPerdu: false },
 } as const;
 type StyleCarte = keyof typeof STYLES;
 const ARGS_CARTES = parseArgs(process.argv.slice(2));
@@ -1139,25 +1144,33 @@ async function baseballURI(deputy: DeputyRow): Promise<string | null> {
   if (cacheBaseball.has(asset)) return cacheBaseball.get(asset) ?? null;
   const source = path.resolve(process.cwd(), "public/images/deputes", `${asset}.jpg`);
   const octets = await fs.readFile(source).catch(() => null);
-  if (!octets) { cacheBaseball.set(asset, null); return null; }
-  const cle = createHash("sha256").update(octets).update(TRAME_VERSION).update(`cellule=${CELLULE_TRAME}`).update(DENSITE_TRAME > 1 ? `densite=${DENSITE_TRAME}` : "").digest("hex").slice(0, 12);
+  const url = octets ? await trameURI(octets, asset) : null;
+  cacheBaseball.set(asset, url);
+  return url;
+}
+
+/** LA TRAME, pour n'importe quelle photo : les portraits des élus (3:4,
+ *  1500 × 2000), et la photo du Parlement au dessus du paquet, dans son propre
+ *  format. `masque` détoure le sujet : hors du masque, l'image est
+ *  transparente et laisse voir la carte. */
+async function trameURI(
+  octets: Buffer,
+  asset: string,
+  format: { largeur: number; hauteur: number; masque?: Buffer } = { largeur: 1500, hauteur: 2000 },
+): Promise<string | null> {
+  const cle = createHash("sha256").update(octets).update(TRAME_VERSION).update(`cellule=${CELLULE_TRAME}`).update(DENSITE_TRAME > 1 ? `densite=${DENSITE_TRAME}` : "")
+    .update(format.largeur === 1500 && format.hauteur === 2000 ? "" : `${format.largeur}x${format.hauteur}`).update(format.masque ?? "").digest("hex").slice(0, 12);
   const fichier = path.join(CACHE_TRAMES, `${asset}-${cle}.png`);
   const url = pathToFileURL(fichier).href;
-  if (await fs.access(fichier).then(() => true, () => false)) {
-    cacheBaseball.set(asset, url);
-    return url;
-  }
+  if (await fs.access(fichier).then(() => true, () => false)) return url;
   const sharp = (await import("sharp")).default;
   const prepared = await sharp(octets)
-    .resize(1500, 2000, { fit: "cover", position: "centre", kernel: "lanczos3" })
+    .resize(format.largeur, format.hauteur, { fit: "cover", position: "centre", kernel: "lanczos3" })
     .modulate({ brightness: 1.03, saturation: 1.7 })
     .linear(1.24, -30)
     .sharpen({ sigma: 0.8, m1: 0.65, m2: 0.35 })
     .removeAlpha().raw().toBuffer({ resolveWithObject: true }).catch(() => null);
-  if (!prepared) {
-    cacheBaseball.set(asset, null);
-    return null;
-  }
+  if (!prepared) return null;
   const { data, info } = prepared;
   const cell = CELLULE_TRAME;
   const cx = info.width / 2; const cy = info.height / 2;
@@ -1167,12 +1180,12 @@ async function baseballURI(deputy: DeputyRow): Promise<string | null> {
     { angle: 0,  fill: "#FFD900", gain: 1.04, protectHighlights: true, value: (_r: number, _g: number, b: number) => 1 - b / 255 },
     { angle: 45, fill: "#171412", gain: 0.7, protectHighlights: true, value: (r: number, g: number, b: number) => 1 - Math.max(r, g, b) / 255 },
   ];
-  const groups: string[] = [];
+  const couches: { fill: string; angle: number; points: [number, number, number][] }[] = [];
   const margin = 480;
   for (const ch of channels) {
     const rad = ch.angle * Math.PI / 180;
     const cos = Math.cos(rad); const sin = Math.sin(rad);
-    const dots: string[] = [];
+    const points: [number, number, number][] = [];
     for (let v = -margin; v < info.height + margin; v += cell) {
       for (let u = -margin; u < info.width + margin; u += cell) {
         const x = Math.round(cx + (u - cx) * cos - (v - cy) * sin);
@@ -1187,17 +1200,51 @@ async function baseballURI(deputy: DeputyRow): Promise<string | null> {
           coverage *= 1 - Math.min(0.7, protection);
         }
         const radius = (cell / 2) * Math.sqrt(coverage) * ch.gain;
-        if (radius > 0.18) dots.push(`<circle cx="${u}" cy="${v}" r="${radius.toFixed(2)}"/>`);
+        if (radius > 0.18) points.push([u, v, radius]);
       }
     }
-    groups.push(`<g fill="${ch.fill}" style="mix-blend-mode:multiply" transform="rotate(${ch.angle} ${cx} ${cy})">${dots.join("")}</g>`);
+    couches.push({ fill: ch.fill, angle: ch.angle, points });
   }
+  // LE LECTEUR SVG REFUSE PLUS D'UN MILLION D'ÉLÉMENTS. Un <circle> par point,
+  // comme depuis le début, tant que le portrait tient sous ce seuil : les
+  // trames des cartes imprimées (8 px) et du site (4 px) sortent donc à
+  // l'identique. À trame fine (3 px, style courriel), un portrait sombre
+  // dépasse le seuil : ses points sont alors tracés en deux arcs et regroupés
+  // par 2 000 dans un même <path>. Le rendu diffère de quelques valeurs sur le
+  // bord des points, sans effet visible. Constat du 29-09 : 34 cartes sur 129
+  // sortaient sans portrait, sans un mot.
+  const total = couches.reduce((n, c) => n + c.points.length, 0);
+  const groupes = total > 999_900;
+  const groups = couches.map((c) => {
+    const dessin: string[] = [];
+    if (groupes) {
+      const arcs = c.points.map(([u, v, radius]) => {
+        const rr = radius.toFixed(2);
+        return `M${(u - radius).toFixed(2)} ${v}a${rr} ${rr} 0 1 0 ${(2 * radius).toFixed(2)} 0a${rr} ${rr} 0 1 0 ${(-2 * radius).toFixed(2)} 0`;
+      });
+      for (let k = 0; k < arcs.length; k += 2000) dessin.push(`<path d="${arcs.slice(k, k + 2000).join("")}"/>`);
+    } else {
+      for (const [u, v, radius] of c.points) dessin.push(`<circle cx="${u}" cy="${v}" r="${radius.toFixed(2)}"/>`);
+    }
+    return `<g fill="${c.fill}" style="mix-blend-mode:multiply" transform="rotate(${c.angle} ${cx} ${cy})">${dessin.join("")}</g>`;
+  });
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${info.width}" height="${info.height}"><rect width="100%" height="100%" fill="#FAF7EF"/>${groups.join("")}</svg>`;
-  const buf = await sharp(Buffer.from(svg), { density: 72 * DENSITE_TRAME }).png({ compressionLevel: 8 }).toBuffer().catch(() => null);
-  if (!buf) { cacheBaseball.set(asset, null); return null; }
+  // Un échec est DIT : il laissait la carte sans portrait, sans un mot.
+  let buf = await sharp(Buffer.from(svg), { density: 72 * DENSITE_TRAME }).png({ compressionLevel: 8 }).toBuffer()
+    .catch((e) => { console.warn(`  ⚠️ trame en échec pour ${asset} : ${e instanceof Error ? e.message : e}`); return null; });
+  if (buf && format.masque) {
+    // En deux temps : sharp retire la transparence à la FIN de sa chaîne, et
+    // emporterait le masque qu'on vient de joindre.
+    const rvb = await sharp(buf).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { width, height } = rvb.info;
+    const decoupe = await sharp(format.masque).resize(width, height, { fit: "fill" }).greyscale().raw().toBuffer();
+    buf = await sharp(rvb.data, { raw: { width, height, channels: 3 } })
+      .joinChannel(decoupe, { raw: { width, height, channels: 1 } })
+      .png({ compressionLevel: 8 }).toBuffer().catch(() => null);
+  }
+  if (!buf) return null;
   await fs.mkdir(path.dirname(fichier), { recursive: true }); // « historique/16777 »
   await fs.writeFile(fichier, buf);
-  cacheBaseball.set(asset, url);
   return url;
 }
 
@@ -2284,10 +2331,14 @@ function rapporterDebordements(liste: string[]): void {
  *    pictogramme).
  *  · DESSOUS : au recto la MÉTHODOLOGIE ; au verso, visible de l'extérieur, le
  *    logo de la Vitrine, un code QR vers le site, le CAPP et l'Université Laval.
- *  PARTI PRIS SOBRE, retenu après une mosaïque des élus, des paquets de cire
- *  d'époque et des objets du hockey, tous écartés : le papier et l'encre des
- *  cartes, le caractère des noms (Playfair), et du hockey un seul rappel,
- *  les rayures du chandail. Aucun élu n'est montré.
+ *  LE DESSUS EST UNE CARTE : le cadre, le médaillon, le bandeau du nom et le
+ *  pied du recto d'un élu, avec pour « portrait » l'Hôtel du Parlement, dans
+ *  la trame des portraits. L'ÉDIFICE N'EST JAMAIS TRONQUÉ (Jules, 28-09) : il
+ *  est large et la carte est haute, d'où deux solutions à l'essai, la carte
+ *  à l'horizontale ou l'édifice détouré dont la tour dépasse du cadre.
+ *  Aucun élu n'est montré.
+ *  PHOTO : « Assemblée nationale du Québec, Canada », Wilfredor, 2020,
+ *  Wikimedia Commons, licence CC0 (donnees/parlement-*).
  *  AUCUNE COULEUR DE PARTI SEULE : les cinq viennent ensemble, à parts
  *  égales, dans l'ordre alphabétique des sigles.
  *  Classes préfixées « pq- » : les ajusteurs et les mesures de la série
@@ -2301,6 +2352,7 @@ function pagesPaquet(
   sansExpression: number,
   monogramme: string | null,
   codeQR: string,
+  photo: { url: string | null; disposition: "horizontal" | "detoure" },
 ): { slug: string; html: string }[] {
   const ENCRE = COLORS.soft;
   const masque = (uri: string) => `-webkit-mask-image:url('${uri}');mask-image:url('${uri}')`;
@@ -2369,26 +2421,94 @@ function pagesPaquet(
     `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">${polices}<style>${css}</style></head><body${MODE_IMPRESSION ? ` data-plancher="${PLANCHER_IMPRESSION}"` : ""}>${corps}</body></html>`;
   const lys = (n: number, couleur: string, taille: number) => Array.from({ length: n }, () => fleur(couleur, taille)).join("");
 
-  // ── Dessus, recto : le titre ───────────────────────────────────────────
-  // Le monogramme, le titre sur deux lignes composées à la même largeur
-  // (data-l : le script règle la taille de chacune), les cinq rayures, la
-  // législature.
-  const couverture = page(`${cssFace}
+  // ── Dessus, recto : la carte du Parlement ──────────────────────────────
+  // Mêmes règles que carteHTML (carte commune) : filet d'encre de 3 px,
+  // médaillon à cheval sur le coin, bandeau du nom, pied, logos. Ce qui
+  // change : le bandeau est à l'encre (pas de parti), son filet du haut porte
+  // les cinq couleurs, le médaillon donne la législature et la réserve du coin
+  // le monogramme de la Vitrine.
+  const cssCarte = (lp: number, hp: number, bande: number) => `${commun(COLORS.paper, COLORS.ink, COLORS.softer)}
+  .grain{opacity:.22}.mouchete{opacity:.18}
+  .cadre{position:absolute;pointer-events:none;overflow:visible}
+  .bande{position:absolute;left:0;right:0;bottom:0;height:${bande}px;background:${COLORS.ink};
+         display:flex;flex-direction:column;justify-content:center;padding:22px 40px 0}
+  .pq-cinq{position:absolute;left:0;right:0;top:0;height:22px;background:${cinq}}
+  .pq-nom{font-family:"Playfair Display",serif;font-weight:900;font-size:64px;line-height:1.06;letter-spacing:-.02em;
+          color:${COLORS.paper};text-transform:uppercase;white-space:nowrap}
+  .medaillon{position:absolute;left:8px;top:8px;width:124px;height:124px;border-radius:50%;
+             background:${COLORS.ink};color:${COLORS.paper};border:6px solid ${COLORS.paper};box-shadow:0 0 0 3px ${COLORS.ink};
+             display:flex;align-items:center;justify-content:center;font-family:"Playfair Display",serif;font-weight:900;
+             font-size:52px;line-height:1;transform:rotate(-6deg)}
+  .medaillon i{display:block;font-style:normal;transform:translateY(-8px)}
+  .medaillon sup{font-size:.5em;vertical-align:.7em;line-height:0}
+  .ecusson-haut{position:absolute;width:142px;height:108px;display:block}
+  .ecusson-haut i{display:block;width:100%;height:100%;background:${COLORS.ink};-webkit-mask-size:contain;mask-size:contain;
+                  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}
+  .pied{position:absolute;left:${MARGE + 4}px;width:${lp - 8}px;top:${MARGE + hp + 26}px;display:flex;align-items:baseline;
+        justify-content:space-between;gap:24px;font-family:"IBM Plex Mono",monospace;font-size:23px;letter-spacing:.08em;
+        text-transform:uppercase;color:${COLORS.softer}}
+  ${MODE_IMPRESSION ? RECTO_IMPRESSION_CSS.replace(`top:${PANNEAU.bas + 14}px`, `top:${MARGE + hp + 14}px`) : ""}`;
+  const medaillon = `<span class="medaillon"><i>43<sup>e</sup></i></span>`;
+  const pied = `<p class="pied"><span>${ordinal("43e")} législature</span><span>2022 – 2026</span></p>`;
+  let couverture: string;
+  if (photo.disposition === "horizontal") {
+    // LA CARTE À L'HORIZONTALE, comme les cartes d'équipe des séries de
+    // hockey. La page reste verticale : tout le dessin est couché d'un quart
+    // de tour (on tourne la carte pour la lire). La photo entière remplit le
+    // panneau ; le bandeau, ramené à 150 px, couvre le pavé du premier plan
+    // et s'arrête au pied de l'édifice.
+    const LH = H, HH = W, lp = LH - 2 * MARGE, hp = HH - MARGE - 120, bande = 150;
+    const chemin = `M 0 0 H ${lp - 349} C ${lp - 259} 0, ${lp - 219} 170, ${lp - 124} 170 C ${lp - 64} 170, ${lp - 24} 140, ${lp} 150 V ${hp} H 0 Z`;
+    couverture = page(`${cssCarte(lp, hp, bande)}
+  .pq-couche{position:absolute;left:0;top:0;width:${LH}px;height:${HH}px;transform-origin:0 0;transform:translateX(${W}px) rotate(90deg)}
+  .panneau{position:absolute;left:${MARGE}px;top:${MARGE}px;width:${lp}px;height:${hp}px;clip-path:path('${chemin}');overflow:hidden;background:${COLORS.paper}}
+  .cadre{left:${MARGE}px;top:${MARGE}px;width:${lp}px;height:${hp}px}
+  .photo{position:absolute;inset:0;background:url("${photo.url ?? ""}") center top / cover no-repeat}
+  .ecusson-haut{left:${MARGE + lp - 186}px;top:${MARGE + 23}px}
+  .marque-capp{left:${LH / 2}px}`,
+    `<div class="pq-couche">
+    <div class="panneau"><div class="photo"></div>
+      <div class="bande"><span class="pq-cinq"></span><p class="pq-nom">L’alignement de l’Assemblée</p></div></div>
+    <svg class="cadre" viewBox="0 0 ${lp} ${hp}" aria-hidden="true"><path d="${chemin}" fill="none" stroke="${COLORS.ink}" stroke-width="3" stroke-linejoin="round"/></svg>
+    ${medaillon}
+    ${monogramme ? `<span class="ecusson-haut"><i style="${masque(monogramme)}"></i></span>` : ""}
+    ${marquesInstitutions(logos.capp)}
+    ${pied}
+  </div>${textures}`);
+  } else {
+    // L'ÉDIFICE DÉTOURÉ. Le panneau ne commence qu'à mi-hauteur : l'édifice,
+    // posé sur le bandeau, y tient en entier sur la largeur, et sa tour
+    // dépasse du cadre, comme un joueur qui sort de sa vignette. Le titre
+    // prend la place libérée au-dessus.
+    const lp = PANNEAU.w, haut = 690, hp = PANNEAU.bas - haut, bande = 150;
+    const lE = 955, hE = Math.round(lE * 1765 / 2400), xE = (W - lE) / 2, yE = PANNEAU.bas - bande - hE + 2;
+    couverture = page(`${cssCarte(lp, PANNEAU.bas - MARGE, bande)}
+  .panneau{position:absolute;left:${MARGE}px;top:${haut}px;width:${lp}px;height:${hp}px;overflow:hidden;
+           background:${COLORS.deep};background-image:radial-gradient(circle at 50% 50%,rgba(28,25,23,.3) 0 1.5px,rgba(28,25,23,0) 1.9px);background-size:9px 9px}
+  .cadre{left:${MARGE}px;top:${haut}px;width:${lp}px;height:${hp}px}
+  .pq-edifice{position:absolute;left:${xE}px;top:${yE}px;width:${lE}px;height:${hE}px;display:block}
+  .pq-socle{position:absolute;left:${MARGE}px;top:${PANNEAU.bas - bande}px;width:${lp}px;height:${bande}px}
+  .pq-socle .bande{padding-top:22px;align-items:center}
+  .pq-leg{font-family:"IBM Plex Mono",monospace;font-size:34px;letter-spacing:.12em;text-transform:uppercase;color:${COLORS.paper}}
+  .pq-leg .ord{font-size:.6em;vertical-align:.55em}
   .pq-titre{position:absolute;left:0;top:0;overflow:visible}
   .pq-titre text{font-family:"Playfair Display",serif;font-weight:900;text-transform:uppercase;letter-spacing:-.005em}
-  .pq-leg{position:absolute;left:0;right:0;text-align:center;text-transform:uppercase;font-family:"IBM Plex Mono",monospace;
-          font-size:34px;letter-spacing:.12em;text-indent:.12em}
-  .pq-leg .ord{font-size:.6em;vertical-align:.55em}`,
-  `${monogramme ? `<span class="pq-rang" style="top:290px"><i class="pq-masque" style="width:120px;height:126px;${masque(monogramme)}"></i></span>` : ""}
+  .medaillon{left:8px;top:8px}
+  .ecusson-haut{left:${W - MARGE - 150}px;top:${MARGE - 6}px}`,
+    `<div class="panneau"></div>
+  <svg class="cadre" viewBox="0 0 ${lp} ${hp}" aria-hidden="true"><rect x="0" y="0" width="${lp}" height="${hp}" fill="none" stroke="${COLORS.ink}" stroke-width="3"/></svg>
   <svg class="pq-titre" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-    <text x="${W / 2}" y="660" data-l="800" text-anchor="middle" fill="${COLORS.ink}">L’alignement</text>
-    <text x="${W / 2}" y="802" data-l="800" text-anchor="middle" fill="${COLORS.ink}">de l’Assemblée</text>
+    <text x="${W / 2}" y="292" data-l="700" text-anchor="middle" fill="${COLORS.ink}">L’alignement</text>
+    <text x="${W / 2}" y="412" data-l="700" text-anchor="middle" fill="${COLORS.ink}">de l’Assemblée</text>
   </svg>
-  ${rayures(960)}
-  <p class="pq-leg" style="top:1190px">${ordinal("43e")} législature</p>
-  <p class="pq-leg" style="top:1246px">2022 – 2026</p>
+  ${photo.url ? `<img class="pq-edifice" src="${photo.url}" alt="">` : ""}
+  <div class="pq-socle"><div class="bande"><span class="pq-cinq"></span><p class="pq-leg">${ordinal("43e")} législature · 2022 – 2026</p></div></div>
+  ${medaillon}
+  ${monogramme ? `<span class="ecusson-haut"><i style="${masque(monogramme)}"></i></span>` : ""}
+  ${marquesInstitutions(logos.capp)}
   <script>document.fonts.ready.then(() => { for (const t of document.querySelectorAll("text[data-l]")) { t.style.fontSize = "100px"; t.style.fontSize = (100 * Number(t.dataset.l) / t.getComputedTextLength()).toFixed(2) + "px"; } });</script>
-  ${grain}`);
+  ${textures}`);
+  }
 
   // ── Dessus, verso : la légende ─────────────────────────────────────────
   // Formes épicènes ou doublets (pas de point médian) : sur une carte, le
@@ -2990,7 +3110,17 @@ async function main() {
   // Les raretés sont celles de la série complète, calculées avant tout filtre.
   if (args.paquet || (!args.only && !args.echantillon && !(limite > 0))) {
     const codeQR = await fs.readFile(path.resolve(process.cwd(), "scripts/social/donnees/qr-vitrine.svg"), "utf8");
-    const paquet = pagesPaquet(logos, TOTAL_SERIE, RARETES_SERIE, SANS_EXPRESSION_SERIE, await monogrammeVitrine(6), codeQR);
+    // ESSAI EN COURS : disposition au choix, à figer une fois le choix fait.
+    const disposition = process.env.VITRINE_PAQUET_PHOTO === "detoure" ? "detoure" as const : "horizontal" as const;
+    const donnee = (f: string) => fs.readFile(path.resolve(process.cwd(), "scripts/social/donnees", f)).catch(() => null);
+    // Échelle de la trame des portraits : 1500 px d'image pour 979 px de carte.
+    const k = 1500 / PANNEAU.w;
+    const source = await donnee(disposition === "detoure" ? "parlement-detoure.jpg" : "parlement-large.jpg");
+    const decoupe = disposition === "detoure" ? await donnee("parlement-detoure-masque.png") : null;
+    const url = !source ? null : disposition === "detoure"
+      ? await trameURI(source, "paquet-parlement-detoure", { largeur: Math.round(955 * k), hauteur: Math.round(955 * k * 1765 / 2400), masque: decoupe ?? undefined })
+      : await trameURI(source, "paquet-parlement-large", { largeur: Math.round((H - 2 * MARGE) * k), hauteur: Math.round((H - 2 * MARGE) * k * 1958 / 3000) });
+    const paquet = pagesPaquet(logos, TOTAL_SERIE, RARETES_SERIE, SANS_EXPRESSION_SERIE, await monogrammeVitrine(6), codeQR, { url, disposition });
     if (args.paquet) pages.length = 0;
     pages.push(...paquet);
   }
@@ -3017,7 +3147,7 @@ async function main() {
     // sans --png, on produit d'abord la planche de relecture, dans la mise en
     // page imprimée (VERSO_IMPRESSION_CSS) mais sans fond perdu. L'ancien
     // --impression sort les images directement, comme avant.
-    const impression = MODE_IMPRESSION && (!!args.png || !!args.impression);
+    const impression = MODE_IMPRESSION && STYLE?.fondPerdu !== false && (!!args.png || !!args.impression);
     const fond = impression ? FOND_PERDU : 0;
     // --echelle N : PNG N fois plus grands pour l'écran (vidéo 4K, zoom), sans
     // le fond perdu ni la réduction de --impression. Le texte et la trame
