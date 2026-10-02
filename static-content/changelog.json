@@ -1,5 +1,11 @@
 [
   {
+    "pr": 913,
+    "date": "2026-10-02T17:49:45Z",
+    "note": "Dans le module des réseaux sociaux (miroir de travail seulement), tout se passe désormais dans l'appareil : plus de pages à part pour les candidats et les circonscriptions, et le téléphone garde sa taille.",
+    "version": null
+  },
+  {
     "pr": 911,
     "date": "2026-10-02T16:57:12Z",
     "note": "Le module des réseaux sociaux, visible sur le miroir de travail seulement, change de visage : les indicateurs en grand, une vue par parti, par candidat, par publication ou par circonscription, et une carte qui suit l'indicateur et la période choisis.",
