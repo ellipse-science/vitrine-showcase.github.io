@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { PartyKey } from "@/lib/data/parties";
 import {
   COULEURS_PLATEFORMES,
@@ -171,10 +172,11 @@ export function trouverCandidat(
 /** Position d'une infobulle de compte, relative au bloc du classement : sous la ligne. */
 type BulleCompte = { index: number; x: number; y: number; largeur: number };
 
-/** Au survol ou au focus d'une ligne de l'onglet Candidats : les 10 dernières
- *  publications du compte (date, logo, extrait, j'aime), et le lien vers la
- *  page du candidat une fois épinglée. Les comptes de parti n'ont pas de
- *  circonscription, donc pas de fichier de fil publié : leur nom complet seul. */
+/** Au clic sur une ligne de Par candidat : la fiche du compte, posée dans
+ *  l'écran de l'appareil (jamais coupée) : son nom, puis ses 10 dernières
+ *  publications (date, logo, extrait, j'aime), chacune un lien vers son
+ *  réseau. Les comptes de parti n'ont pas de circonscription, donc pas de
+ *  fichier de fil publié : leur nom complet seul. */
 export function InfobulleCompte({
   data,
   a,
@@ -198,16 +200,20 @@ export function InfobulleCompte({
   const nom = NOMS_PLATEFORMES[a.plateforme];
   return (
     <div
-      className={`social-infobulle compte${epinglee ? " epinglee" : ""}${etroit ? " etroite" : ""}`}
-      {...(epinglee ? { role: "dialog", "aria-label": `${a.nom}\u00a0: dernières publications` } : { "aria-hidden": true })}
+      className={`social-infobulle compte${epinglee ? " epinglee social-fiche" : ""}${etroit ? " etroite" : ""}`}
+      {...(epinglee
+        ? { role: "dialog", "aria-modal": true, "aria-label": `${a.nom}\u00a0: dernières publications` }
+        : { "aria-hidden": true })}
       style={
-        etroit
-          ? { left: 0, right: 0, top: bulle.y + 4 }
-          : { left: aDroite ? undefined : bulle.x, right: aDroite ? 0 : undefined, top: bulle.y + 4 }
+        epinglee
+          ? undefined
+          : etroit
+            ? { left: 0, right: 0, top: bulle.y + 4 }
+            : { left: aDroite ? undefined : bulle.x, right: aDroite ? 0 : undefined, top: bulle.y + 4 }
       }
     >
       {epinglee && (
-        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer l’infobulle">
+        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer la fiche" autoFocus>
           ×
         </button>
       )}
@@ -262,6 +268,7 @@ function Audience({
   types,
   d0,
   d1,
+  couche = null,
 }: {
   data: SocialData;
   mesure: MesureAudience;
@@ -270,9 +277,12 @@ function Audience({
   types: TypeCompte[];
   d0: number;
   d1: number;
+  /** La couche de l'écran de l'appareil où se pose la fiche d'un compte. */
+  couche?: HTMLElement | null;
 }) {
-  const etroit = useEtroit();
-  const parPage = etroit ? 10 : 20;
+  // Une seule page : les 20 premiers, en deux colonnes de 10 que le CSS empile
+  // sur téléphone (pas de bascule en JavaScript, donc pas d'éclair au chargement).
+  const parPage = AUDIENCE_MAX;
   const [page, setPage] = useState(0);
   const activite = useAudienceJour(data, mesure !== "abonnes");
   // Le classement entier (la recherche donne le rang réel), les 40 premiers affichés.
@@ -282,9 +292,8 @@ function Audience({
   );
   const classement = useMemo(() => complet.slice(0, AUDIENCE_MAX), [complet]);
 
-  // ── Infobulle d'un compte : survol, focus, épingle (comme sur la carte) ────
+  // ── Fiche d'un compte : au clic (ou Entrée), dans l'écran de l'appareil ────
   const blocRef = useRef<HTMLDivElement>(null);
-  const [survol, setSurvol] = useState<BulleCompte | null>(null);
   const [epingle, setEpingle] = useState<BulleCompte | null>(null);
   // Candidat choisi dans la recherche : sa ligne est surlignée ; hors des 40,
   // elle s'affiche à part au-dessus de la liste.
@@ -296,14 +305,12 @@ function Audience({
     return { index, x: r.left - b.left, y: r.bottom - b.top, largeur: b.width };
   };
   const epingler = (index: number, el: HTMLElement) => {
-    setSurvol(null);
     setEpingle((e) => (e?.index === index ? null : bulleDe(index, el)));
   };
   // Un filtre, une mesure, la période ou la taille des pages change : retour à
   // la page 1, sans infobulle ni recherche en cours.
   useEffect(() => {
     setPage(0);
-    setSurvol(null);
     setEpingle(null);
     setCherche(null);
   }, [mesure, plateformes, partis, types, d0, d1, parPage]);
@@ -326,7 +333,6 @@ function Audience({
     // Tout se passe dans le module : la ligne du candidat, ou un mot qui dit
     // pourquoi il n'y est pas (aucun compte suivi, ou écarté par les filtres).
     const t = trouverCandidat(complet, sg, parPage);
-    setSurvol(null);
     setEpingle(null);
     if (t.page != null) setPage(t.page);
     setCherche({ index: t.index, rang: t.rang, dans: t.dans, sg });
@@ -339,7 +345,6 @@ function Audience({
     const doux = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     el.scrollIntoView?.({ block: "center", behavior: doux ? "smooth" : "auto" });
     el.focus({ preventScroll: true });
-    setSurvol(null);
     setEpingle(bulleDe(cherche.index, el));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cherche, page]);
@@ -351,7 +356,7 @@ function Audience({
   const max = classement[0]?.valeur ?? 1;
   // Valeurs en Playfair : séparateur de milliers visible (nombreGrand).
   const format = (v: number) => nombreGrand(v);
-  const colonnes = etroit ? [vus] : [vus.slice(0, 10), vus.slice(10, 20)].filter((c) => c.length > 0);
+  const colonnes = [vus.slice(0, 10), vus.slice(10, 20)].filter((c) => c.length > 0);
   const recherche = data.candidatures?.length ? (
     <Combobox
       id="social-recherche-candidat"
@@ -368,13 +373,9 @@ function Audience({
       className={cherche?.index === index ? "surligne" : undefined}
       tabIndex={0}
       aria-haspopup="dialog"
-      aria-label={`${rang}. ${a.nom}, ${data.partiInfo[a.party].sigle}, ${NOMS_PLATEFORMES[a.plateforme]}\u00a0: ${format(v)} ${MESURE[mesure].unite}. Entrée pour épingler ses dernières publications.`}
-      onPointerEnter={(e) => e.pointerType !== "touch" && !epingle && setSurvol(bulleDe(index, e.currentTarget))}
-      onPointerLeave={() => setSurvol((s) => (s?.index === index ? null : s))}
-      onFocus={(e) => !epingle && setSurvol(bulleDe(index, e.currentTarget))}
-      onBlur={() => setSurvol((s) => (s?.index === index ? null : s))}
-      // Le clic (ou Entrée, ou espace) épingle les dernières publications du
-      // compte ; chacune s'ouvre sur son réseau. Aucune page secondaire.
+      aria-label={`${rang}. ${a.nom}, ${data.partiInfo[a.party].sigle}, ${NOMS_PLATEFORMES[a.plateforme]}\u00a0: ${format(v)} ${MESURE[mesure].unite}. Entrée pour voir ses dernières publications.`}
+      // Le clic (ou Entrée, ou espace) ouvre la fiche du compte dans l'écran :
+      // ses dernières publications, chacune un lien vers son réseau.
       onClick={(e) => epingler(index, e.currentTarget)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -395,7 +396,6 @@ function Audience({
       <span className="social-valeur">{format(v)}</span>
     </li>
   );
-  const bulle = epingle ?? survol;
   if (activite.charge) return <p className="social-note">Chargement de l’activité des comptes…</p>;
   if (classement.length === 0)
     return (
@@ -430,17 +430,24 @@ function Audience({
           </ol>
         ))}
       </div>
-      {bulle && data.audience[bulle.index] && (
-        <InfobulleCompte
-          key={epingle ? `e${bulle.index}` : "survol"}
-          data={data}
-          a={data.audience[bulle.index]}
-          bulle={bulle}
-          etroit={etroit}
-          epinglee={!!epingle}
-          onFermer={() => setEpingle(null)}
-        />
-      )}
+      {/* La fiche se pose dans la couche de l'écran (portail) : centrée sur
+          la tablette, en tiroir sur le téléphone, jamais coupée par le bas. */}
+      {epingle &&
+        data.audience[epingle.index] &&
+        couche &&
+        createPortal(
+          <div className="social-fiche-fond">
+            <InfobulleCompte
+              key={`e${epingle.index}`}
+              data={data}
+              a={data.audience[epingle.index]}
+              bulle={epingle}
+              epinglee
+              onFermer={() => setEpingle(null)}
+            />
+          </div>,
+          couche,
+        )}
       {pages === 1 && (
         <p className="social-meta social-audience-nombre">
           {classement.length}&nbsp;{classement.length > 1 ? "comptes" : "compte"}
@@ -2372,6 +2379,8 @@ export function SocialClient({ data }: { data: SocialData }) {
   const [m, setMesure] = useState<Mesure>("jaime");
   // Mobile : le tiroir des filtres, ouvert depuis la barre du bas.
   const [tiroir, setTiroir] = useState(false);
+  // La couche de l'écran, par-dessus la zone qui défile : la fiche d'un compte s'y pose.
+  const [couche, setCouche] = useState<HTMLDivElement | null>(null);
   // Grand écran : la tablette garde sa taille et défile à l'intérieur ; une
   // flèche en bas de l'écran dit qu'il reste du contenu, tant qu'il en reste.
   const defileur = useRef<HTMLDivElement>(null);
@@ -2617,7 +2626,7 @@ export function SocialClient({ data }: { data: SocialData }) {
             <p className="social-sous-titre">{sousTitre}</p>
 
             {vue === "candidats" && (
-              <Audience data={data} mesure={m} plateformes={plateformes} partis={partis} types={types} d0={d0} d1={d1} />
+              <Audience data={data} mesure={m} plateformes={plateformes} partis={partis} types={types} d0={d0} d1={d1} couche={couche} />
             )}
 
             {/* Barres et parts côte à côte (même mesure, filtres et découpe). */}
@@ -2731,6 +2740,7 @@ export function SocialClient({ data }: { data: SocialData }) {
               {nbFiltres > 0 && <b className="social-badge">{nbFiltres}</b>}
             </button>
           </nav>
+            <div className="social-couche" ref={setCouche} />
       {tiroir && (
         <div className="social-tiroir-fond" onClick={() => setTiroir(false)}>
           <div className="social-tiroir" role="dialog" aria-modal="true" aria-label="Filtres" onClick={(e) => e.stopPropagation()}>
@@ -2759,7 +2769,7 @@ export function SocialClient({ data }: { data: SocialData }) {
       </section>
 
       <div className="module-last-updated social-pied">
-        {data.lastUpdated} · Module expérimental, visible sur le miroir de travail seulement.
+        {data.lastUpdated} · Module expérimental
       </div>
     </>
   );
