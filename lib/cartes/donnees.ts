@@ -15,7 +15,7 @@ export async function chargerScrutins(): Promise<Scrutin[]> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/resultats-elections.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
-    console.warn("  ⚠️ resultats-elections.json absent : pas de résultat électoral. Lancez scripts/social/resultats-elections.ts.");
+    console.warn("  ⚠️ resultats-elections.json absent : pas de résultat électoral. Lancez scripts/social/resultats-elections.ts."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
     return [];
   }
   return (JSON.parse(brut) as { resultats: Scrutin[] }).resultats;
@@ -25,7 +25,7 @@ export async function chargerFonctions(): Promise<FicheFonctions[]> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/fonctions-deputes.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
-    console.warn("  ⚠️ fonctions-deputes.json absent : ni salaire ni vis-à-vis. Lancez scripts/social/fonctions-deputes.ts.");
+    console.warn("  ⚠️ fonctions-deputes.json absent : ni salaire ni vis-à-vis. Lancez scripts/social/fonctions-deputes.ts."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
     return [];
   }
   return (JSON.parse(brut) as { deputes: FicheFonctions[] }).deputes;
@@ -38,7 +38,7 @@ export async function chargerGenres(): Promise<Map<string, Genre>> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/genre-deputes.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
-    console.warn("  ⚠️ genre-deputes.json absent : « Élu.e » reste neutre sur toutes les cartes.");
+    console.warn("  ⚠️ genre-deputes.json absent : « Élu.e » reste neutre sur toutes les cartes."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
     return new Map();
   }
   const d = JSON.parse(brut) as { deputes: Record<string, { genre: "f" | "m" }> };
@@ -137,6 +137,6 @@ export async function retirerExpressions(data: NonNullable<Awaited<ReturnType<ty
   }
   console.log(`  ${faits.size} expression(s) retirée(s) à la relecture (donnees/expressions-retirees.json)`);
   const sansObjet = retraits.filter((r) => !faits.has(r.circonscription));
-  if (sansObjet.length) console.warn(`  ⚠️ retrait sans objet, l'expression a changé : ${sansObjet.map((r) => `${r.elu} « ${r.expression} »`).join(", ")}`);
+  if (sansObjet.length) console.warn(`  ⚠️ retrait sans objet, l'expression a changé : ${sansObjet.map((r) => `${r.elu} « ${r.expression} »`).join(", ")}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
 }
 

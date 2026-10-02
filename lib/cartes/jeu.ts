@@ -5,7 +5,7 @@
 // Partagé entre le générateur imprimé et le site.
 // Origine : scripts/social/cartes-deputes.ts, main() (extraction du 2 oct. 2026).
 import type { PeriodKey } from "@/lib/data/assemblee";
-import { PARTY_COLORS } from "@/lib/data/parties";
+import { PARTY_COLORS } from "@/lib/data/partis-constantes";
 import type { DonneesAssemblee, Sources } from "./donnees";
 import {
   AXE_DEBUT, AXE_FIN, CHEFS, COULEUR_INDEPENDANT, EDITION_LEGISLATURE, LIBELLE_RARETE, PARTI_ACTUEL_PAR_SIEGE,
@@ -27,7 +27,7 @@ export function construireJeu(
   options: { annee?: number } = {},
 ): JeuComplet {
   const vue = data.periods[periode];
-  if (!vue) throw new Error(`Période inconnue : ${periode} (legislature, session ou last_pdq).`);
+  if (!vue) throw new Error(`Période inconnue : ${periode} (legislature, session ou last_pdq).`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
 
   // LE JEU COMPLET D'ABORD, la sélection ensuite. Le numéro de carte doit être
   // celui de la série entière : tiré après un filtre, « --only tanguay »
@@ -93,7 +93,7 @@ export function construireJeu(
     const occupants = jeu.filter((c) => siege(c) === s)
       .sort((a, b) => (finMandat(b) ?? "9999").localeCompare(finMandat(a) ?? "9999"));
     if (occupants.filter((c) => !finMandat(c)).length > 1) {
-      console.warn(`  ⚠️ ${s} : plusieurs élus sans fin de mandat — vérifier la numérotation.`);
+      console.warn(`  ⚠️ ${s} : plusieurs élus sans fin de mandat — vérifier la numérotation.`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
     }
     occupants.slice(1).forEach((c, i) => variante.set(c, String.fromCharCode(65 + i)));
     for (const c of occupants.slice(1)) {
@@ -130,8 +130,8 @@ export function construireJeu(
   const slugsConnus = new Set(jeu.map((c) => c.slug));
   const orphelins = Object.keys(CHEFS).filter((k) => !slugsConnus.has(k));
   if (orphelins.length) {
-    console.warn(`  ⚠️ ${orphelins.length} titre(s) de CHEFS sans élu correspondant : ${orphelins.join(", ")}`);
-    console.warn("     La clé est le slug de la circonscription (« l-assomption », « camille-laurin »).");
+    console.warn(`  ⚠️ ${orphelins.length} titre(s) de CHEFS sans élu correspondant : ${orphelins.join(", ")}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
+    console.warn("     La clé est le slug de la circonscription (« l-assomption », « camille-laurin »)."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
   }
 
   // SALAIRE ET VIS-À-VIS. Appariement par nom : la fiche de l'Assemblée et le
@@ -168,7 +168,7 @@ export function construireJeu(
     if (deja) console.warn(`  ⚠️ ${deja} et ${c.deputy.name} pointent vers la même fiche (${f.nom}) : salaire faux pour l'un des deux.`);
     fichesVues.set(f.assnat_id, c.deputy.name);
   }
-  if (sansFiche.length) console.warn(`  ⚠️ ${sansFiche.length} élu(s) sans fiche de fonctions : ${sansFiche.join(", ")}`);
+  if (sansFiche.length) console.warn(`  ⚠️ ${sansFiche.length} élu(s) sans fiche de fonctions : ${sansFiche.join(", ")}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
   // ACCORD « Élu » / « Élue » : par la fiche de l'Assemblée de chaque carte.
   const neutres: string[] = [];
   for (const c of cartes) {
@@ -177,7 +177,7 @@ export function construireJeu(
     if (!g) neutres.push(c.deputy.name);
     c.mandat = accorderGenre(c.mandat, g);
   }
-  if (neutres.length) console.warn(`  ⚠️ ${neutres.length} carte(s) gardent « Élu.e », genre inconnu : ${neutres.join(", ")}`);
+  if (neutres.length) console.warn(`  ⚠️ ${neutres.length} carte(s) gardent « Élu.e », genre inconnu : ${neutres.join(", ")}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
   for (const c of cartes) {
     const id = ficheParCarte.get(c)?.assnat_id ?? "";
     c.carriere = ligneCarriere(carrieres.get(id), genres.get(id)) || undefined;
@@ -298,7 +298,7 @@ export function construireJeu(
     raretes: { commune: 0, "peu-commune": 0, rare: 0, legendaire: 0 },
   };
   for (const r of Object.keys(serie.raretes) as Rarete[]) serie.raretes[r] = decompte.get(r) ?? 0;
-  console.log(`  rareté : ${[...decompte].map(([r, n]) => `${LIBELLE_RARETE[r]} ${n}`).join(" · ")}`);
+  console.log(`  rareté : ${[...decompte].map(([r, n]) => `${LIBELLE_RARETE[r]} ${n}`).join(" · ")}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
 
   // RÉSULTAT ÉLECTORAL. Le siège ET le nom de famille doivent concorder : à
   // Chicoutimi, Laforest (2022) et Laflamme (partielle de 2026) ont chacune le
@@ -318,11 +318,11 @@ export function construireJeu(
     if (s) c.scrutin = { pourcentage: s.pourcentage, avance: s.avance };
     else sansScrutin.push(`${c.deputy.name} (${c.slug})`);
   }
-  if (sansScrutin.length) console.warn(`  ⚠️ ${sansScrutin.length} élu(s) sans résultat électoral apparié : ${sansScrutin.join(", ")}`);
+  if (sansScrutin.length) console.warn(`  ⚠️ ${sansScrutin.length} élu(s) sans résultat électoral apparié : ${sansScrutin.join(", ")}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
 
   const sansMandat = cartes.filter((c) => !c.mandat);
   if (sansMandat.length) {
-    console.warn(`  ⚠️ ${sansMandat.length} carte(s) sans date d'élection appariée :`);
+    console.warn(`  ⚠️ ${sansMandat.length} carte(s) sans date d'élection appariée :`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
     for (const c of sansMandat) console.warn(`     · ${c.deputy.name} (${c.slug})`);
   }
 

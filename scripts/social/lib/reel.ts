@@ -18,10 +18,8 @@ import path from "node:path";
 import ffmpegPath from "ffmpeg-static";
 import { chromium, type Browser, type Page } from "playwright";
 
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 
-import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
+import { symboleEnjeuSVG } from "@/lib/enjeux-glyphes";
 // Palette, fleur de lys, échappement et typographie : partagés avec les cartes
 // de député (lib/cartes/dessin.ts), ré-exportés ici pour les reels.
 import { COLORS, TONE, FLEUR_PATH, fleur, esc, typo, txt } from "@/lib/cartes/dessin";
@@ -157,11 +155,11 @@ export function celestial(hour: number, color: string, size: number): string {
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" style="color:${color}">${CELESTIAL[h]}</svg>`;
 }
 
-/** Pictogramme d'un des 12 enjeux du CAP, rendu par le composant même du site
- *  (components/interactive/SymboleEnjeu.tsx) : un dessin modifié là-bas l'est
- *  ici aussi. Chaîne vide pour un enjeu inconnu, comme le composant. */
+/** Pictogramme d'un des 12 enjeux du CAP, tiré des mêmes tracés que le
+ *  composant du site (lib/enjeux-glyphes.ts, lu par SymboleEnjeu) : un dessin
+ *  modifié là-bas l'est ici aussi. Chaîne vide pour un enjeu inconnu. */
 export function enjeuGlyph(cle: string | null | undefined, color: string, size: number): string {
-  return renderToStaticMarkup(createElement(SymboleEnjeu, { cle, style: { width: size, height: size, color, display: "block" } }));
+  return symboleEnjeuSVG(cle, `width:${size}px;height:${size}px;color:${color};display:block`);
 }
 
 /** Heure de PUBLICATION (Montréal, 0-23) d'un bloc de données (`2026-09-16T15`),
