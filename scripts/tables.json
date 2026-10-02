@@ -719,7 +719,7 @@
         "jaime",
         "commentaires"
       ],
-      "_note": "Module expérimental « La guerre des clics » (affiché en dev et en prod) : série de chaque compte par jour avec activité depuis le début de la collecte, pour l'Audience (classements sur la période) et les pages de circonscription ; publiée par le raffineur agora-social (aws-refiners#590), remplacée à chaque passage. Absente, les pages masquent leurs séries.",
+      "_note": "Module expérimental « La guerre des clics » (affiché en dev et en prod) : série de chaque compte par jour avec activité depuis le début de la collecte, pour le classement Par candidat et la carte, sur la période choisie ; publiée par le raffineur agora-social (aws-refiners#590), remplacée à chaque passage.",
       "enabled": true,
       "env": "DEV",
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
@@ -736,7 +736,7 @@
         "parti",
         "candidat"
       ],
-      "_note": "Module expérimental « La guerre des clics » (affiché en dev et en prod) : candidatures officielles des cinq partis (127 × 5, liste close du 25 septembre), publiées par le raffineur agora-social (aws-refiners#590), pour que chaque page de circonscription nomme ses candidats, même sans compte suivi.",
+      "_note": "Module expérimental « La guerre des clics » (affiché en dev et en prod) : candidatures officielles des cinq partis (127 × 5, liste close du 25 septembre), publiées par le raffineur agora-social (aws-refiners#590), pour que la recherche du module trouve chaque candidat, même sans compte suivi.",
       "enabled": true,
       "env": "DEV",
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",

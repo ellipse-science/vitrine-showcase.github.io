@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import type { PartyKey } from "@/lib/data/parties";
 import {
@@ -173,6 +173,44 @@ export function trouverCandidat(
 /** Position d'une infobulle de compte, relative au bloc du classement : sous la ligne. */
 type BulleCompte = { index: number; x: number; y: number; largeur: number };
 
+/** Une boîte modale posée dans l'écran de l'appareil (fiche, tiroir des
+ *  filtres) : le focus y entre par son bouton Fermer, Tab y reste, le reste de
+ *  l'écran est inerte, et le focus revient au déclencheur à la fermeture. */
+function useBoiteModale(ref: RefObject<HTMLElement | null>, active: boolean) {
+  useEffect(() => {
+    const boite = ref.current;
+    if (!active || !boite) return;
+    const declencheur = document.activeElement as HTMLElement | null;
+    const fond = Array.from(boite.closest(".social-ecran")?.children ?? []).filter(
+      (el): el is HTMLElement => el instanceof HTMLElement && !el.contains(boite),
+    );
+    fond.forEach((el) => (el.inert = true));
+    const atteignables = () =>
+      Array.from(boite.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])'));
+    atteignables()[0]?.focus();
+    const touche = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const f = atteignables();
+      if (f.length === 0) return;
+      const premier = f[0];
+      const dernier = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === premier) {
+        e.preventDefault();
+        dernier.focus();
+      } else if (!e.shiftKey && document.activeElement === dernier) {
+        e.preventDefault();
+        premier.focus();
+      }
+    };
+    boite.addEventListener("keydown", touche);
+    return () => {
+      boite.removeEventListener("keydown", touche);
+      fond.forEach((el) => (el.inert = false));
+      if (declencheur?.isConnected) declencheur.focus();
+    };
+  }, [ref, active]);
+}
+
 /** Au clic sur une ligne de Par candidat : la fiche du compte, posée dans
  *  l'écran de l'appareil (jamais coupée) : son nom, puis ses 10 dernières
  *  publications (date, logo, extrait, j'aime), chacune un lien vers son
@@ -199,8 +237,11 @@ export function InfobulleCompte({
   const circo = a.code != null ? data.carte?.circos.find((c) => c.code === a.code)?.nom : undefined;
   const aDroite = bulle.x + 352 > bulle.largeur;
   const nom = NOMS_PLATEFORMES[a.plateforme];
+  const boite = useRef<HTMLDivElement>(null);
+  useBoiteModale(boite, epinglee);
   return (
     <div
+      ref={boite}
       className={`social-infobulle compte${epinglee ? " epinglee social-feuille" : ""}${etroit ? " etroite" : ""}`}
       {...(epinglee
         ? { role: "dialog", "aria-modal": true, "aria-label": `${a.nom}\u00a0: dernières publications` }
@@ -214,7 +255,7 @@ export function InfobulleCompte({
       }
     >
       {epinglee && (
-        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer la fiche" autoFocus>
+        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer la fiche">
           ×
         </button>
       )}
@@ -1488,8 +1529,11 @@ export function Infobulle({
   // Des comptes suivis, tous écartés par les filtres : le dire, et non « aucun compte ».
   const filtresVides = lignes.length === 0 && comptesCirco.length > 0;
   const filtresActifs = resumeFiltres(data, plateformes, partis);
+  const boite = useRef<HTMLDivElement>(null);
+  useBoiteModale(boite, epinglee);
   return (
     <div
+      ref={boite}
       className={`social-infobulle${epinglee ? " epinglee social-feuille circo" : ""}${etroit && !epinglee ? " etroite" : ""}`}
       {...(epinglee
         ? { role: "dialog", "aria-modal": true, "aria-label": `${circo.nom}\u00a0: candidats et dernières publications` }
@@ -1508,7 +1552,7 @@ export function Infobulle({
       }
     >
       {epinglee && (
-        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer la fiche" autoFocus>
+        <button type="button" className="social-infobulle-fermer" onClick={onFermer} aria-label="Fermer la fiche">
           ×
         </button>
       )}
@@ -2427,6 +2471,8 @@ export function SocialClient({ data }: { data: SocialData }) {
   useEffect(() => {
     defileur.current?.scrollTo({ top: 0 });
   }, [vue]);
+  const tiroirRef = useRef<HTMLDivElement>(null);
+  useBoiteModale(tiroirRef, tiroir);
   useEffect(() => {
     if (!tiroir) return;
     const esc = (e: globalThis.KeyboardEvent) => {
@@ -2548,7 +2594,7 @@ export function SocialClient({ data }: { data: SocialData }) {
               <h2 className="partis-title">
                 La guerre des clics
                 {/* Texte validé par Adrien le 2026-10-02 : ne pas le retoucher sans lui. */}
-                <InfoTip size="lg" label="À propos de La guerre des clics" dans=".social-ecran">
+                <InfoTip size="lg" label="À propos de La guerre des clics" dans=".social-ecran" interactive>
                   Ce module suit les comptes publics des personnes candidates aux élections québécoises de 2026 et les
                   comptes officiels des cinq partis, sur Facebook, Instagram et TikTok. On y compte leurs abonnés, leurs
                   publications, et les j’aime et les commentaires reçus. Ces réactions en ligne ne mesurent pas un appui
@@ -2780,7 +2826,7 @@ export function SocialClient({ data }: { data: SocialData }) {
             <div className="social-couche" ref={setCouche} />
       {tiroir && (
         <div className="social-tiroir-fond" onClick={() => setTiroir(false)}>
-          <div className="social-tiroir" role="dialog" aria-modal="true" aria-label="Filtres" onClick={(e) => e.stopPropagation()}>
+          <div ref={tiroirRef} className="social-tiroir" role="dialog" aria-modal="true" aria-label="Filtres" onClick={(e) => e.stopPropagation()}>
             <div className="social-tiroir-tete">
               <span className="social-tiroir-poignee" aria-hidden="true" />
               <h3>Filtres</h3>
