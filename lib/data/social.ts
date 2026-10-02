@@ -40,7 +40,7 @@ import {
 export * from "./social-meta";
 
 /**
- * Module « Les candidats sur les réseaux » (expérimental, dev seulement).
+ * Module « La guerre des clics » (expérimental, affiché en dev et en prod).
  *
  * Trois tables publiées par le raffineur `agora-social` (aws-refiners) dans
  * `agora_datamart`, à partir de la collecte `a-social-accounts` d'aws-infra.
