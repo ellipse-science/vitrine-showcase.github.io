@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { AffiliationSegment, AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
+import { slugCirco } from "@/lib/cartes/fonctions";
+import type { CarteSite } from "@/lib/cartes/site";
+import { CarteDepute, carteComplete, type ContexteCartes } from "@/components/interactive/CarteDepute";
+import { TelechargerCarte } from "@/components/interactive/TelechargerCarte";
 import type { PartyKey } from "@/lib/data/parties";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 
@@ -270,15 +274,56 @@ function ToneScale({ score, maxAbs, compact }: {
   );
 }
 
-function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
+// LA CARTE DU CASIER EST LA CARTE IMPRIMÉE (2 oct. 2026) : même fabrique
+// (lib/cartes), même balisage, rendue par CarteDepute dans l'ombre d'un
+// élément. La fiche de carte (numéro, rareté, fonction, parcours…) est
+// préparée au build et retrouvée ici par la circonscription de l'élu — et son
+// parti quand la même personne a deux lignes (une fin de législature
+// indépendante garde la carte « Indépendant », comme sur le carton). Sans
+// fiche — un élu que la série ne connaîtrait pas — l'ancienne carte du site
+// sert de secours : une case vide dirait le contraire de ce qu'on veut dire.
+/** La fiche de carte d'un élu : par sa circonscription, et son parti quand la
+ *  même personne a deux lignes ; sinon la seule carte du siège. */
+function ficheDeCarte(deputy: DeputyRow, party: PartyKey, cartes: CarteSite[]): CarteSite | undefined {
+  const slug = slugCirco(deputy);
+  return cartes.find((c) => c.elu === slug && c.cle === party) ?? cartes.find((c) => c.elu === slug);
+}
+
+function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes, contexte }: {
   deputy: DeputyRow;
   party: PartyKey;
   color: string;
   maxAbsTone: number;
   flipped: boolean;
   onFlip: () => void;
+  cartes: CarteSite[];
+  contexte: ContexteCartes | null;
 }) {
   const partyLabel = party.toUpperCase();
+  const fiche = ficheDeCarte(deputy, party, cartes);
+  const carte = fiche && contexte ? carteComplete(fiche, deputy, contexte) : null;
+  if (carte && contexte) {
+    return (
+      <button
+        type="button"
+        className={`carte carte--fabrique${flipped ? " est-retournee" : ""}`}
+        style={{ ["--pc" as string]: color }}
+        onClick={onFlip}
+        aria-pressed={flipped}
+        aria-label={
+          flipped
+            ? `${deputy.name}\u00a0: revenir au recto de la carte`
+            : `${deputy.name}, ${partyLabel}, ${deputy.wordsFormatted} mots, `
+              + `${toneWording(deputy.toneScore, maxAbsTone)}. Voir les statistiques au verso`
+        }
+      >
+        <span className="carte-pivot">
+          <span className="carte-recto"><CarteDepute carte={carte} face="recto" contexte={contexte} /></span>
+          <span className="carte-verso"><CarteDepute carte={carte} face="verso" contexte={contexte} /></span>
+        </span>
+      </button>
+    );
+  }
   const concept = conceptPubliable(deputy.signatureWord);
   const enjeux = deputy.enjeuStack.filter((s) => !s.isReste).slice(0, 3);
   // Le verso est un objet fermé au format 5:7. Un concept ou un extrait long
@@ -514,9 +559,12 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   );
 }
 
-export function AssembleeVestiaire({ rows, shadowRows }: {
+export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = null }: {
   rows: AssembleeRow[];
   shadowRows: AssembleeRow[];
+  /** Les fiches de carte de la période (lib/cartes/site.ts), préparées au build. */
+  cartes?: CarteSite[];
+  contexte?: ContexteCartes | null;
 }) {
   // Le banc est trié par interventions décroissantes (buildPeriodView) : le
   // premier casier est déjà le parti qui a le plus parlé. On l'ouvre par
@@ -623,7 +671,12 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
                     maxAbsTone={maxAbsTone}
                     flipped={flipped === dep.name}
                     onFlip={() => setFlipped(flipped === dep.name ? null : dep.name)}
+                    cartes={cartes}
+                    contexte={contexte}
                   />
+                  {contexte && ficheDeCarte(dep, openRow.key, cartes) && (
+                    <TelechargerCarte periode={contexte.periode} slug={ficheDeCarte(dep, openRow.key, cartes)!.slug} nom={dep.name} />
+                  )}
                   {dep.affiliationHistory && (
                     <ParliamentaryHistory segments={dep.affiliationHistory} />
                   )}

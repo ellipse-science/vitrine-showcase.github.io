@@ -3562,6 +3562,42 @@
     font-family: 'IBM Plex Mono', monospace;
   }
   .carte:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+
+  /* LA CARTE FABRIQUÉE (2 oct. 2026) : la carte imprimée elle-même
+     (lib/cartes/faces.ts), dessinée en 1071 × 1496 dans l'ombre d'un élément
+     (CarteDepute) et réduite d'un seul facteur, --cd-k, à la largeur de la
+     carte. La hauteur suit le rapport exact du carton (63,5 × 88,9 mm) :
+     291 × 1496 / 1071 = 406,5 px, contre 408 pour l'ancienne carte. Les deux
+     faces n'ont ni fond ni marge : le carton apporte les siens. */
+  .carte.carte--fabrique {
+    --carte-l: 291;
+    --cd-k: calc(var(--carte-l) / 1071);
+    height: calc(var(--carte-l) * 1px * 1496 / 1071);
+  }
+  .carte.carte--fabrique .carte-recto,
+  .carte.carte--fabrique .carte-verso { background: none; padding: 0; border: 0; display: block; overflow: hidden; }
+  .cd-boite { display: block; width: 100%; height: 100%; overflow: hidden; }
+  .cd-hote { display: block; transform-origin: 0 0; }
+
+  /* TÉLÉCHARGER LA CARTE (vitrine#920) : un lien discret sous le carton, dans
+     la typographie des libellés du module ; grisé tant que le dépôt n'a pas
+     la carte de la période. */
+  .carte-telecharger {
+    display: block;
+    margin: 8px auto 0;
+    padding: 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-softer);
+    cursor: pointer;
+  }
+  .carte-telecharger:hover:not(:disabled) { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+  .carte-telecharger:disabled { cursor: progress; opacity: 0.7; }
+  .carte-telecharger.est-absente { border-bottom: none; opacity: 0.6; cursor: default; }
   .carte-pivot {
     position: relative;
     display: block;
@@ -3918,6 +3954,7 @@
     .tiroir-encoche { display: none; }
     .carte-colonne { flex-basis: 276px; width: 276px; }
     .carte { width: 276px; height: 386px; }
+    .carte.carte--fabrique { --carte-l: 276; }
     .carte-nom { font-size: 15px; }
     .carte-v-nom { font-size: 14px; }
     .carte-v-stats b { font-size: 17px; }
