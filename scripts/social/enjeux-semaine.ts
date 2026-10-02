@@ -18,7 +18,7 @@ import { MODULES } from "@/lib/modules";
 import { jourMontreal, rankMovement, rankPointsForPeriod } from "@/lib/treemapRank";
 
 import { captionTypo, footerEdition, pubHourLabel, resolveEdition } from "./lib/commun";
-import {
+import { DECALE, CONTENT_TOP, COL, FORMAT,
   COLORS, FIN_CSS, INTRO_CSS, buildPage, chargerPartenaires, enjeuGlyph, esc,
   frNum, loadLogos, parseArgs, produce, sceneFin, sceneIntro, txt, type Scene,
 } from "./lib/reel";
@@ -37,28 +37,28 @@ const CSS = `
 /* Accroche commune : une miniature du classement réel de la semaine. */
 /* La miniature remonte : à 72 px du bas, elle passait sous la légende et la barre
    de navigation d'Instagram en plein écran (mesuré au simulateur, 17-09). */
-#intro .mini-ranks{position:absolute;left:180px;right:180px;bottom:420px;height:430px}
+#intro .mini-ranks{position:absolute;left:46px;right:46px;bottom:40px;height:min(430px,calc(var(--vis-h,470px) - 40px))}
 #intro .mini-ranks svg{display:block;width:100%;height:100%;overflow:visible}
 @keyframes traceRank{to{stroke-dashoffset:0}}
 
 /* Classement animé : les douze lignes changent réellement de place chaque jour. */
-#course .head{position:absolute;left:180px;right:180px;top:282px}
+#course .head{position:absolute;left:${COL}px;right:${COL}px;top:${CONTENT_TOP + 8}px}
 #course h2{font-size:70px;line-height:1.02;margin-top:12px}
-#course .day{position:absolute;left:180px;right:180px;top:500px;display:flex;align-items:baseline;justify-content:space-between;border-top:3px solid var(--ink);padding-top:14px}
+#course .day{position:absolute;left:${COL}px;right:${COL}px;top:${500 + DECALE}px;display:flex;align-items:baseline;justify-content:space-between;border-top:3px solid var(--ink);padding-top:14px}
 #course .day strong{font-family:"Playfair Display",serif;font-size:42px;line-height:1}
 #course .day span{font-size:28px;color:var(--soft)}
-#course .board{position:absolute;left:180px;right:180px;top:570px;height:744px}
+#course .board{position:absolute;left:${COL}px;right:${COL}px;top:${570 + DECALE}px;height:744px}
 #course .runner{position:absolute;left:0;right:0;top:0;height:54px;box-shadow:0 0 0 0 rgba(28,25,23,0);transition:none;display:grid;grid-template-columns:54px 44px minmax(0,1fr) 84px;align-items:center;gap:12px;padding:0 14px 0 10px;border-left:9px solid var(--c);background:color-mix(in srgb,var(--c) 10%,var(--paper));will-change:transform}
 #course .place{font-family:"Playfair Display",serif;font-weight:900;font-size:36px;line-height:1;text-align:center}
 #course .ico{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--c)}
 #course .name{font-family:"Playfair Display",serif;font-weight:700;font-size:30px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #course .delta{font-family:"IBM Plex Mono",monospace;font-size:28px;text-align:right;color:var(--c)}
-#course .note{position:absolute;left:180px;right:180px;top:1350px;font-size:30px;line-height:1.2;color:var(--soft);font-style:italic}
+#course .note{position:absolute;left:${COL}px;right:${COL}px;top:${1350 + DECALE}px;font-size:30px;line-height:1.2;color:var(--soft);font-style:italic}
 
 /* Bilan : un résultat principal et les six déplacements les plus grands. */
-#bilan .head{position:absolute;left:180px;right:180px;top:282px}
+#bilan .head{position:absolute;left:${COL}px;right:${COL}px;top:${CONTENT_TOP + 8}px}
 #bilan h2{font-size:72px;line-height:1.02;margin-top:12px}
-#bilan .body{position:absolute;left:180px;right:180px;top:492px;height:810px}
+#bilan .body{position:absolute;left:${COL}px;right:${COL}px;top:${492 + DECALE}px;height:810px}
 #bilan .leader{height:156px;display:flex;align-items:center;justify-content:space-between;gap:24px;border-top:6px solid var(--c);border-bottom:2px solid var(--rule);padding:18px 8px 18px 0}
 #bilan .leader-name{display:grid;grid-template-columns:62px minmax(0,1fr);align-items:center;gap:16px;min-width:0}
 #bilan .leader-icon{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--c)}
@@ -74,7 +74,7 @@ const CSS = `
 #bilan .mover-name{font-family:"Playfair Display",serif;font-weight:700;font-size:32px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #bilan .route{font-size:28px;color:var(--soft);text-align:right}
 #bilan .move{font-family:"IBM Plex Mono",monospace;font-size:34px;text-align:right;color:var(--c)}
-#bilan .note{position:absolute;left:180px;right:180px;top:1334px;font-size:30px;line-height:1.2;color:var(--soft);font-style:italic}
+#bilan .note{position:absolute;left:${COL}px;right:${COL}px;top:${1334 + DECALE}px;font-size:30px;line-height:1.2;color:var(--soft);font-style:italic}
 `;
 
 const fmtDate = (iso: string) => new Intl.DateTimeFormat("fr-CA", {
@@ -261,7 +261,7 @@ async function main() {
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
-  const base = path.join(outDir, `enjeux-semaine_${edition.navDateIso}_${edition.pubHour % 24}h`);
+  const base = path.join(outDir, `enjeux-semaine_${edition.navDateIso}_${edition.pubHour % 24}h${FORMAT === "instagram" ? "" : `_${FORMAT}`}`);
   await fs.mkdir(outDir, { recursive: true });
   await fs.writeFile(`${base}_instagram.txt`, caption(data.week.tiles, points, rangeLabel));
   console.log(`Évolution des enjeux · ${rangeLabel} · édition de ${pubHourLabel(edition)}`);

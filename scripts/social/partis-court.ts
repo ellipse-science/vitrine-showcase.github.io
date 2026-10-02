@@ -19,7 +19,7 @@ import { loadParties } from "@/lib/data/parties";
 
 import { footerEdition, pubHourLabel, resolveEdition } from "./lib/commun";
 import { IDENTITE, MODULE, mediaMixes } from "./lib/partis";
-import {
+import { FORMAT,
   FIN_CSS, SLOW, buildPage, chargerPartenaires, loadLogos, openInBrowser, parseArgs, produce, sceneFin, type Scene,
 } from "./lib/reel";
 import { ANALYSES } from "./partis-court/analyses";
@@ -67,7 +67,7 @@ async function main() {
       logos,
       theme: { paper: IDENTITE.papier, accent: IDENTITE.accent },
     });
-    const base = path.join(outDir, `partis-court-${a.id}_${edition.navDateIso}_${pubHourLabel(edition)}`);
+    const base = path.join(outDir, `partis-court-${a.id}_${edition.navDateIso}_${pubHourLabel(edition)}${FORMAT === "instagram" ? "" : `_${FORMAT}`}`);
     await fs.writeFile(`${base}_instagram.txt`, legendeComplete(plan));
     console.log(`\n▶ ${a.id} — ${a.idee}`);
     await produce({ html, scenes, title: `${MODULE} · ${a.id}`, base, args: plusieurs ? { ...args, "sans-ouvrir": true } : args });

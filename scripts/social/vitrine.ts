@@ -24,7 +24,7 @@ import { PARTY_COLORS, PARTY_KEYS, PARTY_LABELS } from "@/lib/data/parties";
 
 import { captionTypo } from "./lib/commun";
 import { HASHTAGS as HASHTAGS_UNE } from "./lib/post";
-import {
+import { DECALE, CONTENT_TOP, COL, FORMAT,
   COLORS, FIN_CSS, SALIENCE_COLORS, buildPage, celestial, chargerPartenaires, enjeuGlyph, esc, fleur, loadLogos, logoAnime, parseArgs, produce, sceneFin, typo,
   type Scene,
 } from "./lib/reel";
@@ -288,35 +288,35 @@ const CSS = `
 #accroche .bande i{position:absolute;inset:0;opacity:0}
 @keyframes eclaire{0%{opacity:0}25%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
 @keyframes efface{to{opacity:0}}
-#accroche .questions{position:absolute;left:180px;right:180px;top:800px;height:420px}
+#accroche .questions{position:absolute;left:${COL}px;right:${COL}px;top:800px;height:420px}
 #accroche .q{position:absolute;left:0;right:0;top:0;font-size:88px;line-height:1.02;opacity:0;background:#F3ECDD;padding:18px 26px 24px;box-shadow:0 14px 40px rgba(28,25,23,.18)}
 @keyframes qentre{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
 @keyframes qsort{to{opacity:0;transform:translateY(-40px)}}
 /* Le logo est là dès l'ouverture, dans un ENCADRÉ en haut ; les bandes partent
    du bas de cet encadré, jamais derrière le logo (Jules, 17-09). */
-#accroche .entete{position:absolute;left:180px;right:180px;top:44px;height:370px;background:#F3ECDD;display:flex;align-items:center;justify-content:center;z-index:2}
+#accroche .entete{position:absolute;left:${COL}px;right:${COL}px;top:44px;height:370px;background:#F3ECDD;display:flex;align-items:center;justify-content:center;z-index:2}
 /* Liseré des six encres tout en haut : l'en-tête d'Instagram le couvre au
    visionnement, mais il habille la vignette et les autres plateformes. */
 #accroche .liseré{position:absolute;left:30px;right:30px;top:30px;height:14px;display:flex;z-index:3}
 #accroche .liseré i{flex:1;display:block;transform-origin:left}
-#accroche h1{position:absolute;top:600px;left:180px;right:180px}
+#accroche h1{position:absolute;top:600px;left:${COL}px;right:${COL}px}
 #accroche .six{display:block;font-size:148px;line-height:1;white-space:nowrap;color:var(--ink)}
 #accroche .pour{display:block;font-size:76px;line-height:1.06;margin-top:24px}
-#accroche .traits{position:absolute;left:180px;right:180px;top:1190px;display:flex;gap:12px;height:18px}
+#accroche .traits{position:absolute;left:${COL}px;right:${COL}px;top:1190px;display:flex;gap:12px;height:18px}
 #accroche .traits i{flex:1;display:block;transform-origin:left}
 
-#sources .kick{position:absolute;top:282px;left:180px;right:180px;font-size:28px;color:var(--soft)}
-#sources h2{position:absolute;top:330px;left:180px;right:180px;font-size:72px;line-height:1.02}
-#sources .lignes{position:absolute;top:560px;left:180px;right:180px}
+#sources .kick{position:absolute;top:${CONTENT_TOP + 8}px;left:${COL}px;right:${COL}px;font-size:28px;color:var(--soft)}
+#sources h2{position:absolute;top:${330 + DECALE}px;left:${COL}px;right:${COL}px;font-size:72px;line-height:1.02}
+#sources .lignes{position:absolute;top:${560 + DECALE}px;left:${COL}px;right:${COL}px}
 #sources .ligne{display:flex;align-items:center;gap:26px;padding:14px 0;border-top:3px solid var(--ink);text-align:left}
 #sources .ligne > b{flex:none;width:160px;font-size:104px;line-height:1;text-align:center;display:flex;justify-content:center}
 #sources .ligne p{font-size:46px;line-height:1.05}
 #sources .ligne small{display:block;font-size:32px;color:var(--soft);margin-top:4px;font-style:italic}
 #sources .heures{display:flex;gap:16px;margin-top:10px}
-#sources .local{position:absolute;top:1125px;left:180px;right:180px;text-align:left;background:var(--ink);color:var(--paper);padding:22px 30px 26px}
+#sources .local{position:absolute;top:${1125 + DECALE}px;left:${COL}px;right:${COL}px;text-align:left;background:var(--ink);color:var(--paper);padding:22px 30px 26px}
 #sources .local .mono{font-size:28px;letter-spacing:.14em;opacity:.8}
 #sources .local p{font-size:46px;line-height:1.04;margin-top:8px}
-#sources .gratuit{position:absolute;top:1435px;left:180px;right:180px;font-size:34px;font-style:italic}
+#sources .gratuit{position:absolute;top:${1435 + DECALE}px;left:${COL}px;right:${COL}px;font-size:34px;font-style:italic}
 
 .scene .fond{position:absolute;inset:30px}
 .scene .rang{display:flex;justify-content:space-between;align-items:center;font-size:28px;color:var(--soft)}
@@ -373,8 +373,8 @@ const CSS = `
 .schema .plaque i{display:block;height:14px;background:var(--rule);margin:6px 0 6px auto}
 .schema .macaron{position:absolute;left:8px;bottom:8px;width:72px;height:72px;border-radius:50%;border:3px solid #FBF8F1;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center}
 
-#recap h2{position:absolute;top:292px;left:180px;right:180px;font-size:76px;line-height:1.02}
-#recap ul{position:absolute;top:700px;left:180px;right:180px;list-style:none;display:flex;flex-direction:column;gap:14px}
+#recap h2{position:absolute;top:${292 + DECALE}px;left:${COL}px;right:${COL}px;font-size:76px;line-height:1.02}
+#recap ul{position:absolute;top:${700 + DECALE}px;left:${COL}px;right:${COL}px;list-style:none;display:flex;flex-direction:column;gap:14px}
 #recap li{display:flex;align-items:center;gap:26px;min-height:100px;text-align:left;padding:12px 26px;border-left:14px solid}
 #recap li b{font-size:64px;width:44px}
 #recap li span{font-size:50px;line-height:1}
@@ -428,7 +428,7 @@ async function main() {
   });
 
   const outDir = path.resolve(process.cwd(), typeof args.sortie === "string" ? args.sortie : "social-out");
-  const base = path.join(outDir, "vitrine_presentation");
+  const base = path.join(outDir, `vitrine_presentation${FORMAT === "instagram" ? "" : `_${FORMAT}`}`);
   await fs.mkdir(outDir, { recursive: true });
   await fs.writeFile(`${base}_instagram.txt`, caption());
   console.log(`La Vitrine démocratique · présentation des 6 modules`);

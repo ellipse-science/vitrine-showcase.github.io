@@ -122,3 +122,26 @@ describe("loadHeadlineEvents — le mot-jour appartient à l'édition, pas à l'
     ]);
   });
 });
+
+describe("loadHeadlineEvents — le premier commentaire ne cite que des médias québécois", () => {
+  it("articlesUne écarte CTV d'articles_24h, comme le compte « n/6 » (vitrine#826)", async () => {
+    const rows = dataset() as Record<string, unknown>[];
+    // Au dernier bloc, « alpha » porte dans ses 24 h un média canadien-anglais
+    // et un média québécois absent du bloc courant.
+    const dernier = rows.filter((r) => r.storyline_id === "alpha").at(-1)!;
+    dernier.media_ids_24h = '["LED","LAP","RCI","CTV"]';
+    dernier.articles_24h = JSON.stringify([
+      { media_id: "CTV", url: "https://ctvnews.ca/a", title: "Alpha in English" },
+      { media_id: "RCI", url: "https://ici.radio-canada.ca/a", title: "Alpha à Radio-Canada" },
+    ]);
+    readFileMock.mockResolvedValue(JSON.stringify(rows));
+    vi.resetModules();
+    const { loadHeadlineEvents } = await import("@/lib/data/headlineEvents");
+    const data = (await loadHeadlineEvents())!;
+
+    const alpha = data.top3.find((u) => u.title === "Alpha reste à la Une")!;
+    const urls = alpha.articlesUne.map((a) => a.url);
+    expect(urls).toContain("https://ici.radio-canada.ca/a");
+    expect(urls).not.toContain("https://ctvnews.ca/a");
+  });
+});
