@@ -12702,6 +12702,10 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 @keyframes social-rebond { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
 .social-defilement > .social-tdb { padding: 0 26px 26px; }
 .social-entete.partis-title-row { margin-top: 0; padding-top: 0; }
+/* La bulle d'info à droite du titre : alignée sur lui, sans hériter de son gras. */
+.social .partis-title .saillance-info-tip { margin-left: 10px; vertical-align: middle; }
+.social .partis-title .saillance-info-bubble { font-weight: 400; z-index: 20; }
+.social .partis-title .saillance-info-bubble .tip-link { margin-top: 8px; }
 /* L'indicateur d'accueil, le trait du bas de l'écran. */
 .social-accueil {
   position: absolute; left: 50%; bottom: 5px; z-index: 530; width: 110px; height: 4px; margin-left: -55px;
