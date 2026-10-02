@@ -4,9 +4,10 @@ import { SocialClient } from "@/components/interactive/SocialClient";
 import { construireSocial } from "@/lib/data/social";
 
 // Ce que la vue d'arrivée affirme tient dans son balisage : la période par
-// défaut (7 derniers jours complets, comme la démo), la frise et ses poignées
-// utilisables au clavier, les tuiles en toutes lettres, les filtres, et la
-// mention « expérimental » tant que le module n'existe que sur dev.
+// défaut (toute la campagne, jusqu'au dernier jour complet), la frise et ses
+// poignées utilisables au clavier, les quatre indicateurs en grandes cases, la
+// rangée des vues, les filtres cochés, et la mention « expérimental » tant que
+// le module n'existe que sur dev.
 const data = construireSocial(
   [
     {
@@ -23,24 +24,29 @@ const data = construireSocial(
   [],
 )!;
 
-describe("rendu du module « Les candidats sur les réseaux »", () => {
+describe("rendu du module « La guerre des clics »", () => {
   const html = renderToStaticMarkup(<SocialClient data={data} />);
   // \s couvre l'espace insécable : on compare sur des espaces simples.
   const texte = html.replace(/<[^>]+>/g, " ").replace(/[\s\u00a0]+/g, " ");
+  /** Les libellés des boutons enfoncés d'une tranche du balisage (icône devant le mot admise). */
+  const enfonces = (tranche: string) =>
+    [...tranche.matchAll(/aria-pressed="true"[^>]*>(?:<span[^>]*>)?(?:<svg[\s\S]*?<\/svg>)?([^<]+)</g)].map((m) => m[1].trim());
 
-  it("s'ouvre sur les 7 derniers jours complets, comme la démo", () => {
-    expect(texte).toContain("Du 22 septembre au 28 septembre · 7 jours");
+  it("s'ouvre sur toute la campagne, jusqu'au dernier jour complet", () => {
+    const nb = data.jours.length - data.campagne;
+    expect(texte).toContain(`au 28 septembre · ${nb} jours`);
   });
 
-  it("les tuiles portent la période : le jour partiel du relevé n'y entre pas", () => {
-    expect(texte).toContain("Publications 162"); // 132 + 30, pas les 9 du 29
-    expect(texte).toContain("J’aime 9 074"); // 8 281 + 793
+  it("le sous-titre porte le total de la période : le jour partiel du relevé n'y entre pas", () => {
+    expect(texte).toContain("9 074 j’aime sur la période."); // 8 281 + 793, pas les 9 du 29
   });
 
-  it("En chiffres : quatre mesures, sans les moyennes retirées", () => {
-    expect((html.match(/<dt>/g) ?? []).length).toBe(4);
-    for (const mot of ["Par jour, en moyenne", "J’aime par publication", "Une moyenne ne se découpe pas"])
-      expect(texte).not.toContain(mot);
+  it("les grandes cases : quatre indicateurs avec leur question, J’aime enfoncé en premier", () => {
+    const cases = html.slice(html.indexOf('class="social-vues'), html.indexOf('class="social-haut"'));
+    expect(cases.match(/class="social-vue-mot"/g)).toHaveLength(4);
+    for (const q of ["Qui fait réagir", "Qui est le plus suivi", "Qui publie le plus", "Qui fait discuter"]) expect(texte).toContain(q);
+    expect(enfonces(cases)).toEqual(["J’aime"]);
+    expect(cases.indexOf("J’aime")).toBeLessThan(cases.indexOf("Abonnés"));
   });
 
   it("la frise et ses deux poignées sont des curseurs accessibles au clavier", () => {
@@ -49,47 +55,38 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
     expect(html).toContain('aria-label="Fin de la période"');
   });
 
-  it("filtres, onglets, formes et découpes de la démo sont présents", () => {
-    // « Filtres » puis « En chiffres » dans la colonne de droite.
-    for (const mot of ["Filtres", "Plateforme", "Parti", "Type de compte", "Présence", "Partis", "Candidats",
-      "Palmarès", "Campagne", "En chiffres", "Abonnés, dernier relevé"]) {
-      expect(texte).toContain(mot);
-    }
-    // Formes, découpes et plateformes en icônes, comme la démo : le nom est
-    // dans aria-label (lecteurs d'écran) et title (infobulle).
-    for (const nom of ["Barres et parts", "Dans le temps", "Ensemble", "Par plateforme", "Par parti",
-      "Facebook", "Instagram", "TikTok"]) {
+  it("filtres en tête : « Filtrer », plateformes et partis cochés ; plus de type de compte ni de Présence", () => {
+    expect(texte).toContain("Filtrer");
+    for (const nom of ["Facebook", "Instagram", "TikTok"]) {
       expect(html).toContain(`aria-label="${nom}"`);
-      // « Dans le temps », grisé sur les abonnés, porte la raison en infobulle.
-      if (nom !== "Dans le temps") expect(html).toContain(`title="${nom}"`);
+      expect(html).toContain(`title="Masquer ${nom}"`);
     }
+    expect(html).toContain('class="social-coche-marque"');
+    // Les titres de groupe (Plateforme, Parti) restent dans le balisage pour les
+    // lecteurs d'écran ; seul le type de compte a disparu.
+    for (const mot of ["Type de compte", "Présence", "En chiffres"]) expect(texte).not.toContain(mot);
   });
 
-  it("Indicateur, Graphique, Découpage : une ligne de groupes, chacun sous son en-tête", () => {
+  it("la rangée sobre : la vue, puis Total | Évolution, un filet entre les deux", () => {
     const reglages = html.slice(html.indexOf('class="social-reglages"'), html.indexOf('class="social-sous-titre"'));
-    const entetes = [...reglages.matchAll(/class="social-coches-titre"[^>]*>([^<]+)</g)].map((x) => x[1].replace(/\s+/g, " "));
-    expect(entetes).toEqual(["Indicateur · J’aime", "Type de graphique", "Découpage"]);
     const groupes = [...reglages.matchAll(/role="group" aria-label="([^"]+)"/g)].map((x) => x[1]);
-    expect(groupes).toEqual(["Indicateur affiché", "Type de graphique", "Découpage"]);
-    const mesure = reglages.slice(reglages.indexOf('aria-label="Indicateur affiché"'));
-    expect(mesure.slice(0, mesure.indexOf("</div>")).match(/<button/g)).toHaveLength(4);
-    for (const nom of ["Abonnés", "Publications", "J’aime", "Commentaires"]) expect(html).toContain(`aria-label="${nom}"`);
-    for (const nom of ["Par jour, en moyenne", "J’aime par publication"]) expect(html).not.toContain(`aria-label="${nom}"`);
-    expect(html).not.toContain("social-mesure-nom");
+    expect(groupes).toEqual(["Vue", "Indicateur affiché", "Type de graphique"]);
+    const vues = reglages.slice(reglages.indexOf('aria-label="Vue"'), reglages.indexOf('aria-label="Indicateur affiché"'));
+    expect([...vues.matchAll(/<\/svg>([^<]+)<\/button>/g)].map((m) => m[1])).toEqual(["Par parti", "Par candidat", "Par publication"]);
+    expect(enfonces(vues)).toEqual(["Par parti"]);
+    const forme = reglages.slice(reglages.indexOf('aria-label="Type de graphique"'));
+    expect(enfonces(forme)).toEqual(["Total"]);
+    expect(texte).toContain("Évolution");
+    for (const mot of ["Découpage", "Ensemble", "Par plateforme", "Barres et parts", "Dans le temps"]) expect(texte).not.toContain(mot);
+    expect(reglages.match(/class="social-reglages-filet"/g)).toHaveLength(1);
     // L'interface dit « indicateur », jamais « mesure » (libellés et aria-label).
     expect(html).not.toMatch(/[Mm]esure/);
-    // Un filet entre deux groupes : Indicateur | Graphique | Découpage.
-    expect(reglages.match(/class="social-reglages-filet"/g)).toHaveLength(2);
   });
 
-  it("s'ouvre sur Partis, en j'aime, barres et parts, ensemble ; « dans le temps » disponible", () => {
-    expect(html).toMatch(/aria-pressed="true"[^>]*>Partis</);
-    expect(html).toMatch(/aria-pressed="true" aria-label="J’aime"/);
-    expect(html).toMatch(/aria-pressed="true" aria-label="Barres et parts"/);
-    expect(html).toMatch(/aria-pressed="true" aria-label="Ensemble"/);
-    expect(texte).toContain("Total des j’aime de la période.");
+  it("s'ouvre sur les barres seules : plus de treemap, « Évolution » disponible", () => {
+    expect(html).toContain("social-barres-seules");
+    expect(html).not.toContain("social-treemap");
     expect(html).not.toContain('title="Pas de série d’abonnés" disabled=""');
-    expect(html).toContain("social-treemap");
   });
 
   it("toutes plateformes cochées : la barre porte un segment par plateforme présente", () => {
@@ -104,7 +101,8 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
     )!;
     const h = renderToStaticMarkup(<SocialClient data={tri} />);
     expect(h).toContain('aria-label="QS\u00a0: 300 j’aime (Facebook 100 · Instagram 100 · TikTok 100)"');
-    for (const p of ["Facebook", "Instagram", "TikTok"]) expect(h).toContain(`title="${p}\u00a0: 100 j’aime"`);
+    // Le détail par réseau vit dans l'infobulle au survol, plus dans un title.
+    for (const p of ["facebook", "instagram", "tiktok"]) expect(h).toContain(`data-plateforme="${p}"`);
   });
 
   it("filtres par défaut : pas de bouton « Réinitialiser »", () => {
@@ -112,7 +110,8 @@ describe("rendu du module « Les candidats sur les réseaux »", () => {
     expect(html).not.toContain('aria-label="Réinitialiser les filtres"');
   });
 
-  it("sans fond de carte, pas d'onglet Carte", () => {
+  it("sans fond de carte, pas de vue Par circonscription", () => {
+    expect(texte).not.toContain("Par circonscription");
     expect(texte).not.toContain("Carte");
   });
 

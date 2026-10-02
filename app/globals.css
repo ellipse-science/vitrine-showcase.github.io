@@ -12614,6 +12614,7 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 @media (max-width: 900px) {
   .social-tdb { grid-template-areas: "entete" "haut" "bas" "barre"; grid-template-rows: auto auto auto auto; row-gap: 18px; }
   .social-premiers, .social-filtres-rangee, .social-onglets-haut, .social-frise, .social-reglage-vues { display: none; }
+  .social-entete .control-block.social-filtres-rangee { display: none; } /* le tiroir prend le relais */
   .social-reglage-indicateur { display: flex; }
   .social-haut { margin-top: 0; }
   .social-raccourcis { margin-bottom: 0; }
