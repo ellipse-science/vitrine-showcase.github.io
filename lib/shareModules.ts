@@ -116,7 +116,7 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
   },
   "assemblee-nationale": {
     title: "L'alignement de l'Assemblée nationale",
-    description: "Répartition des enjeux, ton et richesse lexicale des débats parlementaires.",
+    description: "Répartition des enjeux, ton et variété lexicale des débats parlementaires.",
     subtitle: "Ce que disent les décideurs",
     stat: { value: "116", label: "député.es scrutés à chaque séance" },
   },

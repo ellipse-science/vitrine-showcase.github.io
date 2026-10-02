@@ -77,7 +77,7 @@ export function facetResult(row: AssembleeRow, kind: FacetKind, allRows: Assembl
         (avg) => `Moins varié que la moyenne des autres partis actifs (${avg.toFixed(1)}/5 en moyenne).`,
         (avg) => `Comparable à la moyenne des autres partis actifs (${avg.toFixed(1)}/5 en moyenne).`,
       );
-      return { title: "Richesse lexicale", body: `Niveau ${lvl}/5 : diversité du vocabulaire employé cette période. ${compare}` };
+      return { title: "Variété lexicale", body: `Niveau ${lvl}/5 : variété du vocabulaire employé cette période, par rapport aux autres partis actifs. ${compare}` };
     }
     case "words": {
       const raw = row.wordsRaw ?? 0;

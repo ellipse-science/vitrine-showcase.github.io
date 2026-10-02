@@ -6,8 +6,27 @@ import { __test__ } from "@/lib/data/assemblee";
 const {
   fmtDateFr, fmtWords, computeRichnessLevels, buildEnjeuStack, buildSubtitle,
   buildPeriodView, buildPortraitIndex, lookupPortrait, citationExtrait,
-  citationComplete, buildAffiliationIndex, affiliationHistoryFor,
+  citationComplete, buildAffiliationIndex, affiliationHistoryFor, niveauxParQuintile,
 } = __test__;
+
+describe("niveauxParQuintile", () => {
+  it("partage dix valeurs en cinq groupes de deux", () => {
+    const v = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`e${i}`, 0.80 + i * 0.005]));
+    const n = niveauxParQuintile(v);
+    expect([n.e0, n.e1, n.e2, n.e3, n.e8, n.e9]).toEqual([1, 1, 2, 2, 5, 5]);
+  });
+
+  it("n'est pas écrasé par une valeur extrême, contrairement au min–max", () => {
+    const v = { bas: 0.70, a: 0.82, b: 0.83, c: 0.84, d: 0.85 };
+    expect(computeRichnessLevels(v)).toEqual({ bas: 1, a: 4, b: 4, c: 5, d: 5 });
+    expect(niveauxParQuintile(v)).toEqual({ bas: 1, a: 2, b: 3, c: 4, d: 5 });
+  });
+
+  it("donne le même niveau à deux valeurs égales", () => {
+    const n = niveauxParQuintile({ a: 0.81, b: 0.81, c: 0.82, d: 0.83, e: 0.84 });
+    expect(n.a).toBe(n.b);
+  });
+});
 
 describe("citationExtrait", () => {
   it("ancre l'extrait sur le concept quand il se trouve après le budget", () => {
@@ -356,5 +375,34 @@ describe("buildPeriodView", () => {
     // Pondération par les mots : (0,4 × 300 + 0,8 × 100) / 400.
     expect(lsj?.toneScore).toBeCloseTo(0.5, 6);
     expect(caq.find((d) => d.id === "17929")?.wordsRaw).toBe(1000);
+  });
+
+  it("situe la variété lexicale des élus sur toute l’Assemblée, pas dans chaque parti", () => {
+    const parti = (party: string) => ({
+      period_type: "legislature", period_start_date: "2022-11-29", period_end_date: "2026-06-12",
+      party, n_interventions: 20, word_count: 1200, lexical_richness: 0.82, tone_score: 0, editorial_angle: "x",
+    });
+    const elu = (party: string, deputy: string, lexical_richness: number) => ({
+      period_type: "legislature", period_start_date: "2022-11-29", period_end_date: "2026-06-12",
+      party, deputy, deputy_id: deputy, n_interventions: 10, word_count: 800, lexical_richness, tone_score: 0,
+    });
+    // Dix élus : QS très homogène et haut, CAQ étalée, PCQ seule.
+    const deputyRows = [
+      elu("qs", "q1", 0.835), elu("qs", "q2", 0.833), elu("qs", "q3", 0.831),
+      elu("caq", "c1", 0.829), elu("caq", "c2", 0.820), elu("caq", "c3", 0.810), elu("caq", "c4", 0.800),
+      elu("caq", "c5", 0.790), elu("caq", "c6", 0.780),
+      elu("pcq", "p1", 0.805),
+    ];
+    const view = buildPeriodView([parti("qs"), parti("caq"), parti("pcq")] as never, "legislature", deputyRows as never);
+    const niveau = (id: string) => view.rows.flatMap((r) => r.deputies ?? []).find((d) => d.id === id)?.richnessLevel;
+
+    // Les élus de QS, derniers de leur parti ou non, restent dans le haut de
+    // l'Assemblée : plus de « 1 point » pour le moins varié d'un parti homogène.
+    expect(niveau("q2")).toBe(5);
+    expect(niveau("q3")).toBe(4);
+    // Une élue seule dans son parti n'a plus trois points d'office.
+    expect(niveau("p1")).toBe(2);
+    expect(niveau("c6")).toBe(1);
+    expect(niveau("c1")).toBe(4);
   });
 });
