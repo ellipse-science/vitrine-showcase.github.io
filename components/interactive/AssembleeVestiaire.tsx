@@ -641,6 +641,26 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
 
   return (
     <div className="vestiaire">
+      {/* SUR TÉLÉPHONE, LES CARTES D'ABORD (Jules, 3 oct.) : pas de banc de
+          casiers, un filtre par parti discret, puis le présentoir. Masqué sur
+          ordinateur, où les casiers font ce travail. */}
+      <nav className="vestiaire-filtre" aria-label="Choisir un parti">
+        {rows.map((row) => (
+          <button
+            key={row.key}
+            type="button"
+            className={openParty === row.key ? "est-choisi" : undefined}
+            style={{ ["--pc" as string]: row.color }}
+            aria-pressed={openParty === row.key}
+            onClick={() => { setOpenParty(row.key); setFlipped(null); }}
+          >
+            <span className="filtre-point" aria-hidden="true" />
+            {row.label}
+            <i>{row.deputies?.length ?? 0}</i>
+          </button>
+        ))}
+      </nav>
+
       <div className="vestiaire-banc">
         {rows.map((row) => (
           <LockerDoor
