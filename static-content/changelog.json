@@ -1,5 +1,11 @@
 [
   {
+    "pr": 910,
+    "date": "2026-10-03T14:35:24Z",
+    "note": "Sur les cartes des députés, la « richesse lexicale » s'appelle désormais « diversité lexicale », et ses points comparent chaque élu à l'ensemble de l'Assemblée plutôt qu'aux seuls membres de son parti. La méthodologie explique maintenant en détail comment cette mesure est calculée et ce qu'elle ne dit pas.",
+    "version": "2.50.0-beta.0"
+  },
+  {
     "pr": 798,
     "date": "2026-10-03T02:30:14Z",
     "note": "La barre grise du parti dont les médias parlent le moins s'anime désormais comme celles des autres partis.",
