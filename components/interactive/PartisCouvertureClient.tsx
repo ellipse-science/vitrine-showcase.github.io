@@ -1346,13 +1346,14 @@ function Tranche({
    *  resynchronisent jamais — c'est ce désaccord qui fait vivant plutôt que
    *  clignotant. Le mouvement ne mesure rien.
    *
-   *  Jamais sur un canal en SOURDINE — un canal muet qui se charge annoncerait
-   *  une activité qu'il n'a justement pas. Et jamais plus de segments qu'il n'y
+   *  Le canal en SOURDINE vacille comme les autres : sa barre grise est une
+   *  part réelle, et seule la couleur dit « sourdine ». Une part nulle n'a aucun
+   *  segment allumé, donc rien ne vacille. Et jamais plus de segments qu'il n'y
    *  en a d'allumés : sous trois, la cascade se raccourcit au lieu de déborder
    *  sur des segments éteints. */
   const debutVu = Math.max(0, allumes - 3);
   const vu = (i: number) =>
-    !coupe && i < allumes && i >= debutVu ? i - debutVu + 1 : 0;
+    i < allumes && i >= debutVu ? i - debutVu + 1 : 0;
 
   const ratio = moyennePct > 0 ? row.sovPct / moyennePct : 1;
   const ecart = Math.round((ratio - 1) * 100);
