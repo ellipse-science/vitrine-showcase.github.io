@@ -613,7 +613,7 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
               {deputies.map((dep) => (
                 <div
                   className="carte-colonne"
-                  key={dep.name}
+                  key={dep.id}
                   style={{ ["--pc" as string]: openRow.color }}
                 >
                   <DeputyCard
@@ -621,8 +621,8 @@ export function AssembleeVestiaire({ rows, shadowRows }: {
                     party={openRow.key}
                     color={openRow.color}
                     maxAbsTone={maxAbsTone}
-                    flipped={flipped === dep.name}
-                    onFlip={() => setFlipped(flipped === dep.name ? null : dep.name)}
+                    flipped={flipped === dep.id}
+                    onFlip={() => setFlipped(flipped === dep.id ? null : dep.id)}
                   />
                   {dep.affiliationHistory && (
                     <ParliamentaryHistory segments={dep.affiliationHistory} />
