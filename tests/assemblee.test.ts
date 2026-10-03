@@ -405,4 +405,30 @@ describe("buildPeriodView", () => {
     expect(niveau("c6")).toBe(1);
     expect(niveau("c1")).toBe(4);
   });
+
+  it("n'inclut pas les indépendants dans le classement, et classe une fois une personne de deux casiers", () => {
+    const parti = (party: string) => ({
+      period_type: "legislature", period_start_date: "2022-11-29", period_end_date: "2026-06-12",
+      party, n_interventions: 20, word_count: 1200, lexical_richness: 0.82, tone_score: 0, editorial_angle: "x",
+    });
+    const elu = (party: string, deputy: string, lexical_richness: number, word_count = 800, deputy_id = deputy) => ({
+      period_type: "legislature", period_start_date: "2022-11-29", period_end_date: "2026-06-12",
+      party, deputy, deputy_id, n_interventions: 10, word_count, lexical_richness, tone_score: 0,
+    });
+    const base = [
+      elu("caq", "a", 0.80), elu("caq", "b", 0.81), elu("caq", "c", 0.82), elu("caq", "d", 0.83), elu("caq", "e", 0.84),
+    ];
+    const vue = (rows: unknown[]) => buildPeriodView([parti("caq"), parti("pcq")] as never, "legislature", rows as never);
+    const niveaux = (v: ReturnType<typeof vue>) => Object.fromEntries(v.rows.flatMap((r) => (r.deputies ?? []).map((d) => [`${r.key}:${d.id}`, d.richnessLevel])));
+
+    // Des indépendants très bas ne déplacent pas les seuils des élus affichés.
+    const sans = niveaux(vue(base));
+    const avec = niveaux(vue([...base, elu("ind", "x1", 0.60), elu("ind", "x2", 0.61), elu("ind", "x3", 0.62)]));
+    expect(avec).toEqual(sans);
+
+    // Même personne dans deux casiers : même rang, compté une fois.
+    const v = niveaux(vue([...base, elu("caq", "M", 0.845, 300, "m"), elu("pcq", "M", 0.845, 100, "m")]));
+    expect(v["caq:m"]).toBe(v["pcq:m"]);
+    expect(v["caq:m"]).toBe(5);
+  });
 });

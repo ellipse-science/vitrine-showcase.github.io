@@ -760,17 +760,41 @@ function cleDiversite(party: string, r: DeputyAgoraRow): string {
 // le cinquième de l'Assemblée au vocabulaire le plus varié. Le ton était déjà
 // situé sur toute la période : les deux mesures se lisent pareil.
 function niveauxDiversiteElus(deputyRows: DeputyAgoraRow[], period: PeriodKey, endDate: string): Record<string, number> {
-  const lignes = lignesElusDeLaPeriode(deputyRows, period, endDate);
-  const parPartiEtElu = new Map<string, DeputyAgoraRow[]>();
+  // Seuls les élus AFFICHÉS entrent dans le classement : ceux des cinq partis
+  // qui ont un casier. Les lignes « ind » (interventions prononcées sans
+  // affiliation) sont écartées comme partout ailleurs dans le module ;
+  // classées sans être montrées, elles déplaçaient les seuils de 11 cartes
+  // (relecture d'Adrien, vitrine#910).
+  const partis = new Set<string>(PARTY_KEYS);
+  const lignes = lignesElusDeLaPeriode(deputyRows, period, endDate).filter((r) => partis.has(r.party.toLowerCase()));
+  const parParti = new Map<string, DeputyAgoraRow[]>();
   for (const r of lignes) {
     const parti = r.party.toLowerCase();
-    parPartiEtElu.set(parti, [...(parPartiEtElu.get(parti) ?? []), r]);
+    parParti.set(parti, [...(parParti.get(parti) ?? []), r]);
   }
-  const mattrs: Record<string, number> = {};
-  for (const [parti, rows] of parPartiEtElu) {
-    for (const r of fusionnerLignesParElu(rows)) mattrs[cleDiversite(parti, r)] = Number(r.lexical_richness || 0);
+  // UNE PERSONNE, UN RANG. Un élu passé d'un parti à l'autre a une carte dans
+  // chaque casier ; classé deux fois, il comptait double dans les quintiles.
+  // On le classe une fois, sur sa valeur toutes allégeances confondues
+  // (moyenne des MATTR de ses lignes, pondérée par les mots), et ses deux
+  // cartes reçoivent le même nombre de points.
+  const parPersonne = new Map<string, { mots: number; somme: number; cles: string[] }>();
+  for (const [parti, rows] of parParti) {
+    for (const r of fusionnerLignesParElu(rows)) {
+      const personne = cleElu(r);
+      const mots = Math.max(1, Number(r.word_count || 0));
+      const p = parPersonne.get(personne) ?? { mots: 0, somme: 0, cles: [] };
+      p.mots += mots;
+      p.somme += Number(r.lexical_richness || 0) * mots;
+      p.cles.push(cleDiversite(parti, r));
+      parPersonne.set(personne, p);
+    }
   }
-  return niveauxParQuintile(mattrs);
+  const valeurs: Record<string, number> = {};
+  for (const [personne, p] of parPersonne) valeurs[personne] = p.somme / p.mots;
+  const rangs = niveauxParQuintile(valeurs);
+  const niveaux: Record<string, number> = {};
+  for (const [personne, p] of parPersonne) for (const cle of p.cles) niveaux[cle] = rangs[personne];
+  return niveaux;
 }
 
 function buildDeputyList(
