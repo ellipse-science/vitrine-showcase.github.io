@@ -1,5 +1,11 @@
 [
   {
+    "pr": 858,
+    "date": "2026-10-03T14:51:23Z",
+    "note": "Documentation interne des pipelines mise à jour : rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 910,
     "date": "2026-10-03T14:35:24Z",
     "note": "Sur les cartes des députés, la « richesse lexicale » s'appelle désormais « diversité lexicale », et ses points comparent chaque élu à l'ensemble de l'Assemblée plutôt qu'aux seuls membres de son parti. La méthodologie explique maintenant en détail comment cette mesure est calculée et ce qu'elle ne dit pas.",
