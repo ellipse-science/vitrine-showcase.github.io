@@ -15,12 +15,16 @@ export function InfoTip({
   label,
   size = "sm",
   dans,
+  interactive = false,
 }: {
   children: ReactNode;
   label: string;
   size?: "sm" | "lg";
   /** Sélecteur d'un ancêtre dans lequel la bulle doit tenir (par défaut : la fenêtre). */
   dans?: string;
+  /** La bulle porte un lien : ce n'est plus une infobulle (`role="tooltip"`,
+   *  qui ne doit rien contenir d'interactif) mais une note où le focus entre. */
+  interactive?: boolean;
 }) {
   const [open, setOpen]               = useState(false);
   const [bubbleStyle, setBubbleStyle] = useState<CSSProperties>({});
@@ -123,18 +127,23 @@ export function InfoTip({
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       onPointerDown={handlePointerDown}
+      // Le focus peut passer du bouton à un lien de la bulle : on ne ferme que
+      // s'il quitte l'ensemble.
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open) {
+          e.stopPropagation();
+          setOpen(false);
+          e.currentTarget.querySelector("button")?.focus();
+        }
+      }}
     >
       <button
         type="button"
         className={`saillance-info-btn info-${size}`}
         onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === "Escape" && open) {
-            e.stopPropagation();
-            setOpen(false);
-          }
-        }}
-        onBlur={() => setOpen(false)}
         aria-label={label}
         aria-expanded={open}
       >
@@ -143,7 +152,7 @@ export function InfoTip({
       {open && (
         <span
           className="saillance-info-bubble"
-          role="tooltip"
+          role={interactive ? "note" : "tooltip"}
           style={bubbleStyle}
         >
           {children}

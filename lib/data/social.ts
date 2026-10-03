@@ -163,12 +163,20 @@ const jourMoins = (iso: string, n: number) => {
 };
 
 async function lire<T>(fichier: string): Promise<T[] | null> {
+  let texte: string;
   try {
-    const rows = JSON.parse(await readDatasetText(fichier)) as T[];
-    return Array.isArray(rows) ? rows : null;
-  } catch {
-    return null; // le raffineur n'a pas encore publié
+    texte = await readDatasetText(fichier);
+  } catch (err) {
+    // Fichier absent : le raffineur n'a pas encore publié. Toute autre erreur
+    // (lecture refusée, E/S) remonte, pour qu'un build ne publie pas le site
+    // sans le module en silence (même règle que lib/data/parties.ts).
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw err;
   }
+  if (texte.trim() === "") return null;
+  // Un JSON invalide fait échouer le build : JSON.parse lève.
+  const rows = JSON.parse(texte) as T[];
+  return Array.isArray(rows) ? rows : null;
 }
 
 /** Fond de carte : donnée de référence statique (scripts/reference/carte_circonscriptions.mjs). */

@@ -70,6 +70,14 @@ describe("chargeur du module « Les candidats sur les réseaux »", () => {
     expect(await charger()).toBeNull();
   });
 
+  it("un fichier illisible ou un JSON invalide fait échouer le chargement, au lieu de retirer le module en silence", async () => {
+    readFileMock.mockImplementation(() => Promise.reject(Object.assign(new Error("EACCES"), { code: "EACCES" })));
+    await expect(charger()).rejects.toThrow("EACCES");
+    vi.resetModules();
+    readFileMock.mockImplementation(() => Promise.resolve("{ tronqué"));
+    await expect(charger()).rejects.toThrow();
+  });
+
   it("la présence compte les circonscriptions des comptes de candidat, sur les candidatures du parti", async () => {
     const plus = [
       ...comptes,
