@@ -48,6 +48,8 @@ export const TABLES: TableSpec[] = [
       "period_start_date",
       "period_end_date",
       "party",
+      "deputy_id",
+      "district_id",
       "deputy",
       "n_interventions",
       "word_count",
