@@ -1,5 +1,11 @@
 [
   {
+    "pr": 924,
+    "date": "2026-10-03T19:13:39Z",
+    "note": "Le vestiaire de l'Assemblée fait peau neuve : des casiers en métal au format des cartes, les chiffres de chaque parti à l'intérieur, et sur téléphone les cartes passent au premier plan avec un filtre par parti.",
+    "version": "2.52.0-beta.0"
+  },
+  {
     "pr": 917,
     "date": "2026-10-03T18:37:26Z",
     "note": "Les cartes des député·es dans le vestiaire sont maintenant les cartes de collection imprimées, recto et verso : numéro, rareté, fonction, fiche électorale, parcours et rémunération, et les mêmes mesures de parole qu'avant.",
