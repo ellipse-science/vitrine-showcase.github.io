@@ -181,7 +181,9 @@ export type DeputyRow = {
   /** Répartition par enjeu, pour le verso statistique. */
   enjeuStack: EnjeuSegment[];
   /** Parts brutes des 12 enjeux, pour qui doit recalculer la pile (cartes). */
-  issueShares: IssueShares;
+  /** Absent des données envoyées au navigateur (AssembleeSection) : seul le
+   *  générateur des cartes s'en sert. */
+  issueShares?: IssueShares;
   /** Parcours parlementaire pendant la législature courante. Présent seulement
    *  dans la vue « législature » lorsqu'un événement mérite d'être expliqué :
    *  changement d'affiliation, élection partielle ou démission. */

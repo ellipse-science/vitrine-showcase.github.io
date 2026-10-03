@@ -689,7 +689,7 @@ async function fusionnerLignesParParti(data: NonNullable<Awaited<ReturnType<type
     const pond = (f: (r: Brute) => number) => mots > 0 ? lignes.reduce((t, r) => t + f(r) * Number(r.word_count || 0), 0) / mots : 0;
     const principale = [...lignes].sort((x, y) => Number(y.word_count) - Number(x.word_count))[0];
     const modele = cibles.find((d) => d.wordsRaw === Number(principale.word_count)) ?? cibles[0];
-    const parts = Object.fromEntries(Object.keys(modele.issueShares).map((k) => [k, pond((r) => Number(r[k] || 0))])) as typeof modele.issueShares;
+    const parts = Object.fromEntries(Object.keys(modele.issueShares ?? {}).map((k) => [k, pond((r) => Number(r[k] || 0))])) as NonNullable<typeof modele.issueShares>;
     for (const d of cibles) {
       d.interventions = lignes.reduce((t, r) => t + Number(r.n_interventions || 0), 0);
       d.wordsRaw = mots;
@@ -737,7 +737,7 @@ async function main() {
   // Le site n'est pas touché. Liste vidée le 28-09 (raffineur recalibré).
   for (const p of Object.values(data.periods)) {
     for (const d of [...(p?.rows.flatMap((r) => r.deputies ?? []) ?? []), ...(p?.independants ?? [])]) {
-      d.enjeuStack = buildEnjeuStack(d.issueShares, ENJEUX_EN_REVISION);
+      d.enjeuStack = buildEnjeuStack(d.issueShares ?? {}, ENJEUX_EN_REVISION);
       const top = d.enjeuStack.find((s) => !s.isReste);
       d.topIssueLabel = top?.label;
       d.topIssueKey = top?.cle ?? undefined;

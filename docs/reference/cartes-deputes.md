@@ -321,7 +321,7 @@ Grille du 23 septembre 2026 (décision de Jules).
   conversion CMJN revient à l'imprimeur, sur épreuve.
 - **Logos** : CAPP et Vitrine viennent de `public/images/brand/` (PNG de
   1 500 à 1 800 px, suffisants). Université Laval : le logo monochrome
-  officiel du kit des normes graphiques (`public/images/partners/ULaval-N.eps`,
+  officiel du kit des normes graphiques (`scripts/social/donnees/ULaval-N.eps`, hors de `public/` : rien sur le site ne le lit,
   vectoriel, gardé pour l'imprimeur), rendu en noir sur transparent à 2 000 px
   (`ULaval-N.png`) ; oiseaux et croix transparents, puisque la carte affiche
   les logos en masque. L'ancien `ULaval.png` (277 px, avec la mention de

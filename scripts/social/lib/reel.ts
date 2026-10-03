@@ -84,7 +84,8 @@ export async function loadLogos(): Promise<Logos> {
   // Université Laval : le logo monochrome OFFICIEL (kit « logo-monochrome »
   // des normes graphiques, ULaval-N.eps, téléchargé par Jules le 24-09), rendu
   // en noir sur fond transparent à 2 000 px de large (public/images/partners/
-  // ULaval-N.png ; l'EPS est gardé à côté pour l'imprimeur). Écusson et
+  // ULaval-N.png ; l'EPS, pour l'imprimeur, est dans scripts/social/donnees/ :
+  // public/ le servirait au monde entier sans usage). Écusson et
   // mot-symbole seulement, sans mention de faculté. Les oiseaux et la croix
   // sont transparents, pas blancs : la carte l'affiche comme un masque.
   const ulaval = async () => {
