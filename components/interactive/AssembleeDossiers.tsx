@@ -9,7 +9,7 @@ import { facetResult } from "@/lib/data/assembleeInsights";
 // dossier révèle la chemise du parti (toutes ses mesures) et une fiche
 // satellite par député, reliée au dossier par un fil pointillé et
 // dimensionnée selon sa contribution en mots au sein du parti. Cliquer une
-// fiche dévoile le ton et la richesse lexicale du député. Les phrases de
+// fiche dévoile le ton et la diversité lexicale du député. Les phrases de
 // comparaison viennent de facetResult, la source commune des facettes du module.
 
 function RichnessDots({ level }: { level: number }) {
@@ -55,7 +55,7 @@ function DeputyFiche({ deputy, color, tier, expanded, onToggle }: {
       style={{ ["--c" as string]: color }}
       onClick={onToggle}
       aria-expanded={expanded}
-      aria-label={`${deputy.name} · ${deputy.wordsFormatted} mots, voir le ton et la richesse lexicale`}
+      aria-label={`${deputy.name} · ${deputy.wordsFormatted} mots, voir le ton et la diversité lexicale`}
     >
       <span className="ass-fiche-pin" aria-hidden="true" />
       <span className="ass-fiche-name">{deputy.name}</span>
@@ -68,7 +68,7 @@ function DeputyFiche({ deputy, color, tier, expanded, onToggle }: {
         <span className="ass-fiche-more">
           <span className="stat-label">Ton en chambre</span>
           <ToneGauge pct={deputy.toneLeftPct} />
-          <span className="stat-label">Richesse lexicale</span>
+          <span className="stat-label">Diversité lexicale</span>
           <span className="ass-richness"><RichnessDots level={deputy.richnessLevel} /></span>
         </span>
       )}
@@ -116,7 +116,7 @@ function DossierCard({ row, allRows }: { row: AssembleeRow; allRows: AssembleeRo
         </div>
 
         <div className="ass-card-block">
-          <span className="stat-label">Richesse lexicale</span>
+          <span className="stat-label">Diversité lexicale</span>
           <span className="ass-richness"><RichnessDots level={row.richnessLevel || 1} /></span>
           <p className="ass-card-caption">{richness.body}</p>
         </div>

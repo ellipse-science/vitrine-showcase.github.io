@@ -364,7 +364,7 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip }: {
               <b className="carte-v-points">
                 <RichnessDots level={deputy.richnessLevel} />
               </b>
-              <i>richesse lexicale</i>
+              <i>diversité lexicale</i>
             </span>
           </span>
 
@@ -444,7 +444,7 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
     >
       {/* Fond de casier. Ce n'est pas un décor : les battants emportent avec eux
           le bilan du parti en s'ouvrant, donc l'intérieur reprend le relais avec
-          ce que les portes ne montraient pas — répartition par enjeu, richesse
+          ce que les portes ne montraient pas — répartition par enjeu, diversité
           lexicale, concept distinctif. Comme des papiers punaisés au fond d'un
           casier. */}
       <span className="casier-fond">
