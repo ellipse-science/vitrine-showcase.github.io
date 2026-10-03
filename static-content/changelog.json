@@ -1,5 +1,11 @@
 [
   {
+    "pr": 907,
+    "date": "2026-10-03T01:47:21Z",
+    "note": "Dans le vestiaire de l'Assemblée, une carte de député restait affichée en ouvrant le casier d'un autre parti ; c'est corrigé. Un élu dont le nom apparaît sous deux graphies n'a plus qu'une seule carte, qui réunit toutes ses prises de parole.",
+    "version": "2.49.0-beta.10"
+  },
+  {
     "pr": 923,
     "date": "2026-10-03T00:24:05Z",
     "note": "Les fiches du module La guerre des clics se parcourent mieux au clavier.",
