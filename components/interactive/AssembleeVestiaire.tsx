@@ -292,7 +292,8 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
   contexte: ContexteCartes | null;
 }) {
   const partyLabel = party.toUpperCase();
-  // Le verso n'est dessiné qu'à l'approche : survol, focus ou retournement.
+  // La face cachée n'est dessinée qu'à l'approche : survol, focus ou
+  // retournement (le verso est la face visible par défaut).
   const [versoPret, setVersoPret] = useState(false);
   const slug = slugCirco(deputy);
   const fiche = cartes.find((c) => c.elu === slug && c.cle === party) ?? cartes.find((c) => c.elu === slug);
@@ -316,7 +317,7 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
         }
       >
         <span className="carte-pivot">
-          <span className="carte-recto"><CarteDepute carte={carte} face="recto" contexte={contexte} /></span>
+          <span className="carte-recto"><CarteDepute carte={carte} face="recto" contexte={contexte} actif={!flipped || versoPret} /></span>
           <span className="carte-verso"><CarteDepute carte={carte} face="verso" contexte={contexte} actif={versoPret || flipped} /></span>
         </span>
       </button>
@@ -598,6 +599,10 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
   // premier casier est déjà le parti qui a le plus parlé. On l'ouvre par
   // défaut plutôt que de laisser le tiroir vide au premier coup d'œil.
   const [openParty, setOpenParty] = useState<PartyKey | null>(rows[0]?.key ?? null);
+  // L'ENDOS D'ABORD (Jules, 3 oct. : « surtout l'endos avec les données ») :
+  // les cartes s'affichent côté verso ; le sélecteur les retourne toutes, un
+  // clic sur une carte la retourne seule (`flipped` = l'exception).
+  const [face, setFace] = useState<"verso" | "recto">("verso");
   const [flipped, setFlipped] = useState<string | null>(null);
 
   // Une seule échelle de ton pour tout le module : les positions ne veulent
@@ -688,13 +693,17 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
             <span className="tiroir-compte">
               {deputies.length} député·es qui ont pris la parole
             </span>
+            <span className="tiroir-faces" role="group" aria-label="Face des cartes">
+              {(["verso", "recto"] as const).map((f) => (
+                <button key={f} type="button" aria-pressed={face === f} onClick={() => { setFace(f); setFlipped(null); }}>
+                  {f === "verso" ? "Verso" : "Recto"}
+                </button>
+              ))}
+            </span>
             <button type="button" className="tiroir-refermer" onClick={() => toggle(openRow.key)}>
               Refermer
             </button>
           </div>
-
-          {/* L'angle éditorial du parti : une phrase a besoin de largeur, donc
-              elle vit dans le tiroir et non sur une porte de casier. */}
 
           {deputies.length > 0 ? (
             // Une clé par parti : changer de parti repart de la première carte
@@ -711,7 +720,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
                     party={openRow.key}
                     color={openRow.color}
                     maxAbsTone={maxAbsTone}
-                    flipped={flipped === dep.id}
+                    flipped={(face === "verso") !== (flipped === dep.id)}
                     onFlip={basculer}
                     cartes={cartes}
                     contexte={contexte}

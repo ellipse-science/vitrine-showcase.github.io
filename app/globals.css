@@ -3113,11 +3113,19 @@
     position: absolute;
     inset: 0;
     background:
-      var(--carton-mouchete) 0 0 / 512px 512px,
-      var(--carton-grain) 0 0 / 256px 256px,
+      var(--metal-brosse),
+      linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.05) 30%, rgba(0,0,0,.12)),
       color-mix(in srgb, var(--pc) 82%, #000);
   }
   .casier-cloison { display: none; }
+  /* FINI MÉTAL (Jules, 3 oct.) : une tôle peinte, brossée — fines stries
+     verticales, un reflet en biais, une ombre au pied. Le grain de carton
+     des cartes ne va pas au métal. */
+  .vestiaire {
+    --metal-brosse: repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 1px, rgba(0,0,0,.04) 1px 2px, rgba(255,255,255,0) 2px 4px);
+    --metal-reflet: linear-gradient(118deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.06) 28%, rgba(255,255,255,0) 46%, rgba(0,0,0,.08) 72%, rgba(0,0,0,.18) 100%);
+  }
+
   /* Les panneaux du verso : papier, coins arrondis, encre du parti. */
   .casier-dedans {
     position: absolute;
@@ -3297,8 +3305,8 @@
   .casier-face {
     padding: 12px 14px 10px 16px;
     background:
-      var(--carton-mouchete) 0 0 / 512px 512px,
-      var(--carton-grain) 0 0 / 256px 256px,
+      var(--metal-reflet),
+      var(--metal-brosse),
       var(--pc);
     color: var(--carton-papier);
     /* Tôle emboutie : un liseré clair en haut à gauche, une ombre en bas à
@@ -3315,7 +3323,7 @@
     transform: rotateY(180deg);
     padding: 12px 16px 10px 14px;
     background:
-      var(--carton-grain) 0 0 / 256px 256px,
+      var(--metal-brosse),
       linear-gradient(90deg, color-mix(in srgb, var(--pc) 50%, #000), color-mix(in srgb, var(--pc) 68%, #000));
     box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 35%, transparent);
   }
@@ -3489,28 +3497,24 @@
   }
 
   /* --- Le tiroir : le présentoir de cartes du casier ouvert --------------- */
-  /* LE PRÉSENTOIR SUR CARTON KRAFT (Jules, 3 oct.) : les cartes sont soit
-     claires (carton papier), soit à l'encre du parti ; un fond moyen, le brun
-     d'une boîte de cartes, grené comme le reste du module, les détache
-     toutes. Le fond anthracite essayé avant a été écarté. */
+  /* LE PRÉSENTOIR SANS FOND (Jules, 3 oct. : « il faut vraiment que ce soit
+     les cartes qui soient mises de l'avant ») : les cartes se posent sur le
+     papier de la page, sous un simple filet à l'encre du parti. Le fond
+     anthracite puis le kraft essayés avant détonnaient. */
   .vestiaire-tiroir {
     position: relative;
-    padding: 20px 16px 16px;
-    background:
-      var(--carton-mouchete) 0 0 / 512px 512px,
-      var(--carton-grain) 0 0 / 256px 256px,
-      #B9A688;
-    color: var(--carton-encre);
-    border: 1px solid #9C8B6E;
-    border-top: none;
-    border-bottom: 3px solid var(--pc);
+    padding: 18px 0 8px;
+    background: none;
+    color: var(--ink);
+    border: none;
+    border-top: 3px solid var(--pc);
   }
-  .vestiaire-tiroir .tiroir-tete { border-bottom-color: rgba(28, 25, 23, 0.22); }
+  .vestiaire-tiroir .tiroir-tete { border-bottom-color: var(--rule); }
   .vestiaire-tiroir .tiroir-parti { color: var(--pc); }
   .vestiaire-tiroir .tiroir-compte,
-  .vestiaire-tiroir .tiroir-vide { color: rgba(28, 25, 23, 0.72); }
-  .vestiaire-tiroir .tiroir-refermer { color: rgba(28, 25, 23, 0.8); border-bottom-color: rgba(28, 25, 23, 0.35); }
-  .vestiaire-tiroir .tiroir-refermer:hover { color: var(--carton-encre); border-bottom-color: var(--carton-encre); }
+  .vestiaire-tiroir .tiroir-vide { color: var(--ink-softer); }
+  .vestiaire-tiroir .tiroir-refermer { color: var(--ink-soft); border-bottom-color: var(--rule); }
+  .vestiaire-tiroir .tiroir-refermer:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
   /* Encoche alignée sur le casier ouvert : elle dit lequel on a ouvert, ce que
      l'ancienne mise en page (le casier ouvert s'étalait sur toute la largeur)
      rendait justement illisible. */
@@ -3565,6 +3569,30 @@
     color: var(--ink-soft);
   }
   .tiroir-refermer:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
+  /* Verso · Recto : retourne toutes les cartes du présentoir d'un coup. */
+  .tiroir-faces {
+    display: inline-flex;
+    margin-left: auto;
+    padding: 2px;
+    gap: 2px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+  }
+  .tiroir-faces button {
+    padding: 4px 11px;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .tiroir-faces button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .tiroir-faces + .tiroir-refermer { margin-left: 14px; }
   .tiroir-refermer:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
   /* LES PANNEAUX DU TIROIR : angle éditorial et concept distinctif du parti,
      sur le carton à l'encre du parti, comme les blocs du verso. */
@@ -3714,8 +3742,8 @@
   .tiroir-presentoir > * { scroll-snap-align: start; }
 
   .carte-colonne {
-    flex: 0 0 291px;
-    width: 291px;
+    flex: 0 0 340px;
+    width: 340px;
   }
   /* Avis compact sous une carte : le parcours reste visible sans imposer la
      hauteur de toute la frise. Le <details> natif conserve le clic, le clavier
@@ -3872,8 +3900,8 @@
   /* --- La carte : format 63,5 × 88,9 mm, soit 5:7 ------------------------- */
   .carte {
     flex: 0 0 auto;
-    width: 291px;
-    height: 408px;
+    width: 340px;
+    height: 475px;
     padding: 0;
     background: none;
     border: none;
@@ -3890,7 +3918,7 @@
      291 × 1496 / 1071 = 406,5 px, contre 408 pour l'ancienne carte. Les deux
      faces n'ont ni fond ni marge : le carton apporte les siens. */
   .carte.carte--fabrique {
-    --carte-l: 291;
+    --carte-l: 340;
     --cd-k: calc(var(--carte-l) / 1071);
     height: calc(var(--carte-l) * 1px * 1496 / 1071);
   }
@@ -4262,7 +4290,7 @@
        largeur, sur son fond sombre. */
     .vestiaire-banc { display: none; }
     .vestiaire-filtre { display: flex; }
-    .vestiaire-tiroir { padding: 14px 12px 16px; }
+    .vestiaire-tiroir { padding: 14px 0 8px; }
     .tiroir-tete { margin-bottom: 10px; padding-bottom: 6px; }
     .tiroir-parti { font-size: 18px; }
     .tiroir-compte { font-size: 11px; }
@@ -4273,9 +4301,9 @@
        le casier du second rang, juste en dessous — pire que pas de flèche du
        tout. L'en-tête du tiroir nomme le parti, et le casier ouvert se voit. */
     .tiroir-encoche { display: none; }
-    .carte-colonne { flex-basis: 300px; width: 300px; }
-    .carte { width: 300px; height: 419px; }
-    .carte.carte--fabrique { --carte-l: 300; }
+    .carte-colonne { flex-basis: 320px; width: 320px; }
+    .carte { width: 320px; height: 447px; }
+    .carte.carte--fabrique { --carte-l: 320; }
     .carte-nom { font-size: 15px; }
     .carte-v-nom { font-size: 14px; }
     .carte-v-stats b { font-size: 17px; }
