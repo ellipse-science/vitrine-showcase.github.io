@@ -1,10 +1,11 @@
 "use client";
 
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useId, useMemo, useState } from "react";
 import type { AffiliationSegment, AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import { slugCirco } from "@/lib/cartes/fonctions";
 import type { CarteSite } from "@/lib/cartes/site";
-import { CarteDepute, carteComplete, type ContexteCartes } from "@/components/interactive/CarteDepute";
+import { CarteDepute, carteComplete, chargerPolices, type ContexteCartes } from "@/components/interactive/CarteDepute";
+import { POLICES_VERSO } from "@/lib/cartes/faces";
 import type { PartyKey } from "@/lib/data/parties";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 
@@ -480,9 +481,25 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   // CASIER VIDE (Jules, 3 oct.) : les cinq partis gardent leur casier, même
   // sans parole dans la vue ; l'intérieur dit pourquoi il est vide.
   const vide = row.inShadow;
+  // Sans article (« du CAQ », « du QS ») : le sigle mène la phrase.
   const raison = row.aSiege === false
-    ? `Aucun élu du ${row.label} ne siégeait pendant cette période.`
-    : `Aucune prise de parole du ${row.label} pendant cette période.`;
+    ? `${row.label}\u00a0: aucune personne élue ne siégeait pendant cette période.`
+    : `${row.label}\u00a0: aucune prise de parole pendant cette période.`;
+  // Lecteur d'écran (relecture d'Adrien, #924) : le nom du bouton dit l'action,
+  // le bilan intérieur passe en description, en phrases. Le dessin de
+  // l'intérieur (colonnes, barres) est aria-hidden : lu tel quel, il donnait
+  // « Mots Interv. Député·es 139 085 … ».
+  const idBilan = useId();
+  const enjeuxNommes = (row.enjeuStack ?? []).filter((s) => !s.isReste && s.cle).slice(0, 3);
+  const bilan = vide
+    ? raison
+    : [
+        `${nb} ${nb > 1 ? "député·es" : "député·e"}, ${row.wordsFormatted ?? "0"} mots, ${(row.interventions ?? 0).toLocaleString("fr-CA")} interventions, ${toneWording(row.toneScore ?? 0, maxAbsTone)}.`,
+        enjeuxNommes.length
+          ? `Part des interventions\u00a0: ${enjeuxNommes.map((x) => `${(x.title ?? x.label).split(" · ")[0]} ${x.widthPct}\u00a0%`).join(", ")}.`
+          : "",
+        plusLoquace ? `A le plus parlé\u00a0: ${plusLoquace.name}, ${plusLoquace.wordsFormatted} mots.` : "",
+      ].filter(Boolean).join(" ");
   return (
     <button
       type="button"
@@ -490,20 +507,15 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
       style={{ ["--pc" as string]: row.color }}
       onClick={onToggle}
       aria-expanded={open}
-      aria-label={
-        open
-          ? `Casier ${row.label}, ouvert`
-          : vide
-            ? `Ouvrir le casier ${row.label}\u00a0: ${raison}`
-            : `Ouvrir le casier ${row.label}\u00a0: ${nb} député·es, ${row.wordsFormatted ?? "0"} mots, `
-              + `${toneWording(row.toneScore ?? 0, maxAbsTone)}`
-      }
+      aria-label={open ? `Casier ${row.label}, ouvert` : `Ouvrir le casier ${row.label}`}
+      aria-describedby={idBilan}
     >
+      <span id={idBilan} className="visually-hidden">{bilan}</span>
       {/* L'INTÉRIEUR porte tout le bilan (Jules, 3 oct. : « pas trop d'infos
           sur le devant, seulement à l'intérieur »), en panneaux de papier
           comme le verso des cartes : la fiche (mots, interventions,
           député·es, ton), la part des interventions, qui a le plus parlé. */}
-      <span className="casier-fond">
+      <span className="casier-fond" aria-hidden="true">
         <span className="casier-dedans">
           <span className="dedans-bloc">
             <span className="dedans-titre">Fiche à l'Assemblée</span>
@@ -599,6 +611,10 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
   // premier casier est déjà le parti qui a le plus parlé. On l'ouvre par
   // défaut plutôt que de laisser le tiroir vide au premier coup d'œil.
   const [openParty, setOpenParty] = useState<PartyKey | null>(rows[0]?.key ?? null);
+  // Oswald et Archivo Narrow (casiers et verso) : demandées ici, à l'affichage
+  // du module, et non dans app/layout.tsx, où elles alourdissaient la feuille
+  // de polices de toutes les pages (relecture d'Adrien, #924).
+  useEffect(() => { void chargerPolices(POLICES_VERSO); }, []);
   // RECTO PAR DÉFAUT (Jules, 3 oct.) ; le sélecteur retourne toutes les
   // cartes côté verso, celui des données, et un clic sur une carte la
   // retourne seule (`flipped` = l'exception).
@@ -726,8 +742,8 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
           ) : (
             <p className="tiroir-vide">
               {openRow.aSiege === false
-                ? `Aucun élu du ${openRow.label} ne siégeait pendant cette période\u00a0: pas de carte.`
-                : `Aucune prise de parole du ${openRow.label} pendant cette période\u00a0: pas de carte.`}
+                ? `${openRow.label}\u00a0: aucune personne élue ne siégeait pendant cette période, donc pas de carte.`
+                : `${openRow.label}\u00a0: aucune prise de parole pendant cette période, donc pas de carte.`}
             </p>
           )}
         </div>

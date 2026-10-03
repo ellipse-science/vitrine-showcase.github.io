@@ -85,6 +85,9 @@ export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeD
                   role="tab"
                   tabIndex={0}
                   aria-selected={p === period}
+                  // Nom accessible explicite : sur téléphone, le libellé long est
+                  // masqué et le court est aria-hidden (relecture d'Adrien, #924).
+                  aria-label={data.periods[p].tabLabel}
                   className={p === period ? "active" : undefined}
                   onClick={() => setPeriod(p)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPeriod(p); } }}

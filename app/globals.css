@@ -3116,7 +3116,6 @@
       linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.05) 30%, rgba(0,0,0,.12)),
       color-mix(in srgb, var(--pc) 82%, #000);
   }
-  .casier-cloison { display: none; }
   /* FINI MÉTAL (Jules, 3 oct.) : une tôle peinte, sans grain de carton. */
   .vestiaire {
     /* Tôle peinte, lisse et mate (Jules, 3 oct. : le brossé est écarté) :
@@ -3509,8 +3508,6 @@
   .vestiaire-tiroir .tiroir-parti { color: var(--pc); }
   .vestiaire-tiroir .tiroir-compte,
   .vestiaire-tiroir .tiroir-vide { color: var(--ink-softer); }
-  .vestiaire-tiroir .tiroir-refermer { color: var(--ink-soft); border-bottom-color: var(--rule); }
-  .vestiaire-tiroir .tiroir-refermer:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
   /* Encoche alignée sur le casier ouvert : elle dit lequel on a ouvert, ce que
      l'ancienne mise en page (le casier ouvert s'étalait sur toute la largeur)
      rendait justement illisible. */
@@ -3550,21 +3547,6 @@
     text-transform: uppercase;
     color: var(--ink-softer);
   }
-  .tiroir-refermer {
-    margin-left: auto;
-    background: none;
-    border: none;
-    border-bottom: 1px solid var(--rule);
-    cursor: pointer;
-    padding: 0 0 2px;
-    font-family: 'Oswald', 'Arial Narrow', sans-serif;
-    font-weight: 500;
-    font-size: 13px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-  }
-  .tiroir-refermer:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
   /* Verso · Recto : retourne toutes les cartes du présentoir d'un coup. */
   .tiroir-faces {
     display: inline-flex;
@@ -3594,60 +3576,6 @@
   .tiroir-presentoir,
   .vestiaire-tiroir .tiroir-vide { min-height: calc(var(--carte-hauteur, 475px) + 76px); }
   .vestiaire-tiroir .tiroir-vide { display: flex; align-items: center; justify-content: center; text-align: center; margin: 0; }
-  .tiroir-faces + .tiroir-refermer { margin-left: 14px; }
-  .tiroir-refermer:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
-  /* LES PANNEAUX DU TIROIR : angle éditorial et concept distinctif du parti,
-     sur le carton à l'encre du parti, comme les blocs du verso. */
-  .tiroir-panneaux {
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    gap: 6px;
-    padding: 6px;
-    margin-bottom: 14px;
-    border-radius: 16px;
-    background: var(--carton-mouchete) 0 0 / 512px 512px, var(--carton-grain) 0 0 / 256px 256px, var(--pc);
-  }
-  .tiroir-panneaux > :only-child { grid-column: 1 / -1; }
-  @media (max-width: 760px) { .tiroir-panneaux { grid-template-columns: 1fr; } }
-  .tiroir-panneau {
-    background: var(--carton-papier);
-    color: var(--pc);
-    border-radius: 12px;
-    padding: 10px 16px 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .tiroir-rubrique {
-    font-family: 'Oswald', 'Arial Narrow', sans-serif;
-    font-weight: 600;
-    font-size: 12px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    text-align: center;
-    margin: 0 0 6px;
-  }
-  .tiroir-angle {
-    font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
-    font-size: 16px;
-    line-height: 1.38;
-    color: var(--carton-encre);
-    margin: 0;
-    text-align: center;
-  }
-  /* Concept distinctif au niveau du PARTI, dans le tiroir. Le mot passe à la
-     ligne sous son intitulé : sur une seule ligne, un mot long poussait la
-     glose hors du tiroir à 1280 px. */
-  .tiroir-concept { text-align: center; }
-  .tiroir-concept-titre {
-    display: block;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--cordovan);
-    margin-bottom: 3px;
-  }
 
   /* Bloc du concept distinctif, partagé par la carte et le tiroir. Tout est
      visible en permanence : pas de survol (une carte finit imprimée, et un
@@ -3701,36 +3629,6 @@
     line-height: 1.45;
     margin-top: 0;
   }
-  /* Dans le tiroir, la largeur ne manque pas : la citation s'y lit en entier
-     et au corps du texte courant, pas au corps réduit de la carte. */
-  /* Le concept comme l'« Expression distinctive » du verso : le mot en Oswald
-     grasse capitales, la citation en italique dessous. */
-  .tiroir-concept .concept-mot {
-    font-family: 'Oswald', 'Arial Narrow', sans-serif;
-    font-weight: 700;
-    font-size: 26px;
-    line-height: 1.04;
-    text-transform: uppercase;
-    color: var(--pc);
-  }
-  .tiroir-concept .concept-citation {
-    font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
-    font-size: 13px;
-    line-height: 1.4;
-    color: var(--pc);
-    opacity: 0.85;
-  }
-  .tiroir-concept .concept-glose,
-  .tiroir-concept .concept-vide {
-    font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
-    font-style: italic;
-    font-size: 12px;
-    letter-spacing: 0;
-    color: var(--pc);
-    opacity: 0.8;
-  }
-  .tiroir-concept .concept-citation-indisponible { font-size: 9px; }
-  .tiroir-concept .concept-glose { font-size: 8.5px; }
 
   /* Le présentoir défile horizontalement : les cartes gardent leur format
      exact plutôt que de se comprimer pour tenir dans la largeur. */
@@ -4296,7 +4194,6 @@
     .tiroir-tete { margin-bottom: 10px; padding-bottom: 6px; }
     .tiroir-parti { font-size: 18px; }
     .tiroir-compte { font-size: 11px; }
-    .tiroir-refermer { display: none; }
     .casier-persiennes > i:nth-child(n + 4) { display: none; }
     /* Encoche masquée : sur une grille 2 × 2, elle ne peut désigner qu'une
        COLONNE. Un casier ouvert au premier rang verrait donc la flèche pointer
