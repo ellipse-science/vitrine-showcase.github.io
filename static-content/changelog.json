@@ -1,5 +1,11 @@
 [
   {
+    "pr": 912,
+    "date": "2026-10-03T02:22:30Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
     "pr": 907,
     "date": "2026-10-03T01:47:21Z",
     "note": "Dans le vestiaire de l'Assemblée, une carte de député restait affichée en ouvrant le casier d'un autre parti ; c'est corrigé. Un élu dont le nom apparaît sous deux graphies n'a plus qu'une seule carte, qui réunit toutes ses prises de parole.",
