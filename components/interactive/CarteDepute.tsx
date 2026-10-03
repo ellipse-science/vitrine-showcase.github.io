@@ -119,7 +119,7 @@ const POLICES_FACES = [
 ];
 
 const feuilles = new Map<string, Promise<void>>();
-function chargerPolices(href: string): Promise<void> {
+export function chargerPolices(href: string): Promise<void> {
   if (typeof document === "undefined") return Promise.resolve();
   let p = feuilles.get(href);
   if (p) return p;

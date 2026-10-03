@@ -1,10 +1,11 @@
 "use client";
 
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useId, useMemo, useState } from "react";
 import type { AffiliationSegment, AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import { slugCirco } from "@/lib/cartes/fonctions";
 import type { CarteSite } from "@/lib/cartes/site";
-import { CarteDepute, carteComplete, type ContexteCartes } from "@/components/interactive/CarteDepute";
+import { CarteDepute, carteComplete, chargerPolices, type ContexteCartes } from "@/components/interactive/CarteDepute";
+import { POLICES_VERSO } from "@/lib/cartes/faces";
 import type { PartyKey } from "@/lib/data/parties";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 
@@ -263,7 +264,7 @@ function ToneScale({ score, maxAbs, compact }: {
     >
       <span className="ton-piste" aria-hidden="true">
         <span className="ton-neutre" />
-        <span className="ton-repere" style={{ left: `${pct}%` }} />
+        <span className={`ton-repere${score >= 0 ? " est-favorable" : " est-defavorable"}`} style={{ left: `${pct}%` }} />
       </span>
       <span className="ton-bornes" aria-hidden="true">
         <i>défavorable</i>
@@ -292,7 +293,8 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
   contexte: ContexteCartes | null;
 }) {
   const partyLabel = party.toUpperCase();
-  // Le verso n'est dessiné qu'à l'approche : survol, focus ou retournement.
+  // La face cachée n'est dessinée qu'à l'approche : survol, focus ou
+  // retournement (le verso est la face visible par défaut).
   const [versoPret, setVersoPret] = useState(false);
   const slug = slugCirco(deputy);
   const fiche = cartes.find((c) => c.elu === slug && c.cle === party) ?? cartes.find((c) => c.elu === slug);
@@ -316,7 +318,7 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
         }
       >
         <span className="carte-pivot">
-          <span className="carte-recto"><CarteDepute carte={carte} face="recto" contexte={contexte} /></span>
+          <span className="carte-recto"><CarteDepute carte={carte} face="recto" contexte={contexte} actif={!flipped || versoPret} /></span>
           <span className="carte-verso"><CarteDepute carte={carte} face="verso" contexte={contexte} actif={versoPret || flipped} /></span>
         </span>
       </button>
@@ -463,6 +465,9 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
 const DeputyCardMemo = memo(DeputyCard);
 
 // Porte de casier : reste toujours à sa place et à sa taille dans le banc.
+/** Partis dont l'écusson est préparé (public/images/cartes/ecusson-<clé>.png). */
+const ECUSSONS = new Set<string>(["caq", "plq", "qs", "pq", "pcq"]);
+
 function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   row: AssembleeRow;
   open: boolean;
@@ -473,87 +478,123 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   const nb = deputies.length;
   // deputies arrive déjà trié par mots décroissants (buildDeputyList).
   const plusLoquace = deputies[0];
+  // CASIER VIDE (Jules, 3 oct.) : les cinq partis gardent leur casier, même
+  // sans parole dans la vue ; l'intérieur dit pourquoi il est vide.
+  const vide = row.inShadow;
+  // Sans article (« du CAQ », « du QS ») : le sigle mène la phrase.
+  const raison = row.aSiege === false
+    ? `${row.label}\u00a0: aucune personne élue ne siégeait pendant cette période.`
+    : `${row.label}\u00a0: aucune prise de parole pendant cette période.`;
+  // Lecteur d'écran (relecture d'Adrien, #924) : le nom du bouton dit l'action,
+  // le bilan intérieur passe en description, en phrases. Le dessin de
+  // l'intérieur (colonnes, barres) est aria-hidden : lu tel quel, il donnait
+  // « Mots Interv. Député·es 139 085 … ».
+  const idBilan = useId();
+  const enjeuxNommes = (row.enjeuStack ?? []).filter((s) => !s.isReste && s.cle).slice(0, 3);
+  const bilan = vide
+    ? raison
+    : [
+        `${nb} ${nb > 1 ? "député·es" : "député·e"}, ${row.wordsFormatted ?? "0"} mots, ${(row.interventions ?? 0).toLocaleString("fr-CA")} interventions, ${toneWording(row.toneScore ?? 0, maxAbsTone)}.`,
+        enjeuxNommes.length
+          ? `Part des interventions\u00a0: ${enjeuxNommes.map((x) => `${(x.title ?? x.label).split(" · ")[0]} ${x.widthPct}\u00a0%`).join(", ")}.`
+          : "",
+        plusLoquace ? `A le plus parlé\u00a0: ${plusLoquace.name}, ${plusLoquace.wordsFormatted} mots.` : "",
+      ].filter(Boolean).join(" ");
   return (
     <button
       type="button"
-      className={`casier${open ? " est-ouvert" : ""}`}
+      className={`casier${open ? " est-ouvert" : ""}${vide ? " est-vide" : ""}`}
       style={{ ["--pc" as string]: row.color }}
       onClick={onToggle}
       aria-expanded={open}
-      aria-label={
-        open
-          ? `Refermer le casier ${row.label}`
-          : `Ouvrir le casier ${row.label} : ${nb} député.es, `
-            + `${toneWording(row.toneScore ?? 0, maxAbsTone)}`
-      }
+      aria-label={open ? `Casier ${row.label}, ouvert` : `Ouvrir le casier ${row.label}`}
+      aria-describedby={idBilan}
     >
-      {/* Fond de casier. Ce n'est pas un décor : les battants emportent avec eux
-          le bilan du parti en s'ouvrant, donc l'intérieur reprend le relais avec
-          ce que les portes ne montraient pas — répartition par enjeu, diversité
-          lexicale, concept distinctif. Comme des papiers punaisés au fond d'un
-          casier. */}
-      <span className="casier-fond">
-        <span className="casier-cloison" aria-hidden="true" />
+      <span id={idBilan} className="visually-hidden">{bilan}</span>
+      {/* L'INTÉRIEUR porte tout le bilan (Jules, 3 oct. : « pas trop d'infos
+          sur le devant, seulement à l'intérieur »), en panneaux de papier
+          comme le verso des cartes : la fiche (mots, interventions,
+          député·es, ton), la part des interventions, qui a le plus parlé. */}
+      <span className="casier-fond" aria-hidden="true">
         <span className="casier-dedans">
-          <span className="dedans-bloc bloc-chiffre">
-            <span className="dedans-titre">Interventions</span>
-            <span className="dedans-vedette">{row.interventions ?? 0}</span>
+          <span className="dedans-bloc">
+            <span className="dedans-titre">Fiche à l'Assemblée</span>
+            <span className="dedans-stats">
+              <i>Mots</i><i>Interv.</i><i>Député·es</i>
+              <b>{row.wordsFormatted ?? "0"}</b><b>{(row.interventions ?? 0).toLocaleString("fr-CA")}</b><b>{nb}</b>
+            </span>
+            {!vide && (
+              <span className="dedans-ton">
+                <i>Ton</i>
+                <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
+              </span>
+            )}
           </span>
 
-          {row.enjeuStack && row.enjeuStack.length > 0 && (
-            <span className="dedans-bloc bloc-enjeux">
-              <span className="dedans-titre">Sujets abordés</span>
-              {row.enjeuStack.filter((s) => !s.isReste).slice(0, 3).map((seg) => (
-                <span key={seg.label} className="dedans-enjeu" title={seg.title}>
-                  <i className="dedans-lbl">
-                    <SymboleEnjeu cle={seg.cle} className="assemblee-symbole" />
-                    {seg.label}
-                  </i>
-                  <i className="dedans-piste">
-                    <i style={{ width: `${seg.widthPct}%`, background: seg.color }} />
-                  </i>
-                  <i className="dedans-pct">{seg.widthPct}&nbsp;%</i>
+          {vide && <span className="dedans-bloc dedans-raison">{raison}</span>}
+
+          {!vide && row.enjeuStack && row.enjeuStack.length > 0 && (() => {
+            const nommes = row.enjeuStack.filter((s) => !s.isReste && s.cle).slice(0, 3);
+            const autres = Math.max(0, 100 - nommes.reduce((t, x) => t + x.widthPct, 0));
+            const TRAMES = [100, 68, 42];
+            return (
+              <span className="dedans-bloc">
+                <span className="dedans-titre">Part des interventions</span>
+                <span className="dedans-empilee">
+                  {nommes.map((seg, rang) => (
+                    <i
+                      key={seg.label}
+                      title={seg.title}
+                      style={{ width: `${seg.widthPct}%`, background: `color-mix(in srgb, var(--pc) ${TRAMES[rang]}%, var(--carton-papier))` }}
+                    >
+                      {seg.widthPct >= 9 && (
+                        <SymboleEnjeu cle={seg.cle} className="dedans-picto" style={{ color: rang < 2 ? "var(--carton-papier)" : "var(--pc)" }} />
+                      )}
+                    </i>
+                  ))}
+                  <i style={{ flex: "1 1 0", background: "color-mix(in srgb, var(--pc) 16%, var(--carton-papier))" }} />
                 </span>
-              ))}
-            </span>
-          )}
+                <span className="dedans-legende">
+                  {nommes.map((seg) => (
+                    <i key={seg.label}>
+                      <SymboleEnjeu cle={seg.cle} className="dedans-picto" />
+                      {seg.label}&nbsp;<b>{seg.widthPct}&nbsp;%</b>
+                    </i>
+                  ))}
+                  <i className="reste">Autres&nbsp;<b>{autres}&nbsp;%</b></i>
+                </span>
+              </span>
+            );
+          })()}
 
-          {/* Qui a le plus parlé : une mesure directe, contrairement au
-              concept, et c'est déjà l'ordre du présentoir. */}
           {plusLoquace && (
-            <span className="dedans-bloc bloc-vedette">
+            <span className="dedans-bloc">
               <span className="dedans-titre">A le plus parlé</span>
-              <span className="dedans-vedette">{plusLoquace.name}</span>
-              <span className="dedans-vedette-mots">{plusLoquace.wordsFormatted} mots</span>
+              <span className="dedans-nom">{plusLoquace.name}</span>
+              <span className="dedans-sous">{plusLoquace.wordsFormatted} mots</span>
             </span>
           )}
-
         </span>
       </span>
 
-      <span className="casier-battant gauche">
-        <span className="casier-fentes" aria-hidden="true" />
-        <span className="casier-plaque">
-          <span className="casier-sigle">{row.label}</span>
-        </span>
-        <span className="casier-bilan">
-          <span>
-            <b>{row.wordsFormatted}</b>
-            <i>mots</i>
+      {/* LA PORTE, ÉPURÉE : persiennes, porte-étiquette au sigle et à
+          l'écusson, poignée et cadenas. Deux faces : l'extérieur peint,
+          l'intérieur en tôle nue, qu'on voit quand la porte est ouverte. */}
+      <span className="casier-porte">
+        <span className="casier-dos" aria-hidden="true"><span className="casier-persiennes"><i /><i /><i /><i /><i /></span><span className="casier-persiennes bas"><i /><i /><i /><i /><i /></span></span>
+        <span className="casier-face">
+          <span className="casier-charniere haut" aria-hidden="true" />
+          <span className="casier-charniere bas" aria-hidden="true" />
+          <span className="casier-persiennes" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+          <span className="casier-etiquette">
+            <span className="casier-sigle">{row.label}</span>
+            {ECUSSONS.has(row.key) && (
+              <span className="casier-ecusson" aria-hidden="true" style={{ ["--ecusson" as string]: `url(${BASE_PATH}/images/cartes/ecusson-${row.key}.png)` }} />
+            )}
           </span>
+          <span className="casier-persiennes bas" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+          <span className="casier-poignee" aria-hidden="true"><span className="casier-cadenas" /></span>
         </span>
-      </span>
-
-      <span className="casier-battant droite">
-        <span className="casier-fentes" aria-hidden="true" />
-        <span className="casier-bilan">
-          <span>
-            <b>{nb}</b>
-            <i>député.es</i>
-          </span>
-        </span>
-        <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
-        <span className="casier-poignee" aria-hidden="true" />
       </span>
     </button>
   );
@@ -570,6 +611,14 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
   // premier casier est déjà le parti qui a le plus parlé. On l'ouvre par
   // défaut plutôt que de laisser le tiroir vide au premier coup d'œil.
   const [openParty, setOpenParty] = useState<PartyKey | null>(rows[0]?.key ?? null);
+  // Oswald et Archivo Narrow (casiers et verso) : demandées ici, à l'affichage
+  // du module, et non dans app/layout.tsx, où elles alourdissaient la feuille
+  // de polices de toutes les pages (relecture d'Adrien, #924).
+  useEffect(() => { void chargerPolices(POLICES_VERSO); }, []);
+  // RECTO PAR DÉFAUT (Jules, 3 oct.) ; le sélecteur retourne toutes les
+  // cartes côté verso, celui des données, et un clic sur une carte la
+  // retourne seule (`flipped` = l'exception).
+  const [face, setFace] = useState<"recto" | "verso">("recto");
   const [flipped, setFlipped] = useState<string | null>(null);
 
   // Une seule échelle de ton pour tout le module : les positions ne veulent
@@ -591,29 +640,43 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
   const openRow = rows.find((r) => r.key === partiTiroir) ?? null;
   const openIndex = openRow ? rows.findIndex((r) => r.key === openRow.key) : 0;
   const deputies = openRow?.deputies ?? [];
-  const partyConcept = conceptPubliable(openRow?.signatureWord);
 
-  // Échap referme le tiroir : réflexe attendu de tout panneau qui se déroule.
-  useEffect(() => {
-    if (!openParty) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenParty(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [openParty]);
 
   // Stable d'un rendu à l'autre : sans elle, chaque carte du présentoir se
   // re-rendait (et reconstruisait ses faces) au moindre changement d'état.
   const basculer = useCallback((id: string) => setFlipped((f) => (f === id ? null : id)), []);
 
+  // UN CASIER TOUJOURS OUVERT (Jules, 3 oct.) : la hauteur du module ne doit
+  // jamais changer. Cliquer un casier l'ouvre ; cliquer le casier ouvert ne
+  // le referme pas (plus de « Refermer », plus d'Échap).
   const toggle = (key: PartyKey) => {
-    setOpenParty(openParty === key ? null : key);
+    if (openParty === key) return;
+    setOpenParty(key);
     setFlipped(null);
   };
 
   return (
     <div className="vestiaire">
+      {/* SUR TÉLÉPHONE, LES CARTES D'ABORD (Jules, 3 oct.) : pas de banc de
+          casiers, un filtre par parti discret, puis le présentoir. Masqué sur
+          ordinateur, où les casiers font ce travail. */}
+      <nav className="vestiaire-filtre" aria-label="Choisir un parti">
+        {rows.map((row) => (
+          <button
+            key={row.key}
+            type="button"
+            className={openParty === row.key ? "est-choisi" : undefined}
+            style={{ ["--pc" as string]: row.color }}
+            aria-pressed={openParty === row.key}
+            onClick={() => { setOpenParty(row.key); setFlipped(null); }}
+          >
+            <span className="filtre-point" aria-hidden="true" />
+            {row.label}
+            <i>{row.deputies?.length ?? 0}</i>
+          </button>
+        ))}
+      </nav>
+
       <div className="vestiaire-banc">
         {rows.map((row) => (
           <LockerDoor
@@ -639,34 +702,21 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
           <div className="tiroir-tete">
             <span className="tiroir-parti">{openRow.label}</span>
             <span className="tiroir-compte">
-              {deputies.length} député.es qui ont pris la parole
+              {deputies.length} député·es qui ont pris la parole
             </span>
-            <button type="button" className="tiroir-refermer" onClick={() => toggle(openRow.key)}>
-              Refermer
-            </button>
+            <span className="tiroir-faces" role="group" aria-label="Face des cartes">
+              {(["recto", "verso"] as const).map((f) => (
+                <button key={f} type="button" aria-pressed={face === f} onClick={() => { setFace(f); setFlipped(null); }}>
+                  {f === "verso" ? "Verso" : "Recto"}
+                </button>
+              ))}
+            </span>
           </div>
 
-          {/* L'angle éditorial du parti : une phrase a besoin de largeur, donc
-              elle vit dans le tiroir et non sur une porte de casier. */}
-          {openRow.editorialAngle && (
-            <p className="tiroir-angle">{openRow.editorialAngle}</p>
-          )}
-
-          {/* Concept distinctif agrégé au niveau du parti (TF-IDF inter-partis,
-              cf. AssembleeRow.signatureWord) — distinct du concept par député,
-              qui compare chaque élu.e au reste de l'Assemblée. */}
-          <p className="tiroir-concept">
-            <span className="tiroir-concept-titre">Concept distinctif du parti</span>
-            <ConceptBloc
-              concept={partyConcept}
-              glose={conceptGlose("party")}
-              absence={conceptAbsent("party")}
-              citation={openRow.signatureWordContext}
-            />
-          </p>
-
           {deputies.length > 0 ? (
-            <div className="tiroir-presentoir">
+            // Une clé par parti : changer de parti repart de la première carte
+            // (le présentoir gardait sinon le défilement du parti précédent).
+            <div className="tiroir-presentoir" key={openRow.key}>
               {deputies.map((dep) => (
                 <div
                   className="carte-colonne"
@@ -678,7 +728,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
                     party={openRow.key}
                     color={openRow.color}
                     maxAbsTone={maxAbsTone}
-                    flipped={flipped === dep.id}
+                    flipped={(face === "verso") !== (flipped === dep.id)}
                     onFlip={basculer}
                     cartes={cartes}
                     contexte={contexte}
@@ -691,19 +741,14 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
             </div>
           ) : (
             <p className="tiroir-vide">
-              Aucune prise de parole attribuée à ce parti pour la période.
+              {openRow.aSiege === false
+                ? `${openRow.label}\u00a0: aucune personne élue ne siégeait pendant cette période, donc pas de carte.`
+                : `${openRow.label}\u00a0: aucune prise de parole pendant cette période, donc pas de carte.`}
             </p>
           )}
         </div>
       )}
 
-      {shadowRows.length > 0 && (
-        <p className="in-shadow">
-          <span className="in-shadow-label">Hors chambre&nbsp;:</span>{" "}
-          {shadowRows.map((r) => r.label).join(", ")}, aucune prise de parole
-          relevée pour la période.
-        </p>
-      )}
     </div>
   );
 }
