@@ -3113,17 +3113,15 @@
     position: absolute;
     inset: 0;
     background:
-      var(--metal-brosse),
       linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.05) 30%, rgba(0,0,0,.12)),
       color-mix(in srgb, var(--pc) 82%, #000);
   }
   .casier-cloison { display: none; }
-  /* FINI MÉTAL (Jules, 3 oct.) : une tôle peinte, brossée — fines stries
-     verticales, un reflet en biais, une ombre au pied. Le grain de carton
-     des cartes ne va pas au métal. */
+  /* FINI MÉTAL (Jules, 3 oct.) : une tôle peinte, sans grain de carton. */
   .vestiaire {
-    --metal-brosse: repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 1px, rgba(0,0,0,.04) 1px 2px, rgba(255,255,255,0) 2px 4px);
-    --metal-reflet: linear-gradient(118deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.06) 28%, rgba(255,255,255,0) 46%, rgba(0,0,0,.08) 72%, rgba(0,0,0,.18) 100%);
+    /* Tôle peinte, lisse et mate (Jules, 3 oct. : le brossé est écarté) :
+       un aplat, une lumière très douce du haut vers le bas. */
+    --metal-lumiere: linear-gradient(180deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 38%, rgba(0,0,0,0) 70%, rgba(0,0,0,.10) 100%);
   }
 
   /* Les panneaux du verso : papier, coins arrondis, encre du parti. */
@@ -3305,8 +3303,7 @@
   .casier-face {
     padding: 12px 14px 10px 16px;
     background:
-      var(--metal-reflet),
-      var(--metal-brosse),
+      var(--metal-lumiere),
       var(--pc);
     color: var(--carton-papier);
     /* Tôle emboutie : un liseré clair en haut à gauche, une ombre en bas à
@@ -3323,7 +3320,6 @@
     transform: rotateY(180deg);
     padding: 12px 16px 10px 14px;
     background:
-      var(--metal-brosse),
       linear-gradient(90deg, color-mix(in srgb, var(--pc) 50%, #000), color-mix(in srgb, var(--pc) 68%, #000));
     box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 35%, transparent);
   }
@@ -3332,7 +3328,7 @@
   /* Ouverte : au-delà de l'équerre, comme une vraie porte de casier. Elle se
      rabat sur le casier voisin, intérieur visible, au-dessus de lui ; elle ne
      capte plus le clic (c'est le casier qui se referme). */
-  .casier.est-ouvert { z-index: 2; }
+  .casier.est-ouvert { z-index: 2; cursor: default; }
   .casier.est-ouvert .casier-porte,
   .casier.est-ouvert:hover .casier-porte {
     transform: rotateY(-100deg);
@@ -3592,6 +3588,12 @@
     cursor: pointer;
   }
   .tiroir-faces button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  /* MÊME HAUTEUR EN TOUT TEMPS (Jules, 3 oct.) : le présentoir réserve une
+     rangée de cartes et leur avis de parcours, même vide (un parti sans
+     parole dans la vue), pour que le module ne change jamais de taille. */
+  .tiroir-presentoir,
+  .vestiaire-tiroir .tiroir-vide { min-height: calc(var(--carte-hauteur, 475px) + 76px); }
+  .vestiaire-tiroir .tiroir-vide { display: flex; align-items: center; justify-content: center; text-align: center; margin: 0; }
   .tiroir-faces + .tiroir-refermer { margin-left: 14px; }
   .tiroir-refermer:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
   /* LES PANNEAUX DU TIROIR : angle éditorial et concept distinctif du parti,
@@ -4304,6 +4306,7 @@
     .carte-colonne { flex-basis: 320px; width: 320px; }
     .carte { width: 320px; height: 447px; }
     .carte.carte--fabrique { --carte-l: 320; }
+    .vestiaire-tiroir { --carte-hauteur: 447px; }
     .carte-nom { font-size: 15px; }
     .carte-v-nom { font-size: 14px; }
     .carte-v-stats b { font-size: 17px; }

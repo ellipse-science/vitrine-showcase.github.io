@@ -492,7 +492,7 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
       aria-expanded={open}
       aria-label={
         open
-          ? `Refermer le casier ${row.label}`
+          ? `Casier ${row.label}, ouvert`
           : vide
             ? `Ouvrir le casier ${row.label}\u00a0: ${raison}`
             : `Ouvrir le casier ${row.label}\u00a0: ${nb} député·es, ${row.wordsFormatted ?? "0"} mots, `
@@ -599,10 +599,10 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
   // premier casier est déjà le parti qui a le plus parlé. On l'ouvre par
   // défaut plutôt que de laisser le tiroir vide au premier coup d'œil.
   const [openParty, setOpenParty] = useState<PartyKey | null>(rows[0]?.key ?? null);
-  // L'ENDOS D'ABORD (Jules, 3 oct. : « surtout l'endos avec les données ») :
-  // les cartes s'affichent côté verso ; le sélecteur les retourne toutes, un
-  // clic sur une carte la retourne seule (`flipped` = l'exception).
-  const [face, setFace] = useState<"verso" | "recto">("verso");
+  // RECTO PAR DÉFAUT (Jules, 3 oct.) ; le sélecteur retourne toutes les
+  // cartes côté verso, celui des données, et un clic sur une carte la
+  // retourne seule (`flipped` = l'exception).
+  const [face, setFace] = useState<"recto" | "verso">("recto");
   const [flipped, setFlipped] = useState<string | null>(null);
 
   // Une seule échelle de ton pour tout le module : les positions ne veulent
@@ -625,22 +625,17 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
   const openIndex = openRow ? rows.findIndex((r) => r.key === openRow.key) : 0;
   const deputies = openRow?.deputies ?? [];
 
-  // Échap referme le tiroir : réflexe attendu de tout panneau qui se déroule.
-  useEffect(() => {
-    if (!openParty) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenParty(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [openParty]);
 
   // Stable d'un rendu à l'autre : sans elle, chaque carte du présentoir se
   // re-rendait (et reconstruisait ses faces) au moindre changement d'état.
   const basculer = useCallback((id: string) => setFlipped((f) => (f === id ? null : id)), []);
 
+  // UN CASIER TOUJOURS OUVERT (Jules, 3 oct.) : la hauteur du module ne doit
+  // jamais changer. Cliquer un casier l'ouvre ; cliquer le casier ouvert ne
+  // le referme pas (plus de « Refermer », plus d'Échap).
   const toggle = (key: PartyKey) => {
-    setOpenParty(openParty === key ? null : key);
+    if (openParty === key) return;
+    setOpenParty(key);
     setFlipped(null);
   };
 
@@ -694,15 +689,12 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
               {deputies.length} député·es qui ont pris la parole
             </span>
             <span className="tiroir-faces" role="group" aria-label="Face des cartes">
-              {(["verso", "recto"] as const).map((f) => (
+              {(["recto", "verso"] as const).map((f) => (
                 <button key={f} type="button" aria-pressed={face === f} onClick={() => { setFace(f); setFlipped(null); }}>
                   {f === "verso" ? "Verso" : "Recto"}
                 </button>
               ))}
             </span>
-            <button type="button" className="tiroir-refermer" onClick={() => toggle(openRow.key)}>
-              Refermer
-            </button>
           </div>
 
           {deputies.length > 0 ? (
