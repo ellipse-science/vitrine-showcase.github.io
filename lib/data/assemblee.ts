@@ -151,6 +151,9 @@ export type EnjeuSegment = {
 };
 
 export type DeputyRow = {
+  /** Clé unique dans une liste de parti (identifiant ANQ, sinon siège et
+   *  graphie) : sert de clé React, le nom ne suffisant pas (deux Girard). */
+  id: string;
   /** Graphie de l'Assemblée nationale quand le portrait est apparié
    *  (« Jean-François Roberge ») ; sinon la graphie brute du référentiel,
    *  remise en capitales initiales (« Jean-Francois Roberge »). */
@@ -652,6 +655,47 @@ function titleCaseName(raw: string): string {
     .join(" ");
 }
 
+/** Clé qui désigne un élu dans une liste de parti : l'identifiant ANQ quand le
+ *  raffineur le publie, sinon le siège et la graphie. Deux élus peuvent porter
+ *  le même nom (Eric Girard, Groulx ; Éric Girard, Lac-Saint-Jean) : le nom ne
+ *  suffit donc jamais à les distinguer. */
+function cleElu(r: DeputyAgoraRow): string {
+  if (r.deputy_id !== undefined && r.deputy_id !== null && String(r.deputy_id) !== "") return String(r.deputy_id);
+  return `${r.district_id ?? ""}|${r.deputy}`;
+}
+
+// MÊME ÉLU, MÊME PARTI, PLUSIEURS LIGNES : les données reconstruites (1er oct.
+// 2026) sortent « Eric Girard » et « Éric Girard », même identifiant 17957 et
+// même siège de Lac-Saint-Jean, en deux lignes du même parti. Deux lignes
+// font deux cartes, et deux cartes au même nom partagent la même clé React :
+// au changement de casier, React laissait alors traîner une carte de l'ancien
+// parti dans le nouveau. Une seule ligne par élu : mots et interventions
+// additionnés, ton et parts d'enjeux pondérés par les mots, mot distinctif et
+// richesse de la ligne la plus bavarde (même règle que les cartes imprimées).
+function fusionnerLignesParElu(rows: DeputyAgoraRow[]): DeputyAgoraRow[] {
+  const groupes = new Map<string, DeputyAgoraRow[]>();
+  for (const r of rows) {
+    const cle = cleElu(r);
+    groupes.set(cle, [...(groupes.get(cle) ?? []), r]);
+  }
+  return [...groupes.values()].map((lignes) => {
+    if (lignes.length === 1) return lignes[0];
+    const principale = [...lignes].sort((a, b) => (b.word_count || 0) - (a.word_count || 0))[0];
+    const mots = lignes.reduce((t, r) => t + Number(r.word_count || 0), 0);
+    const pond = (f: (r: DeputyAgoraRow) => number) =>
+      mots > 0 ? lignes.reduce((t, r) => t + f(r) * Number(r.word_count || 0), 0) / mots : 0;
+    const parts: IssueShares = {};
+    for (const meta of ISSUE_META) parts[meta.key] = pond((r) => Number(r[meta.key] || 0));
+    return {
+      ...principale,
+      ...parts,
+      n_interventions: lignes.reduce((t, r) => t + Number(r.n_interventions || 0), 0),
+      word_count: mots,
+      tone_score: pond((r) => Number(r.tone_score || 0)),
+    };
+  });
+}
+
 function buildDeputyList(
   partyKey: PartyKey,
   period: PeriodKey,
@@ -675,7 +719,7 @@ function buildDeputyList(
   // de toute façon jamais passées à cette fonction (PARTY_KEYS ne contient
   // que les partis représentés par un casier). Filtrer ici sur l'affiliation
   // actuelle du portrait faisait donc disparaître l'historique légitime.
-  const sorted = [...rows].sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
+  const sorted = fusionnerLignesParElu(rows).sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
   if (sorted.length === 0) return [];
 
   const mattrs: Record<string, number> = {};
@@ -689,6 +733,7 @@ function buildDeputyList(
     const top = stack.find((s) => !s.isReste);
     const name = portrait ? portraitBaseName(portrait.nom) : titleCaseName(r.deputy);
     return {
+      id: cleElu(r),
       name,
       wordsFormatted: fmtWords(r.word_count),
       wordsRaw: Number(r.word_count || 0),
