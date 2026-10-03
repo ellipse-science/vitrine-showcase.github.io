@@ -2,7 +2,7 @@
 // (scripts/social/cartes-deputes.ts) et le site. Les choix méthodologiques
 // sont documentés dans docs/reference/cartes-deputes.md.
 import type { DeputyRow, PeriodKey } from "@/lib/data/assemblee";
-import type { PartyKey } from "@/lib/data/parties";
+import type { PartyKey } from "@/lib/data/partis-constantes";
 
 /** RARETÉ (grille arrêtée avec Jules, 23-09). Légendaire : les premiers
  *  ministres de la législature, hors calcul. Tous les autres, chefs compris,

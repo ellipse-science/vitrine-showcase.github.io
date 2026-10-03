@@ -3562,6 +3562,26 @@
     font-family: 'IBM Plex Mono', monospace;
   }
   .carte:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
+
+  /* LA CARTE FABRIQUÉE (2 oct. 2026) : la carte imprimée elle-même
+     (lib/cartes/faces.ts), dessinée en 1071 × 1496 dans l'ombre d'un élément
+     (CarteDepute) et réduite d'un seul facteur, --cd-k, à la largeur de la
+     carte. La hauteur suit le rapport exact du carton (63,5 × 88,9 mm) :
+     291 × 1496 / 1071 = 406,5 px, contre 408 pour l'ancienne carte. Les deux
+     faces n'ont ni fond ni marge : le carton apporte les siens. */
+  .carte.carte--fabrique {
+    --carte-l: 291;
+    --cd-k: calc(var(--carte-l) / 1071);
+    height: calc(var(--carte-l) * 1px * 1496 / 1071);
+  }
+  .carte.carte--fabrique .carte-recto,
+  .carte.carte--fabrique .carte-verso { background: none; padding: 0; border: 0; display: block; overflow: hidden; }
+  .cd-boite { display: block; width: 100%; height: 100%; overflow: hidden; }
+  /* En attente de dessin : l'aplat du carton, pour qu'un défilement rapide ne
+     montre jamais de trou blanc. */
+  .cd-boite.est-attente { background: color-mix(in srgb, var(--pc) 22%, #F3ECDD); }
+  .cd-hote { display: block; transform-origin: 0 0; }
+  .carte.carte--fabrique .carte-pivot { will-change: transform; }
   .carte-pivot {
     position: relative;
     display: block;
@@ -3918,6 +3938,7 @@
     .tiroir-encoche { display: none; }
     .carte-colonne { flex-basis: 276px; width: 276px; }
     .carte { width: 276px; height: 386px; }
+    .carte.carte--fabrique { --carte-l: 276; }
     .carte-nom { font-size: 15px; }
     .carte-v-nom { font-size: 14px; }
     .carte-v-stats b { font-size: 17px; }

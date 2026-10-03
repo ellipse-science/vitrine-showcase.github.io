@@ -1,9 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import type { AssembleeData, PeriodKey, PeriodView } from "@/lib/data/assemblee";
+import { useMemo, useState } from "react";
+import type { AssembleeData, DeputyRow, PeriodKey, PeriodView } from "@/lib/data/assemblee";
+import { slugCirco } from "@/lib/cartes/fonctions";
+import type { CartesSite } from "@/lib/cartes/site";
+import { PERIODES } from "@/lib/cartes/types";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { AssembleeVestiaire } from "@/components/interactive/AssembleeVestiaire";
+import type { ContexteCartes } from "@/components/interactive/CarteDepute";
+
+/** Ce que le verso d'une carte doit savoir des TROIS périodes : la fiche du
+ *  même élu dans chacune (indexée par circonscription, le nom ne suffisant
+ *  pas — deux Éric Girard à la CAQ) et l'étendue du ton réellement observée,
+ *  qui cale l'échelle. Les mêmes règles que le générateur imprimé. */
+function contexteCartes(data: AssembleeData, cartes: CartesSite, periode: PeriodKey): ContexteCartes {
+  // La fiche d'un élu dans chaque période, par circonscription (le nom ne
+  // suffit pas — deux Girard à la CAQ). Pour une personne qui a plusieurs
+  // lignes, la fiche RÉUNIE préparée au build remplace celle du casier : la
+  // carte parle de la personne (relecture d'Adrien, vitrine#917).
+  const fiches = new Map<string, Partial<Record<PeriodKey, DeputyRow>>>();
+  for (const cle of PERIODES) {
+    const vue = data.periods[cle];
+    const surcharges = cartes.personnes[cle] ?? {};
+    for (const r of vue ? vue.rows.flatMap((x) => x.deputies ?? []) : []) {
+      const s = slugCirco(r);
+      fiches.set(s, { ...(fiches.get(s) ?? {}), [cle]: { ...r, ...surcharges[s] } });
+    }
+  }
+  // « Dernière mise à jour du module : vendredi 12 juin 2026 » → la date seule.
+  const derniereSeance = data.periods[periode].lastUpdated.replace(/^[^:]*:\s*/, "");
+  return { periode, fiches, maxAbs: cartes.maxAbs, libelles: cartes.libelles, derniereSeance, signatures: new Set(cartes.signatures) };
+}
 
 function SourceTip() {
   const [open, setOpen] = useState(false);
@@ -30,9 +57,10 @@ function SourceTip() {
 
 const PERIODS: PeriodKey[] = ["last_pdq", "session", "legislature"];
 
-export function AssembleeClient({ data, editionKey }: { data: AssembleeData; editionKey?: string }) {
+export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeData; cartes?: CartesSite; editionKey?: string }) {
   const [period, setPeriod] = useState<PeriodKey>("legislature");
   const view: PeriodView = data.periods[period];
+  const contexte = useMemo(() => (cartes ? contexteCartes(data, cartes, period) : null), [data, cartes, period]);
 
   const visibleRows = view.rows.filter((r) => !r.inShadow);
   const shadowRows = view.rows.filter((r) => r.inShadow);
@@ -67,7 +95,7 @@ export function AssembleeClient({ data, editionKey }: { data: AssembleeData; edi
       </div>
 
       <section className="assemblee">
-        <AssembleeVestiaire key={period} rows={visibleRows} shadowRows={shadowRows} />
+        <AssembleeVestiaire key={period} rows={visibleRows} shadowRows={shadowRows} cartes={cartes?.parPeriode[period]?.cartes} contexte={contexte} />
       </section>
       <div className="module-last-updated">{view.lastUpdated}</div>
     </>

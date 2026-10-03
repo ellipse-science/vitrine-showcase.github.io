@@ -5,7 +5,8 @@
 // directement sur le site, dans l'ombre (shadow DOM) de chaque carte.
 //
 // `racine` : l'arbre à ajuster. Absent, c'est le document entier (générateur).
-// Le plancher d'impression se lit sur <body data-plancher> ; sur le site il
+// Le plancher d'impression se lit sur <body data-plancher>, ou sur l'hôte de
+// l'ombre sur le site (data-plancher sur l'élément hôte) ; sans lui, il
 // n'y en a pas.
 // Origine : scripts/social/cartes-deputes.ts (extraction du 2 oct. 2026).
 
@@ -30,15 +31,12 @@ export function mesurerCoupes(racine?: ParentNode): string[] {
     if (e.closest("svg") || e.tagName === "SCRIPT" || e.tagName === "STYLE") continue;
     const t = (e.textContent || "").trim();
     if (!t) continue;
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    if (e.style.display === "none" && !e.classList.contains("parti-long")) { out.push(`masqué : ${t.slice(0, 60)}`); continue; }
+    if (e.style.display === "none" && !e.classList.contains("parti-long")) { out.push(`masqué : ${t.slice(0, 60)}`); continue; } // garde-redaction: ok (diagnostic de console, jamais affiché)
     const cs = getComputedStyle(e);
     if (cs.display === "none") continue;
     const cache = cs.overflowX === "hidden" || cs.textOverflow === "ellipsis";
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    if (cache && e.scrollWidth > e.clientWidth + 1) out.push(`coupé : ${t.slice(0, 60)}`);
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    else if (e.classList.contains("citation") && e.scrollHeight > e.clientHeight + 1) out.push(`citation rognée : ${t.slice(0, 60)}`);
+    if (cache && e.scrollWidth > e.clientWidth + 1) out.push(`coupé : ${t.slice(0, 60)}`); // garde-redaction: ok (diagnostic de console, jamais affiché)
+    else if (e.classList.contains("citation") && e.scrollHeight > e.clientHeight + 1) out.push(`citation rognée : ${t.slice(0, 60)}`); // garde-redaction: ok (diagnostic de console, jamais affiché)
   }
   return out;
 }
@@ -68,22 +66,20 @@ export function mesurerRetours(racine?: ParentNode): string[] {
   // règle d'abréviation (titreCourt) doit le résoudre, pas la taille du texte.
   const legendes = r.querySelectorAll<HTMLElement>(".legende-parcours .ft");
   for (let i = 0; i < legendes.length; i++) {
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    if (legendes[i].style.fontSize) coupees.push(`rapetissé à ${legendes[i].style.fontSize} : ${(legendes[i].textContent || "").trim().slice(0, 60)}`);
+    if (legendes[i].style.fontSize) coupees.push(`rapetissé à ${legendes[i].style.fontSize} : ${(legendes[i].textContent || "").trim().slice(0, 60)}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
   }
   // Une ligne de statistiques plus large que son encadré (colonnes à la
   // mesure du contenu) déborderait sur le côté sans passer à la ligne.
   // À l'impression, des enjeux restés sur deux rangs malgré ajusterLegende.
   const enjeux = r.querySelectorAll<HTMLElement>(".legende li");
-  if ((r as Document).body?.dataset.plancher && enjeux.length) {
+  if ((((r as ShadowRoot).host as HTMLElement | undefined)?.dataset?.plancher ?? (r as Document).body?.dataset.plancher) && enjeux.length) {
     let h = Infinity, b = -Infinity;
     for (let i = 0; i < enjeux.length; i++) { const t = enjeux[i].getBoundingClientRect().top; if (t < h) h = t; if (t > b) b = t; }
     if (b - h >= 4) coupees.push("enjeux sur deux rangs");
   }
   const grilles = r.querySelectorAll<HTMLElement>(".stats, .rubrique, .paie");
   for (let i = 0; i < grilles.length; i++) {
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    if (grilles[i].scrollWidth > grilles[i].clientWidth + 1) coupees.push(`grille trop large : ${(grilles[i].textContent || "").trim().slice(0, 40)}`);
+    if (grilles[i].scrollWidth > grilles[i].clientWidth + 1) coupees.push(`grille trop large : ${(grilles[i].textContent || "").trim().slice(0, 40)}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
   }
   return coupees;
 }
@@ -104,7 +100,7 @@ export function mesurerRetours(racine?: ParentNode): string[] {
 export function ajusterRubriques(racine?: ParentNode): void {
   const r = racine || document;
   const els = r.querySelectorAll<HTMLElement>(".rubrique");
-  const plancher = Number((r as Document).body?.dataset.plancher || 18);
+  const plancher = Number((((r as ShadowRoot).host as HTMLElement | undefined)?.dataset?.plancher ?? (r as Document).body?.dataset.plancher) || 18);
   for (let i = 0; i < els.length; i++) {
     const cs = getComputedStyle(els[i]);
     let taille = parseFloat(cs.fontSize);
@@ -127,7 +123,7 @@ export function ajusterRubriques(racine?: ParentNode): void {
 export function ajusterLegende(racine?: ParentNode): void {
   const r = racine || document;
   const l = r.querySelector<HTMLElement>(".legende");
-  if (!l || !(r as Document).body?.dataset.plancher) return;
+  if (!l || !(((r as ShadowRoot).host as HTMLElement | undefined)?.dataset?.plancher ?? (r as Document).body?.dataset.plancher)) return;
   const items = Array.from(l.querySelectorAll<HTMLElement>("li"));
   let ecart = 12, interne = 6, marge = 10;
   for (let etape = 0; etape < 30; etape++) {
@@ -146,7 +142,7 @@ export function ajusterFonctions(racine?: ParentNode): void {
   const els = r.querySelectorAll<HTMLElement>(".legende-parcours .ft");
   for (let i = 0; i < els.length; i++) {
     let taille = parseFloat(getComputedStyle(els[i]).fontSize);
-    const plancher = Number((r as Document).body?.dataset.plancher || 15);
+    const plancher = Number((((r as ShadowRoot).host as HTMLElement | undefined)?.dataset?.plancher ?? (r as Document).body?.dataset.plancher) || 15);
     while (els[i].scrollWidth > els[i].clientWidth && taille > plancher) {
       taille -= 1;
       els[i].style.fontSize = `${taille}px`;
@@ -216,7 +212,7 @@ export function ajusterVerso(racine?: ParentNode): void {
   let rembourrage = blocs.length ? parseFloat(getComputedStyle(blocs[0]).paddingTop) : 0;
   const metho = r.querySelector<HTMLElement>(".metho");
   let tailleMetho = metho ? parseFloat(getComputedStyle(metho).fontSize) : 0;
-  const imprime = !!(r as Document).body?.dataset.plancher;
+  const imprime = !!(((r as ShadowRoot).host as HTMLElement | undefined)?.dataset?.plancher ?? (r as Document).body?.dataset.plancher);
   const cellules = Array.from(r.querySelectorAll<HTMLElement>(".stats > b"));
   let cellule = cellules.length ? parseFloat(getComputedStyle(cellules[0]).paddingTop) : 0;
   const haut = r.querySelector<HTMLElement>(".haut");
@@ -285,5 +281,24 @@ export function ajusterVerso(racine?: ParentNode): void {
     // sources, de 15 à 13 px au plus bas.
     if (metho && tailleMetho > 13) { tailleMetho -= 0.5; metho.style.fontSize = `${tailleMetho}px`; continue; }
     return;
+  }
+}
+
+/** LE PLANCHER DU TEXTE, appliqué à la page : tout texte sous `data-plancher`
+ *  px y est porté (même règle que SCRIPT_PLANCHER du générateur, qui ne peut
+ *  pas s'exécuter dans une ombre remplie par innerHTML). Pas de fonction
+ *  imbriquée (cf. ajusterVerso). */
+export function appliquerPlancher(racine?: ParentNode): void {
+  const r = racine || document;
+  const m = Number((((r as ShadowRoot).host as HTMLElement | undefined)?.dataset?.plancher ?? (r as Document).body?.dataset.plancher) || 0);
+  if (!m) return;
+  const els = r.querySelectorAll<HTMLElement>("*");
+  for (let i = 0; i < els.length; i++) {
+    const e = els[i];
+    if (e.closest("svg") || e.tagName === "SCRIPT" || e.tagName === "STYLE") continue;
+    let texte = false;
+    for (let j = 0; j < e.childNodes.length; j++) if (e.childNodes[j].nodeType === 3 && (e.childNodes[j].textContent || "").trim()) texte = true;
+    if (!texte) continue;
+    if (parseFloat(getComputedStyle(e).fontSize) < m) e.style.fontSize = m + "px";
   }
 }
