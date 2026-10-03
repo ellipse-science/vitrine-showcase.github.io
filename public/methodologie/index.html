@@ -125,10 +125,22 @@
     background: var(--paper, #f4efe6); border: 0.5px solid var(--rule);
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     transition: opacity 0.12s ease, visibility 0s linear 0.35s;
+    /* Libellés à droite dans les DEUX menus, comme sur l'accueil (hérité de `.header-utility`) : la barre
+       est alignée à droite. Sans cette ligne, « Méthodologie » s'alignait à gauche ici, à droite là-bas. */
+    text-align: right;
   }
+  /* Le dernier menu s'ancre à DROITE, libellés alignés sous « À propos ». Ancré à gauche, son panneau de
+     210px sortait de la page : même caché (`visibility: hidden` ne retire pas la boîte du débordement),
+     il faisait défiler la page à l'horizontale sous 1332px de large (+76px à 768, +112px à 375). */
+  .sub-nav .nav-item:last-child .nav-menu { left: auto; right: -8px; }
   .sub-nav .nav-item:hover .nav-menu,
   .sub-nav .nav-item:focus-within .nav-menu,
   .sub-nav .nav-menu:hover { visibility: visible; opacity: 1; transition-delay: 0s; }
+  /* Les deux panneaux se chevauchent, et celui qui se referme reste cliquable 0,35 s : le panneau actif
+     passe devant, sinon l'autre, invisible, reprenait le survol et se rouvrait. Deux étages : à égalité,
+     l'ordre du DOM donnerait toujours raison à « À propos » — le survol l'emporte donc sur le focus. */
+  .sub-nav .nav-item:focus-within .nav-menu { z-index: 31; }
+  .sub-nav .nav-item:hover .nav-menu { z-index: 32; }
   .sub-nav .nav-menu a {
     display: block; padding: 11px 18px; white-space: nowrap; line-height: 1.2;
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
@@ -516,6 +528,7 @@
       <li><a href="#limites">Limites reconnues</a></li>
       <li><a href="#ethique">Éthique et transparence</a></li>
       <li><a href="#citation">Citation et accès aux données</a></li>
+      <li><a href="#reseaux-sociaux">Module&nbsp;: La guerre des clics</a></li>
     </ol>
   </nav>
 
@@ -793,21 +806,23 @@
     </ol>
 
     <h3>Enrichissement génératif (optionnel)</h3>
-    <p class="metho-body">En complément de l'identification décrite ci-dessus, et sans intervenir dans le calcul de l'indice, un modèle de langage génératif (Gemma 3) produit deux éléments d'affichage&nbsp;: un <strong>libellé court</strong> pour chaque promesse et un <strong>résumé journalistique</strong> (2 à 3 phrases) décrivant comment la promesse a été couverte pendant la période, à partir des titres des articles qui l'ont mentionnée (résumé hebdomadaire, puis synthèse mensuelle des résumés hebdomadaires). Cet enrichissement est optionnel&nbsp;: si le service n'est pas disponible, ces champs restent vides et le reste du module est publié normalement.</p>
+    <p class="metho-body">En complément de l'identification décrite ci-dessus, et sans intervenir dans le calcul de l'indice, un modèle de langage génératif (Gemma 3) produit deux éléments d'affichage&nbsp;: un <strong>libellé court</strong> pour chaque promesse et un <strong>résumé journalistique</strong> (2 à 3 phrases) décrivant comment la promesse a été couverte pendant la période, à partir des titres des articles qui l'ont mentionnée (résumé hebdomadaire, puis synthèse mensuelle des résumés hebdomadaires). Un résumé déjà rédigé est repris tel quel tant que la couverture qu'il décrit n'a pas changé, et la synthèse mensuelle est renouvelée une fois par semaine; elle n'est rédigée que si le résumé de la semaine en cours existe. Cet enrichissement est optionnel&nbsp;: si le service n'est pas disponible, le résumé affiché est le dernier rédigé il y a moins de sept jours pour cette promesse; à défaut, la synthèse mensuelle reprend le résumé de la semaine, et sinon le champ reste vide. Le reste du module est publié normalement.</p>
 
     <h3>Affichage</h3>
     <p class="metho-body">Classement des promesses de la CAQ les plus saillantes de la semaine, avec l'indication de leur progression et, lorsque disponible, un libellé court et un résumé de la couverture médiatique récente.</p>
     <p class="metho-body">Le repli sur les règles vaut pour une semaine entière, jamais pour une partie de semaine. La vue d'un mois cumulant quatre semaines, elle peut donc réunir des semaines identifiées par le modèle et des semaines identifiées par les règles&nbsp;: les deux méthodes ne repèrent pas les mêmes promesses, et les volumes ne se comparent pas d'une semaine à l'autre lorsque la méthode change.</p>
-    <h3>Mode «&nbsp;promesses de la campagne&nbsp;»</h3>
-    <p class="metho-body">Pendant la campagne électorale de 2026, le module se dote d'un second mode, mis en service au fil de la campagne&nbsp;: les promesses formulées par les partis dans leurs communiqués et leurs plateformes, classées selon l'écho qu'elles reçoivent dans les Unes. L'inverseur de mode n'apparaît qu'à partir du moment où au moins une promesse a été reprise en Une; avant, le module ne montre que son mode principal. Il ne porte pas sur la liste officielle des promesses du mandat précédent, mais sur ce que les partis annoncent au fil de la campagne. Une promesse qui vient d'être formulée n'a pas d'état de réalisation&nbsp;: la pastille indique le parti, pas un verdict.</p>
+    <h3>Volet «&nbsp;promesses de la campagne&nbsp;»</h3>
+    <p class="metho-body">Pendant la campagne électorale de 2026, le module se dote d'un second volet, affiché au-dessus des promesses de 2022 et mis en service au fil de la campagne&nbsp;: les promesses formulées par les partis dans leurs communiqués et leurs plateformes, classées selon l'écho qu'elles reçoivent dans les Unes. Ce volet n'apparaît qu'à partir du moment où au moins une promesse a été reprise en Une; avant, le module ne montre que les promesses de 2022. Il ne porte pas sur la liste officielle des promesses du mandat précédent, mais sur ce que les partis annoncent au fil de la campagne. Une promesse qui vient d'être formulée n'a pas d'état de réalisation&nbsp;: la pastille indique le parti, pas un verdict.</p>
     <p class="metho-body"><strong>Source des données.</strong> Les communiqués publiés par les cinq partis reconnus sur leurs sites officiels et les sections de leurs plateformes électorales, depuis le 1<sup>er</sup>&nbsp;août 2026. Chaque document est examiné une seule fois. Un modèle de langage (Gemma&nbsp;3) détermine d'abord s'il contient une promesse électorale (un engagement de faire quelque chose s'il est élu, et non une annonce de candidature ni une annonce gouvernementale), puis en extrait le texte, cité tel quel. Le titre affiché est un libellé court écrit par le modèle; le texte de la promesse, cité en dessous, est un verbatim du document. La consigne de repérage écarte les engagements pris par un candidat en son nom propre pour sa seule circonscription&nbsp;: seul ce que le parti promet compte.</p>
     <ol class="metho-list">
-      <li><strong>Appariement à la couverture</strong>&nbsp;: les Unes des cinq médias québécois francophones sont découpées en paragraphes. Un préfiltre lexical retient ceux qui partagent du vocabulaire avec les promesses connues, puis le modèle de langage détermine, pour chacun, laquelle des promesses il reprend (ou aucune), parmi les trente candidates avec lesquelles ce paragraphe partage le plus de vocabulaire. Une promesse reprise sans un seul mot en commun avec le paragraphe ne lui est donc pas proposée. Deux garde-fous rejettent les appariements dont le paragraphe ne nomme pas le bon parti ou ne partage aucun terme spécifique avec la promesse.</li>
+      <li><strong>Appariement à la couverture</strong>&nbsp;: les Unes des cinq médias québécois francophones sont découpées en paragraphes. Un paragraphe n'est rattaché à une promesse que s'il nomme lui-même le parti qui l'a formulée ou son chef (le titre de l'article ne suffit pas); les partis sont repérés avec le même dictionnaire que les autres modules. Le modèle de langage vérifie ensuite que le paragraphe rapporte bien une promesse électorale au sens du Polimètre (un engagement vérifiable), et non un sondage, une candidature ou une controverse. Il détermine alors laquelle des promesses de ce parti le paragraphe reprend, parmi les trente qui partagent le plus de vocabulaire avec lui, même si les médias la formulent autrement; une reprise qui n'a aucun mot en commun avec la promesse peut donc lui échapper. Chaque rattachement est ensuite confirmé par une seconde question, promesse par promesse.</li>
       <li><strong>Cumul par bloc de 4&nbsp;heures</strong>&nbsp;: cet appariement se fait bloc par bloc, en continu, et chaque verdict est conservé. Un paragraphe encore en Une au bloc suivant n'est pas réexaminé; il l'est seulement sur les promesses détectées après son premier examen, pour qu'une promesse annoncée le matin ne soit pas ignorée par la couverture de la même matinée.</li>
-      <li><strong>Indice de saillance</strong>&nbsp;: pour chaque promesse, nombre de paragraphes de Une qui la reprennent multiplié par leur temps de présence en Une, normalisé. C'est la même grandeur que dans le mode principal, pour que le rang veuille dire la même chose d'un onglet à l'autre. La même dépêche reprise par deux médias compte deux fois, avec le temps de chacun.</li>
-      <li><strong>Fenêtres</strong>&nbsp;: «&nbsp;Aujourd'hui&nbsp;» somme les six derniers blocs complets (24&nbsp;heures glissantes), «&nbsp;Depuis une semaine&nbsp;» les quarante-deux derniers. Une promesse entre dans une fenêtre si au moins un média l'a reprise pendant cette période, quelle que soit sa date d'annonce; sans écho, elle n'y figure pas, et l'onglet peut être vide.</li>
+      <li><strong>Formulations en double</strong>&nbsp;: une même promesse peut être formulée plusieurs fois, dans deux communiqués ou deux sections d'une plateforme. Avant le calcul de l'indice, ces formulations sont réunies sous la plus anciennement annoncée, et un paragraphe rattaché à plusieurs d'entre elles ne compte qu'une fois. Deux formulations ne sont réunies que si elles viennent du même parti, que leurs libellés courts ne portent pas chacun un chiffre absent de l'autre, et qu'elles sont très proches selon un modèle de représentation du sens des phrases (un peu moins proches suffit quand elles portent le même libellé court); dans le doute, elles restent séparées. Une promesse reformulée très librement peut donc encore apparaître deux fois, et si le service qui compare les formulations est indisponible, aucune n'est réunie lors de cette mise à jour.</li>
+      <li><strong>Indice de saillance</strong>&nbsp;: pour chaque promesse, nombre de paragraphes de Une qui la reprennent multiplié par leur temps de présence en Une, normalisé. C'est la même grandeur que pour les promesses de 2022, pour que le rang veuille dire la même chose d'un volet à l'autre. La même dépêche reprise par deux médias compte deux fois, avec le temps de chacun.</li>
+      <li><strong>Fenêtres</strong>&nbsp;: «&nbsp;Aujourd'hui&nbsp;» somme les six derniers blocs complets (24&nbsp;heures glissantes), «&nbsp;Depuis une semaine&nbsp;» les quarante-deux derniers, et «&nbsp;Campagne&nbsp;» tous les blocs depuis le déclenchement des élections, le 27&nbsp;août 2026 (la même période que l'onglet Campagne des autres modules). Une promesse entre dans une fenêtre si au moins un média l'a reprise pendant cette période, quelle que soit sa date d'annonce; sans écho, elle n'y figure pas, et l'onglet peut être vide. Les fenêtres de la semaine et de la campagne ne sont pas recalculées à chaque mise à jour du module; tant qu'une fenêtre n'a pas été publiée, l'onglet le dit plutôt que d'afficher un classement vide.</li>
+
     </ol>
-    <p class="metho-body"><strong>Réserve explicite.</strong> L'extraction des promesses fonctionne; l'appariement d'une promesse à sa couverture est le maillon le moins sûr. Mesuré hors campagne, où presque aucun communiqué ne contient de promesse, il produisait surtout des faux positifs. Ce mode est publié pendant la campagne précisément pour être mesuré sur des données réelles, et sa méthode peut changer en cours de route.</p>
+    <p class="metho-body"><strong>Réserve explicite.</strong> L'extraction des promesses fonctionne; l'appariement d'une promesse à sa couverture est le maillon le moins sûr. Mesuré hors campagne, où presque aucun communiqué ne contient de promesse, il produisait surtout des faux positifs. Ce volet est publié pendant la campagne précisément pour être mesuré sur des données réelles, et sa méthode peut changer en cours de route.</p>
   </section>
 
   <!-- §8 Assemblée nationale -->
@@ -944,9 +959,42 @@
       <!-- garde-redaction: ok (citation APA : le style impose l'italique sur le titre de l'œuvre) -->
       Centre d'analyse des politiques publiques (CAPP). (2026). <em>La Vitrine démocratique</em> [Plateforme numérique]. Université Laval. <a href="https://vitrinedemocratique.com" target="_blank" rel="noopener">https://vitrinedemocratique.com</a>
     </div>
-    <p class="metho-body">Pour toute demande d'accès aux données brutes ou pour établir une collaboration de recherche, utilisez le <a href="https://clessn.notion.site/2398cfa805498059a2b8f797f05867d0?pvs=105" target="_blank" rel="noopener" style="color: var(--cordovan);">formulaire d'accès aux données</a> ou écrivez à <a href="mailto:capp@ulaval.ca" style="color: var(--cordovan);">capp@ulaval.ca</a>.</p>
+    <p class="metho-body">Pour toute demande d'accès aux données brutes ou pour établir une collaboration de recherche, utilisez le <a href="https://clessn.notion.site/2398cfa805498059a2b8f797f05867d0?pvs=105" target="_blank" rel="noopener" style="color: var(--cordovan);">formulaire d'accès aux données</a> ou écrivez à <a href="mailto:info@capp.ulaval.ca" style="color: var(--cordovan);">info@capp.ulaval.ca</a>.</p>
 
     <button class="metho-btn" onclick="window.print()">Télécharger en PDF ↓</button>
+  </section>
+
+  <!-- §13 Module expérimental : La guerre des clics (les candidats sur les réseaux).
+       Placé après la citation pour ne pas renuméroter les §09 à §12, cités
+       ailleurs (app/methodologie/*, skill synchro-methodologie). Sources de
+       vérité : aws-refiners refiners/agora-social/runtime.R, vitrine
+       lib/data/social*.ts, aws-infra src/pipelines/pipelines.ts
+       (SOCIAL_ACCOUNTS). -->
+  <section id="reseaux-sociaux" class="metho-section">
+    <p class="metho-section-label">§ 13 · Module expérimental</p>
+    <h2>Module&nbsp;: La guerre des clics</h2>
+    <p class="metho-body">Ce module est expérimental&nbsp;: sa présentation peut encore évoluer. Il décrit l'activité des candidates et des candidats aux élections générales québécoises de 2026 sur Facebook, Instagram et TikTok, ainsi que celle des comptes officiels des cinq partis.</p>
+
+    <h3>Source des données</h3>
+    <p class="metho-body">Le point de départ est la liste des candidatures officielles des cinq partis publiée par Élections Québec, close le 25&nbsp;septembre 2026&nbsp;: 635 candidatures, soit 127 par parti. Les comptes de chaque personne ont été cherchés sur les trois plateformes, puis vérifiés un à un par l'équipe avant d'entrer dans la collecte. S'y ajoutent les comptes officiels des partis, un par parti et par plateforme.</p>
+    <p class="metho-body">La collecte passe plusieurs fois par jour sur chaque compte. Elle relève le nombre d'abonnés et les publications, avec leur texte, leur date et leurs nombres de j'aime et de commentaires. L'historique remonte au 1<sup>er</sup>&nbsp;avril 2026. Au 30&nbsp;septembre 2026, 1&nbsp;003 comptes étaient suivis et 602 des 635 candidatures avaient au moins un compte collecté.</p>
+
+    <h3>Ce qui est mesuré</h3>
+    <p class="metho-body">Le module propose quatre indicateurs. Le nombre d'abonnés est celui du dernier relevé de chaque compte&nbsp;: il ne dépend pas de la période choisie. Les publications, les j'aime et les commentaires sont comptés par jour de publication, puis additionnés sur la période.</p>
+    <p class="metho-body">La collecte relit une publication à chaque passage, et ses compteurs continuent de grimper pendant des jours. Seule la dernière observation est retenue&nbsp;: chaque publication compte une fois, avec ses chiffres les plus récents. Une publication signée par deux comptes compte pour chacun d'eux. La date retenue est le jour de mise en ligne en temps universel; Facebook ne fournit que le jour, sans l'heure.</p>
+
+    <h3>Affichage</h3>
+    <p class="metho-body">Le module s'ouvre sur la campagne, depuis le déclenchement des élections le 27&nbsp;août 2026; la période se règle ensuite à volonté. Les filtres par plateforme et par parti s'appliquent à toutes les vues.</p>
+    <p class="metho-body">La vue Par parti additionne l'indicateur choisi pour chaque parti. Chaque barre se découpe par plateforme, et un second graphique en suit l'évolution par jour, ou par semaine quand la période dépasse 45 jours. La vue Par candidat classe les 20 comptes de candidates et de candidats en tête pour l'indicateur choisi; les comptes officiels des partis n'y figurent pas. Un clic sur un compte affiche ses dernières publications, avec un lien vers chacune sur sa plateforme.</p>
+    <p class="metho-body">La vue Par publication montre les 10 publications les plus aimées ou les plus commentées de la période. Elles sont choisies parmi les publications les plus aimées de chaque jour des 60 derniers jours&nbsp;: une publication très commentée mais peu aimée peut donc y manquer. Sur la carte de la vue Par circonscription, chaque circonscription prend la couleur du parti dont les candidates et les candidats arrivent en tête pour l'indicateur et la période choisis; plus la couleur est soutenue, plus le total est élevé.</p>
+
+    <h3>Limites</h3>
+    <ul class="metho-list">
+      <li>Seuls les comptes publics sont collectés. Les comptes privés et les profils personnels Facebook, que la collecte ne peut pas lire, en sont absents&nbsp;: une personne qui ne publie que sur son profil personnel n'apparaît pas.</li>
+      <li>Au 30&nbsp;septembre 2026, 33 candidatures n'avaient aucun compte collecté&nbsp;: soit la personne n'a pas de compte public, soit son compte n'a pas été retrouvé.</li>
+      <li>Les chiffres sont ceux qu'affichent les plateformes. TikTok arrondit ses nombres d'abonnés et de j'aime au-delà de 10&nbsp;000 (par exemple 61&nbsp;300).</li>
+      <li>Les j'aime et les commentaires mesurent une réaction en ligne, pas un appui électoral. Ils dépendent aussi de la taille de l'auditoire de chaque compte.</li>
+    </ul>
   </section>
 
   <!-- Footer -->
@@ -961,7 +1009,7 @@
     </div>
     <div>
       <h4>Contact</h4>
-      <p><a href="mailto:capp@ulaval.ca" style="color: var(--cordovan);">capp@ulaval.ca</a></p>
+      <p><a href="mailto:info@capp.ulaval.ca" style="color: var(--cordovan);">info@capp.ulaval.ca</a></p>
     </div>
   </div>
   <div class="colophon">

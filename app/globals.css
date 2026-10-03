@@ -570,9 +570,20 @@
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     transition: opacity 0.12s ease, visibility 0s linear 0.35s;
   }
+  /* Le dernier menu s'ancre à DROITE. « À propos » clôt une barre alignée à droite : ancré à gauche, son
+     panneau de 210px sortait de la page (libellés coupés de 64px de 901 à ~1430px de large, dont 1280).
+     `visibility: hidden` ne retire pas la boîte du débordement : seul `overflow-x: clip` sur html/body
+     empêchait la page de défiler — la page Méthodologie, qui n'a pas cette ceinture, défilait. */
+  .sub-nav .nav-item:last-child .nav-menu { left: auto; right: -8px; }
   .sub-nav .nav-item:hover .nav-menu,
   .sub-nav .nav-item:focus-within .nav-menu,
   .sub-nav .nav-menu:hover { visibility: visible; opacity: 1; transition-delay: 0s; }
+  /* Les deux panneaux se chevauchent, et celui qui se referme reste cliquable 0,35 s (délai de
+     `visibility` ci-dessus) : le panneau actif passe devant, sinon l'autre, invisible mais placé après
+     dans le DOM, reprenait le survol et se rouvrait à sa place. Deux étages, et non un seul : à égalité,
+     l'ordre du DOM donnerait toujours raison à « À propos » — le survol l'emporte donc sur le focus. */
+  .sub-nav .nav-item:focus-within .nav-menu { z-index: 31; }
+  .sub-nav .nav-item:hover .nav-menu { z-index: 32; }
   .sub-nav .nav-menu a {
     display: block; padding: 11px 18px; white-space: nowrap; line-height: 1.2;
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
@@ -7906,6 +7917,14 @@
     --ppl-parti-pcq: #5A3B6E;
   }
 
+  /* Le bloc « campagne » prend la hauteur de son contenu, pas les 390px de
+     .ppl-grid : ce plancher réservait de l'air sous une liste courte quand le
+     module était seul ; empilé au-dessus du bloc « 2022 », cet air séparait
+     les deux blocs plus que leur marge. Le rail (six filtres de parti) reste le
+     plancher naturel, donc une liste d'une promesse ne fait pas sauter la
+     hauteur. */
+  .polimeter-plus--neuves .ppl-grid { min-height: 0; }
+
   /* Rang : lavis du parti + anneau plein, exactement comme les verdicts. */
   .ppl-promise--parti-plq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-plq) 20%, transparent); border-color: var(--ppl-parti-plq); }
   .ppl-promise--parti-caq .ppl-rank { background: color-mix(in srgb, var(--ppl-parti-caq) 20%, transparent); border-color: var(--ppl-parti-caq); }
@@ -7988,10 +8007,26 @@
     border-radius: 3px;
   }
 
-  /* Inverseur de mode — au-dessus des onglets de période, dont il est la
-     hiérarchie supérieure : il change la SOURCE des promesses, les onglets ne
-     changent que la fenêtre. */
-  .ppl-mode-switch { margin-bottom: 8px; }
+  /* Sous-titres du Polimètre+ : plus gros et en gras que le .period-subtitle
+     des autres modules (10px, 400), parce que celui du bloc « 2022 » est le
+     seul titre de son bloc. Les deux blocs suivent, pour rester jumeaux.
+     Portée limitée au module : les autres sous-titres du site ne bougent pas.
+     Le 700 est une vraie graisse (chargée dans app/layout.tsx), pas un gras
+     synthétisé par le navigateur. */
+  .polimeter-plus .period-subtitle { font-size: 14px; font-weight: 700; }
+  /* Bloc « 2022 » sous le bloc « campagne » : son sous-titre est un h3 (le plan
+     de la page doit encore nommer le bloc), rendu EXACTEMENT comme le
+     .period-subtitle en div du bloc du haut — on efface la marge que h3
+     apporte de lui-même. */
+  .ppl-sous-titre { margin: 0; }
+  /* …et il se tient tout près : 12px au lieu des 56px inter-modules de
+     .partis-title-row (10px au lieu de 40px sous le même seuil de 768px que
+     sa marge mobile). Le bloc « 2022 » se lit comme la suite du module, pas
+     comme un module de plus. */
+  .polimeter-plus--second .partis-title-row { margin-top: 12px; }
+  @media (max-width: 768px) {
+    .polimeter-plus--second .partis-title-row { margin-top: 10px; }
+  }
 
   /* Le verbatim du communiqué. En serif et en retrait : c'est une CITATION, la
      pièce justificative du mode — ce que le parti a écrit, mot pour mot. */
@@ -11802,3 +11837,1019 @@
 @media print {
   .dg-promo { display: none; }
 }
+
+/* ── Module « Les candidats sur les réseaux » (expérimental, dev seulement) ── */
+.social { margin: 18px 0 8px; }
+/* Deux colonnes : le tableau de bord à gauche, les filtres à droite sur toute
+   la hauteur, derrière un filet vertical. */
+.social-tdb {
+  display: grid; grid-template-columns: minmax(0, 1fr) 15rem; column-gap: 28px;
+  grid-template-areas: "entete entete" "haut filtres" "bas filtres"; grid-template-rows: auto auto 1fr;
+}
+.social-entete { grid-area: entete; }
+.social-haut { grid-area: haut; min-width: 0; }
+.social-bas { grid-area: bas; min-width: 0; }
+.social-filtres { grid-area: filtres; }
+.social-pied { text-align: right; }
+.social-coches-titre {
+  display: block; font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: 0.3em; text-transform: uppercase; color: var(--cordovan); margin-bottom: 6px;
+}
+.social-raccourcis { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.social-raccourcis .social-coches-titre { margin: 0 8px 0 0; }
+.social-raccourcis button, .social-coches button, .social-bascule button {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-soft); background: transparent;
+  border: 0.5px solid var(--rule); padding: 5px 9px; cursor: pointer; border-radius: 0;
+}
+.social-raccourcis button.actif, .social-bascule button.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.social-bascule { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+
+/* Frise : histogramme + fenêtre */
+.social-frise { position: relative; padding: 0 8px 20px; }
+.social-frise-zone { position: relative; height: 64px; touch-action: none; cursor: crosshair; border-bottom: 0.5px solid var(--rule); }
+.social-frise-zone svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.social-frise-zone rect.hors { opacity: 0.3; }
+.social-frise-repere { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--brass); pointer-events: none; }
+.social-frise-fenetre {
+  position: absolute; top: 0; bottom: 0; cursor: grab;
+  background: color-mix(in srgb, var(--cordovan) 10%, transparent);
+  border-left: 2px solid var(--cordovan); border-right: 2px solid var(--cordovan);
+}
+.social-frise-fenetre:focus-visible, .social-frise-poignee:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.social-frise-poignee { position: absolute; top: 0; bottom: 0; width: 14px; cursor: ew-resize; }
+.social-frise-poignee.debut { left: -8px; }
+.social-frise-poignee.fin { right: -8px; }
+.social-frise-poignee::after { content: ""; position: absolute; top: 50%; left: 5px; width: 4px; height: 18px; margin-top: -9px; background: var(--cordovan); }
+.social-frise-mois { position: relative; height: 16px; }
+.social-frise-mois span {
+  position: absolute; top: 4px; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-softer); white-space: nowrap;
+}
+.social-frise-mois span.fin { transform: translateX(-100%); padding-right: 2px; }
+.social-frise-repere-libelle {
+  position: absolute; top: 0; right: 4px; font-family: "IBM Plex Mono", monospace; font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber-encre); white-space: nowrap;
+}
+
+/* Filtres */
+.social-filtres { border-left: 0.5px solid var(--rule); padding-left: 22px; }
+.social-coches { margin-bottom: 18px; }
+/* Colonne de droite : trois groupes au même niveau (Filtres, Mesure, En
+   chiffres), séparés par le même filet appuyé ; Mesure absente, un seul filet. */
+.social-groupe + .social-groupe { margin-top: 34px; padding-top: 30px; border-top: 1px solid var(--rule); }
+.social-groupe-titre {
+  display: inline-block; margin: 0 0 14px; padding-bottom: 4px; border-bottom: 1.5px solid var(--cordovan);
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--cordovan);
+}
+.social-bascule button:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Partis : les barres seules, sur une largeur de lecture. */
+.social-barres-seules { max-width: none; }
+.social-panneaux { position: relative; }
+.social-barres-empilees .social-piste { cursor: default; outline: none; }
+.social-barres-empilees .social-piste:focus-visible .social-segments { outline: 2px solid var(--social-accent); outline-offset: 3px; }
+.social-barres-empilees .social-piste i { transition: opacity 0.12s, box-shadow 0.12s; }
+.social-barres-empilees .social-piste i:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8); }
+.social-barres-empilees .social-piste i.estompe { opacity: 0.45; }
+/* L'infobulle d'une barre : total, puis une ligne par réseau. */
+.social-bulle-barre {
+  position: absolute; z-index: 8; transform: translateX(-50%); min-width: 200px; max-width: 300px;
+  padding: 9px 13px 8px; background: var(--ink); color: var(--paper); border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(28, 25, 23, 0.3); pointer-events: none;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.04em;
+}
+.social-bulle-barre-titre { font-family: "Source Serif 4", serif; font-size: 13px; letter-spacing: 0; color: color-mix(in srgb, var(--paper) 80%, transparent); }
+.social-bulle-barre-total { margin: 2px 0 6px; font-family: "Playfair Display", serif; font-weight: 700; font-size: 20px; letter-spacing: -0.3px; }
+.social-bulle-barre-total span { font-family: "IBM Plex Mono", monospace; font-weight: 400; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--paper) 70%, transparent); }
+.social-bulle-barre dl { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 12px; margin: 0; padding: 0; }
+.social-bulle-barre dl > div { display: contents; }
+.social-bulle-barre dt, .social-bulle-barre dd { margin: 0; color: color-mix(in srgb, var(--paper) 78%, transparent); white-space: nowrap; }
+.social-bulle-barre dt { display: flex; align-items: center; gap: 6px; }
+.social-bulle-barre dd { text-align: right; }
+.social-bulle-barre .social-bulle-barre-part { color: color-mix(in srgb, var(--paper) 55%, transparent); }
+.social-bulle-barre dl > div.active dt, .social-bulle-barre dl > div.active dd { color: var(--paper); font-weight: 600; }
+/* La rangée de filtres se lit comme telle : une amorce « Filtrer » en tête,
+   une coche sur chaque pastille active, un contour pâle sur les écartées. */
+.social-filtrer { display: inline-flex; align-items: center; gap: 6px; font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-softer); }
+.social-filtrer .social-icone-vue { width: 14px; height: 14px; }
+.social-coches button { display: inline-flex; align-items: center; gap: 5px; }
+.social-coche-marque { font-size: 10px; line-height: 1; }
+.social-filtres-rangee .social-coches button:not(.actif) { color: var(--ink-softer); border-style: dashed; }
+.social-filtres-rangee .social-coches button:not(.actif):hover { color: var(--ink); border-color: var(--ink); }
+.social-barres-seules .social-panneau-titre { display: flex; align-items: center; height: 24px; margin: 0; }
+/* Sous les barres, comme la démo : titre d'axe centré, légende des plateformes. */
+.social-axe-titre { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 14px 0 4px; }
+.social-axe-titre > span { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--ink); }
+.social-audience-nombre { margin-top: 10px; }
+.social-coches > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.social-coches button.actif { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+.social-coches button .social-logo { vertical-align: -2px; margin-right: 2px; }
+
+/* Onglets, réglages, notes */
+/* Onglets : le niveau au-dessus des réglages. Grands, en pleine largeur de la
+   colonne du graphique, puis 22 px avant la ligne des réglages, sans filet
+   entre les deux. Sur mobile, ils défilent dans leur rangée si la place
+   manque, jamais la page. */
+.social-onglets {
+  margin: 26px 0 22px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.social-onglets::-webkit-scrollbar { display: none; }
+.social-onglets .social-bascule { display: flex; flex-wrap: nowrap; gap: 4px; width: 100%; }
+/* Style éditorial : titres en Playfair, sans cadre, sur un filet commun ;
+   l'onglet actif en encre avec un trait bordeaux dessous, les autres en gris. */
+.social-onglets .social-bascule { gap: 0; border-bottom: 0.5px solid var(--rule); }
+.social-onglets .social-bascule button {
+  flex: 1 0 auto; min-height: 52px; padding: 14px 24px 12px;
+  font-family: 'Playfair Display', Georgia, serif; font-size: 19px; font-weight: 600;
+  letter-spacing: 0; text-transform: none; white-space: nowrap;
+  color: var(--ink-softer); background: transparent;
+  border: 0; border-bottom: 3px solid transparent; margin-bottom: -0.5px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.social-onglets .social-bascule button:hover { color: var(--ink); border-bottom-color: var(--rule); }
+.social-onglets .social-bascule button.active {
+  color: var(--ink); background: transparent; border-color: transparent; border-bottom-color: var(--cordovan);
+}
+.social-onglets .social-bascule button:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; }
+@media (max-width: 640px) {
+  .social-onglets .social-bascule button { min-height: 44px; padding: 10px 6px 8px; font-size: 15px; }
+}
+/* Mesure, Graphique, Découpage : toute la largeur du graphique, Mesure à
+   gauche, Découpage à droite, Graphique au milieu, chacun sous son en-tête ;
+   un filet fin (celui des filtres) au milieu de chaque intervalle : les filets
+   sont des éléments de la ligne, space-between les centre. Sur mobile, les
+   groupes s'empilent et les filets deviennent horizontaux. */
+.social-reglages {
+  display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: flex-end;
+  gap: 12px 20px; margin: 18px 0 8px;
+}
+.social-reglages-filet { align-self: stretch; width: 0; border-left: 0.5px solid var(--rule); }
+/* Sur l'écran du téléphone, Graphique et Découpage tiennent côte à côte
+   (2 + 4 boutons de 40 px) : on garde la ligne, le filet vertical entre eux. */
+@media (max-width: 900px) {
+  .social-reglages { gap: 10px 8px; }
+  .social-reglages .social-bascule.icones { gap: 4px; }
+  .social-reglages .social-icone-logos { gap: 1px; }
+  .social-reglages .social-bascule.icones button { min-width: 36px; min-height: 38px; padding: 6px 8px; }
+  .social-reglages .social-bascule.icones button svg { width: 26px; height: 18px; }
+  .social-reglages .social-icone-logos svg { width: 16px; height: 16px; }
+}
+.social-reglage { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.social-reglage .social-bascule { flex-wrap: nowrap; }
+.social-sous-titre, .social-note {
+  font-family: "Source Serif 4", serif; font-size: 14px; color: var(--ink-softer); margin: 8px 0 14px;
+}
+.social-sous-titre { font-style: italic; }
+.social-note { font-size: 13px; }
+
+/* Panneaux */
+.social-panneaux.multiples { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px 32px; }
+.social-panneaux .social-note { grid-column: 1 / -1; }
+.social-panneau-titre {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink); margin-bottom: 6px;
+}
+
+/* Présence */
+.social-presence { border-collapse: collapse; width: 100%; max-width: 560px; }
+.social-presence th {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-soft);
+  padding: 6px 8px; text-align: center;
+}
+.social-presence tbody th { text-align: left; }
+.social-presence td {
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px;
+  text-align: center; padding: 12px 6px; color: var(--ink);
+  border: 2px solid var(--paper);
+}
+.social-presence td.fonce { color: var(--paper); }
+
+/* Barres */
+.social-barres, .social-palmares, .social-legende { list-style: none; margin: 0; padding: 0; }
+.social-barres li {
+  display: grid; grid-template-columns: minmax(0, 4rem) 1fr 6rem;
+  align-items: center; gap: 10px; padding: 5px 0;
+}
+.social-audience li { grid-template-columns: minmax(0, 15rem) 1fr 5.5rem; }
+.social-nom { font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink); }
+.social-barres .social-nom { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.1em; }
+.social-audience .social-nom { font-family: "Source Serif 4", serif; font-size: 15px; letter-spacing: 0; }
+.social-meta {
+  display: block; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-softer);
+}
+.social-palmares-tete .social-meta { display: inline; margin-left: 8px; }
+.social-piste { height: 10px; background: var(--rule-faint); }
+.social-piste i { display: block; height: 100%; }
+.social-valeur {
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 15px;
+  text-align: right; color: var(--ink);
+}
+
+/* Barres empilées par plateforme, comme la démo : couleur du parti, texture de
+   la plateforme (Facebook plein, Instagram hachuré, TikTok pointillé), logo
+   blanc dans le segment, total au bout. */
+.social-barres-empilees li { grid-template-columns: minmax(0, 4rem) 1fr; padding: 7px 0; border-bottom: 0; }
+.social-barres-empilees .social-nom { text-align: right; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.social-barres-empilees .social-piste { display: flex; align-items: center; gap: 2px; height: 30px; background: none; }
+.social-barres-empilees.compactes .social-piste { height: 22px; }
+.social-segments { display: flex; gap: 2px; height: 100%; flex: none; }
+.social-barres-empilees .social-piste i {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  flex: none; height: 100%; color: #fff; min-width: 2px;
+}
+.social-segments i:first-child { border-radius: 3px 0 0 3px; }
+.social-segments i:last-child { border-radius: 0 3px 3px 0; }
+.social-segments i:only-child { border-radius: 3px; }
+.social-barres-empilees .social-valeur { flex: none; margin-left: 8px; font-family: "IBM Plex Mono", monospace; font-weight: 400; font-size: 14px; color: var(--ink-soft); }
+.social-barres-empilees .social-nom .social-logo { color: var(--ink-soft); vertical-align: middle; }
+.social-logo { display: inline-block; flex: none; }
+.social-plateforme { display: inline-flex; align-items: center; vertical-align: -2px; margin-right: 6px; color: var(--ink-soft); }
+.social-audience .social-piste { height: 14px; background: none; }
+.social-audience .social-piste i { border-radius: 2px; }
+.social-audience .social-meta { display: inline; margin-left: 6px; }
+.tex-instagram { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.42) 0 3px, transparent 3px 7px) !important; }
+.tex-tiktok { background-image: radial-gradient(rgba(255,255,255,0.62) 1.1px, transparent 1.3px) !important; background-size: 5px 5px !important; }
+.social-barres-empilees .social-piste i.tex-instagram, .social-tuile.tex-instagram { background-blend-mode: normal; }
+
+/* Boutons en icônes (forme, découpe), comme la démo */
+.social-bascule.icones { gap: 6px; }
+.social-bascule.icones button {
+  display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px;
+  min-width: 56px; min-height: 44px; color: var(--ink-softer); background: var(--paper);
+  border: 0.5px solid var(--rule); border-radius: 2px;
+}
+.social-bascule.icones button.active { background: var(--cordovan); border-color: var(--cordovan); color: var(--paper); }
+.social-bascule.icones button svg { width: 30px; height: 20px; fill: currentColor; }
+.social-bascule.icones button svg.trait { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; }
+.social-icone-logos { display: inline-flex; gap: 2px; }
+
+/* Parts : treemap en tuiles */
+.social-treemap { position: relative; width: 100%; max-height: 360px; }
+.social-tuile { position: absolute; box-sizing: border-box; border: 2px solid var(--paper); overflow: hidden; }
+/* Étiquette de case : logo (ou sigle) puis pourcentage, sur une ligne, posés
+   sur une pastille de la couleur pleine du parti (lisible sur les textures). */
+.social-tuile-pastille {
+  position: absolute; left: 8px; top: 8px; display: inline-flex; align-items: center; gap: 6px;
+  max-width: calc(100% - 16px); padding: 3px 6px; border-radius: 2px; color: var(--paper); white-space: nowrap;
+}
+.social-tuile-pastille .social-logo { display: block; flex: none; }
+.social-tuile-pastille b {
+  font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; overflow: hidden; text-overflow: ellipsis;
+}
+.social-tuile-pastille em { font-style: normal; font-family: "Playfair Display", serif; font-weight: 700; font-size: 15px; line-height: 1; }
+.social-tuile { container-type: size; }
+@container (max-width: 78px) { .social-tuile-pastille em { display: none; } }
+@container (max-width: 36px) { .social-tuile-pastille { display: none; } }
+@container (max-height: 30px) { .social-tuile-pastille { display: none; } }
+
+/* Courbes */
+.social-graphe { padding: 8px 84px 28px 48px; }
+/* Même hauteur que le bloc des barres (5 rangées + titre d'axe) : l'appareil
+   ne change pas de taille quand on passe de « Total » à « Évolution ». */
+.social-trace { position: relative; height: 190px; }
+.social-panneaux > .social-note { margin-bottom: 4px; }
+.social-panneaux.multiples .social-trace { height: 170px; }
+.social-trace svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.social-axe {
+  position: absolute; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  letter-spacing: 0.08em; color: var(--ink-softer); white-space: nowrap;
+}
+.social-axe-y { right: calc(100% + 8px); transform: translateY(-50%); }
+.social-axe-x { top: calc(100% + 8px); transform: translateX(-50%); }
+.social-etiquette {
+  position: absolute; left: calc(100% + 6px); transform: translateY(-50%);
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+}
+.social-point { position: absolute; left: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; }
+/* Évolution au survol : un point par courbe sur le jour visé, et l'infobulle
+   à côté du repère (elle change de côté passé le milieu du tracé). */
+.social-trace { cursor: crosshair; touch-action: pan-y; }
+.social-point-survol {
+  position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%;
+  border: 1.5px solid var(--paper); pointer-events: none; transition: opacity 0.1s;
+}
+.social-point-survol.estompe { opacity: 0.35; }
+.social-bulle-barre.social-bulle-courbe { top: 4px; min-width: 150px; }
+.social-bulle-courbe-date {
+  margin-bottom: 6px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--paper) 70%, transparent); white-space: nowrap;
+}
+.social-bulle-courbe dl { grid-template-columns: 1fr auto; }
+.social-bulle-courbe dt i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* Palmarès */
+.social-palmares li { padding: 12px 0; border-bottom: 0.5px solid var(--rule); }
+.social-rang {
+  font-family: "Playfair Display", serif; font-weight: 700; font-size: 18px;
+  color: var(--cordovan); margin-right: 10px;
+}
+.social-texte {
+  font-family: "Source Serif 4", serif; font-size: 15px; line-height: 1.5;
+  color: var(--ink-soft); margin: 6px 0;
+}
+.social-palmares a { color: var(--cordovan); border-bottom: 0.5px solid var(--cordovan); text-decoration: none; }
+.social-vide { font-family: "Source Serif 4", serif; color: var(--ink-softer); padding: 12px 0; }
+.social-publication { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: 14px; align-items: start; }
+.social-publication > * { grid-column: 2; }
+.social-media {
+  grid-column: 1 !important; grid-row: 1 / span 3; position: relative; display: block;
+  width: 96px; height: 96px; overflow: hidden; border-radius: 2px; background: var(--paper-deep);
+  border: 0.5px solid var(--rule-faint); border-bottom: 0.5px solid var(--rule-faint) !important;
+}
+.social-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.social-media-vide { position: absolute; inset: 0; display: block; }
+.social-media-coin { position: absolute; right: 6px; bottom: 5px; display: inline-flex; color: var(--ink-soft); }
+.social-lecture { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; }
+.social-lecture circle { fill: rgba(28, 25, 23, 0.55); stroke: var(--paper); stroke-width: 1.5; }
+.social-lecture path { fill: var(--paper); }
+.social-media-vide .social-lecture circle { fill: none; stroke: var(--ink-soft); }
+.social-media-vide .social-lecture path { fill: var(--ink-soft); }
+.social-media:hover .social-lecture circle { fill: var(--cordovan); stroke: var(--cordovan); }
+.social-media:hover .social-media-vide .social-lecture path { fill: var(--paper); }
+button.social-media { padding: 0; cursor: pointer; font: inherit; }
+button.social-media:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.social-lecteur { padding: 0; border: 0; background: transparent; max-width: 94vw; max-height: 94vh; overflow: visible; }
+.social-lecteur::backdrop { background: rgba(20, 18, 16, 0.72); }
+.social-lecteur-cadre { display: flex; flex-direction: column; background: var(--paper); border: 0.5px solid var(--rule); }
+.social-lecteur-cadre.portrait { width: min(360px, 92vw); }
+.social-lecteur-cadre.paysage { width: min(720px, 92vw); }
+.social-lecteur-tete {
+  display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px;
+  font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink);
+}
+.social-lecteur-tete .social-plateforme { margin: 0; }
+.social-lecteur-fermer {
+  margin-left: auto; min-width: 40px; min-height: 40px; border: 0.5px solid var(--rule); background: var(--paper);
+  font-size: 22px; line-height: 1; color: var(--ink); cursor: pointer;
+}
+.social-lecteur-fermer:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.social-lecteur iframe { display: block; width: 100%; border: 0; background: var(--paper-deep); }
+.social-lecteur-cadre.portrait iframe { height: min(640px, 72vh); }
+.social-lecteur-cadre.paysage iframe { aspect-ratio: 16 / 9; height: auto; }
+.social-lecteur-pied { margin: 0; padding: 8px 12px 10px; font-family: "Source Serif 4", serif; font-size: 12px; color: var(--ink-soft); }
+.social-lecteur-pied a { color: var(--cordovan); }
+.social-infobulle { max-height: min(78vh, 560px); overflow: hidden; }
+.social-infobulle.epinglee {
+  pointer-events: auto; display: flex; flex-direction: column; overflow: visible;
+  border-color: var(--ink-soft); box-shadow: 0 6px 22px rgba(0, 0, 0, 0.18);
+}
+.social-infobulle.epinglee .social-infobulle-fil { min-height: 0; overflow-y: auto; overscroll-behavior: contain; max-height: 16rem; }
+.social-infobulle.etroite { width: auto; max-width: none; max-height: 70vh; }
+.social-infobulle.etroite.epinglee .social-infobulle-fil { max-height: 38vh; }
+.social-infobulle-fermer {
+  position: absolute; top: 4px; right: 4px; min-width: 40px; min-height: 40px; border: 0; background: none;
+  font-size: 22px; line-height: 1; color: var(--ink-soft); cursor: pointer;
+}
+.social-infobulle-fermer:focus-visible, .social-infobulle-fiche:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+/* Lien pleine largeur, aligné sur le contenu, sous un filet fin ; hors de la
+   zone qui défile, il n'est jamais coupé. */
+.social-infobulle-fiche {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; flex: none;
+  margin-top: 8px; min-height: 40px; padding: 0; border-top: 0.5px solid var(--rule);
+  color: var(--cordovan); text-decoration: none; cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.social-infobulle-fiche:hover { text-decoration: underline; text-underline-offset: 3px; }
+.social-recherche { position: relative; max-width: 26rem; margin: 4px 0 10px; }
+.social-recherche input {
+  width: 100%; box-sizing: border-box; min-height: 40px; padding: 6px 10px; font: 15px "Source Serif 4", serif;
+  color: var(--ink); background: var(--paper); border: 0.5px solid var(--rule); border-radius: 2px;
+}
+.social-recherche input:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 1px; }
+.social-recherche ul {
+  position: absolute; z-index: 6; left: 0; right: 0; top: calc(100% + 2px); list-style: none; margin: 0; padding: 4px 0;
+  background: var(--paper); border: 0.5px solid var(--rule); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+.social-recherche li { display: flex; flex-direction: column; justify-content: center; min-height: 40px; padding: 3px 10px; cursor: pointer; }
+.social-recherche li span { font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink); }
+.social-recherche li small { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.08em; color: var(--ink-softer); }
+.social-recherche li.actif, .social-recherche li:hover { background: var(--paper-deep); }
+.social-infobulle-nom-lien { color: inherit; text-decoration: none; }
+.social-infobulle-nom-lien:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.social-infobulle-entete { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.social-infobulle-fil { display: grid; gap: 3px; margin-top: 8px; padding-top: 6px; border-top: 0.5px solid var(--rule-faint); }
+.social-infobulle-fil ol { list-style: none; margin: 0; padding: 0; border: 0; }
+.social-infobulle .social-infobulle-fil li {
+  display: grid; grid-template-columns: 12px 2.2rem 3.4rem minmax(0, 1fr) 2.8rem; align-items: center; gap: 5px;
+  padding: 1px 0; font-size: 12px; line-height: 1.3;
+}
+.social-infobulle-fil li .social-logo { color: var(--ink-soft); }
+.social-infobulle-fil b { font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; }
+.social-infobulle-date { font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--ink-softer); white-space: nowrap; }
+.social-infobulle-texte { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* Une publication se clique : elle s'ouvre sur son réseau. */
+a.social-infobulle-texte { color: inherit; text-decoration: none; border-bottom: 0.5px solid var(--rule); }
+a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: var(--cordovan); border-bottom-color: var(--cordovan); outline: none; }
+.social-infobulle-derniere { display: grid; gap: 2px; margin-top: 8px; padding-top: 6px; border-top: 0.5px solid var(--rule-faint); font-size: 12.5px; line-height: 1.35; }
+.social-infobulle-derniere b { font-weight: 600; }
+.social-fil { margin-top: 18px; }
+/* Pages de circonscription */
+.circo-retour {
+  display: inline-block; margin: 8px 0 12px; font-family: "IBM Plex Mono", monospace; font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--cordovan); text-decoration: none;
+}
+.circo-page .apropos-header { margin-bottom: 8px; }
+.circo-section { margin: 26px 0; }
+.circo-section-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+/* Une carte par candidat : un bloc net (cadre fin, liseré du parti à gauche),
+   3 colonnes, 2 sur tablette, 1 sur mobile ; hauteurs égales par rangée. */
+.circo-cartes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.circo-carte {
+  position: relative; display: flex; flex-direction: column; gap: 10px; padding: 18px 20px;
+  border: 1px solid var(--rule); border-left: 3px solid var(--rule); background: var(--paper);
+}
+.circo-vide { font-style: italic; }
+/* En-tête compact : total des abonnés et détail par compte sur une ligne. */
+.circo-abonnes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 2px; }
+.circo-grand { font-family: "Playfair Display", serif; font-weight: 700; font-size: 20px; line-height: 1; color: var(--ink); }
+.circo-comptes { list-style: none; margin: 0 0 0 4px; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.circo-abonnes a, .circo-comptes a { color: var(--ink-soft); text-decoration: none; }
+.circo-comptes a:hover { color: var(--cordovan); }
+/* Logo et chiffre centrés sur la ligne, écart fixe, quelle que soit la balise. */
+.circo-compte {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 28px; line-height: 1;
+  font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft);
+}
+.circo-compte .social-logo { display: block; flex: none; }
+.circo-chiffres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 12px; margin: 2px 0 0; }
+/* Pastille de rang en j'aime : 1er plein bordeaux, 2e-3e contour bordeaux, les autres gris. */
+.circo-pastille {
+  position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: flex-start; justify-content: center;
+  width: 34px; height: 34px; padding-top: 6px; box-sizing: border-box; border-radius: 50%;
+  border: 1.5px solid var(--rule); color: var(--ink-soft);
+}
+.circo-pastille b { font-family: "Playfair Display", serif; font-weight: 700; font-size: 15px; line-height: 1; }
+.circo-pastille sup { font-family: "IBM Plex Mono", monospace; font-size: 8px; line-height: 1; margin-left: 1px; }
+.circo-pastille.podium { border-color: var(--cordovan); color: var(--cordovan); }
+.circo-pastille.premier { border-color: var(--cordovan); background: var(--cordovan); color: var(--paper); }
+.circo-carte .social-fiche-tete { padding-right: 44px; }
+.circo-chiffres > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.circo-chiffres dd { margin: 0; font-family: "Playfair Display", serif; font-weight: 700; font-size: 17px; line-height: 1.1; color: var(--ink); }
+.circo-chiffres dt {
+  font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-softer);
+}
+.circo-plateformes { display: flex; height: 14px; gap: 1px; margin-top: 4px; background: var(--rule-faint); }
+.circo-plateformes i { display: flex; align-items: center; justify-content: center; height: 100%; color: #fff; }
+.circo-meilleure a { color: var(--cordovan); }
+.circo-meilleure { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: start; margin-top: 4px; }
+.circo-meilleure .social-media { width: 64px; height: 64px; grid-row: auto; }
+.circo-meilleure p { margin: 2px 0; font-family: "Source Serif 4", serif; font-size: 13px; line-height: 1.35; color: var(--ink-soft); }
+.circo-serie { margin: auto 0 0; padding-top: 10px; }
+.circo-serie figcaption { text-align: right; margin-bottom: 2px; }
+@media (max-width: 1100px) { .circo-cartes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .circo-cartes { grid-template-columns: 1fr; }
+  .circo-comptes a, .circo-compte { min-height: 40px; }
+  .circo-carte { padding: 18px; }
+}
+.circo-serie svg { display: block; width: 100%; height: 56px; border-bottom: 0.5px solid var(--rule); }
+.circo-sigle {
+  padding: 0 5px; border-radius: 2px; color: var(--paper); font-family: "IBM Plex Mono", monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+}
+.circo-declenchement { stroke: var(--brass); stroke-width: 1px; stroke-dasharray: 3 3; }
+.circo-mois { position: relative; height: 16px; margin-top: 4px; }
+.circo-mois span {
+  position: absolute; font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-softer);
+}
+.circo-filtres { margin: 6px 0 4px; }
+.circo-filtres > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.circo-plus {
+  display: block; margin: 16px auto 0; min-height: 40px; padding: 0 18px; border: 0.5px solid var(--ink);
+  background: var(--paper); color: var(--ink); cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.circo-plus:hover { background: var(--ink); color: var(--paper); }
+.circo-plus:disabled { opacity: 0.5; cursor: wait; }
+.social-publication.compacte { grid-template-columns: 34px minmax(0, 1fr); }
+.social-media.social-media-pastille {
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--paper-deep); grid-row: 1 / span 3;
+}
+.social-nature { width: 17px; height: 17px; fill: var(--ink-soft); }
+.social-libelle { font-style: italic; color: var(--ink-softer); }
+.social-texte.repli { color: var(--ink-softer); }
+.social-repli { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-style: normal; }
+.social-fil h4 {
+  margin: 0 0 4px; font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-softer);
+}
+
+/* Carte des circonscriptions */
+.social { --social-carte-vide: var(--rule-faint); }
+.social-carte-outils { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; margin: 4px 0 10px; }
+.social-carte-liste { display: inline-flex; align-items: center; gap: 8px; }
+.social-carte-liste span {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-softer);
+}
+.social-carte-liste select {
+  min-height: 36px; max-width: 16rem; padding: 4px 8px; font: 14px "Source Serif 4", serif;
+  color: var(--ink); background: var(--paper); border: 0.5px solid var(--rule); border-radius: 2px;
+}
+.social-carte-legende { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; margin: 0 0 10px; padding: 0; }
+.social-carte-legende li {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--ink-soft);
+}
+.social-carte-legende i { width: 12px; height: 12px; border-radius: 2px; }
+/* Carte principale (72 %) et, à sa droite, les encarts Montréal et Québec
+   empilés (28 %) ; sur mobile, les encarts passent dessous, côte à côte. */
+.social-carte-vues { display: grid; grid-template-columns: minmax(0, 72fr) minmax(0, 28fr); gap: 18px; align-items: start; }
+.social-carte-principale { position: relative; }
+.social-carte-encarts { display: grid; gap: 14px; }
+.social-carte-encarts figure { margin: 0; border: 0.5px solid var(--rule); }
+.social-carte-encarts svg { display: block; width: 100%; height: auto; }
+.social-carte-encarts use { stroke: var(--paper); stroke-width: 0.8px; cursor: pointer; }
+.social-carte-encarts use:hover { opacity: 0.8; }
+.social-carte-encarts use.social-carte-contour { fill: none; stroke: var(--ink); stroke-width: 2px; pointer-events: none; }
+.social-carte-encarts figcaption {
+  padding: 4px 8px; font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-softer); border-top: 0.5px solid var(--rule-faint);
+}
+.social-carte-cadre { fill: none; stroke: var(--ink-soft); stroke-width: 1px; stroke-dasharray: 4 3; pointer-events: none; }
+/* La carte occupe toute la largeur ; le viewBox (« meet ») centre la province
+   dans son cadre, au fond de la page, sans cadre ni fond propre. */
+.social-carte-province {
+  display: block; width: 100%; height: auto; max-height: 78vh;
+  touch-action: none; cursor: grab; background: none; border: 0;
+}
+.social-carte-province:active { cursor: grabbing; }
+.social-zoom { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
+.social-zoom button {
+  width: 40px; height: 40px; border: 0.5px solid var(--rule); background: var(--paper); color: var(--ink);
+  font-size: 20px; line-height: 1; cursor: pointer;
+}
+.social-zoom button:hover { background: var(--ink); color: var(--paper); }
+.social-zoom button:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+.social-carte-legende-note { font-style: italic; letter-spacing: 0.04em !important; }
+/* Audience : deux colonnes de 10, pagination */
+/* Deux colonnes nettement séparées : une gouttière de 56 px coupée d'un filet ;
+   chaque chiffre reste collé à sa barre (colonne de valeurs à largeur fixe). */
+.social-audience-colonnes.deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.social-audience-colonnes.deux > ol + ol { margin-left: 28px; padding-left: 28px; border-left: 0.5px solid var(--rule); }
+.social-audience-colonnes .social-valeur { text-align: right; }
+/* Le nom d'abord : il prend la plus grande part de la ligne, et passe sur deux
+   lignes plutôt que d'être coupé (tablette étroite, noms composés). */
+.social-audience-colonnes .social-audience li { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) 4.8rem; }
+.social-audience-colonnes .social-audience .social-nom-texte { white-space: normal; overflow: visible; line-height: 1.2; }
+.social-audience .social-nom { display: flex; align-items: center; gap: 4px; min-width: 0; white-space: nowrap; }
+.social-nom-texte { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.social-rang-petit { flex: none; width: 1.6rem; font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-softer); }
+.social-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0 4px; }
+.social-pagination button {
+  min-width: 40px; min-height: 36px; padding: 4px 10px; border: 0.5px solid var(--rule); background: transparent;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-soft); cursor: pointer;
+}
+.social-pagination button.actif { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.social-pagination button:disabled { opacity: 0.35; cursor: default; }
+.social-pagination .social-meta { margin-left: 8px; }
+.social-carte use { stroke: var(--paper); cursor: pointer; }
+.social-carte use { stroke-width: 0.6px; }
+.social-carte use:hover { opacity: 0.8; }
+.social-carte use.social-carte-contour { fill: none; stroke: var(--ink); stroke-width: 2.5px; pointer-events: none; }
+.social-fiche { margin: 18px 0 6px; padding-top: 12px; border-top: 0.5px solid var(--rule); }
+.social-fiche h3 { margin: 0 0 8px; font-family: "Playfair Display", serif; font-size: 22px; color: var(--ink); }
+.social-fiche ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0 28px; }
+.social-fiche li { padding: 10px 0; border-bottom: 0.5px solid var(--rule-faint); }
+.social-fiche-tete { display: flex; align-items: baseline; gap: 8px; }
+.social-fiche-parti {
+  flex: none; padding: 1px 6px; border-radius: 2px; color: var(--paper);
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+}
+.social-fiche-comptes { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 2px; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft); }
+.social-fiche-comptes a, .social-fiche-comptes span { display: inline-flex; align-items: center; min-height: 28px; color: inherit; text-decoration: none; }
+.social-fiche-comptes a:hover { color: var(--cordovan); }
+.social-carte .social-note a { color: var(--cordovan); }
+.social-carte-vues { position: relative; }
+.social-carte-province use:focus { outline: none; }
+.social-carte-province use:focus-visible { stroke: var(--cordovan); stroke-width: 3px; }
+.social-infobulle {
+  position: absolute; z-index: 5; width: 21rem; max-width: calc(100% - 32px); padding: 10px 12px;
+  pointer-events: none; background: var(--paper); border: 0.5px solid var(--rule);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); font-family: "Source Serif 4", serif; font-size: 14px; color: var(--ink);
+}
+.social-infobulle strong { display: block; font-family: "Playfair Display", serif; font-size: 17px; line-height: 1.2; }
+.social-infobulle > .social-meta { display: block; margin-top: 2px; }
+.social-infobulle-tete { margin: 8px 0 6px; font-size: 13px; color: var(--ink-soft); }
+.social-infobulle ul { list-style: none; margin: 0; padding: 6px 0 0; border-top: 0.5px solid var(--rule-faint); }
+/* Sigle, nom (tronqué), logos, valeur : colonnes auto, jamais de largeur
+   fixe pour les chiffres, qui ne débordent donc plus. */
+.social-infobulle li { display: grid; grid-template-columns: 3.4em minmax(0, 1fr) auto 4.6em; align-items: center; column-gap: 8px; padding: 2px 0; }
+.social-infobulle-sigle { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
+.social-infobulle-nom { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
+.social-infobulle-logos { display: inline-grid; gap: 3px; justify-items: center; color: var(--ink-soft); }
+.social-infobulle-logo-vide { width: 12px; height: 12px; }
+.social-infobulle-n {
+  text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;
+  font-family: "IBM Plex Mono", monospace; font-size: 12px;
+}
+.social-infobulle-pied {
+  display: block; margin-top: 6px; text-align: right; font-family: "IBM Plex Mono", monospace;
+  font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-softer);
+}
+
+@media (max-width: 900px) {
+  .social-tdb { grid-template-columns: 1fr; grid-template-areas: "entete" "haut" "filtres" "bas"; row-gap: 18px; }
+  .social-filtres { border-left: 0; padding-left: 0; }
+}
+/* Le téléphone du module vaut jusqu'à 900 px de fenêtre : son contenu suit
+   les mêmes règles « étroit » sur toute cette plage. */
+@media (max-width: 900px) {
+  .social-raccourcis button, .social-coches button, .social-bascule button { min-height: 40px; min-width: 40px; padding: 8px 10px; }
+  .social-carte-vues { grid-template-columns: minmax(0, 1fr); }
+  .social-carte-encarts { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .social-pagination button { min-height: 40px; }
+  .social-carte-liste, .social-carte-liste select { width: 100%; max-width: none; }
+  .social-carte-liste select { min-height: 40px; }
+  .social-fiche-comptes a { min-height: 40px; }
+  .social-publication { grid-template-columns: 72px minmax(0, 1fr); column-gap: 10px; }
+  .social-media { width: 72px; height: 72px; }
+  .social-frise { padding: 0 20px 20px; } /* la zone tactile des poignées reste dans l'écran */
+  .social-frise-zone { height: 72px; }
+  .social-frise-poignee { width: 40px; }
+  .social-frise-poignee.debut { left: -21px; }
+  .social-frise-poignee.fin { right: -21px; }
+  .social-frise-poignee::after { left: 18px; }
+  .social-trace { height: 200px; }
+  .social-graphe { padding: 8px 76px 28px 40px; }
+  .social-audience li { grid-template-columns: minmax(0, 1fr) 4.5rem; }
+  .social-audience .social-piste { grid-column: 1 / -1; order: 3; }
+}
+.social-infobulle-filtres { display: grid; justify-items: start; gap: 2px; }
+.social-lien {
+  min-height: 32px; padding: 0; border: 0; background: none; cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--cordovan); text-decoration: underline; text-underline-offset: 3px;
+}
+.social-lien:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+/* Page d'un candidat : sa carte en grand, puis son fil. */
+.candidat-sous-titre { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 6px 0 0; font-family: "Source Serif 4", serif; font-size: 16px; color: var(--ink-soft); }
+.candidat-sous-titre a, .candidat-profils a, .circo-carte .social-nom a { color: var(--cordovan); text-decoration: none; border-bottom: 0.5px solid var(--cordovan); }
+.candidat-sous-titre a:hover, .candidat-profils a:hover, .circo-carte .social-nom a:hover { border-bottom-width: 1.5px; }
+.candidat-sous-titre .social-meta { flex-basis: 100%; }
+.candidat-profils { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 10px 0 0; padding: 0; font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+.candidat-profils a { display: inline-flex; align-items: center; min-height: 40px; }
+.candidat-rang { margin: 14px 0 8px; font-family: "Source Serif 4", serif; font-size: 15px; color: var(--ink-soft); }
+.circo-cartes.candidat-carte { grid-template-columns: minmax(0, 1fr); }
+.circo-carte.grand { padding: 22px 26px; }
+.circo-carte.grand h2.social-nom { margin: 0; font-family: "Playfair Display", serif; font-size: 22px; font-weight: 700; }
+.circo-carte.grand .circo-grand { font-size: 30px; }
+.circo-carte.grand .circo-chiffres dd { font-size: 24px; }
+.circo-carte.grand .circo-plateformes { height: 20px; }
+.circo-carte.grand .circo-meilleure { grid-template-columns: 120px minmax(0, 1fr); }
+.circo-carte.grand .circo-meilleure .social-media { width: 120px; height: 120px; }
+.circo-carte.grand .circo-meilleure p { font-size: 15px; }
+.circo-carte.grand .circo-serie svg { height: 120px; }
+/* Onglet Candidats : une ligne se survole, se focalise et s'épingle (infobulle
+   de ses dernières publications) ; un fond léger le dit, sans sélection de
+   texte au clic. La ligne trouvée par la recherche reste surlignée. */
+.social-audience-bloc { position: relative; }
+.social-audience li {
+  margin: 0 -6px; padding-left: 6px; padding-right: 6px; border-radius: 2px;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+}
+.social-audience li:hover { background: var(--paper-deep); }
+.social-audience li:focus { outline: none; }
+.social-audience li:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -2px; background: var(--paper-deep); }
+.social-audience li.surligne { background: color-mix(in srgb, var(--cordovan) 12%, transparent); box-shadow: inset 3px 0 0 var(--cordovan); }
+.social-audience-apart { margin: 0 0 14px; padding: 8px 10px 4px; border: 0.5px solid var(--rule); }
+.social-audience-apart .social-meta { display: block; margin: 0 0 4px; }
+.social-audience-apart .social-infobulle-fiche { margin-top: 4px; }
+.social-infobulle.compte { z-index: 6; }
+.social-infobulle.compte .social-infobulle-fil li { grid-template-columns: 12px 3.4rem minmax(0, 1fr) auto; }
+/* « Filtres » et, sur la même ligne, « Réinitialiser » dès qu'un filtre diffère du défaut. */
+.social-groupe-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.social-reinitialiser { min-height: 24px; text-decoration: none; }
+.social-reinitialiser:hover { text-decoration: underline; }
+.social-reinitialiser span { font-size: 13px; letter-spacing: 0; }
+
+/* ── Premier jet « une appli dans le journal » (2026-10-02) ──────────────────
+   Grand écran : page de journal, filtres dans la colonne de droite. Mobile :
+   grammaire d'appli — tuiles qui défilent, barre d'onglets collée au bas de
+   l'écran, tiroir de filtres. L'accent du module est le bleu réservé aux
+   modules de campagne (chantier des palettes par module). */
+.social { --social-accent: var(--bleu); }
+.social-tdb {
+  grid-template-columns: minmax(0, 1fr); grid-template-areas: "entete" "premiers" "haut" "bas";
+  grid-template-rows: auto auto auto auto;
+}
+/* Les premiers choix, sous le titre : la rangée de pastilles (plateforme,
+   parti, type) puis les onglets, sur un filet commun. */
+.social-premiers { grid-area: premiers; margin-top: 6px; }
+.social-filtres-rangee { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; margin: 0; padding: 0; }
+/* À droite du titre : alignée sur sa ligne de base, calée à droite. */
+.social-entete .control-block.social-filtres-rangee {
+  flex: 1 1 auto; width: auto; max-width: none; flex-direction: row; flex-wrap: wrap; align-items: center;
+  justify-content: flex-end; align-self: flex-end; gap: 8px 14px; padding-bottom: 6px;
+}
+.social-entete.partis-title-row { margin-top: 0; }
+.social-premiers .social-onglets { margin: 4px 0 0; }
+.social-haut { margin-top: 22px; }
+/* Sans étiquettes (les logos, les sigles et les mots parlent d'eux-mêmes) :
+   un filet fin sépare les trois groupes ; le nom du groupe reste pour les
+   lecteurs d'écran (aria-label). */
+.social-filtres-rangee { gap: 10px 14px; }
+.social-filtres-rangee .social-coches { display: flex; align-items: center; margin: 0; }
+.social-filtres-rangee .social-coches + .social-coches { padding-left: 14px; border-left: 0.5px solid var(--rule); }
+.social-filtres-rangee .social-coches-titre { display: none; }
+/* « Réinitialiser » se pose au-dessus de la rangée, à droite, sans rien
+   déplacer quand il apparaît ou disparaît. */
+.social-filtres-rangee { position: relative; }
+.social-filtres-rangee .social-reinitialiser { position: absolute; right: 0; bottom: 100%; margin: 0 0 2px; min-height: 22px; white-space: nowrap; }
+.social-barre { display: none; }
+
+/* Les quatre vues : de grandes cases encadrées, celle qui est enfoncée est
+   la vue affichée ; une ligne dit ce qu'on y voit. */
+.social-vues { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0 0; }
+.social-vue {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-height: 72px; padding: 11px 14px 10px;
+  text-align: left; cursor: pointer; background: var(--paper-deep); color: var(--ink);
+  border: 0.5px solid var(--rule); border-radius: 0; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.social-vue-mot { display: inline-flex; align-items: center; gap: 9px; font-family: "Playfair Display", serif; font-weight: 700; font-size: 22px; line-height: 1.1; letter-spacing: -0.3px; }
+.social-vue-mot .social-icone-vue { width: 22px; height: 22px; flex: none; }
+.social-vue-mot svg.trait { width: 28px; height: 20px; flex: none; fill: none; stroke: currentColor; }
+.social-reglages .social-bascule button .social-icone-vue { width: 15px; height: 15px; }
+/* La rangée des vues n'existe que sur grand écran ; celle de l'indicateur, que sur téléphone. */
+.social-reglage-indicateur { display: none; }
+.social-vue small { font-family: "Source Serif 4", serif; font-style: italic; font-size: 12.5px; color: var(--ink-softer); }
+.social-vue:hover { border-color: var(--ink); }
+.social-vue.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.social-vue.active small { color: color-mix(in srgb, var(--paper) 78%, transparent); }
+.social-vue:focus-visible { outline: 2px solid var(--social-accent); outline-offset: 2px; }
+/* Par publication : abonnés et publications ne s'y comptent pas, les cases se grisent. */
+.social-vue:disabled { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+.social-vue:disabled:hover { border-color: var(--rule); }
+.social-indicateurs button:disabled { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+/* L'indicateur : des boutons sobres, comme Total | Évolution, chacun avec
+   son icône devant le mot ; la rangée passe sur deux lignes dans le téléphone. */
+.social-reglage .social-indicateurs { flex-wrap: wrap; }
+.social-reglages .social-bascule button { display: inline-flex; align-items: center; gap: 6px; }
+.social-reglages .social-bascule button svg.trait { width: 20px; height: 14px; fill: none; stroke: currentColor; flex: none; }
+.social-chiffres { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; }
+.social-chiffre {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 86px; padding: 12px 14px 10px;
+  text-align: left; cursor: pointer; background: var(--paper-deep); color: var(--ink);
+  border: 0.5px solid var(--rule); border-radius: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+/* Le mot en gros (c'est le filtre), le chiffre en petit dessous. */
+.social-chiffre-mot { font-family: "Playfair Display", serif; font-weight: 700; font-size: 22px; line-height: 1.1; letter-spacing: -0.3px; }
+.social-chiffre-nombre {
+  margin-top: 6px; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 13px; letter-spacing: 0.06em; color: var(--ink-soft);
+}
+.social-chiffre small { font-family: "Source Serif 4", serif; font-style: italic; font-size: 12px; color: var(--ink-softer); }
+.social-chiffre:hover { border-color: var(--ink); }
+.social-chiffre.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.social-chiffre.active .social-chiffre-nombre, .social-chiffre.active small { color: color-mix(in srgb, var(--paper) 78%, transparent); }
+.social-chiffre:focus-visible { outline: 2px solid var(--social-accent); outline-offset: 2px; }
+
+/* L'accent du module : fenêtre de la frise, trait de l'onglet actif. */
+.social .social-frise-fenetre { background: color-mix(in srgb, var(--social-accent) 12%, transparent); border-color: var(--social-accent); }
+.social .social-frise-poignee::after { background: var(--social-accent); }
+.social .social-frise-fenetre:focus-visible, .social .social-frise-poignee:focus-visible { outline-color: var(--social-accent); }
+.social .social-onglets .social-bascule button.active { border-bottom-color: var(--social-accent); }
+.social-onglets { margin-top: 22px; }
+.social-icone-vue { width: 22px; height: 22px; display: block; }
+
+/* La période : sur grand écran, la frise seule (on y trace la fenêtre) ; sur
+   téléphone, les raccourcis seuls (7 j, 30 j, campagne, tout). */
+@media (min-width: 901px) {
+  .social-raccourcis { display: none; }
+  /* Les barres remplissent l'écran de la tablette (808 px) : rangées de 64 px,
+     et le graphique d'évolution garde la même hauteur que le bloc des barres. */
+  .social-barres-empilees li { padding: 9px 0; }
+  .social-barres-empilees .social-piste { height: 46px; }
+  .social-barres-empilees .social-valeur { font-size: 15px; }
+  .social-trace { height: 290px; }
+}
+@media (max-width: 900px) {
+  .social-tdb { grid-template-areas: "entete" "haut" "bas"; grid-template-rows: auto auto auto; row-gap: 18px; }
+  .social-premiers, .social-filtres-rangee, .social-onglets-haut, .social-frise, .social-reglage-vues { display: none; }
+  .social-entete .control-block.social-filtres-rangee { display: none; } /* le tiroir prend le relais */
+  .social-reglage-indicateur { display: flex; }
+  .social-haut { margin-top: 0; }
+  .social-raccourcis { margin-bottom: 0; }
+  .social-reglages { margin-top: 4px; }
+  /* La barre d'onglets : dernière rangée de l'écran du téléphone, sous la
+     zone qui défile. */
+  .social-barre {
+    display: flex; position: relative; flex: none; z-index: 2;
+    padding: 6px max(4px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+    background: var(--paper); border-top: 1px solid var(--ink); box-shadow: 0 -6px 18px rgba(28, 25, 23, 0.08);
+  }
+  .social-barre button {
+    position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    min-height: 50px; padding: 5px 2px 3px; border: 0; background: transparent; cursor: pointer; color: var(--ink-softer);
+    font-family: "IBM Plex Mono", monospace; font-size: 8px; letter-spacing: 0.02em; text-transform: uppercase;
+  }
+  /* « Par candidat » tient sur deux lignes plutôt que d'être tronqué. */
+  .social-barre button span { max-width: 100%; line-height: 1.15; text-align: center; }
+  .social-barre button.active { color: var(--ink); }
+  .social-barre button.active .social-icone-vue { color: var(--social-accent); }
+  .social-barre button:focus-visible { outline: 2px solid var(--social-accent); outline-offset: -2px; }
+  .social-barre .social-barre-filtres { border-left: 0.5px solid var(--rule); color: var(--ink); }
+  .social-badge {
+    position: absolute; top: 2px; right: 4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
+    background: var(--cordovan); color: var(--paper); font-size: 9px; font-weight: 600; line-height: 16px; text-align: center;
+  }
+}
+
+/* ── L'appareil : une tablette (paysage) sur grand écran, un téléphone sur
+   téléphone. Cadre en encre, écran en papier à hauteur fixe qui défile à
+   l'intérieur ; la barre d'état en haut est un décor. ───────────────────── */
+.social-appareil {
+  position: relative; margin: 10px auto 0; max-width: 1180px;
+  background: var(--ink); border-radius: 28px; padding: 18px 20px;
+  box-shadow: 0 24px 48px -14px rgba(28, 25, 23, 0.4), inset 0 0 0 1.5px #4a4540;
+}
+/* Caméra frontale, sur le long côté (tablette en paysage). */
+.social-appareil::before {
+  content: ""; position: absolute; top: 6px; left: 50%; width: 6px; height: 6px; margin-left: -3px;
+  border-radius: 50%; background: #0b0a09; box-shadow: inset 0 0 0 1.5px #2f2b27, 0 0 0 1px #3d3833;
+}
+.social-ecran {
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  height: 808px; /* toujours la même : la vue Par parti y tient sans défiler */
+  background: var(--paper); border-radius: 14px;
+}
+.social-statut {
+  flex: none; display: flex; justify-content: space-between; align-items: center; height: 26px; padding: 0 18px;
+  font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-softer);
+}
+.social-statut-court { display: none; }
+.social-statut-glyphes { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-soft); }
+.social-statut-glyphes svg { display: block; height: 10px; width: auto; }
+.social-zone { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.social-defilement {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
+}
+/* La flèche « voir la suite » : un voile de papier au bas de l'écran et un
+   chevron qui respire, tant qu'il reste du contenu sous le bord. */
+.social-indice-defiler {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; height: 72px; border: 0; cursor: pointer;
+  display: flex; align-items: flex-end; justify-content: center; padding: 0 0 18px;
+  background: linear-gradient(to bottom, transparent, var(--paper) 65%); color: var(--ink);
+}
+.social-indice-defiler svg { width: 28px; height: 28px; animation: social-rebond 1.6s ease-in-out infinite; }
+.social-indice-defiler:focus-visible { outline: 2px solid var(--social-accent); outline-offset: -4px; }
+@keyframes social-rebond { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+.social-defilement > .social-tdb { padding: 0 26px 26px; }
+.social-entete.partis-title-row { margin-top: 0; padding-top: 0; }
+/* La bulle d'info à droite du titre : alignée sur lui, sans hériter de son gras. */
+.social .partis-title .saillance-info-tip { margin-left: 10px; vertical-align: middle; }
+.social .partis-title .saillance-info-bubble { font-weight: 400; z-index: 20; }
+.social .partis-title .saillance-info-bubble .tip-link { margin-top: 8px; }
+/* L'indicateur d'accueil, le trait du bas de l'écran. */
+.social-accueil {
+  position: absolute; left: 50%; bottom: 5px; z-index: 530; width: 110px; height: 4px; margin-left: -55px;
+  border-radius: 2px; background: color-mix(in srgb, var(--ink) 35%, transparent); pointer-events: none;
+}
+@media (max-width: 900px) {
+  .social-appareil { max-width: 430px; padding: 10px; border-radius: 48px; }
+  /* Boutons latéraux ; l'îlot est dans l'écran. */
+  .social-appareil::before {
+    top: 110px; left: -3px; width: 3px; height: 54px; margin: 0; border-radius: 2px 0 0 2px;
+    background: #2a2724; box-shadow: none;
+  }
+  .social-appareil::after {
+    content: ""; position: absolute; top: 160px; right: -3px; width: 3px; height: 76px;
+    border-radius: 0 2px 2px 0; background: #2a2724;
+  }
+  /* Le téléphone garde sa taille : il tient dans la fenêtre et défile à
+     l'intérieur, comme la tablette. */
+  .social-ecran { border-radius: 38px; height: min(720px, calc(100vh - 28px)); height: min(720px, calc(100svh - 28px)); }
+  .social-indice-defiler { height: 52px; padding-bottom: 6px; }
+  .social-indice-defiler svg { width: 24px; height: 24px; }
+  .social-ecran::before {
+    content: ""; position: absolute; top: 9px; left: 50%; z-index: 540; width: 104px; height: 28px; margin-left: -52px;
+    border-radius: 14px; background: var(--ink);
+  }
+  .social-statut { height: 46px; padding: 12px 26px 0; }
+  .social-statut-long { display: none; }
+  .social-statut-court { display: inline; }
+  .social-defilement > .social-tdb { padding: 0 14px 10px; }
+  /* Écran de 300 px : les quatre raccourcis tiennent sur une ligne sans leur
+     étiquette (le groupe garde son nom accessible). */
+  .social-raccourcis .social-coches-titre { display: none; }
+  .social-raccourcis button { padding: 8px 9px; letter-spacing: 0.12em; }
+  .social-barre { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .social-accueil { bottom: 6px; width: 100px; margin-left: -50px; }
+}
+
+/* Tablette étroite (fenêtre de 901 à 1200 px) : deux colonnes ne laissent pas
+   la place aux noms ; les 20 lignes passent en une colonne, qui défile dans
+   l'écran. */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .social-audience-colonnes.deux { grid-template-columns: minmax(0, 1fr); }
+  .social-audience-colonnes.deux > ol + ol { margin-left: 0; padding-left: 0; border-left: 0; }
+}
+/* Par candidat sur téléphone : une seule colonne de 20, le nom sur toute la
+   largeur, la valeur à droite, la barre dessous. */
+@media (max-width: 900px) {
+  .social-audience-colonnes.deux { grid-template-columns: minmax(0, 1fr); }
+  .social-audience-colonnes.deux > ol + ol { margin-left: 0; padding-left: 0; border-left: 0; }
+  .social-audience-colonnes .social-audience li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; padding: 8px 4px; }
+  .social-audience-colonnes .social-audience .social-piste { grid-column: 1 / -1; order: 3; height: 6px; }
+  .social-audience-colonnes .social-audience .social-piste i { height: 100%; }
+  /* Un nom long passe sur deux lignes plutôt que d'être coupé. */
+  .social-audience-colonnes .social-audience .social-nom-texte { white-space: normal; overflow: visible; }
+}
+
+/* (Classe « social-feuille » : « social-fiche » est déjà prise par l'ancien
+   bloc de fiche, dont la grille à deux colonnes s'appliquait ici par erreur.)
+   La fiche d'un compte : dans la couche de l'écran, par-dessus la zone qui
+   défile. Centrée sur la tablette, en tiroir sur le téléphone ; ses
+   publications sont des liens bien lisibles, sur deux lignes au plus. */
+.social-couche { position: absolute; inset: 0; z-index: 590; pointer-events: none; }
+.social-fiche-fond {
+  position: absolute; inset: 0; pointer-events: auto; display: flex; align-items: center; justify-content: center;
+  padding: 28px; background: rgba(28, 25, 23, 0.42); animation: social-monter 0.18s ease-out;
+}
+.social-infobulle.social-feuille {
+  position: relative; z-index: auto; margin: 0; width: min(660px, 100%); max-width: none; max-height: 100%;
+  padding: 24px 28px 20px; border: 0; border-radius: 6px; overflow: hidden;
+  box-shadow: 0 18px 50px rgba(28, 25, 23, 0.35); font-size: 15px;
+}
+.social-feuille strong { font-size: 26px; padding-right: 48px; }
+.social-feuille > .social-meta { margin-top: 5px; }
+.social-feuille .social-infobulle-fermer {
+  top: 14px; right: 14px; width: 38px; height: 38px; min-width: 0; min-height: 0; border-radius: 50%;
+  border: 0.5px solid var(--rule); background: transparent;
+}
+.social-feuille .social-infobulle-fermer:hover { border-color: var(--ink); color: var(--ink); }
+.social-infobulle.social-feuille .social-infobulle-fil { flex: 1 1 auto; min-height: 0; max-height: none; margin-top: 16px; overflow-y: auto; }
+.social-feuille .social-infobulle-fil ol { margin: 0; padding: 0; list-style: none; }
+.social-infobulle.compte.social-feuille .social-infobulle-fil li {
+  grid-template-columns: 16px 4.4rem minmax(0, 1fr) auto; column-gap: 12px; align-items: start;
+  padding: 10px 0; border-bottom: 0.5px solid var(--rule-faint);
+}
+.social-feuille .social-infobulle-fil li:last-child { border-bottom: 0; }
+/* Fiche d'une circonscription : ses candidats d'abord, bien lisibles, puis le
+   fil (logo, parti, date, texte sur deux lignes, j'aime). */
+.social-feuille.circo .social-infobulle-tete { margin: 12px 0 10px; font-size: 15px; }
+.social-feuille.circo > ul { padding-top: 8px; }
+.social-feuille.circo > ul li { grid-template-columns: 3.6em minmax(0, 1fr) auto 5.6em; padding: 5px 0; }
+.social-feuille.circo .social-infobulle-nom { font-size: 15px; white-space: normal; overflow: visible; }
+.social-feuille.circo .social-infobulle-sigle { font-size: 12px; }
+.social-infobulle.social-feuille.circo .social-infobulle-fil li {
+  grid-template-columns: 16px 2.8rem 4.4rem minmax(0, 1fr) auto; column-gap: 10px; align-items: start;
+  padding: 10px 0; border-bottom: 0.5px solid var(--rule-faint);
+}
+.social-feuille.circo .social-infobulle-fil b { padding-top: 3px; }
+.social-feuille .social-infobulle-fil li .social-logo { margin-top: 3px; }
+.social-feuille .social-infobulle-date { font-size: 11px; padding-top: 2px; }
+.social-feuille .social-infobulle-texte {
+  white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4; border-bottom: 0;
+}
+.social-feuille a.social-infobulle-texte { text-decoration: underline; text-decoration-color: var(--rule); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.social-feuille a.social-infobulle-texte:hover, .social-feuille a.social-infobulle-texte:focus-visible { color: var(--cordovan); text-decoration-color: var(--cordovan); }
+.social-feuille .social-infobulle-n { font-size: 14px; padding-top: 1px; }
+@media (max-width: 900px) {
+  .social-fiche-fond { align-items: flex-end; padding: 0; }
+  .social-infobulle.social-feuille { width: 100%; max-height: 88%; border-radius: 18px 18px 0 0; padding: 22px 18px 24px; }
+  .social-feuille strong { font-size: 22px; }
+  .social-infobulle.compte.social-feuille .social-infobulle-fil li { grid-template-columns: 14px 3.6rem minmax(0, 1fr) auto; column-gap: 8px; }
+  .social-infobulle.social-feuille.circo .social-infobulle-fil li { grid-template-columns: 14px 2.4rem 3.6rem minmax(0, 1fr) auto; column-gap: 7px; }
+}
+
+/* Le tiroir des filtres (mobile) : dans l'écran du téléphone, depuis le bas. */
+.social-tiroir-fond {
+  position: absolute; inset: 0; z-index: 600; background: rgba(28, 25, 23, 0.42);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.social-tiroir {
+  width: 100%; max-height: 88%; display: flex; flex-direction: column;
+  background: var(--paper); border-radius: 18px 18px 0 0; box-shadow: 0 -10px 40px rgba(28, 25, 23, 0.3);
+  animation: social-monter 0.22s ease-out;
+}
+@keyframes social-monter { from { opacity: 0; } to { opacity: 1; } }
+.social-tiroir-tete { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 6px; }
+.social-tiroir-poignee { position: absolute; top: 7px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: var(--rule); }
+.social-tiroir-tete h3 { margin: 0; font-family: "Playfair Display", serif; font-size: 22px; font-weight: 700; color: var(--ink); }
+.social-tiroir-fermer {
+  width: 36px; height: 36px; border-radius: 50%; border: 0.5px solid var(--rule); background: transparent;
+  font-size: 22px; line-height: 1; color: var(--ink-soft); cursor: pointer;
+}
+.social-tiroir-corps { padding: 8px 20px 4px; overflow-y: auto; }
+.social-tiroir-corps .social-coches { margin-bottom: 16px; }
+.social-tiroir-corps .social-coches-titre { color: var(--ink-softer); }
+.social-tiroir-corps .social-coches > div { gap: 6px; }
+.social-tiroir-corps .social-coches button { border-radius: 999px; padding: 8px 14px; min-height: 40px; font-size: 10.5px; }
+.social-tiroir-pied { display: flex; gap: 10px; padding: 12px 20px max(16px, env(safe-area-inset-bottom)); border-top: 0.5px solid var(--rule); }
+.social-tiroir-pied button {
+  flex: 1 1 0; min-height: 48px; border-radius: 999px; cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.social-tiroir-remettre { background: transparent; border: 0.5px solid var(--ink); color: var(--ink); }
+.social-tiroir-remettre:disabled { opacity: 0.4; cursor: default; }
+.social-tiroir-voir { flex-grow: 1.6; background: var(--ink); border: 1px solid var(--ink); color: var(--paper); }
