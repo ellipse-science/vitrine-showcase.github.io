@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { AffiliationSegment, AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import { slugCirco } from "@/lib/cartes/fonctions";
 import type { CarteSite } from "@/lib/cartes/site";
@@ -287,21 +287,26 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
   color: string;
   maxAbsTone: number;
   flipped: boolean;
-  onFlip: () => void;
+  onFlip: (id: string) => void;
   cartes: CarteSite[];
   contexte: ContexteCartes | null;
 }) {
   const partyLabel = party.toUpperCase();
+  // Le verso n'est dessiné qu'à l'approche : survol, focus ou retournement.
+  const [versoPret, setVersoPret] = useState(false);
   const slug = slugCirco(deputy);
   const fiche = cartes.find((c) => c.elu === slug && c.cle === party) ?? cartes.find((c) => c.elu === slug);
-  const carte = fiche && contexte ? carteComplete(fiche, deputy, contexte) : null;
+  // Mémorisée : un nouvel objet à chaque rendu reconstruisait les faces.
+  const carte = useMemo(() => (fiche && contexte ? carteComplete(fiche, deputy, contexte) : null), [fiche, deputy, contexte]);
   if (carte && contexte) {
     return (
       <button
         type="button"
         className={`carte carte--fabrique${flipped ? " est-retournee" : ""}`}
         style={{ ["--pc" as string]: color }}
-        onClick={onFlip}
+        onClick={() => { setVersoPret(true); onFlip(deputy.id); }}
+        onPointerEnter={() => setVersoPret(true)}
+        onFocus={() => setVersoPret(true)}
         aria-pressed={flipped}
         aria-label={
           flipped
@@ -312,7 +317,7 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
       >
         <span className="carte-pivot">
           <span className="carte-recto"><CarteDepute carte={carte} face="recto" contexte={contexte} /></span>
-          <span className="carte-verso"><CarteDepute carte={carte} face="verso" contexte={contexte} /></span>
+          <span className="carte-verso"><CarteDepute carte={carte} face="verso" contexte={contexte} actif={versoPret || flipped} /></span>
         </span>
       </button>
     );
@@ -332,7 +337,7 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
       type="button"
       className={`carte${flipped ? " est-retournee" : ""}${denseBack ? " est-dense" : ""}`}
       style={{ ["--pc" as string]: color }}
-      onClick={onFlip}
+      onClick={() => onFlip(deputy.id)}
       aria-pressed={flipped}
       aria-label={
         flipped
@@ -455,6 +460,8 @@ function DeputyCard({ deputy, party, color, maxAbsTone, flipped, onFlip, cartes,
   );
 }
 
+const DeputyCardMemo = memo(DeputyCard);
+
 // Porte de casier : reste toujours à sa place et à sa taille dans le banc.
 function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   row: AssembleeRow;
@@ -576,7 +583,12 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
     return max;
   }, [rows]);
 
-  const openRow = rows.find((r) => r.key === openParty) ?? null;
+  // LE TIROIR SUIT D'UNE IMAGE : la porte doit commencer à s'ouvrir avant que
+  // le présentoir se remplisse. `useDeferredValue` laisse passer d'abord le
+  // rendu léger (la classe du casier ouvert), puis remplit le tiroir sans
+  // bloquer l'animation. Les portes lisent `openParty` directement.
+  const partiTiroir = useDeferredValue(openParty);
+  const openRow = rows.find((r) => r.key === partiTiroir) ?? null;
   const openIndex = openRow ? rows.findIndex((r) => r.key === openRow.key) : 0;
   const deputies = openRow?.deputies ?? [];
   const partyConcept = conceptPubliable(openRow?.signatureWord);
@@ -590,6 +602,10 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [openParty]);
+
+  // Stable d'un rendu à l'autre : sans elle, chaque carte du présentoir se
+  // re-rendait (et reconstruisait ses faces) au moindre changement d'état.
+  const basculer = useCallback((id: string) => setFlipped((f) => (f === id ? null : id)), []);
 
   const toggle = (key: PartyKey) => {
     setOpenParty(openParty === key ? null : key);
@@ -657,13 +673,13 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
                   key={dep.id}
                   style={{ ["--pc" as string]: openRow.color }}
                 >
-                  <DeputyCard
+                  <DeputyCardMemo
                     deputy={dep}
                     party={openRow.key}
                     color={openRow.color}
                     maxAbsTone={maxAbsTone}
                     flipped={flipped === dep.id}
-                    onFlip={() => setFlipped(flipped === dep.id ? null : dep.id)}
+                    onFlip={basculer}
                     cartes={cartes}
                     contexte={contexte}
                   />

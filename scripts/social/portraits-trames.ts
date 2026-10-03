@@ -77,8 +77,12 @@ const PARTIS = ["caq", "plq", "qs", "pq", "pcq"] as const;
 
 async function accessoires(sharp: typeof import("sharp").default): Promise<void> {
   await fs.mkdir(ACCESSOIRES, { recursive: true });
+  // Rognés à l'encre, puis ramenés à 720 px de large : sur la face (1071 px),
+  // le plus grand logo en occupe 180 ; à l'échelle 2 d'un écran Retina, 720
+  // suffit largement. Les originaux de 1 800 à 2 000 px pesaient 4 fois plus.
   const rogne = async (source: string, cible: string) => {
-    await sharp(path.resolve(process.cwd(), source)).trim().png().toFile(path.join(ACCESSOIRES, cible));
+    await sharp(path.resolve(process.cwd(), source)).trim().resize({ width: 720, withoutEnlargement: true })
+      .png({ compressionLevel: 9, palette: true }).toFile(path.join(ACCESSOIRES, cible));
   };
   await rogne("public/images/brand/logo_capp_1row_bg-none_theme-black.png", "capp.png");
   await rogne("public/images/brand/logo_vitrinedemocratique_bg-none_theme-black.png", "vitrine.png");
@@ -90,7 +94,10 @@ async function accessoires(sharp: typeof import("sharp").default): Promise<void>
     const cote = Math.max(dessin.info.width, dessin.info.height);
     await sharp({ create: { width: cote, height: cote, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
       .composite([{ input: dessin.data, left: Math.round((cote - dessin.info.width) / 2), top: Math.round((cote - dessin.info.height) / 2) }])
-      .png().toFile(path.join(ACCESSOIRES, `ecusson-${cle}.png`));
+      .png().toBuffer()
+      // Ramené à 256 px APRÈS la composition (sharp redimensionne avant de
+      // composer, et refuse une incrustation plus grande que le fond).
+      .then((carre) => sharp(carre).resize(256, 256).png({ compressionLevel: 9, palette: true }).toFile(path.join(ACCESSOIRES, `ecusson-${cle}.png`)));
   }
   // AUTOGRAPHES des légendaires (scripts/social/donnees/signatures/<slug>.jpg,
   // encre sombre sur fond clair) → tracé BLANC sur fond transparent, ×3,

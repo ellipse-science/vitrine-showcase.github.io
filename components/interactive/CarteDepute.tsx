@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { DeputyRow, PeriodKey } from "@/lib/data/assemblee";
 import { ajusterFonctions, ajusterLegende, ajusterNom, ajusterRubriques, ajusterVerso } from "@/lib/cartes/ajustements";
@@ -47,7 +47,33 @@ const RENDU: Rendu = {
   impression: false,
   glyphe: (cle, color, size) => symboleEnjeuSVG(cle, `width:${size}px;height:${size}px;color:${color};display:block`),
   logoUlaval: ASSETS.ulaval,
+  // Le grain en textures précalculées : les filtres SVG du carton étaient
+  // recalculés à chaque image du retournement et du défilement.
+  textures: { grain: "/images/cartes/grain-carte.webp", mouchete: "/images/cartes/mouchete-carte.webp" },
 };
+
+// MONTAGE À LA DEMANDE (2 oct. 2026). Ouvrir le casier CAQ montait 184 faces
+// d'un coup (recto et verso de 92 cartes) : 355 ms de blocage, en pleine
+// animation des portes. Une face n'est plus dessinée que lorsque sa carte
+// approche de l'écran (un écran de marge, dans le présentoir qui défile), et
+// le verso seulement quand on s'apprête à retourner la carte (`actif`).
+// Une fois dessinée, une face le reste : revenir en arrière ne coûte rien.
+let observateur: IntersectionObserver | null = null;
+const rappels = new WeakMap<Element, () => void>();
+function observer(el: Element, rappel: () => void): () => void {
+  if (typeof IntersectionObserver === "undefined") { rappel(); return () => {}; }
+  observateur ??= new IntersectionObserver((entrees) => {
+    for (const e of entrees) {
+      if (!e.isIntersecting) continue;
+      rappels.get(e.target)?.();
+      rappels.delete(e.target);
+      observateur?.unobserve(e.target);
+    }
+  }, { rootMargin: "300px 1400px" });
+  rappels.set(el, rappel);
+  observateur.observe(el);
+  return () => { rappels.delete(el); observateur?.unobserve(el); };
+}
 
 export type ContexteCartes = {
   periode: PeriodKey;
@@ -103,21 +129,36 @@ function chargerPolices(href: string): Promise<void> {
   return p;
 }
 
-export function CarteDepute({ carte, face, contexte }: { carte: Carte; face: "recto" | "verso"; contexte: ContexteCartes }) {
+export function CarteDepute({ carte, face, contexte, actif = true }: {
+  carte: Carte;
+  face: "recto" | "verso";
+  contexte: ContexteCartes;
+  /** Faux tant que la face n'a pas à exister (verso jamais approché). */
+  actif?: boolean;
+}) {
   const hote = useRef<HTMLDivElement>(null);
   const ombre = useRef<ShadowRoot | null>(null);
+  const boite = useRef<HTMLSpanElement>(null);
+  const [proche, setProche] = useState(false);
+  useEffect(() => {
+    const el = boite.current;
+    if (!el || proche) return;
+    return observer(el, () => setProche(true));
+  }, [proche]);
+  const dessiner = proche && actif;
 
-  const rendue: Face = useMemo(() => {
+  const rendue: Face | null = useMemo(() => {
+    if (!dessiner) return null;
     const portrait = ASSETS.portrait(carte.deputy);
     const ecusson = ASSETS.ecusson(carte.cle);
     if (face === "recto") return recto(carte, portrait, ecusson, ASSETS.capp, RENDU);
     const fiche = contexte.fiches.get(slugCirco(carte.deputy)) ?? { [contexte.periode]: carte.deputy };
     return verso(carte, fiche, contexte.maxAbs, contexte.libelles, portrait, ecusson, ASSETS.vitrine, ASSETS.capp, contexte.derniereSeance, { ...RENDU, periodeFiche: contexte.periode });
-  }, [carte, face, contexte]);
+  }, [carte, face, contexte, dessiner]);
 
   useLayoutEffect(() => {
     const el = hote.current;
-    if (!el) return;
+    if (!el || !rendue) return;
     if (!ombre.current) ombre.current = el.shadowRoot ?? el.attachShadow({ mode: "open" });
     const racine = ombre.current;
     // `body` → `:host` : le CSS de la face est écrit pour une page entière.
@@ -143,7 +184,7 @@ export function CarteDepute({ carte, face, contexte }: { carte: Carte; face: "re
   // Le dessin fait W × H ; la boîte prend la largeur de la carte et la
   // hauteur qui va avec, et l'hôte y est réduit d'un seul facteur.
   return (
-    <span className="cd-boite" aria-hidden="true">
+    <span ref={boite} className={`cd-boite${rendue ? "" : " est-attente"}`} aria-hidden="true">
       <div ref={hote} className="cd-hote" style={{ width: W, height: H, transform: `scale(var(--cd-k))` }} />
     </span>
   );
