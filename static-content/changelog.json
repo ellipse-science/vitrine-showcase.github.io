@@ -1,5 +1,11 @@
 [
   {
+    "pr": 917,
+    "date": "2026-10-03T18:37:26Z",
+    "note": "Les cartes des député·es dans le vestiaire sont maintenant les cartes de collection imprimées, recto et verso : numéro, rareté, fonction, fiche électorale, parcours et rémunération, et les mêmes mesures de parole qu'avant.",
+    "version": "2.51.0-beta.0"
+  },
+  {
     "pr": 858,
     "date": "2026-10-03T14:51:23Z",
     "note": "Documentation interne des pipelines mise à jour : rien ne change sur le site.",
