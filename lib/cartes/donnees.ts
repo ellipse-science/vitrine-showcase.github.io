@@ -6,7 +6,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { PeriodKey, loadAssemblee } from "@/lib/data/assemblee";
-import { cleDistrict, plageFr, slugCirco } from "./fonctions";
+import { MONTANT, cleDistrict, plageFr, slugCirco } from "./fonctions";
 import type { Etiquette, FicheFonctions, Genre, Mandat, Mandats, Scrutin } from "./types";
 
 export type DonneesAssemblee = NonNullable<Awaited<ReturnType<typeof loadAssemblee>>>;
@@ -15,8 +15,7 @@ export async function chargerScrutins(): Promise<Scrutin[]> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/resultats-elections.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    console.warn("  ⚠️ resultats-elections.json absent : pas de résultat électoral. Lancez scripts/social/resultats-elections.ts.");
+    console.warn("  ⚠️ resultats-elections.json absent : pas de résultat électoral. Lancez scripts/social/resultats-elections.ts."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
     return [];
   }
   return (JSON.parse(brut) as { resultats: Scrutin[] }).resultats;
@@ -26,8 +25,7 @@ export async function chargerFonctions(): Promise<FicheFonctions[]> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/fonctions-deputes.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    console.warn("  ⚠️ fonctions-deputes.json absent : ni salaire ni vis-à-vis. Lancez scripts/social/fonctions-deputes.ts.");
+    console.warn("  ⚠️ fonctions-deputes.json absent : ni salaire ni vis-à-vis. Lancez scripts/social/fonctions-deputes.ts."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
     return [];
   }
   return (JSON.parse(brut) as { deputes: FicheFonctions[] }).deputes;
@@ -40,8 +38,7 @@ export async function chargerGenres(): Promise<Map<string, Genre>> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/genre-deputes.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
-    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-    console.warn("  ⚠️ genre-deputes.json absent : « Élu.e » reste neutre sur toutes les cartes.");
+    console.warn("  ⚠️ genre-deputes.json absent : « Élu.e » reste neutre sur toutes les cartes."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
     return new Map();
   }
   const d = JSON.parse(brut) as { deputes: Record<string, { genre: "f" | "m" }> };
@@ -140,7 +137,67 @@ export async function retirerExpressions(data: NonNullable<Awaited<ReturnType<ty
   }
   console.log(`  ${faits.size} expression(s) retirée(s) à la relecture (donnees/expressions-retirees.json)`);
   const sansObjet = retraits.filter((r) => !faits.has(r.circonscription));
-  // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
-  if (sansObjet.length) console.warn(`  ⚠️ retrait sans objet, l'expression a changé : ${sansObjet.map((r) => `${r.elu} « ${r.expression} »`).join(", ")}`);
+  if (sansObjet.length) console.warn(`  ⚠️ retrait sans objet, l'expression a changé : ${sansObjet.map((r) => `${r.elu} « ${r.expression} »`).join(", ")}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
 }
 
+/** UN ÉLU, UNE LIGNE (relevé du 23-09). Les données agora ont une ligne par
+ *  élu ET PAR PARTI : un élu qui a changé d'allégeance en a plusieurs, et la
+ *  carte n'en lisait qu'une, souvent la ligne « ind » de fin de mandat. Vincent
+ *  Marissal sortait à 5 380 mots au lieu de 223 184 ; neuf élus touchés à la
+ *  législature (Dubé, Marissal, Rizqy, Lakhoyan Olivier, Nichols, Blanchette
+ *  Vézina, Poulet, Dufour, Lefebvre). Le site, qui range la parole par parti,
+ *  n'est pas touché ; la carte, elle, parle d'un élu.
+ *  · Interventions et mots : sommés (exact).
+ *  · Ton et parts d'enjeux : moyennes pondérées par les mots (approximation :
+ *    les parts brutes ne portent pas leur propre dénominateur).
+ *  · Richesse lexicale et expression distinctive : ceux de la ligne la plus longue. Un
+ *    MATTR ne se moyenne pas, et le niveau est relatif aux autres élus.
+ *  Chaque ligne agora est retrouvée par ses mots et interventions, que le
+ *  loader recopie tels quels. */
+export async function fusionnerLignesParParti(data: DonneesAssemblee, journal = true): Promise<void> {
+  type Brute = { period_type: PeriodKey; deputy_id: string | number; n_interventions: number; word_count: number;
+                 tone_score: number } & Record<string, unknown>;
+  const brutes = JSON.parse(await fs.readFile(path.resolve(process.cwd(), "public/data/agora/agora_decideurs_qc_deputes.json"), "utf8")) as Brute[];
+  const groupes = new Map<string, Brute[]>();
+  for (const r of brutes) {
+    const cle = `${r.period_type}|${r.deputy_id}`;
+    groupes.set(cle, [...(groupes.get(cle) ?? []), r]);
+  }
+  let fusions = 0;
+  for (const [cle, lignes] of groupes) {
+    if (lignes.length < 2) continue;
+    const vueP = data.periods[cle.split("|")[0] as PeriodKey];
+    if (!vueP) continue;
+    const tous = [...vueP.rows.flatMap((x) => x.deputies ?? []), ...(vueP.independants ?? [])];
+    const cibles = tous.filter((d) => lignes.some((r) => Number(r.word_count) === d.wordsRaw && Number(r.n_interventions) === d.interventions));
+    if (!cibles.length) continue;
+    const mots = lignes.reduce((t, r) => t + Number(r.word_count || 0), 0);
+    const pond = (f: (r: Brute) => number) => mots > 0 ? lignes.reduce((t, r) => t + f(r) * Number(r.word_count || 0), 0) / mots : 0;
+    const principale = [...lignes].sort((x, y) => Number(y.word_count) - Number(x.word_count))[0];
+    const modele = cibles.find((d) => d.wordsRaw === Number(principale.word_count)) ?? cibles[0];
+    const parts = Object.fromEntries(Object.keys(modele.issueShares ?? {}).map((k) => [k, pond((r) => Number(r[k] || 0))])) as NonNullable<typeof modele.issueShares>;
+    for (const d of cibles) {
+      d.interventions = lignes.reduce((t, r) => t + Number(r.n_interventions || 0), 0);
+      d.wordsRaw = mots;
+      d.wordsFormatted = MONTANT.format(mots);
+      d.toneScore = pond((r) => Number(r.tone_score || 0));
+      d.issueShares = parts;
+      d.richnessLevel = modele.richnessLevel;
+      d.signatureWord = modele.signatureWord;
+      d.signatureWordContext = modele.signatureWordContext;
+    }
+    // MÊME ÉLU, MÊME PARTI, DEUX GRAPHIES (28-09, données reconstruites) :
+    // « Eric Girard » et « Éric Girard », même identifiant et même siège de
+    // Lac-Saint-Jean, sortaient en deux lignes du même parti, donc en deux
+    // cartes. Dans une même liste de parti, une seule ligne par élu : celle
+    // qui porte le plus de mots.
+    for (const liste of [...vueP.rows.map((x) => x.deputies ?? []), vueP.independants ?? []]) {
+      const doubles = liste.filter((d) => cibles.includes(d));
+      if (doubles.length < 2) continue;
+      const garde = doubles.includes(modele) ? modele : doubles[0];
+      for (const d of doubles) if (d !== garde) liste.splice(liste.indexOf(d), 1);
+    }
+    fusions++;
+  }
+  if (journal) console.log(`  ${fusions} élu·période(s) réunis sur plusieurs lignes de parti`);
+}

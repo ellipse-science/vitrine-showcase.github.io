@@ -316,9 +316,20 @@ export function contourEnjeu(marge: number, epaisseur: number): string {
     + `<path d="M ${g} ${haut + BULLE.ligne} H ${d}" ${trait}/>`;
 }
 
+/** Textures précalculées du grain (site). */
+export type Textures = { grain: string; mouchete: string };
+
 /** LE GRAIN, en deux couches (voir le verso pour le détail) : le piqué fin de
  *  la trame d'impression et les taches larges du carton recyclé. */
-export function grainHTML(): string {
+export function grainHTML(textures?: Textures): string {
+  // Sur le site, les deux bruits sont des TEXTURES précalculées (mêmes
+  // réglages, scripts/social/portraits-trames.ts) : un filtre SVG est
+  // recalculé à chaque image d'une animation, une image non. Le générateur
+  // imprimé garde les filtres.
+  if (textures) {
+    return `<div class="grain" style="background:url('${textures.grain}') 0 0 / 512px 512px"></div>
+  <div class="mouchete" style="background:url('${textures.mouchete}') 0 0 / 1024px 1024px"></div>`;
+  }
   return `<svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
   <svg class="mouchete"><filter id="m"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42"/></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>`;
 }
