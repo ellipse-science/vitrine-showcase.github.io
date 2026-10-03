@@ -1068,6 +1068,45 @@
   }
   .legend-toggle.inline span:last-child { border-right: none; }
   .legend-toggle.inline .active { background: var(--ink); color: var(--paper); }
+  /* Les libellés imbriqués héritent de l'onglet : la règle
+     `.legend-toggle.inline span` les visait aussi (bordure, rembourrage,
+     couleur d'encre sur l'onglet actif noir). */
+  .legend-toggle.inline.assemblee-periodes > span > span { color: inherit; background: none; border: none; padding: 0; margin: 0; }
+  .assemblee-periodes .periode-court { display: none; }
+  /* SUR TÉLÉPHONE, UNE CAPSULE (Jules, 3 oct.) : les trois libellés longs
+     passaient sur deux ou trois lignes de largeurs inégales. Un mot chacun,
+     trois parts égales, coins arrondis, en Oswald comme le reste du module. */
+  @media (max-width: 767px) {
+    .assemblee-periodes.legend-toggle.inline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      flex: 1;
+      padding: 3px;
+      gap: 3px;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      background: var(--paper-deep);
+    }
+    .assemblee-periodes.legend-toggle.inline > span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px;
+      border: none;
+      border-radius: 999px;
+      font-family: 'Oswald', 'Arial Narrow', sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      line-height: 1;
+      white-space: nowrap;
+      color: var(--ink-soft);
+    }
+    .assemblee-periodes.legend-toggle.inline > span.active { background: var(--ink); color: var(--paper); }
+    .assemblee-periodes .periode-long { display: none; }
+    .assemblee-periodes .periode-court { display: inline; }
+  }
   .section-label .legend-toggle.inline { margin-left: auto; }
 
   /* Hero principal — une pleine largeur (Figma: "hero") */
@@ -3450,27 +3489,28 @@
   }
 
   /* --- Le tiroir : le présentoir de cartes du casier ouvert --------------- */
-  /* LE PRÉSENTOIR SUR FOND SOMBRE (Jules, 3 oct.) : les cartes sont soit
-     claires (carton papier), soit à l'encre du parti ; un fond de tôle
-     anthracite, grené comme le reste du module, les détache toutes. */
+  /* LE PRÉSENTOIR SUR CARTON KRAFT (Jules, 3 oct.) : les cartes sont soit
+     claires (carton papier), soit à l'encre du parti ; un fond moyen, le brun
+     d'une boîte de cartes, grené comme le reste du module, les détache
+     toutes. Le fond anthracite essayé avant a été écarté. */
   .vestiaire-tiroir {
     position: relative;
     padding: 20px 16px 16px;
     background:
       var(--carton-mouchete) 0 0 / 512px 512px,
       var(--carton-grain) 0 0 / 256px 256px,
-      #26221F;
-    color: var(--carton-papier);
-    border: 1px solid #1a1715;
+      #B9A688;
+    color: var(--carton-encre);
+    border: 1px solid #9C8B6E;
     border-top: none;
     border-bottom: 3px solid var(--pc);
   }
-  .vestiaire-tiroir .tiroir-tete { border-bottom-color: rgba(243, 236, 221, 0.18); }
-  .vestiaire-tiroir .tiroir-parti { color: var(--carton-papier); }
+  .vestiaire-tiroir .tiroir-tete { border-bottom-color: rgba(28, 25, 23, 0.22); }
+  .vestiaire-tiroir .tiroir-parti { color: var(--pc); }
   .vestiaire-tiroir .tiroir-compte,
-  .vestiaire-tiroir .tiroir-vide { color: rgba(243, 236, 221, 0.72); }
-  .vestiaire-tiroir .tiroir-refermer { color: rgba(243, 236, 221, 0.85); border-bottom-color: rgba(243, 236, 221, 0.35); }
-  .vestiaire-tiroir .tiroir-refermer:hover { color: var(--carton-papier); border-bottom-color: var(--carton-papier); }
+  .vestiaire-tiroir .tiroir-vide { color: rgba(28, 25, 23, 0.72); }
+  .vestiaire-tiroir .tiroir-refermer { color: rgba(28, 25, 23, 0.8); border-bottom-color: rgba(28, 25, 23, 0.35); }
+  .vestiaire-tiroir .tiroir-refermer:hover { color: var(--carton-encre); border-bottom-color: var(--carton-encre); }
   /* Encoche alignée sur le casier ouvert : elle dit lequel on a ouvert, ce que
      l'ancienne mise en page (le casier ouvert s'étalait sur toute la largeur)
      rendait justement illisible. */
