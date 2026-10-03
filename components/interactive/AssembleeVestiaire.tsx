@@ -697,7 +697,9 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
               elle vit dans le tiroir et non sur une porte de casier. */}
 
           {deputies.length > 0 ? (
-            <div className="tiroir-presentoir">
+            // Une clé par parti : changer de parti repart de la première carte
+            // (le présentoir gardait sinon le défilement du parti précédent).
+            <div className="tiroir-presentoir" key={openRow.key}>
               {deputies.map((dep) => (
                 <div
                   className="carte-colonne"
