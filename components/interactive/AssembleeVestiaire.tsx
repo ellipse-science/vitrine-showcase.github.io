@@ -476,39 +476,51 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
   const nb = deputies.length;
   // deputies arrive déjà trié par mots décroissants (buildDeputyList).
   const plusLoquace = deputies[0];
+  // CASIER VIDE (Jules, 3 oct.) : les cinq partis gardent leur casier, même
+  // sans parole dans la vue ; l'intérieur dit pourquoi il est vide.
+  const vide = row.inShadow;
+  const raison = row.aSiege === false
+    ? `Aucun élu du ${row.label} ne siégeait pendant cette période.`
+    : `Aucune prise de parole du ${row.label} pendant cette période.`;
   return (
     <button
       type="button"
-      className={`casier${open ? " est-ouvert" : ""}`}
+      className={`casier${open ? " est-ouvert" : ""}${vide ? " est-vide" : ""}`}
       style={{ ["--pc" as string]: row.color }}
       onClick={onToggle}
       aria-expanded={open}
       aria-label={
         open
           ? `Refermer le casier ${row.label}`
-          : `Ouvrir le casier ${row.label} : ${nb} député.es, `
-            + `${toneWording(row.toneScore ?? 0, maxAbsTone)}`
+          : vide
+            ? `Ouvrir le casier ${row.label}\u00a0: ${raison}`
+            : `Ouvrir le casier ${row.label}\u00a0: ${nb} député·es, ${row.wordsFormatted ?? "0"} mots, `
+              + `${toneWording(row.toneScore ?? 0, maxAbsTone)}`
       }
     >
-      {/* Fond de casier. Ce n'est pas un décor : les battants emportent avec eux
-          le bilan du parti en s'ouvrant, donc l'intérieur reprend le relais avec
-          ce que les portes ne montraient pas — répartition par enjeu, diversité
-          lexicale, concept distinctif. Comme des papiers punaisés au fond d'un
-          casier. */}
+      {/* L'INTÉRIEUR porte tout le bilan (Jules, 3 oct. : « pas trop d'infos
+          sur le devant, seulement à l'intérieur »), en panneaux de papier
+          comme le verso des cartes : la fiche (mots, interventions,
+          député·es, ton), la part des interventions, qui a le plus parlé. */}
       <span className="casier-fond">
-        <span className="casier-cloison" aria-hidden="true" />
         <span className="casier-dedans">
-          {/* L'INTÉRIEUR PARLE COMME LE VERSO DES CARTES (2 oct. 2026) : des
-              panneaux de papier arrondis sur le carton, titres en Oswald
-              capitales, la répartition en barre empilée tramée à l'encre du
-              parti, pictogramme dans le segment — exactement « Part de ses
-              interventions ». */}
           <span className="dedans-bloc">
-            <span className="dedans-titre">Interventions</span>
-            <span className="dedans-chiffre">{(row.interventions ?? 0).toLocaleString("fr-CA")}</span>
+            <span className="dedans-titre">Fiche à l'Assemblée</span>
+            <span className="dedans-stats">
+              <i>Mots</i><i>Interv.</i><i>Député·es</i>
+              <b>{row.wordsFormatted ?? "0"}</b><b>{(row.interventions ?? 0).toLocaleString("fr-CA")}</b><b>{nb}</b>
+            </span>
+            {!vide && (
+              <span className="dedans-ton">
+                <i>Ton</i>
+                <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
+              </span>
+            )}
           </span>
 
-          {row.enjeuStack && row.enjeuStack.length > 0 && (() => {
+          {vide && <span className="dedans-bloc dedans-raison">{raison}</span>}
+
+          {!vide && row.enjeuStack && row.enjeuStack.length > 0 && (() => {
             const nommes = row.enjeuStack.filter((s) => !s.isReste && s.cle).slice(0, 3);
             const autres = Math.max(0, 100 - nommes.reduce((t, x) => t + x.widthPct, 0));
             const TRAMES = [100, 68, 42];
@@ -542,8 +554,6 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
             );
           })()}
 
-          {/* Qui a le plus parlé : une mesure directe, et c'est déjà l'ordre
-              du présentoir. */}
           {plusLoquace && (
             <span className="dedans-bloc">
               <span className="dedans-titre">A le plus parlé</span>
@@ -554,39 +564,23 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
         </span>
       </span>
 
-      {/* LA PORTE (2 oct. 2026) : un casier de vestiaire a UNE porte sur
-          charnières, des persiennes d'aération, un porte-étiquette où glisse
-          un carton au nom du propriétaire, une poignée à moraillon pour le
-          cadenas. La tôle est peinte à l'encre du parti et grenée comme le
-          carton des cartes ; l'étiquette est un morceau de ce carton. Les
-          chiffres vivent sur une fiche de papier, en ligne de statistiques
-          comme la « Fiche à l'Assemblée » du verso. */}
+      {/* LA PORTE, ÉPURÉE : persiennes, porte-étiquette au sigle et à
+          l'écusson, poignée et cadenas. Deux faces : l'extérieur peint,
+          l'intérieur en tôle nue, qu'on voit quand la porte est ouverte. */}
       <span className="casier-porte">
-        {/* Deux faces : l'extérieur peint, l'intérieur en tôle nue, qu'on voit
-            quand la porte est grande ouverte. */}
-        <span className="casier-dos" aria-hidden="true"><span className="casier-persiennes"><i /><i /><i /><i /><i /></span><span className="casier-persiennes bas"><i /><i /><i /></span></span>
+        <span className="casier-dos" aria-hidden="true"><span className="casier-persiennes"><i /><i /><i /><i /><i /></span><span className="casier-persiennes bas"><i /><i /><i /><i /><i /></span></span>
         <span className="casier-face">
-        <span className="casier-charniere haut" aria-hidden="true" />
-        <span className="casier-charniere bas" aria-hidden="true" />
-        <span className="casier-persiennes" aria-hidden="true"><i /><i /><i /><i /><i /></span>
-        <span className="casier-etiquette">
-          <span className="casier-sigle">{row.label}</span>
-          {ECUSSONS.has(row.key) && (
-            <span className="casier-ecusson" aria-hidden="true" style={{ ["--ecusson" as string]: `url(${BASE_PATH}/images/cartes/ecusson-${row.key}.png)` }} />
-          )}
-        </span>
-        <span className="casier-fiche">
-          <span className="casier-stats">
-            <i>Mots</i><i>Député·es</i>
-            <b>{row.wordsFormatted}</b><b>{nb}</b>
+          <span className="casier-charniere haut" aria-hidden="true" />
+          <span className="casier-charniere bas" aria-hidden="true" />
+          <span className="casier-persiennes" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+          <span className="casier-etiquette">
+            <span className="casier-sigle">{row.label}</span>
+            {ECUSSONS.has(row.key) && (
+              <span className="casier-ecusson" aria-hidden="true" style={{ ["--ecusson" as string]: `url(${BASE_PATH}/images/cartes/ecusson-${row.key}.png)` }} />
+            )}
           </span>
-          <span className="casier-ton">
-            <i>Ton</i>
-            <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
-          </span>
-        </span>
-        <span className="casier-persiennes bas" aria-hidden="true"><i /><i /><i /></span>
-        <span className="casier-poignee" aria-hidden="true"><span className="casier-cadenas" /></span>
+          <span className="casier-persiennes bas" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+          <span className="casier-poignee" aria-hidden="true"><span className="casier-cadenas" /></span>
         </span>
       </span>
     </button>
@@ -625,7 +619,6 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
   const openRow = rows.find((r) => r.key === partiTiroir) ?? null;
   const openIndex = openRow ? rows.findIndex((r) => r.key === openRow.key) : 0;
   const deputies = openRow?.deputies ?? [];
-  const partyConcept = conceptPubliable(openRow?.signatureWord);
 
   // Échap referme le tiroir : réflexe attendu de tout panneau qui se déroule.
   useEffect(() => {
@@ -682,27 +675,6 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
 
           {/* L'angle éditorial du parti : une phrase a besoin de largeur, donc
               elle vit dans le tiroir et non sur une porte de casier. */}
-          <div className="tiroir-panneaux">
-          {openRow.editorialAngle && (
-            <div className="tiroir-panneau">
-              <p className="tiroir-rubrique">Angle éditorial</p>
-              <p className="tiroir-angle">{openRow.editorialAngle}</p>
-            </div>
-          )}
-
-          {/* Concept distinctif agrégé au niveau du parti (TF-IDF inter-partis,
-              cf. AssembleeRow.signatureWord) — distinct du concept par député,
-              qui compare chaque élu.e au reste de l'Assemblée. */}
-          <div className="tiroir-panneau tiroir-concept">
-            <p className="tiroir-rubrique">Concept distinctif du parti</p>
-            <ConceptBloc
-              concept={partyConcept}
-              glose={conceptGlose("party")}
-              absence={conceptAbsent("party")}
-              citation={openRow.signatureWordContext}
-            />
-          </div>
-          </div>
 
           {deputies.length > 0 ? (
             <div className="tiroir-presentoir">
@@ -730,19 +702,14 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
             </div>
           ) : (
             <p className="tiroir-vide">
-              Aucune prise de parole attribuée à ce parti pour la période.
+              {openRow.aSiege === false
+                ? `Aucun élu du ${openRow.label} ne siégeait pendant cette période\u00a0: pas de carte.`
+                : `Aucune prise de parole du ${openRow.label} pendant cette période\u00a0: pas de carte.`}
             </p>
           )}
         </div>
       )}
 
-      {shadowRows.length > 0 && (
-        <p className="in-shadow">
-          <span className="in-shadow-label">Hors chambre&nbsp;:</span>{" "}
-          {shadowRows.map((r) => r.label).join(", ")}, aucune prise de parole
-          relevée pour la période.
-        </p>
-      )}
     </div>
   );
 }

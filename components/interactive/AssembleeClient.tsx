@@ -95,7 +95,9 @@ export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeD
       </div>
 
       <section className="assemblee">
-        <AssembleeVestiaire key={period} rows={visibleRows} shadowRows={shadowRows} cartes={cartes?.parPeriode[period]?.cartes} contexte={contexte} />
+        {/* Les cinq casiers en tout temps (Jules, 3 oct.) : un parti sans parole
+            dans la vue garde le sien, vide, au bout du banc. */}
+        <AssembleeVestiaire key={period} rows={[...visibleRows, ...shadowRows]} shadowRows={[]} cartes={cartes?.parPeriode[period]?.cartes} contexte={contexte} />
       </section>
       <div className="module-last-updated">{view.lastUpdated}</div>
     </>

@@ -3016,7 +3016,9 @@
   .casier {
     position: relative;
     display: block;
-    height: 280px;
+    /* AU FORMAT DES CARTES (Jules, 3 oct.) : 63,5 × 88,9, le rapport du
+       carton (1071 × 1496). */
+    aspect-ratio: 1071 / 1496;
     padding: 0;
     background: none;
     border: none;
@@ -3027,7 +3029,9 @@
        milieu du banc, une porte du bord gauche, vue de très loin sur le côté,
        s'écrasait contre sa charnière en s'ouvrant. */
     perspective: 1100px;
-    perspective-origin: 50% 50%;
+    /* Vue depuis la charnière : la porte ouverte se lit de biais, sans
+       s'étirer loin sur la gauche. */
+    perspective-origin: 0% 50%;
     text-align: left;
   }
   .casier:first-child { border-left: none; }
@@ -3082,6 +3086,68 @@
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
+  .dedans-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    container-type: inline-size;
+  }
+  .dedans-stats > i {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+    opacity: 0.85;
+  }
+  .dedans-stats > b {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    font-size: clamp(9px, 7cqw, 15px);
+    line-height: 1;
+    text-align: center;
+    padding-top: 4px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .dedans-stats > :nth-child(3n + 2), .dedans-stats > :nth-child(3n) { border-left: 1px solid currentColor; }
+  .dedans-ton {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px solid currentColor;
+  }
+  .dedans-ton > i {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .dedans-ton .ton-echelle.compacte { flex: 1; margin-top: 0; }
+  .dedans-ton .ton-echelle.compacte::before { display: none; }
+  .dedans-ton .ton-echelle .ton-bornes { display: none; }
+  .dedans-ton .ton-echelle .ton-piste { height: 6px; border: none; background: color-mix(in srgb, currentColor 20%, transparent); }
+  .dedans-ton .ton-echelle .ton-neutre { background: currentColor; opacity: 0.4; width: 2px; }
+  .dedans-ton .ton-echelle .ton-repere { top: -4px; width: 4px; height: 14px; margin-left: -2px; border: none; transform: none; }
+  .dedans-ton .ton-echelle .ton-repere.est-favorable { background: #4E7A43; }
+  .dedans-ton .ton-echelle .ton-repere.est-defavorable { background: #B0473A; }
+  .dedans-raison {
+    font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+    font-style: italic;
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
+  }
+  /* Casier vide : la porte un peu éteinte, pour qu'on le lise d'un coup d'œil. */
+  .casier.est-vide .casier-face { filter: saturate(0.55) brightness(0.92); }
   .dedans-empilee {
     display: flex;
     height: 14px;
@@ -3193,22 +3259,10 @@
     transform: rotateY(-100deg);
     pointer-events: none;
   }
-  .vestiaire { overflow-x: clip; }
-
-  /* LA PORTE DU BORD GAUCHE s'ouvre de l'autre côté. Charnières à gauche, le
-     premier casier n'a pas de voisin de ce côté : sa porte sortait du banc et
-     était rognée au bord du module. On le monte « à droite » — charnières à
-     droite, poignée à gauche — comme on le fait dans un vrai vestiaire. Sur
-     téléphone (deux colonnes), c'est toute la colonne de gauche. */
-  .casier:first-child .casier-porte { transform-origin: right center; }
-  .casier:first-child:hover .casier-porte { transform: rotateY(13deg); }
-  .casier.est-ouvert:first-child .casier-porte,
-  .casier.est-ouvert:first-child:hover .casier-porte { transform: rotateY(100deg); }
-  .casier:first-child .casier-charniere { left: auto; right: -3px; }
-  .casier:first-child .casier-poignee { right: auto; left: 7px; }
-  .casier:first-child .casier-face { padding: 12px 16px 10px 14px; }
-  .casier:first-child .casier-etiquette { margin: 0 4% 0 16px; }
-  .casier:first-child .casier-fiche { margin: 0 2% 0 14px; }
+  /* TOUTES LES PORTES S'OUVRENT À GAUCHE, celle du premier casier comprise
+     (Jules, 3 oct.) : le module déborde de 64 px dans la marge de la page
+     pour que sa porte ouverte reste visible, et se rogne au-delà. */
+  .vestiaire { overflow-x: clip; margin-left: -64px; padding-left: 64px; }
 
   .casier-charniere {
     position: absolute;
@@ -3237,6 +3291,8 @@
     box-shadow: 0 1px 0 color-mix(in srgb, #fff 25%, transparent), inset 0 1px 1px rgba(0,0,0,.5);
   }
   .casier-persiennes.bas { margin-top: auto; }
+  .casier-face > .casier-persiennes:not(.bas) { margin-top: 6%; }
+  .casier-face .casier-etiquette { margin-top: 10%; }
 
   /* Le porte-étiquette : un cadre de métal, et dedans un morceau de carton
      au nom du propriétaire. */
@@ -3362,14 +3418,27 @@
   }
 
   /* --- Le tiroir : le présentoir de cartes du casier ouvert --------------- */
+  /* LE PRÉSENTOIR SUR FOND SOMBRE (Jules, 3 oct.) : les cartes sont soit
+     claires (carton papier), soit à l'encre du parti ; un fond de tôle
+     anthracite, grené comme le reste du module, les détache toutes. */
   .vestiaire-tiroir {
     position: relative;
     padding: 20px 16px 16px;
-    background: var(--paper-deep);
-    border: 1px solid var(--rule);
+    background:
+      var(--carton-mouchete) 0 0 / 512px 512px,
+      var(--carton-grain) 0 0 / 256px 256px,
+      #26221F;
+    color: var(--carton-papier);
+    border: 1px solid #1a1715;
     border-top: none;
     border-bottom: 3px solid var(--pc);
   }
+  .vestiaire-tiroir .tiroir-tete { border-bottom-color: rgba(243, 236, 221, 0.18); }
+  .vestiaire-tiroir .tiroir-parti { color: var(--carton-papier); }
+  .vestiaire-tiroir .tiroir-compte,
+  .vestiaire-tiroir .tiroir-vide { color: rgba(243, 236, 221, 0.72); }
+  .vestiaire-tiroir .tiroir-refermer { color: rgba(243, 236, 221, 0.85); border-bottom-color: rgba(243, 236, 221, 0.35); }
+  .vestiaire-tiroir .tiroir-refermer:hover { color: var(--carton-papier); border-bottom-color: var(--carton-papier); }
   /* Encoche alignée sur le casier ouvert : elle dit lequel on a ouvert, ce que
      l'ancienne mise en page (le casier ouvert s'étalait sur toute la largeur)
      rendait justement illisible. */
@@ -4095,33 +4164,28 @@
      présentoir défile). */
   @media (max-width: 767px) {
     .vestiaire-banc { grid-auto-flow: row; grid-template-columns: 1fr 1fr; grid-auto-columns: auto; }
-    .casier { height: 214px; border-left: none; border-top: 1px solid var(--rule); }
+    .casier { border-left: none; border-top: 1px solid var(--rule); }
     .casier:nth-child(-n + 2) { border-top: none; }
     .casier:nth-child(even) { border-left: 1px solid var(--rule); }
     .casier-sigle { font-size: 22px; }
     /* L'intérieur déborde de 16 px sur un casier de 214 px : on ne garde que
        les deux blocs qui portent vraiment de l'information, et deux enjeux. */
-    .casier { height: 232px; }
-    .casier-dedans { inset: 10px 9px; gap: 5px; }
-    /* Le nombre d'interventions cède la place : la part des interventions et
-       « A le plus parlé » portent l'essentiel. */
-    .casier-dedans > .dedans-bloc:first-child { display: none; }
+    .casier-dedans { inset: 8px 7px; gap: 4px; }
+    /* Le casier fait ~210 px de haut sur téléphone : « A le plus parlé » cède
+       la place — le présentoir, juste dessous, commence justement par cet élu. */
+    .casier-dedans > .dedans-bloc:last-child:not(:first-child) { display: none; }
+    .dedans-bloc { padding: 5px 7px 6px; }
+    .dedans-legende { gap: 1px 5px; margin-top: 4px; }
+    .dedans-legende > i { font-size: 9px; }
     /* Plus de corps fixe ici : le nombre se dimensionne d'après la largeur du
        bilan (voir `clamp(... 20cqw ...)`), ce qui couvre aussi la grille 2 × 2.
        Le 16 px codé en dur reprenait le dessus sur ce calcul et retronquait
        « 6 578 506 » d'un pixel. */
     .casier-face { padding: 9px 11px 8px 12px; gap: 7px; }
-    /* Deux colonnes : la colonne de gauche s'ouvre vers la droite. On annule
-       d'abord la règle du premier casier, puis on l'applique aux impairs. */
-    .casier:nth-child(odd) .casier-porte { transform-origin: right center; }
-    .casier:nth-child(odd):hover .casier-porte { transform: rotateY(13deg); }
-    .casier.est-ouvert:nth-child(odd) .casier-porte,
-    .casier.est-ouvert:nth-child(odd):hover .casier-porte { transform: rotateY(100deg); }
-    .casier:nth-child(odd) .casier-charniere { left: auto; right: -3px; }
-    .casier:nth-child(odd) .casier-poignee { right: auto; left: 7px; }
-    .casier:nth-child(odd) .casier-face { padding: 9px 12px 8px 11px; }
-    .casier:nth-child(odd) .casier-etiquette { margin: 0 4% 0 16px; }
-    .casier:nth-child(odd) .casier-fiche { margin: 0 2% 0 14px; }
+    /* Sur téléphone, la marge de la page ne suffit pas : le banc se décale
+       de 40 px pour laisser voir la porte ouverte de la colonne de gauche. */
+    .vestiaire { margin-left: 0; padding-left: 0; }
+    .vestiaire-banc { margin-left: 40px; }
     .casier-persiennes > i:nth-child(n + 4) { display: none; }
     /* Encoche masquée : sur une grille 2 × 2, elle ne peut désigner qu'une
        COLONNE. Un casier ouvert au premier rang verrait donc la flèche pointer
