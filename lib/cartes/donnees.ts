@@ -15,6 +15,7 @@ export async function chargerScrutins(): Promise<Scrutin[]> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/resultats-elections.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
+    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
     console.warn("  ⚠️ resultats-elections.json absent : pas de résultat électoral. Lancez scripts/social/resultats-elections.ts.");
     return [];
   }
@@ -25,6 +26,7 @@ export async function chargerFonctions(): Promise<FicheFonctions[]> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/fonctions-deputes.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
+    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
     console.warn("  ⚠️ fonctions-deputes.json absent : ni salaire ni vis-à-vis. Lancez scripts/social/fonctions-deputes.ts.");
     return [];
   }
@@ -38,6 +40,7 @@ export async function chargerGenres(): Promise<Map<string, Genre>> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/genre-deputes.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
+    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
     console.warn("  ⚠️ genre-deputes.json absent : « Élu.e » reste neutre sur toutes les cartes.");
     return new Map();
   }
@@ -137,6 +140,7 @@ export async function retirerExpressions(data: NonNullable<Awaited<ReturnType<ty
   }
   console.log(`  ${faits.size} expression(s) retirée(s) à la relecture (donnees/expressions-retirees.json)`);
   const sansObjet = retraits.filter((r) => !faits.has(r.circonscription));
+  // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
   if (sansObjet.length) console.warn(`  ⚠️ retrait sans objet, l'expression a changé : ${sansObjet.map((r) => `${r.elu} « ${r.expression} »`).join(", ")}`);
 }
 

@@ -435,6 +435,8 @@ export function verso(
   // circonscription est au recto ; sans elle, le nom complet du parti tient
   // toujours sur la ligne et le sigle de repli n'a plus lieu d'être.
   const partiLong = ligneParti(c);
+  const ligneChef = c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${ordinal(txt(rendu.impression ? sigleParti(c.chef.titre) : c.chef.titre))}</span>`
+    : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : "";
 
   // Vitaux du carton — « Ht: 6'0"  Wt: 178  Born: 5-12-56 ». Les nôtres
   // viennent d'affiliationHistory : date d'élection, et bascule d'allégeance
@@ -737,8 +739,7 @@ export function verso(
       <span class="titre">
         <span class="nom">${txt(nomImprime(d.name))}</span>
         <span class="identite"><span class="parti-long">${txt(partiLong)}</span></span>
-        ${c.chef ? `<span class="chef${c.chef.eclat ? " eclat" : ""}">${c.chef.eclat ? "&#9733; " : ""}${ordinal(txt(rendu.impression ? sigleParti(c.chef.titre) : c.chef.titre))}</span>`
-          : c.depart ? `<span class="chef">${txt(c.depart.titre)}</span>` : ""}
+        ${ligneChef}
       </span>
     </div>
     ${blocElection}

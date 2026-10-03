@@ -27,6 +27,7 @@ export function construireJeu(
   options: { annee?: number } = {},
 ): JeuComplet {
   const vue = data.periods[periode];
+  // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
   if (!vue) throw new Error(`Période inconnue : ${periode} (legislature, session ou last_pdq).`);
 
   // LE JEU COMPLET D'ABORD, la sélection ensuite. Le numéro de carte doit être
@@ -93,6 +94,7 @@ export function construireJeu(
     const occupants = jeu.filter((c) => siege(c) === s)
       .sort((a, b) => (finMandat(b) ?? "9999").localeCompare(finMandat(a) ?? "9999"));
     if (occupants.filter((c) => !finMandat(c)).length > 1) {
+      // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
       console.warn(`  ⚠️ ${s} : plusieurs élus sans fin de mandat — vérifier la numérotation.`);
     }
     occupants.slice(1).forEach((c, i) => variante.set(c, String.fromCharCode(65 + i)));
@@ -130,7 +132,9 @@ export function construireJeu(
   const slugsConnus = new Set(jeu.map((c) => c.slug));
   const orphelins = Object.keys(CHEFS).filter((k) => !slugsConnus.has(k));
   if (orphelins.length) {
+    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
     console.warn(`  ⚠️ ${orphelins.length} titre(s) de CHEFS sans élu correspondant : ${orphelins.join(", ")}`);
+    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
     console.warn("     La clé est le slug de la circonscription (« l-assomption », « camille-laurin »).");
   }
 
@@ -168,6 +172,7 @@ export function construireJeu(
     if (deja) console.warn(`  ⚠️ ${deja} et ${c.deputy.name} pointent vers la même fiche (${f.nom}) : salaire faux pour l'un des deux.`);
     fichesVues.set(f.assnat_id, c.deputy.name);
   }
+  // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
   if (sansFiche.length) console.warn(`  ⚠️ ${sansFiche.length} élu(s) sans fiche de fonctions : ${sansFiche.join(", ")}`);
   // ACCORD « Élu » / « Élue » : par la fiche de l'Assemblée de chaque carte.
   const neutres: string[] = [];
@@ -177,6 +182,7 @@ export function construireJeu(
     if (!g) neutres.push(c.deputy.name);
     c.mandat = accorderGenre(c.mandat, g);
   }
+  // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
   if (neutres.length) console.warn(`  ⚠️ ${neutres.length} carte(s) gardent « Élu.e », genre inconnu : ${neutres.join(", ")}`);
   for (const c of cartes) {
     const id = ficheParCarte.get(c)?.assnat_id ?? "";
@@ -298,6 +304,7 @@ export function construireJeu(
     raretes: { commune: 0, "peu-commune": 0, rare: 0, legendaire: 0 },
   };
   for (const r of Object.keys(serie.raretes) as Rarete[]) serie.raretes[r] = decompte.get(r) ?? 0;
+  // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
   console.log(`  rareté : ${[...decompte].map(([r, n]) => `${LIBELLE_RARETE[r]} ${n}`).join(" · ")}`);
 
   // RÉSULTAT ÉLECTORAL. Le siège ET le nom de famille doivent concorder : à
@@ -318,10 +325,12 @@ export function construireJeu(
     if (s) c.scrutin = { pourcentage: s.pourcentage, avance: s.avance };
     else sansScrutin.push(`${c.deputy.name} (${c.slug})`);
   }
+  // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
   if (sansScrutin.length) console.warn(`  ⚠️ ${sansScrutin.length} élu(s) sans résultat électoral apparié : ${sansScrutin.join(", ")}`);
 
   const sansMandat = cartes.filter((c) => !c.mandat);
   if (sansMandat.length) {
+    // garde-redaction: ok (diagnostic de console du générateur, jamais affiché sur une carte ni sur le site)
     console.warn(`  ⚠️ ${sansMandat.length} carte(s) sans date d'élection appariée :`);
     for (const c of sansMandat) console.warn(`     · ${c.deputy.name} (${c.slug})`);
   }
