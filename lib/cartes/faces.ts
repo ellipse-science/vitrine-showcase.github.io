@@ -46,6 +46,10 @@ export type Rendu = {
  *  cartes imprimées avant cette date portent le code en police de secours. */
 const POLICES_RECTO = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Oswald:wght@700&display=block";
 
+/** La feuille du verso : Oswald et Archivo Narrow. Le vestiaire du site la
+ *  charge aussi pour ses casiers (même adresse, donc une seule feuille). */
+export const POLICES_VERSO = "https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo+Narrow:ital,wght@0,400;0,600;0,700;1,400&display=block";
+
 /** Une face rendue : la feuille Google Fonts à charger, le CSS (qui cible
  *  `body`), les attributs du <body> et le balisage du corps. */
 export type Face = { polices: string; css: string; attributs: string; corps: string };
@@ -553,7 +557,7 @@ export function verso(
     : `<p class="stats-vide">Aucune intervention</p>`;
 
   return {
-    polices: "https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo+Narrow:ital,wght@0,400;0,600;0,700;1,400&display=block",
+    polices: POLICES_VERSO,
     css: `
   *{box-sizing:border-box;margin:0;padding:0}
   /* LE CARTON est teinté ; l'encre du carton est le papier. */

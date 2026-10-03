@@ -56,6 +56,7 @@ function SourceTip() {
 }
 
 const PERIODS: PeriodKey[] = ["last_pdq", "session", "legislature"];
+const LIBELLES_COURTS: Record<PeriodKey, string> = { last_pdq: "Journée", session: "Session", legislature: "Législature" };
 
 export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeData; cartes?: CartesSite; editionKey?: string }) {
   const [period, setPeriod] = useState<PeriodKey>("legislature");
@@ -77,15 +78,24 @@ export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeD
         </div>
         <div className="control-block">
           <div className="control-row">
-            <div className="legend-toggle inline">
+            <div className="legend-toggle inline assemblee-periodes" role="tablist" aria-label="Période">
               {PERIODS.map((p) => (
                 <span
                   key={p}
+                  role="tab"
+                  tabIndex={0}
+                  aria-selected={p === period}
+                  // Nom accessible explicite : sur téléphone, le libellé long est
+                  // masqué et le court est aria-hidden (relecture d'Adrien, #924).
+                  aria-label={data.periods[p].tabLabel}
                   className={p === period ? "active" : undefined}
                   onClick={() => setPeriod(p)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPeriod(p); } }}
                   style={{ cursor: "pointer" }}
                 >
-                  {data.periods[p].tabLabel}
+                  {/* Libellé complet sur ordinateur, un mot sur téléphone. */}
+                  <span className="periode-long">{data.periods[p].tabLabel}</span>
+                  <span className="periode-court" aria-hidden="true">{LIBELLES_COURTS[p]}</span>
                 </span>
               ))}
             </div>
@@ -95,7 +105,9 @@ export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeD
       </div>
 
       <section className="assemblee">
-        <AssembleeVestiaire key={period} rows={visibleRows} shadowRows={shadowRows} cartes={cartes?.parPeriode[period]?.cartes} contexte={contexte} />
+        {/* Les cinq casiers en tout temps (Jules, 3 oct.) : un parti sans parole
+            dans la vue garde le sien, vide, au bout du banc. */}
+        <AssembleeVestiaire key={period} rows={[...visibleRows, ...shadowRows]} shadowRows={[]} cartes={cartes?.parPeriode[period]?.cartes} contexte={contexte} />
       </section>
       <div className="module-last-updated">{view.lastUpdated}</div>
     </>

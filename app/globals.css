@@ -1068,6 +1068,45 @@
   }
   .legend-toggle.inline span:last-child { border-right: none; }
   .legend-toggle.inline .active { background: var(--ink); color: var(--paper); }
+  /* Les libellés imbriqués héritent de l'onglet : la règle
+     `.legend-toggle.inline span` les visait aussi (bordure, rembourrage,
+     couleur d'encre sur l'onglet actif noir). */
+  .legend-toggle.inline.assemblee-periodes > span > span { color: inherit; background: none; border: none; padding: 0; margin: 0; }
+  .assemblee-periodes .periode-court { display: none; }
+  /* SUR TÉLÉPHONE, UNE CAPSULE (Jules, 3 oct.) : les trois libellés longs
+     passaient sur deux ou trois lignes de largeurs inégales. Un mot chacun,
+     trois parts égales, coins arrondis, en Oswald comme le reste du module. */
+  @media (max-width: 767px) {
+    .assemblee-periodes.legend-toggle.inline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      flex: 1;
+      padding: 3px;
+      gap: 3px;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      background: var(--paper-deep);
+    }
+    .assemblee-periodes.legend-toggle.inline > span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px;
+      border: none;
+      border-radius: 999px;
+      font-family: 'Oswald', 'Arial Narrow', sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      line-height: 1;
+      white-space: nowrap;
+      color: var(--ink-soft);
+    }
+    .assemblee-periodes.legend-toggle.inline > span.active { background: var(--ink); color: var(--paper); }
+    .assemblee-periodes .periode-long { display: none; }
+    .assemblee-periodes .periode-court { display: inline; }
+  }
   .section-label .legend-toggle.inline { margin-left: auto; }
 
   /* Hero principal — une pleine largeur (Figma: "hero") */
@@ -2989,6 +3028,38 @@
      des filets et des aplats, jamais d'un flou. */
   .vestiaire { display: flex; flex-direction: column; gap: 0; }
 
+  /* Le filtre par parti du téléphone : masqué ici, affiché sous 767 px. */
+  .vestiaire-filtre {
+    display: none;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 0 12px;
+    scrollbar-width: none;
+  }
+  .vestiaire-filtre::-webkit-scrollbar { display: none; }
+  .vestiaire-filtre button {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px 5px 9px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: none;
+    color: var(--ink-soft);
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+  }
+  .vestiaire-filtre button i { font-style: normal; font-weight: 400; opacity: 0.6; }
+  .vestiaire-filtre .filtre-point { width: 8px; height: 8px; border-radius: 50%; background: var(--pc); }
+  .vestiaire-filtre button.est-choisi { background: var(--pc); border-color: var(--pc); color: #F3ECDD; }
+  .vestiaire-filtre button.est-choisi .filtre-point { background: #F3ECDD; }
+  .vestiaire-filtre button.est-choisi i { opacity: 0.8; }
+  .vestiaire-filtre button:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 2px; }
+
   /* Un vrai banc : casiers jointifs, largeurs égales, cloisons partagées. */
   .vestiaire-banc {
     display: grid;
@@ -2997,253 +3068,446 @@
     border: 1px solid var(--rule);
     border-bottom: 3px solid var(--rule);
     background: var(--paper-deep);
-    perspective: 1500px;
+  }
+
+  /* LE VESTIAIRE PARLE COMME LES CARTES (2 oct. 2026). Même vocabulaire que
+     le carton de collection (lib/cartes/faces.ts) : encre du parti en aplat,
+     grain et mouchetures du carton recyclé, filet de papier en retrait,
+     panneaux de papier à coins très arrondis, titres en Oswald capitales,
+     chiffres en Oswald grasse, petits textes en Archivo Narrow. Les couleurs
+     de papier et d'encre sont celles du carton, FIXES : comme les cartes, le
+     module ne change pas de teinte avec le thème sombre. */
+  .vestiaire {
+    --carton-papier: #F3ECDD;
+    --carton-encre: #1C1917;
+    --carton-grain: url("/images/cartes/grain.webp");
+    --carton-mouchete: url("/images/cartes/mouchete.webp");
   }
 
   .casier {
     position: relative;
     display: block;
-    height: 280px;
+    /* AU FORMAT DES CARTES (Jules, 3 oct.) : 63,5 × 88,9, le rapport du
+       carton (1071 × 1496). */
+    aspect-ratio: 1071 / 1496;
     padding: 0;
     background: none;
     border: none;
     border-left: 1px solid var(--rule);
     cursor: pointer;
     transform-style: preserve-3d;
+    /* La perspective de CHAQUE casier, centrée sur lui : calculée depuis le
+       milieu du banc, une porte du bord gauche, vue de très loin sur le côté,
+       s'écrasait contre sa charnière en s'ouvrant. */
+    perspective: 1100px;
+    /* Vue depuis la charnière : la porte ouverte se lit de biais, sans
+       s'étirer loin sur la gauche. */
+    perspective-origin: 0% 50%;
     text-align: left;
   }
   .casier:first-child { border-left: none; }
   .casier:focus-visible { outline: 2px solid var(--cordovan); outline-offset: -4px; }
 
-  /* Fond de casier : la tôle qu'on aperçoit une fois les battants écartés. */
+  /* Fond de casier : le carton du verso, plus sombre, sous ses panneaux. */
   .casier-fond {
     position: absolute;
     inset: 0;
     background:
-      repeating-linear-gradient(
-        to bottom,
-        color-mix(in srgb, var(--pc) 26%, #000) 0 1px,
-        transparent 1px 9px
-      ),
-      color-mix(in srgb, var(--pc) 58%, #000);
+      linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.05) 30%, rgba(0,0,0,.12)),
+      color-mix(in srgb, var(--pc) 82%, #000);
   }
-  /* Cloison de fond : la tôle qui donne la profondeur, derrière les papiers. */
-  .casier-cloison {
-    position: absolute;
-    left: 9px; right: 9px; top: 9px; bottom: 9px;
-    border: 1px solid color-mix(in srgb, var(--pc) 78%, #fff);
-    opacity: 0.35;
+  /* FINI MÉTAL (Jules, 3 oct.) : une tôle peinte, sans grain de carton. */
+  .vestiaire {
+    /* Tôle peinte, lisse et mate (Jules, 3 oct. : le brossé est écarté) :
+       un aplat, une lumière très douce du haut vers le bas. */
+    --metal-lumiere: linear-gradient(180deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 38%, rgba(0,0,0,0) 70%, rgba(0,0,0,.10) 100%);
   }
-  /* Les papiers punaisés : ce que les battants emportaient en s'ouvrant. */
+
+  /* Les panneaux du verso : papier, coins arrondis, encre du parti. */
   .casier-dedans {
     position: absolute;
-    inset: 16px 13px;
+    inset: 10px 9px;
     display: flex;
     flex-direction: column;
-    gap: 11px;
-    color: var(--paper);
+    gap: 5px;
     text-align: left;
-    /* Le contenu n'apparaît qu'une fois les portes écartées : sinon il
-       transparaît une fraction de seconde pendant la rotation. */
     opacity: 0;
     transition: opacity 0.25s ease 0.28s;
   }
   .casier.est-ouvert .casier-dedans { opacity: 1; }
-  .dedans-bloc { display: block; }
+  .dedans-bloc {
+    display: block;
+    background: var(--carton-papier);
+    color: var(--pc);
+    border-radius: 11px;
+    padding: 6px 9px 7px;
+  }
   .dedans-titre {
     display: block;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.17em;
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 600;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    line-height: 1.1;
     text-transform: uppercase;
-    color: rgba(243, 236, 221, 0.72);
-    border-bottom: 1px solid rgba(243, 236, 221, 0.28);
-    padding-bottom: 3px;
-    margin-bottom: 6px;
+    text-align: center;
+    margin-bottom: 4px;
   }
-  .dedans-enjeu {
+  .dedans-chiffre {
+    display: block;
+    text-align: center;
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    font-size: 21px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .dedans-stats {
     display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-areas: 'lbl pct' 'piste piste';
-    align-items: center;
-    gap: 2px 6px;
-    margin-bottom: 6px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    container-type: inline-size;
   }
-  .dedans-lbl {
-    grid-area: lbl;
-    font-family: 'IBM Plex Mono', monospace;
+  .dedans-stats > i {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
     font-style: normal;
-    font-size: 9px;
+    font-weight: 500;
+    font-size: 8.5px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--paper);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    text-align: center;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+    opacity: 0.85;
+  }
+  .dedans-stats > b {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    font-size: clamp(9px, 7cqw, 15px);
+    line-height: 1;
+    text-align: center;
+    padding-top: 4px;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  .dedans-pct {
-    grid-area: pct;
-    font-family: 'IBM Plex Mono', monospace;
+  .dedans-stats > :nth-child(3n + 2), .dedans-stats > :nth-child(3n) { border-left: 1px solid currentColor; }
+  .dedans-ton {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px solid currentColor;
+  }
+  .dedans-ton > i {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
     font-style: normal;
-    font-size: 9px;
-    font-variant-numeric: tabular-nums;
-    color: rgba(243, 236, 221, 0.8);
-  }
-  .dedans-piste {
-    grid-area: piste;
-    display: block;
-    height: 5px;
-    background: rgba(243, 236, 221, 0.22);
-  }
-  .dedans-piste > i { display: block; height: 5px; }
-  .dedans-points {
-    display: block;
-    font-size: 11px;
-    letter-spacing: 2px;
-    color: var(--paper);
-  }
-  .dedans-points .empty { color: rgba(243, 236, 221, 0.35); }
-  .bloc-chiffre .dedans-vedette { font-size: 22px; }
-  .dedans-vedette {
-    display: block;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 15px;
-    line-height: 1.08;
-    color: var(--paper);
-  }
-  .dedans-vedette-mots {
-    display: block;
-    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
     font-size: 9px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: rgba(243, 236, 221, 0.72);
-    margin-top: 2px;
+    opacity: 0.85;
   }
-  .dedans-concept {
-    display: block;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 19px;
-    line-height: 1.05;
-    color: var(--paper);
+  .dedans-ton .ton-echelle.compacte { flex: 1; margin-top: 0; }
+  .dedans-ton .ton-echelle.compacte::before { display: none; }
+  .dedans-ton .ton-echelle .ton-bornes { display: none; }
+  .dedans-ton .ton-echelle .ton-piste { height: 6px; border: none; background: color-mix(in srgb, currentColor 20%, transparent); }
+  .dedans-ton .ton-echelle .ton-neutre { background: currentColor; opacity: 0.4; width: 2px; }
+  .dedans-ton .ton-echelle .ton-repere { top: -4px; width: 4px; height: 14px; margin-left: -2px; border: none; transform: none; }
+  .dedans-ton .ton-echelle .ton-repere.est-favorable { background: #4E7A43; }
+  .dedans-ton .ton-echelle .ton-repere.est-defavorable { background: #B0473A; }
+  .dedans-raison {
+    font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+    font-style: italic;
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
   }
-
-  .casier-battant {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 50%;
+  /* Casier vide : la porte un peu éteinte, pour qu'on le lise d'un coup d'œil. */
+  .casier.est-vide .casier-face { filter: saturate(0.55) brightness(0.92); }
+  .dedans-empilee {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 11px 10px;
-    background: var(--pc);
-    border: 1px solid color-mix(in srgb, var(--pc) 72%, #000);
-    color: var(--paper);
-    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
-    backface-visibility: hidden;
+    height: 14px;
+    border-radius: 2px;
+    overflow: hidden;
   }
-  .casier-battant.gauche { left: 0;  transform-origin: left center; }
-  .casier-battant.droite { right: 0; transform-origin: right center; align-items: flex-end; text-align: right; }
-  /* Fermé, au survol : les battants s'entrebâillent — l'indice qu'il y a
-     quelque chose derrière. */
-  .casier:hover .casier-battant.gauche { transform: rotateY(-11deg); }
-  .casier:hover .casier-battant.droite { transform: rotateY(11deg); }
-  /* Ouvert : grands écarts, le fond de casier apparaît. Les cartes, elles,
-     vivent dans le tiroir en dessous — un battant de casier est bien trop
-     étroit pour un présentoir. */
-  .casier.est-ouvert .casier-battant.gauche,
-  .casier.est-ouvert:hover .casier-battant.gauche { transform: rotateY(-115deg); }
-  .casier.est-ouvert .casier-battant.droite,
-  .casier.est-ouvert:hover .casier-battant.droite { transform: rotateY(115deg); }
-
-  /* Fentes d'aération : le détail qui fait lire « casier » plutôt que « boîte ». */
-  .casier-fentes {
-    display: block;
-    height: 12px;
-    background: repeating-linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--pc) 55%, #000) 0 2px,
-      transparent 2px 5px
-    );
-  }
-  .casier-plaque {
-    display: block;
-    padding: 4px 0;
-    border-top: 1px solid rgba(243, 236, 221, 0.45);
-    border-bottom: 1px solid rgba(243, 236, 221, 0.45);
-  }
-  .casier-sigle {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 28px;
-    line-height: 1;
-  }
-  /* Le bilan vit dans le battant GAUCHE, qui ne fait que la moitié du casier.
-     À quatre partis le casier est assez large pour qu'un nombre à sept chiffres
-     y tienne au corps 19 px ; à cinq il tombe à 171 px, le battant à 63 px de
-     contenu, et « 6 578 506 » en réclame 83. Le nombre était tronqué.
-     Le PCQ n'apparaissant que sur la législature complète, le cas ne s'est
-     présenté qu'une fois l'historique 2022-2026 rattrapé.
-     On dimensionne donc le nombre d'après la largeur RÉELLE du bilan plutôt que
-     d'après un nombre de partis présumé : la règle tient aussi bien à trois
-     partis qu'à six, sans média-requête à rallonge. */
-  .casier-bilan {
+  .dedans-empilee > i { display: flex; align-items: center; justify-content: center; height: 100%; }
+  .dedans-picto { width: 10px; height: 10px; display: block; flex: 0 0 auto; }
+  .dedans-legende {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: auto;
-    /* `container-type: inline-size` retire le dimensionnement par le contenu :
-       sans largeur imposée, le bilan du battant droit (« 83 DÉPUTÉ.ES »)
-       s'effondrait à zéro. On l'étire donc explicitement sur la largeur du
-       battant, qui est la mesure dont on veut dépendre de toute façon. */
-    align-self: stretch;
-    container-type: inline-size;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2px 6px;
+    margin-top: 5px;
   }
-  .casier-bilan b {
-    display: block;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    /* Mesuré : « 6 578 506 » occupe environ 4,7 fois son corps en largeur, donc
-       il tient tant que le corps reste sous ~21 % de la largeur du bilan. 20 %
-       laisse une marge, et le plancher couvre le cas le plus serré (cinq partis
-       sur un écran étroit) avant que la grille ne repasse à deux colonnes. */
-    font-size: clamp(10px, 20cqw, 19px);
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-  }
-  .casier-bilan i {
-    display: block;
-    font-family: 'IBM Plex Mono', monospace;
+  .dedans-legende > i {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
     font-style: normal;
     font-size: 9.5px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: rgba(243, 236, 221, 0.76);
-    margin-top: 2px;
+    white-space: nowrap;
   }
-  .casier-poignee {
+  .dedans-legende > i b { font-family: 'Oswald', 'Arial Narrow', sans-serif; font-weight: 600; }
+  .dedans-legende > i.reste { opacity: 0.62; }
+  .dedans-nom {
+    display: block;
+    text-align: center;
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.05;
+    text-transform: uppercase;
+  }
+  .dedans-sous {
+    display: block;
+    text-align: center;
+    font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+    font-style: italic;
+    font-size: 10px;
+    opacity: 0.8;
+    margin-top: 1px;
+  }
+
+  /* LE CADRE DU CASIER : la tôle du meuble, plus sombre, autour de la porte.
+     La porte s'y loge en retrait de 4 px : c'est ce jour, et l'ombre qu'il
+     porte, qui fait lire « casier » et non « panneau ». */
+  .casier { background: color-mix(in srgb, var(--pc) 55%, #000); }
+  .casier-fond { inset: 4px; border-radius: 2px; }
+  .casier-dedans { inset: 12px 11px; }
+
+  /* LA PORTE : une seule, sur charnières à gauche, à DEUX FACES — l'extérieur
+     peint (.casier-face) et l'intérieur en tôle nue (.casier-dos), chacune
+     invisible de dos. Calque graphique à part (will-change) : la rotation ne
+     repeint ni le grain ni les textes. */
+  .casier-porte {
+    position: absolute;
+    inset: 4px;
+    transform-style: preserve-3d;
+    transform-origin: left center;
+    transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.3, 1);
+    will-change: transform;
+  }
+  .casier-face,
+  .casier-dos {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    border-radius: 2px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .casier-face {
+    padding: 12px 14px 10px 16px;
+    background:
+      var(--metal-lumiere),
+      var(--pc);
+    color: var(--carton-papier);
+    /* Tôle emboutie : un liseré clair en haut à gauche, une ombre en bas à
+       droite, et le jour sombre tout autour. */
+    box-shadow:
+      inset 1px 1px 0 color-mix(in srgb, #fff 22%, transparent),
+      inset -1px -1px 0 color-mix(in srgb, #000 30%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--pc) 45%, #000);
+    transition: box-shadow 0.6s ease;
+  }
+  /* L'intérieur de la porte : la même tôle, plus sombre et sans peinture
+     d'apparat ; on y devine le revers des persiennes. */
+  .casier-dos {
+    transform: rotateY(180deg);
+    padding: 12px 16px 10px 14px;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--pc) 50%, #000), color-mix(in srgb, var(--pc) 68%, #000));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 35%, transparent);
+  }
+  .casier:hover .casier-porte { transform: rotateY(-13deg); }
+  .casier:hover .casier-face { box-shadow: inset 1px 1px 0 color-mix(in srgb, #fff 22%, transparent), inset -1px -1px 0 color-mix(in srgb, #000 30%, transparent), 6px 0 10px -4px rgba(0,0,0,.45); }
+  /* Ouverte : au-delà de l'équerre, comme une vraie porte de casier. Elle se
+     rabat sur le casier voisin, intérieur visible, au-dessus de lui ; elle ne
+     capte plus le clic (c'est le casier qui se referme). */
+  .casier.est-ouvert { z-index: 2; cursor: default; }
+  .casier.est-ouvert .casier-porte,
+  .casier.est-ouvert:hover .casier-porte {
+    transform: rotateY(-100deg);
+    pointer-events: none;
+  }
+  /* TOUTES LES PORTES S'OUVRENT À GAUCHE, celle du premier casier comprise
+     (Jules, 3 oct.) : le module déborde de 64 px dans la marge de la page
+     pour que sa porte ouverte reste visible, et se rogne au-delà. */
+  .vestiaire { overflow-x: clip; margin-left: -64px; padding-left: 64px; }
+
+  .casier-charniere {
     position: absolute;
     left: -3px;
-    top: 50%;
     width: 6px;
-    height: 40px;
-    margin-top: -20px;
-    background: var(--brass);
-    border: 1px solid color-mix(in srgb, var(--brass) 65%, #000);
+    height: 22px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #8b8578, #d9d2c2 45%, #7a7468);
+    box-shadow: 0 1px 1px rgba(0,0,0,.4);
+  }
+  .casier-charniere.haut { top: 20px; }
+  .casier-charniere.bas { bottom: 20px; }
+
+  /* Persiennes : des fentes embouties, ombre dessus, lumière dessous. */
+  .casier-persiennes {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 18%;
+  }
+  .casier-persiennes > i {
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--pc) 40%, #000);
+    box-shadow: 0 1px 0 color-mix(in srgb, #fff 25%, transparent), inset 0 1px 1px rgba(0,0,0,.5);
+  }
+  .casier-persiennes.bas { margin-top: auto; }
+  .casier-face > .casier-persiennes:not(.bas) { margin-top: 6%; }
+  .casier-face .casier-etiquette { margin-top: 10%; }
+
+  /* Le porte-étiquette : un cadre de métal, et dedans un morceau de carton
+     au nom du propriétaire. */
+  .casier-etiquette {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin: 0 16px 0 4%;
+    padding: 4px 9px 4px 10px;
+    background: var(--carton-papier);
+    color: var(--pc);
+    border-radius: 3px;
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, #c9c2b2 85%, var(--pc)),
+      0 0 0 3px color-mix(in srgb, #000 35%, transparent),
+      inset 0 1px 2px rgba(0,0,0,.18);
+  }
+  .casier-sigle {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+  .casier-ecusson {
+    display: block;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    background: var(--pc);
+    -webkit-mask: var(--ecusson) center / contain no-repeat;
+    mask: var(--ecusson) center / contain no-repeat;
+  }
+
+  /* La fiche des chiffres : la « Fiche à l'Assemblée » du verso, en
+     miniature — deux colonnes séparées d'un filet, libellés en haut. */
+  .casier-fiche {
+    display: block;
+    margin: 0 14px 0 2%;
+    background: var(--carton-papier);
+    color: var(--pc);
+    border-radius: 9px;
+    padding: 6px 8px 7px;
+    container-type: inline-size;
+  }
+  .casier-stats {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+  .casier-stats > i {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+    opacity: 0.85;
+  }
+  .casier-stats > b {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    font-size: clamp(11px, 11cqw, 19px);
+    line-height: 1;
+    text-align: center;
+    padding-top: 4px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .casier-stats > :nth-child(2), .casier-stats > :nth-child(4) { border-left: 1px solid currentColor; }
+  .casier-ton {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px solid currentColor;
+  }
+  .casier-ton > i {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .casier-ton .ton-echelle.compacte { flex: 1; margin-top: 0; }
+  .casier-ton .ton-echelle.compacte::before { display: none; }
+  .casier-ton .ton-echelle .ton-bornes { display: none; }
+  .casier-ton .ton-echelle .ton-piste { height: 6px; border: none; background: color-mix(in srgb, currentColor 20%, transparent); }
+  .casier-ton .ton-echelle .ton-neutre { background: currentColor; opacity: 0.4; width: 2px; }
+  .casier-ton .ton-echelle .ton-repere { top: -4px; width: 4px; height: 14px; margin-left: -2px; border: none; transform: none; }
+  .casier-ton .ton-echelle .ton-repere.est-favorable { background: #4E7A43; }
+  .casier-ton .ton-echelle .ton-repere.est-defavorable { background: #B0473A; }
+
+  /* La poignée à moraillon, sur le bord libre, avec l'anneau du cadenas. */
+  .casier-poignee {
+    position: absolute;
+    right: 7px;
+    top: 50%;
+    width: 7px;
+    height: 46px;
+    margin-top: -23px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #7a7468, #e3dccc 40%, #8b8578);
+    box-shadow: 0 1px 2px rgba(0,0,0,.45);
+  }
+  .casier-cadenas {
+    position: absolute;
+    left: 50%;
+    top: 30px;
+    width: 9px;
+    height: 9px;
+    margin-left: -4.5px;
+    border-radius: 50%;
+    border: 2px solid #b9b1a0;
+    background: color-mix(in srgb, var(--pc) 40%, #000);
   }
 
   /* --- Le tiroir : le présentoir de cartes du casier ouvert --------------- */
+  /* LE PRÉSENTOIR SANS FOND (Jules, 3 oct. : « il faut vraiment que ce soit
+     les cartes qui soient mises de l'avant ») : les cartes se posent sur le
+     papier de la page, sous un simple filet à l'encre du parti. Le fond
+     anthracite puis le kraft essayés avant détonnaient. */
   .vestiaire-tiroir {
     position: relative;
-    padding: 20px 16px 16px;
-    background: var(--paper-deep);
-    border: 1px solid var(--rule);
-    border-top: none;
-    border-bottom: 3px solid var(--pc);
+    padding: 18px 0 8px;
+    background: none;
+    color: var(--ink);
+    border: none;
+    border-top: 3px solid var(--pc);
   }
+  .vestiaire-tiroir .tiroir-tete { border-bottom-color: var(--rule); }
+  .vestiaire-tiroir .tiroir-parti { color: var(--pc); }
+  .vestiaire-tiroir .tiroir-compte,
+  .vestiaire-tiroir .tiroir-vide { color: var(--ink-softer); }
   /* Encoche alignée sur le casier ouvert : elle dit lequel on a ouvert, ce que
      l'ancienne mise en page (le casier ouvert s'étalait sur toute la largeur)
      rendait justement illisible. */
@@ -3267,58 +3531,51 @@
     border-bottom: 1px solid var(--rule);
   }
   .tiroir-parti {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 21px;
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 1;
+    text-transform: uppercase;
     color: var(--pc);
   }
   .tiroir-compte,
   .tiroir-vide {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
-    letter-spacing: 0.16em;
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-softer);
   }
-  .tiroir-refermer {
+  /* Verso · Recto : retourne toutes les cartes du présentoir d'un coup. */
+  .tiroir-faces {
+    display: inline-flex;
     margin-left: auto;
-    background: none;
+    padding: 2px;
+    gap: 2px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+  }
+  .tiroir-faces button {
+    padding: 4px 11px;
     border: none;
-    border-bottom: 1px solid var(--rule);
+    border-radius: 999px;
+    background: none;
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
     cursor: pointer;
-    padding: 0 0 2px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
   }
-  .tiroir-refermer:hover { color: var(--cordovan); border-bottom-color: var(--cordovan); }
-  .tiroir-refermer:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 3px; }
-  .tiroir-angle {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 16px;
-    line-height: 1.42;
-    color: var(--ink-soft);
-    margin: -4px 0 14px;
-    max-width: 72ch;
-  }
-  /* Concept distinctif au niveau du PARTI, dans le tiroir. Le mot passe à la
-     ligne sous son intitulé : sur une seule ligne, un mot long poussait la
-     glose hors du tiroir à 1280 px. */
-  .tiroir-concept {
-    margin: -2px 0 14px;
-    max-width: 72ch;
-  }
-  .tiroir-concept-titre {
-    display: block;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--cordovan);
-    margin-bottom: 3px;
-  }
+  .tiroir-faces button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  /* MÊME HAUTEUR EN TOUT TEMPS (Jules, 3 oct.) : le présentoir réserve une
+     rangée de cartes et leur avis de parcours, même vide (un parti sans
+     parole dans la vue), pour que le module ne change jamais de taille. */
+  .tiroir-presentoir,
+  .vestiaire-tiroir .tiroir-vide { min-height: calc(var(--carte-hauteur, 475px) + 76px); }
+  .vestiaire-tiroir .tiroir-vide { display: flex; align-items: center; justify-content: center; text-align: center; margin: 0; }
 
   /* Bloc du concept distinctif, partagé par la carte et le tiroir. Tout est
      visible en permanence : pas de survol (une carte finit imprimée, et un
@@ -3372,15 +3629,6 @@
     line-height: 1.45;
     margin-top: 0;
   }
-  /* Dans le tiroir, la largeur ne manque pas : la citation s'y lit en entier
-     et au corps du texte courant, pas au corps réduit de la carte. */
-  .tiroir-concept .concept-mot { font-size: 19px; color: var(--ink); }
-  .tiroir-concept .concept-citation {
-    font-size: 13px;
-    line-height: 1.45;
-  }
-  .tiroir-concept .concept-citation-indisponible { font-size: 9px; }
-  .tiroir-concept .concept-glose { font-size: 8.5px; }
 
   /* Le présentoir défile horizontalement : les cartes gardent leur format
      exact plutôt que de se comprimer pour tenir dans la largeur. */
@@ -3394,8 +3642,8 @@
   .tiroir-presentoir > * { scroll-snap-align: start; }
 
   .carte-colonne {
-    flex: 0 0 291px;
-    width: 291px;
+    flex: 0 0 340px;
+    width: 340px;
   }
   /* Avis compact sous une carte : le parcours reste visible sans imposer la
      hauteur de toute la frise. Le <details> natif conserve le clic, le clavier
@@ -3552,8 +3800,8 @@
   /* --- La carte : format 63,5 × 88,9 mm, soit 5:7 ------------------------- */
   .carte {
     flex: 0 0 auto;
-    width: 291px;
-    height: 408px;
+    width: 340px;
+    height: 475px;
     padding: 0;
     background: none;
     border: none;
@@ -3570,7 +3818,7 @@
      291 × 1496 / 1071 = 406,5 px, contre 408 pour l'ancienne carte. Les deux
      faces n'ont ni fond ni marge : le carton apporte les siens. */
   .carte.carte--fabrique {
-    --carte-l: 291;
+    --carte-l: 340;
     --cd-k: calc(var(--carte-l) / 1071);
     height: calc(var(--carte-l) * 1px * 1496 / 1071);
   }
@@ -3905,7 +4153,8 @@
   .ton-echelle.compacte .ton-bornes { color: rgba(243,236,221,.75); font-size: 7px; }
 
   @media (prefers-reduced-motion: reduce) {
-    .casier-battant,
+    .casier-porte,
+    .casier-face,
     .carte-pivot { transition: none; }
   }
 
@@ -3915,30 +4164,46 @@
      présentoir défile). */
   @media (max-width: 767px) {
     .vestiaire-banc { grid-auto-flow: row; grid-template-columns: 1fr 1fr; grid-auto-columns: auto; }
-    .casier { height: 214px; border-left: none; border-top: 1px solid var(--rule); }
+    .casier { border-left: none; border-top: 1px solid var(--rule); }
     .casier:nth-child(-n + 2) { border-top: none; }
     .casier:nth-child(even) { border-left: 1px solid var(--rule); }
     .casier-sigle { font-size: 22px; }
     /* L'intérieur déborde de 16 px sur un casier de 214 px : on ne garde que
        les deux blocs qui portent vraiment de l'information, et deux enjeux. */
-    .casier { height: 232px; }
-    .casier-dedans { inset: 13px 11px; gap: 9px; }
-    .casier-dedans .bloc-chiffre,
-    .casier-dedans .dedans-enjeu:nth-of-type(3) { display: none; }
-    .dedans-vedette { font-size: 14px; }
+    .casier-dedans { inset: 8px 7px; gap: 4px; }
+    /* Le casier fait ~210 px de haut sur téléphone : « A le plus parlé » cède
+       la place — le présentoir, juste dessous, commence justement par cet élu. */
+    .casier-dedans > .dedans-bloc:last-child:not(:first-child) { display: none; }
+    .dedans-bloc { padding: 5px 7px 6px; }
+    .dedans-legende { gap: 1px 5px; margin-top: 4px; }
+    .dedans-legende > i { font-size: 9px; }
     /* Plus de corps fixe ici : le nombre se dimensionne d'après la largeur du
        bilan (voir `clamp(... 20cqw ...)`), ce qui couvre aussi la grille 2 × 2.
        Le 16 px codé en dur reprenait le dessus sur ce calcul et retronquait
        « 6 578 506 » d'un pixel. */
-    .casier-battant { padding: 9px 8px; }
+    .casier-face { padding: 9px 11px 8px 12px; gap: 7px; }
+    /* Sur téléphone, la marge de la page ne suffit pas : le banc se décale
+       de 40 px pour laisser voir la porte ouverte de la colonne de gauche. */
+    .vestiaire { margin-left: 0; padding-left: 0; }
+    /* LES CARTES D'ABORD (Jules, 3 oct.) : sur téléphone, plus de banc de
+       casiers ; un filtre par parti discret, puis le présentoir, pleine
+       largeur, sur son fond sombre. */
+    .vestiaire-banc { display: none; }
+    .vestiaire-filtre { display: flex; }
+    .vestiaire-tiroir { padding: 14px 0 8px; }
+    .tiroir-tete { margin-bottom: 10px; padding-bottom: 6px; }
+    .tiroir-parti { font-size: 18px; }
+    .tiroir-compte { font-size: 11px; }
+    .casier-persiennes > i:nth-child(n + 4) { display: none; }
     /* Encoche masquée : sur une grille 2 × 2, elle ne peut désigner qu'une
        COLONNE. Un casier ouvert au premier rang verrait donc la flèche pointer
        le casier du second rang, juste en dessous — pire que pas de flèche du
        tout. L'en-tête du tiroir nomme le parti, et le casier ouvert se voit. */
     .tiroir-encoche { display: none; }
-    .carte-colonne { flex-basis: 276px; width: 276px; }
-    .carte { width: 276px; height: 386px; }
-    .carte.carte--fabrique { --carte-l: 276; }
+    .carte-colonne { flex-basis: 320px; width: 320px; }
+    .carte { width: 320px; height: 447px; }
+    .carte.carte--fabrique { --carte-l: 320; }
+    .vestiaire-tiroir { --carte-hauteur: 447px; }
     .carte-nom { font-size: 15px; }
     .carte-v-nom { font-size: 14px; }
     .carte-v-stats b { font-size: 17px; }
