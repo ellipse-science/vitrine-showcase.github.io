@@ -329,4 +329,32 @@ describe("buildPeriodView", () => {
     expect(deputy?.name).toBe("Christian Dubé");
     expect(deputy?.affiliationHistory).toHaveLength(2);
   });
+
+  it("réunit les lignes d’un même élu et distingue deux élus du même nom", () => {
+    const partyRows = [{
+      period_type: "legislature", period_start_date: "2022-11-29", period_end_date: "2026-06-12",
+      party: "caq", n_interventions: 20, word_count: 1200, lexical_richness: 0.5,
+      tone_score: 0, editorial_angle: "x",
+    }];
+    const base = { period_type: "legislature", period_start_date: "2022-11-29", period_end_date: "2026-06-12", party: "caq", lexical_richness: 0.8 };
+    const deputyRows = [
+      // Deux graphies du même élu de Lac-Saint-Jean (données reconstruites).
+      { ...base, deputy: "Éric Girard", deputy_id: "17957", district_id: "lacsaintjean", n_interventions: 34, word_count: 300, tone_score: 0.4, economy_and_labour: 0.5 },
+      { ...base, deputy: "Eric Girard", deputy_id: "17957", district_id: "lacsaintjean", n_interventions: 1, word_count: 100, tone_score: 0.8, economy_and_labour: 0.9 },
+      // Un homonyme, autre siège, autre identifiant.
+      { ...base, deputy: "Eric Girard", deputy_id: "17929", district_id: "groulx", n_interventions: 702, word_count: 1000, tone_score: 0, economy_and_labour: 0.6 },
+    ];
+
+    const view = buildPeriodView(partyRows as never, "legislature", deputyRows as never);
+    const caq = view.rows.find((row) => row.key === "caq")?.deputies ?? [];
+
+    expect(caq).toHaveLength(2);
+    expect(new Set(caq.map((d) => d.id)).size).toBe(2);
+    const lsj = caq.find((d) => d.id === "17957");
+    expect(lsj?.wordsRaw).toBe(400);
+    expect(lsj?.interventions).toBe(35);
+    // Pondération par les mots : (0,4 × 300 + 0,8 × 100) / 400.
+    expect(lsj?.toneScore).toBeCloseTo(0.5, 6);
+    expect(caq.find((d) => d.id === "17929")?.wordsRaw).toBe(1000);
+  });
 });
