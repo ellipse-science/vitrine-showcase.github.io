@@ -1,5 +1,11 @@
 [
   {
+    "pr": 798,
+    "date": "2026-10-03T02:30:14Z",
+    "note": "La barre grise du parti dont les médias parlent le moins s'anime désormais comme celles des autres partis.",
+    "version": "2.49.0-beta.11"
+  },
+  {
     "pr": 912,
     "date": "2026-10-03T02:22:30Z",
     "note": "Rien ne change sur le site.",
