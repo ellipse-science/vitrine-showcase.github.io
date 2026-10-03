@@ -552,7 +552,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 29 septembre 2026 (le mode « promesses de la campagne » réunit les promesses en double avant la saillance, par les embeddings de l'infer-api — <code>qwen3-embedding:0.6b</code> s'il est servi, sinon <code>bge-m3</code>, aws-refiners#592 ; il lit aussi <code>dict-political-parties-qc</code>&nbsp;: une reprise exige que le paragraphe nomme le parti, aws-refiners#580 ; fenêtre <code>campaign</code> du mode « promesses de la campagne », cumul depuis le bref, publiée seulement à couverture entière, aws-refiners#535 ; étage de rattrapage temporaire depuis le 27 août, 30 départs par jour hors des créneaux LLM des autres raffineurs, aws-infra#636 ; la Vitrine lit le datamart de production&nbsp;: les deux couloirs « Publication Vitrine » passent en PROD et leur décompte est remis à jour, 18 tables au filet, 16 au Worker, vitrine-showcase#827 ; le mode « promesses de la campagne » du Polimètre+ entre au diagramme&nbsp;: raffineur <code>polimetre-promesses-neuves</code>, ses trois tables dont la nouvelle <code>polimetre_promesses_neuves_hits</code>, saillance 6×/jour par bloc de 4&nbsp;h, aws-refiners#511 / aws-infra#580 ; quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 30 septembre 2026 (le module « Les candidats sur les réseaux » entre au diagramme&nbsp;: collecte <code>a-social-accounts</code> (DEV), raffineur <code>agora-social</code> 6×/jour à :30 et ses huit tables <code>social_*</code>, lues en DEV par le filet de publication, aws-refiners#586 / #590, aws-infra#651 ; le mode « promesses de la campagne » réunit les promesses en double avant la saillance, par les embeddings de l'infer-api — <code>qwen3-embedding:0.6b</code> s'il est servi, sinon <code>bge-m3</code>, aws-refiners#592 ; il lit aussi <code>dict-political-parties-qc</code>&nbsp;: une reprise exige que le paragraphe nomme le parti, aws-refiners#580 ; fenêtre <code>campaign</code> du mode « promesses de la campagne », cumul depuis le bref, publiée seulement à couverture entière, aws-refiners#535 ; étage de rattrapage temporaire depuis le 27 août, 30 départs par jour hors des créneaux LLM des autres raffineurs, aws-infra#636 ; la Vitrine lit le datamart de production&nbsp;: les deux couloirs « Publication Vitrine » passent en PROD et leur décompte est remis à jour, 18 tables au filet, 16 au Worker, vitrine-showcase#827 ; le mode « promesses de la campagne » du Polimètre+ entre au diagramme&nbsp;: raffineur <code>polimetre-promesses-neuves</code>, ses trois tables dont la nouvelle <code>polimetre_promesses_neuves_hits</code>, saillance 6×/jour par bloc de 4&nbsp;h, aws-refiners#511 / aws-infra#580 ; quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>PROD</strong> pour la lecture du site; depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a> les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> étaient DEV-only ; ils passent en PROD le 3 septembre 2026 (aws-infra#558).</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -579,6 +579,7 @@
         <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>4️⃣ Les 12 enjeux de la campagne</span><span class="frequency">6×/jour — trois provenances dans une seule tuile</span></div><div class="chaine-libelle">Chaîne A — la TAILLE des tuiles</div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-data-preparation<div class="node-detail">segmentation + annotation par phrase<br><em>API d'inférence locale</em></div></div><div class="arrow">→</div><div class="node node-table">radar_annotated<div class="node-detail">thèmes CAP, partis, sentiment</div></div><div class="arrow">→</div><div class="node node-refiner">radar-issues-score<div class="node-detail">proportions des 12 enjeux CAP</div></div><div class="arrow">→</div><div class="node node-table">issues_score_{day,week,month}<div class="node-detail">+ colonne issues_meta</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena PROD</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 4<div class="node-detail">taille de chaque tuile</div></div></div><div class="chaine-libelle">Chaîne B — les ARTICLES listés sous chaque tuile</div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-salient-objects<div class="node-detail">objets saillants — GPT-4o<br><em>→ modèles locaux après #206</em></div></div><div class="arrow">→</div><div class="node node-table">salient_headlines_objects<div class="node-detail">objets par article</div></div><div class="arrow">→</div><div class="node node-refiner">radar-salient-index<div class="node-detail">agrège par objet et par bloc</div></div><div class="arrow">→</div><div class="node node-table">salient_index<div class="node-detail">indice de saillance par objet</div></div><div class="arrow">→</div><div class="node node-refiner">radar-event-salience</div><div class="arrow">→</div><div class="node node-table">headline_events_4h<div class="node-detail">liés à la tuile par main_issue</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena PROD</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 4<div class="node-detail">articles de la tuile</div></div></div><div class="chaine-libelle">Chaîne C — l'OBJET dominant et l'ACCROCHE</div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">radar-data-preparation<div class="node-detail">segmentation + annotation par phrase<br><em>API d'inférence locale</em></div></div><div class="arrow">→</div><div class="node node-table">radar_annotated<div class="node-detail">d'où sortent les titres dominants de l'enjeu</div></div><div class="arrow">→</div><div class="node node-refiner">radar-issues-score<div class="node-detail">2ᵉ appel&nbsp;: GPT-4o<br><em>ne voit que des titres</em></div></div><div class="arrow">→</div><div class="node node-table">issues_meta<div class="node-detail">obj + label + url</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena PROD</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 4<div class="node-detail">objet et accroche de la tuile</div></div></div><div class="note-module"><strong>Trois provenances dans une seule tuile</strong> — c'est ce que la vue par pipeline ne montrait pas. La <em>taille</em> vient des classifieurs locaux, les <em>articles</em> de l'indice de saillance, et l'<em>objet dominant</em> d'un appel GPT-4o qui n'a jamais vu ces articles. Rien ne garantit que les trois s'accordent.</div></div>
         <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>5️⃣ L'alignement de l'Assemblée</span><span class="frequency">hebdomadaire — corpus de décideurs</span></div><div class="pipeline-content"><div class="node node-source">a-qc-parliament-debates<div class="node-detail">débats de l'Assemblée — PROD</div></div><div class="arrow">→</div><div class="node node-refiner">agora-decideurs-qc-phrases<div class="node-detail">segmentation + annotation par phrase<br><em>API d'inférence locale</em></div></div><div class="arrow">→</div><div class="node node-table">agora_datamart-…_phrases · _affiliations</div><div class="arrow">→</div><div class="node node-refiner">agora-decideurs-qc<div class="node-detail">agrège par jour et par parti</div></div><div class="arrow">→</div><div class="node node-table">agora_decideurs_qc · _deputes_v2</div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena PROD</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 5<div class="node-detail">jauge de ton, enjeux débattus</div></div></div><div class="note-module">Seul module qui <strong>ne part pas des médias</strong>. Sa chaîne d'alerte Sonar est donc celle des <strong>décideurs</strong> — la chaîne se choisit sur la source de la donnée, jamais sur le sujet.</div></div>
         <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>6️⃣ Polimètre+ : promesses électorales à la Une</span><span class="frequency">hebdomadaire (mode 2022), six fois par jour (mode campagne)</span></div><div class="pipeline-content"><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">+</div><div class="node node-dict">polimeter / mastersheet_Promesses<div class="node-detail">promesses officielles — Polimètre, U. Laval</div></div><div class="arrow">→</div><div class="node node-refiner">polimetre-plus<div class="node-detail">identification (IA, repli regex) + saillance hebdo<br><em>libellés courts&nbsp;: gemma3 local</em></div></div><div class="arrow">→</div><div class="node node-table">polimetre_plus<div class="node-detail">indice + progression</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena PROD</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 6<div class="node-detail">promesses les plus couvertes</div></div></div><div class="chaine-libelle">Mode «&nbsp;promesses de la campagne&nbsp;» (DEV seulement)</div><div class="pipeline-content"><div class="node node-source">a-qc-press-releases<div class="node-detail">communiqués des partis + plateformes — PROD</div></div><div class="arrow">+</div><div class="node node-source">r-media-headlines<div class="node-detail">LA Une de chaque média, toutes les 10 min — PROD</div></div><div class="arrow">+</div><div class="node node-dict">dict-political-parties-qc<div class="node-detail">partis et chefs — même dictionnaire que le module des partis</div></div><div class="arrow">→</div><div class="node node-refiner">polimetre-promesses-neuves<div class="node-detail">détection 4×/jour ; saillance 6×/jour, un bloc de 4&nbsp;h par run, doublons réunis ; rattrapage depuis le bref 30×/jour (temporaire)<br><em>Gemma&nbsp;3 local + embeddings bge-m3 / Qwen3</em></div></div><div class="arrow">→</div><div class="node node-table">polimetre_promesses_neuves_hits<div class="node-detail">reprises par bloc</div></div><div class="arrow">→</div><div class="node node-table">polimetre_promesses_neuves<div class="node-detail">day / week / campaign = sommes de blocs</div></div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour — lit Athena PROD</div></div><div class="arrow">→</div><div class="node node-output">public/data/*.json<div class="node-detail">servi par GitHub Pages</div></div><div class="arrow">→</div><div class="node node-output">Module 6<div class="node-detail">mode «&nbsp;campagne&nbsp;»</div></div></div></div>
+        <div class="pipeline pipeline-module"><div class="pipeline-header"><span class="toggle-icon">▼</span><span>7️⃣ La guerre des clics (les candidats sur les réseaux)</span><span class="frequency">6×/jour · Facebook, Instagram, TikTok, DEV seulement</span></div><div class="pipeline-content"><div class="node node-source">a-social-accounts<div class="node-detail">comptes validés des candidatures et des partis, collecte horaire (DEV)</div></div><div class="arrow">→</div><div class="node node-refiner">agora-social<div class="node-detail">dernière observation de chaque publication, agrégats par compte, parti et jour</div></div><div class="arrow">→</div><div class="node node-table">agora_datamart-social_* (8 tables)</div><div class="arrow">→</div><div class="node node-refiner">fetch_data.R<div class="node-detail">GitHub Actions, 6×/jour, lit Athena DEV et découpe le fil par circonscription</div></div><div class="arrow">→</div><div class="node node-output">public/data/agora/*.json<div class="node-detail">servi avec le site</div></div><div class="arrow">→</div><div class="node node-output">Module 7<div class="node-detail">par parti, par candidat, par publication, par circonscription</div></div></div><div class="note-module">Module affiché sur le miroir de travail et sur le site public. Sa source, la collecte des réseaux sociaux, et ses tables n'existent qu'en DEV.</div></div>
         <div style="margin:26px auto 10px;max-width:900px;padding:.9rem 1.2rem;border-left:4px solid #4A90E2;background:#f4f8fd;font-size:.9em;line-height:1.55"><strong>Ce que cette vue montre et que l'autre cachait.</strong> Un raffineur alimente souvent plusieurs modules — <code>radar-salient-objects</code> est en amont de quatre d'entre eux — et un module a souvent plusieurs provenances. Le jour où un étage s'arrête, cette vue dit immédiatement ce qui s'éteint à l'écran. Pour les horaires et l'état actif, passer à la <strong>vue par pipeline</strong>.</div>
         </div>
 
@@ -594,6 +595,7 @@
             <button class="btn" data-filter="hot20">Hot 20</button>
             <button class="btn" data-filter="sonar">SONAR</button>
             <button class="btn" data-filter="agora">Agora décideurs</button>
+            <button class="btn" data-filter="agora-social">Réseaux sociaux</button>
             <button class="btn" data-filter="polimetre">Polimètre+</button>
             <button class="btn" data-filter="vitrine">Publication</button>
         </div>
@@ -1126,6 +1128,41 @@
             </div>
         </div>
 
+        <!-- AGORA : LES CANDIDATS SUR LES RÉSEAUX (module du miroir de travail, DEV seulement) -->
+        <div class="pipeline pipeline-agora" data-pipeline="agora-social">
+            <div class="pipeline-header">
+                <span class="toggle-icon">▼</span>
+                <span>📱 Les candidats sur les réseaux (Facebook, Instagram, TikTok) · DEV seulement</span>
+                <span class="frequency">Collecte horaire (UTC)&nbsp;: Instagram à :00 de 00h à 15h, Facebook à :20 et :40, TikTok à :00 de 16h à 20h • table convertie 6×/jour à :03 (heure du Québec) • agora-social 6×/jour à :30 (heure du Québec) • lu par le filet de publication à :53</span>
+            </div>
+            <div class="pipeline-content">
+                <div class="node node-source" data-type="source" data-source="a-social-accounts" data-env-source="DEV">
+                    a-social-accounts
+                    <div class="node-detail">Comptes validés des candidatures 2026 et des cinq partis, relevés par l'extracteur social</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-refiner" data-type="refiner" data-refiner="agora-social" data-ecr="agora-social" data-active="true" data-cron="23:30,03:30,07:30,11:30,15:30,19:30">
+                    agora-social.R
+                    <div class="node-detail">Dernière observation de chaque publication, agrégats par compte, parti et jour</div>
+                    <div class="node-schedule">⏰ 23:30, 03:30, 07:30, 11:30, 15:30, 19:30</div>
+                    <div class="info-badge">ℹ️ Cliquer pour détails</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table" data-type="table" data-table="agora_social" data-env-output="DEV">
+                    social_comptes · _comptes_jour<br>social_publications_jour · _palmares<br>social_fil · _fil_complet · _fil_compteurs<br>social_candidats
+                    <div class="node-detail">Datamart&nbsp;: agora_datamart, remplacées à chaque passage</div>
+                    <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-output" data-type="output" data-output="json-social">
+                    public/data/agora/
+                    <div class="node-detail">agora_social_*.json, fil/&lt;circonscription&gt;.json (127), fil-compteurs.json</div>
+                    <div class="info-badge">📄 Cliquer pour détails</div>
+                </div>
+            </div>
+        </div>
+
         <!-- POLIMÈTRE+ (SUIVI DES PROMESSES) -->
         <div class="pipeline pipeline-polimetre" data-pipeline="polimetre">
             <div class="pipeline-header">
@@ -1211,8 +1248,8 @@
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="all-final-tables" data-env-source="PROD">
-                    18 tables du datamart
-                    <div class="node-detail">Liste blanche <code>scripts/tables.json</code> — tables ET colonnes. <code>polimetre_promesses_neuves</code>, produite en DEV seulement, reste lue en DEV</div>
+                    26 tables du datamart
+                    <div class="node-detail">Liste blanche <code>scripts/tables.json</code> — tables ET colonnes. <code>polimetre_promesses_neuves</code> et les 8 tables <code>social_*</code>, produites en DEV seulement, restent lues en DEV</div>
                     <div class="info-badge">📋 Cliquer pour liste complète</div>
                 </div>
                 <div class="arrow">→</div>
@@ -1882,6 +1919,25 @@
                         '⚠️ La table _phrases est lue par agora-decideurs-qc.R; la table _affiliations est lue au build par la Vitrine'
                     ]
                 },
+                'agora_social': {
+                    title: 'Tables : social_* (agora_datamart, DEV)',
+                    description: 'Les huit tables du module « Les candidats sur les réseaux », publiées par agora-social et remplacées à chaque passage. Une publication relue à chaque passage de la collecte ne compte qu\'une fois, à sa dernière observation (clé : compte × publication).',
+                    columns: [
+                        'social_comptes - un compte suivi : plateforme, pseudo, candidat, parti, circonscription, type (candidat ou parti), abonnés au dernier relevé, candidatures officielles du parti, activité sur 7 jours et depuis le déclenchement',
+                        'social_comptes_jour - compte × jour avec activité depuis le 1er avril 2026 : publications, j\'aime, commentaires',
+                        'social_publications_jour - jour × parti × plateforme × type : publications, j\'aime, commentaires, j\'aime médian',
+                        'social_palmares - les 10 publications les plus aimées par jour et par plateforme, sur 60 jours (texte, nature, vignette)',
+                        'social_fil - les 20 publications les plus récentes de chaque circonscription',
+                        'social_fil_complet - toutes les publications des candidats depuis le déclenchement (27 août 2026), contenu stable, texte à 500 caractères',
+                        'social_fil_compteurs - j\'aime et commentaires du fil complet, qui changent à chaque passage',
+                        'social_candidats - les 635 candidatures officielles des cinq partis (liste close du 25 septembre 2026)'
+                    ],
+                    details: [
+                        '📊 Datamart cible : agora_datamart (DEV)',
+                        '🌐 Lues au build par scripts/fetch_data.R (liste blanche scripts/tables.json, entrées env DEV, hors Worker)',
+                        '📦 Le fil complet est découpé au build en un fichier par circonscription plus un fichier de compteurs, pour que chaque rafraîchissement ne commite que de petits deltas'
+                    ]
+                },
                 'agora_decideurs_qc': {
                     title: 'Tables: agora_decideurs_qc + agora_decideurs_qc_deputes_v2',
                     description: 'Agrégats de la parole en chambre, par parti et par député. La Vitrine les combine avec la dimension datée des affiliations publiée par le raffineur amont.',
@@ -1903,7 +1959,7 @@
                     ]
                 },
                 'all-final-tables': {
-                    title: 'Entrée : les 18 tables que la Vitrine consomme',
+                    title: 'Entrée : les 26 tables que la Vitrine consomme',
                     description: 'Liste blanche tenue dans scripts/tables.json (dépôt vitrine). Elle fixe les tables ET les colonnes projetées : ce qui n\'y est pas n\'est jamais lu. Audit du 2026-09-18.',
                     columns: [
                         'vitrine_datamart-issues_score_day / _week / _month',
@@ -1917,7 +1973,8 @@
                         'vitrine_datamart-polimetre_promesses_neuves (lue en DEV, depuis le fichier ; pas dans le Worker)',
                         'agora_datamart-agora_decideurs_qc',
                         'agora_datamart-agora_decideurs_qc_deputes',
-                        'agora_datamart-agora_decideurs_qc_affiliations'
+                        'agora_datamart-agora_decideurs_qc_affiliations',
+                        'agora_datamart-social_comptes, _comptes_jour, _publications_jour, _palmares, _fil, _fil_complet, _fil_compteurs, _candidats (lues en DEV, depuis le fichier ; pas dans le Worker)'
                     ],
                     details: [
                         '🌐 Lues dans le datamart PROD depuis le 18 septembre 2026 (vitrine-showcase#702), sauf polimetre_promesses_neuves, produite en DEV seulement. Le Worker en synchronise 16 : toutes sauf radar_annotated et polimetre_promesses_neuves.',
@@ -2492,6 +2549,26 @@
                         '📌 Déployé tardivement : ce raffineur existait sans être en service, corrigé par aws-infra#463 (2026-07-28)'
                     ]
                 },
+                'agora-social': {
+                    title: 'Refiner: agora-social.R',
+                    description: 'Raffine la collecte des comptes de candidat·e·s et de partis sur Facebook, Instagram et TikTok pour le module « La guerre des clics », affiché sur le miroir de travail et sur le site public.',
+                    details: [
+                        '📥 SOURCE: <span class="badge-dev">DEV</span>/datawarehouse - a-social-accounts (la collecte n\'existe qu\'en DEV)',
+                        '📤 OUTPUTS: <span class="badge-dev">DEV</span>/datamarts - agora_datamart : social_comptes, social_comptes_jour, social_publications_jour, social_palmares, social_fil, social_fil_complet, social_fil_compteurs, social_candidats',
+                        '',
+                        '⚙️ TRAITEMENT:',
+                        '• Comptes du rôle actuel : observés dans les 3 derniers jours du relevé',
+                        '• Dernière observation de chaque publication, clé compte × publication (une publication cosignée compte pour chaque compte)',
+                        '• Nature de la publication (vidéo, photo, carrousel, texte, partage) et texte de repli (description Meta, autocollants TikTok)',
+                        '• Candidatures officielles figées dans candidatures_2026.csv (dénominateur de la présence)',
+                        '• Vignettes (vignettes.py, ffmpeg pour les vidéos sans image) : désactivées tant que le Worker n\'accepte pas les clés social/…',
+                        '',
+                        '⏰ HORAIRE: 23:30, 03:30, 07:30, 11:30, 15:30, 19:30 (heure du Québec), après la conversion de la table à :03',
+                        '💾 MÉMOIRE: 2 GB • ⏳ TIMEOUT: 15 minutes • DEV seulement (active: !isProd)',
+                        '',
+                        '🌐 Consommé par: lib/data/social.ts + components/sections/SocialSection.tsx (module affiché en dev et en prod)'
+                    ]
+                },
                 'agora-decideurs-qc': {
                     title: 'Refiner: agora-decideurs-qc.R',
                     description: 'Agrège les phrases annotées en portraits de la parole en chambre, par parti et par député, et génère un angle éditorial par LLM.',
@@ -2696,6 +2773,18 @@
                         'Output: Table Glue brute (non-datamart)'
                     ]
                 },
+                'a-social-accounts': {
+                    title: 'Source: a-social-accounts',
+                    description: 'Comptes des candidatures officielles 2026 et des cinq partis sur Facebook, Instagram et TikTok, identifiés et validés à la main (rôle dans aws-infra, src/utils/social/accounts/). Une ligne par compte relevé et par publication relevée, à chaque passage.',
+                    details: [
+                        '📥 Environnement: <span class="badge-dev">DEV</span>/datawarehouse (pipeline actif en DEV seulement)',
+                        '⏰ Extracteurs (UTC) : Instagram à :00 de 00h à 15h, Facebook à :20 et :40 de chaque heure, TikTok à :00 de 16h à 20h',
+                        '⏰ Conversion CSV → table : 03:03, 07:03, 11:03, 15:03, 19:03, 23:03 (heure du Québec)',
+                        '📅 Historique depuis le 1er avril 2026',
+                        '',
+                        '🔗 Lue par: agora-social.R (6×/jour à :30)'
+                    ]
+                },
                 'a-qc-parliament-debates': {
                     title: 'Source: a-qc-parliament-debates',
                     description: 'Interventions à l\'Assemblée nationale du Québec (Salon bleu), extraites par le pipeline qc-parliament-debates. Seule source du module Assemblée.',
@@ -2709,6 +2798,17 @@
                 }
             },
             outputs: {
+                'json-social': {
+                    title: 'Fichiers du module réseaux dans public/data/agora/',
+                    description: 'Écrits au build par scripts/fetch_data.R depuis les tables social_* (DEV). Le fil complet brut n\'est pas commité : il est découpé pour que Git ne voie que de petits deltas.',
+                    details: [
+                        '• agora_social_comptes, _comptes_jour, _publications_jour, _palmares, _fil, _candidats (.json)',
+                        '• fil/&lt;circonscription&gt;.json : une publication par ligne, ordre stable, un fichier par circonscription (127)',
+                        '• fil-compteurs.json : id → [j\'aime, commentaires]',
+                        '',
+                        '🌐 Lus par le module « La guerre des clics », affiché sur le miroir de travail et sur le site public'
+                    ]
+                },
                 'slack-sonar-pipeline': {
                     title: 'Notifications Slack - Sonar pipeline',
                     description: 'Alertes de santé des raffineurs, routées vers ceux qui peuvent réparer : le corpus selon sa SOURCE, les modules du site vers la chaîne de la Vitrine.',
@@ -2827,6 +2927,7 @@
                         '• agora_decideurs_qc.json',
                         '• agora_decideurs_qc_deputes.json',
                         '• agora_decideurs_qc_affiliations.json',
+                        '• agora_social_*.json, fil/&lt;circonscription&gt;.json, fil-compteurs.json (module réseaux, DEV)',
                         '',
                         '📂 racine public/data/',
                         '• headline-events.json - Une des Unes + Deux solitudes + éditions passées (fenêtre 14 jours)',
@@ -2863,6 +2964,7 @@
                         '• Partis et couverture (PartisCouvertureSection) ← *_parties_score_* et provincial_parties_salient_shadow_*',
                         '• Assemblée (AssembleeSection) ← agora_decideurs_qc + agora_decideurs_qc_deputes_v2 + agora_decideurs_qc_affiliations',
                         '• Polimètre+ (PolimetrePlusSection) ← polimetre_plus',
+                        '• La guerre des clics (SocialSection) ← social_* (agora_datamart, DEV)',
                         '',
                         '🎨 Technologie: Next.js (export statique) + TypeScript, hébergé sur GitHub Pages',
                         '🌍 Environnement décrit: DEV — c\'est le seul en service. dev.vitrinedemocratique.com est un placeholder jamais mis en ligne.',

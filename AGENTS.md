@@ -155,8 +155,9 @@ Treat these as **distinct modules**. A right-click report inside a block must be
 | Module 4 — Enjeux saillants | issue treemap, day/week/month tabs | `module-4-enjeux-saillants` |
 | Module 5 — Assemblée nationale | chamber language + lexical richness | `module-5-assemblee-nationale` |
 | Module 6 — Polimètre+ | promise tracker block (`PolimetrePlusSection`) | `module-6-polimetre` |
+| Module 7 — La guerre des clics (**expérimental**, `data-section` « Candidats sur les réseaux ») | candidates' and parties' Facebook, Instagram and TikTok accounts: likes, followers, posts, comments, top posts, map by riding (`SocialSection`, shown in dev and prod; its tables are read from the DEV datamart) | `module-7-reseaux-sociaux` |
 
-**The module number is an identity, not a position.** It is frozen to its block: it is the key of the GitHub label, of the `SECTION_LABELS` triage table and of the auto-assignment map, so renumbering would orphan every existing signalement. Since the reordering of 2026-08-17 (general → specific), the page reads **1, 2, 4, 3, 6, 5** — Enjeux saillants before Partis et couverture, Polimètre+ before Assemblée nationale. Read the display order from `app/page.tsx`, never from this table.
+**The module number is an identity, not a position.** It is frozen to its block: it is the key of the GitHub label, of the `SECTION_LABELS` triage table and of the auto-assignment map, so renumbering would orphan every existing signalement. Since the reorderings of 2026-08-17 (general → specific) and 2026-10-02, the page reads **1, 2, 4, 3, 7, 5, 6** — Enjeux saillants before Partis et couverture, La guerre des clics in the place Polimètre+ held, Polimètre+ closing the page. Read the display order from `app/page.tsx`, never from this table.
 
 Reports that fall outside a module — the general site chrome and standalone pages — get their own labels:
 
@@ -170,7 +171,7 @@ Reports that fall outside a module — the general site chrome and standalone pa
 
 **How the triage works.** Each zone carries a `data-section` attribute in the DOM. `IssueReporter` walks up from the right-clicked element to the nearest `data-section`, sends that string in the dispatch payload, and `.github/workflows/report-issue.yml` maps it to the label above via the **`SECTION_LABELS` table** (the single place to edit when adding/renaming a zone). Labels are created automatically on first use. Missing labels are non-fatal — the issue is still created with `signalement-utilisateur`.
 
-**One module = one top-level section (hard convention).** Every module is its own component under `components/sections/` and gets its own wrapper in `app/page.tsx` carrying **both** the URL anchor `id` (deep links + `ShareButton`, cf. PR #199) and the `data-section` (signalement) — in display order: `#une-des-unes`, `#deux-solitudes`, `#enjeux-saillants`, `#partis-et-couverture`, `#polimetre-plus`, `#assemblee-nationale`. Modules 1 and 2 read the same table (`headline_events_4h`) but are **separate sections** (`UneDesUnesSection` / `DeuxSolitudesSection`) — never nest one module inside another.
+**One module = one top-level section (hard convention).** Every module is its own component under `components/sections/` and gets its own wrapper in `app/page.tsx` carrying **both** the URL anchor `id` (deep links + `ShareButton`, cf. PR #199) and the `data-section` (signalement) — in display order: `#une-des-unes`, `#deux-solitudes`, `#enjeux-saillants`, `#partis-et-couverture`, `#candidats-reseaux`, `#assemblee-nationale`, `#polimetre-plus`. Modules 1 and 2 read the same table (`headline_events_4h`) but are **separate sections** (`UneDesUnesSection` / `DeuxSolitudesSection`) — never nest one module inside another.
 
 > **Méthodologie is a static HTML page** (`public/methodologie/`), so the React `IssueReporter` does not run there; `page-methodologie` is reserved for when reporting is wired into that page. All other zones are reportable.
 
