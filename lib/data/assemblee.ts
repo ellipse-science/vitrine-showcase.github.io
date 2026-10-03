@@ -982,6 +982,7 @@ function buildPeriodView(
       affiliations,
       rows[0]?.period_start_date ?? endDate,
       endDate,
+      niveauxDiversite,
     ),
   };
 }
