@@ -1,0 +1,19 @@
+{
+  "note": "Expressions distinctives retirées des cartes après relecture à la main. Le retrait ne vaut que pour l'expression nommée : si les données changent, la nouvelle expression paraît et la ligne est signalée comme sans objet. Clé : le slug de la circonscription, comme pour les portraits.",
+  "retraits": [
+    {
+      "circonscription": "marie-victorin",
+      "elu": "Shirley Dorismond",
+      "expression": "adoré",
+      "raison": "Employée 3 fois, tirée de « J'ai vraiment adoré les échanges constructifs » : ce n'est pas un enjeu.",
+      "demande": "Jules, 2026-09-28"
+    },
+    {
+      "circonscription": "duplessis",
+      "elu": "Kateri Champagne Jourdain",
+      "expression": "former requalifier",
+      "raison": "Employée 3 fois, tirée de « attirer, former, requalifier 60 000 travailleurs » : deux verbes accolés, pas une expression.",
+      "demande": "Jules, 2026-09-28"
+    }
+  ]
+}

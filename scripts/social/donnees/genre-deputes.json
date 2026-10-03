@@ -1,0 +1,651 @@
+{
+ "_note": "Genre grammatical des élus de la 43e législature, pour accorder « Élu » / « Élue » au verso des cartes. Clé : assnat_id (fiche de l'Assemblée nationale). Chaque entrée garde sa source ; rien n'est déduit d'un prénom.",
+ "extrait_le": "2026-09-25",
+ "deputes": {
+  "17827": {
+   "nom": "Agnès Grondin",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19263": {
+   "nom": "Alejandra Zaga Mendez",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "20141": {
+   "nom": "Alex Boissonneault",
+   "genre": "m",
+   "source": "fiche de l'Assemblée nationale : « Député d'Arthabaska »"
+  },
+  "17935": {
+   "nom": "Alexandre Leduc",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19315": {
+   "nom": "Alice Abou-Khalil",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19273": {
+   "nom": "Amélie Dionne",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19253": {
+   "nom": "André Albert Morin",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17859": {
+   "nom": "André Bachand",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15383": {
+   "nom": "André Fortin",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15401": {
+   "nom": "André Lamontagne",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17913": {
+   "nom": "Andrée Laforest",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17953": {
+   "nom": "Andrés Fontecilla",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19325": {
+   "nom": "Audrey Bogemans",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "195": {
+   "nom": "Benoit Charette",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "209": {
+   "nom": "Bernard Drainville",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19271": {
+   "nom": "Brigitte B. Garceau",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19351": {
+   "nom": "Carole Mallette",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17837": {
+   "nom": "Caroline Proulx",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19251": {
+   "nom": "Catherine Blouin",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "20131": {
+   "nom": "Catherine Gentilcore",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17931": {
+   "nom": "Chantal Rouleau",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15417": {
+   "nom": "Chantal Soucy",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17959": {
+   "nom": "Chantale Jeannotte",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "12223": {
+   "nom": "Christian Dubé",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19269": {
+   "nom": "Christine Fréchette",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17889": {
+   "nom": "Christine Labrie",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17873": {
+   "nom": "Christopher Skeete",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17833": {
+   "nom": "Claude Reid",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19309": {
+   "nom": "Céline Haytayan",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "13": {
+   "nom": "Daniel Bernard",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17901": {
+   "nom": "Denis Lamothe",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "12165": {
+   "nom": "Donald Martel",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19283": {
+   "nom": "Désirée McGraw",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19301": {
+   "nom": "Elisabeth Prass",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17943": {
+   "nom": "Enrico Ciccone",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17929": {
+   "nom": "Eric Girard",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17957": {
+   "nom": "Eric Girard",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19267": {
+   "nom": "Etienne Grandmont",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "1171": {
+   "nom": "Filomena Rotiroti",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19257": {
+   "nom": "France-Élaine Duranceau",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17909": {
+   "nom": "Frantz Benjamin",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "11": {
+   "nom": "François Bonnardel",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17937": {
+   "nom": "François Jacques",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "4131": {
+   "nom": "François Legault",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19321": {
+   "nom": "François St-Louis",
+   "genre": "m",
+   "source": "fiche de l'Assemblée nationale : « Député de Joliette »"
+  },
+  "17917": {
+   "nom": "François Tremblay",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19307": {
+   "nom": "Frédéric Beauchemin",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "16827": {
+   "nom": "Gabriel Nadeau-Dubois",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "16885": {
+   "nom": "Geneviève Guilbault",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17877": {
+   "nom": "Geneviève Hébert",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17925": {
+   "nom": "Gilles Bélanger",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17951": {
+   "nom": "Gregory Kelley",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19593": {
+   "nom": "Guillaume Cliche-Rivard",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19305": {
+   "nom": "Haroun Bouazzi",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17903": {
+   "nom": "Ian Lafrenière",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17845": {
+   "nom": "Isabelle Charest",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17945": {
+   "nom": "Isabelle Lecours",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19311": {
+   "nom": "Isabelle Poulet",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17899": {
+   "nom": "Jean Boulet",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17857": {
+   "nom": "Jean-Bernard Émond",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15361": {
+   "nom": "Jean-François Roberge",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "5369": {
+   "nom": "Jean-François Simard",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17911": {
+   "nom": "Jennifer Maccarone",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17855": {
+   "nom": "Jonatan Julien",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17947": {
+   "nom": "Joël Arseneau",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "18561": {
+   "nom": "Joëlle Boutin",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19291": {
+   "nom": "Kariane Bourassa",
+   "genre": "f",
+   "source": "fiche de l'Assemblée nationale : « Députée de Charlevoix–Côte-de-Beaupré »"
+  },
+  "19255": {
+   "nom": "Karine Boivin Roy",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19303": {
+   "nom": "Kateri Champagne Jourdain",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19313": {
+   "nom": "Linda Caron",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17893": {
+   "nom": "Lionel Carmant",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17879": {
+   "nom": "Louis Lemieux",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "18073": {
+   "nom": "Louis-Charles Thouin",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17829": {
+   "nom": "Luc Provençal",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17949": {
+   "nom": "Lucie Lecours",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19261": {
+   "nom": "Madwa-Nika Cadet",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15421": {
+   "nom": "Manon Massé",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "11789": {
+   "nom": "Marc Tanguay",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19293": {
+   "nom": "Marie-Belle Gendron",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15439": {
+   "nom": "Marie-Claude Nichols",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "20193": {
+   "nom": "Marie-Karlynn Laflamme",
+   "genre": "f",
+   "source": "fiche de l'Assemblée nationale : « Députée de Chicoutimi »"
+  },
+  "18071": {
+   "nom": "Marie-Louise Tardif",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17891": {
+   "nom": "Marilyne Picard",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17905": {
+   "nom": "Mario Asselin",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15357": {
+   "nom": "Mario Laframboise",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19297": {
+   "nom": "Martine Biron",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17883": {
+   "nom": "Marwah Rizqy",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17927": {
+   "nom": "Mathieu Lacombe",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15403": {
+   "nom": "Mathieu Lemay",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17851": {
+   "nom": "Mathieu Lévesque",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19299": {
+   "nom": "Mathieu Rivest",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19275": {
+   "nom": "Maïté Blanchette Vézina",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19285": {
+   "nom": "Michelle Setlakwe",
+   "genre": "f",
+   "source": "fiche de l'Assemblée nationale : « Députée de Mont-Royal–Outremont »"
+  },
+  "17923": {
+   "nom": "Monsef Derraji",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "18247": {
+   "nom": "Nancy Guillemette",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "12187": {
+   "nom": "Nathalie Roy",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "991": {
+   "nom": "Pascal Bérubé",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19999": {
+   "nom": "Pascal Paradis",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19277": {
+   "nom": "Pascale Déry",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19289": {
+   "nom": "Paul St-Pierre Plamondon",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17823": {
+   "nom": "Pierre Dufour",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17897": {
+   "nom": "Pierre Fitzgibbon",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17921": {
+   "nom": "Robert Bussière",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17933": {
+   "nom": "Ruba Ghazal",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17831": {
+   "nom": "Samuel Poulin",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19063": {
+   "nom": "Shirley Dorismond",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17941": {
+   "nom": "Simon Allaire",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15359": {
+   "nom": "Simon Jolin-Barrette",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17955": {
+   "nom": "Sol Zanetti",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19295": {
+   "nom": "Sona Lakhoyan Olivier",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19281": {
+   "nom": "Sonia Bélanger",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17847": {
+   "nom": "Sonia LeBel",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19319": {
+   "nom": "Stéphane Sainte-Croix",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17835": {
+   "nom": "Stéphanie Lachance",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17825": {
+   "nom": "Suzanne Blais",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19265": {
+   "nom": "Suzanne Roy",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19323": {
+   "nom": "Suzanne Tremblay",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "12213": {
+   "nom": "Sylvain Lévesque",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "15399": {
+   "nom": "Sylvie D'Amours",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "5909": {
+   "nom": "Sébastien Schneeberger",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19259": {
+   "nom": "Valérie Schmaltz",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17849": {
+   "nom": "Vincent Caron",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17867": {
+   "nom": "Vincent Marissal",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19287": {
+   "nom": "Virginie Dufour",
+   "genre": "f",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19317": {
+   "nom": "Yannick Gagnon",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "17881": {
+   "nom": "Youri Chassin",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "19279": {
+   "nom": "Yves Montigny",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "485": {
+   "nom": "Éric Caire",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  },
+  "16777": {
+   "nom": "Éric Lefebvre",
+   "genre": "m",
+   "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+  }
+ }
+}
