@@ -203,6 +203,10 @@ export type AssembleeRow = {
   label: string;
   color: string;
   inShadow: boolean;
+  /** Casier sans parole : le parti avait-il au moins un élu en fonction
+   *  pendant la période ? Dit pourquoi le casier est vide (n'a pas siégé, ou
+   *  a siégé sans prendre la parole). */
+  aSiege?: boolean;
   // Active-row fields (when not in shadow):
   enjeuStack?: EnjeuSegment[];
   editorialAngle?: string;
@@ -869,6 +873,18 @@ function buildSubtitle(periodType: PeriodKey, endDate: string): string {
   return `Législature ${String(endDate || "").slice(0, 4)} · Salon bleu`;
 }
 
+/** Vrai si au moins un élu du parti était en fonction sous sa bannière à un
+ *  moment de [debut, fin] (référentiel daté des affiliations). */
+function aSiegePendant(parti: PartyKey, affiliations: AffiliationIndex, debut: string, fin: string): boolean {
+  for (const lignes of affiliations.byId.values()) {
+    for (const a of lignes) {
+      if ((a.party ?? "").toLowerCase() !== parti) continue;
+      if (a.affiliation_start_date <= fin && (!a.affiliation_end_date || a.affiliation_end_date >= debut)) return true;
+    }
+  }
+  return false;
+}
+
 function buildPeriodView(
   allRows: AgoraRow[],
   period: PeriodKey,
@@ -933,7 +949,8 @@ function buildPeriodView(
   const builtRows: AssembleeRow[] = sorted.map((item): AssembleeRow => {
     const isShadow = !(item.interventions > 0 && item.data);
     if (isShadow || !item.data) {
-      return { key: item.key, label: PARTY_LABELS[item.key], color: PARTY_COLORS[item.key], inShadow: true };
+      return { key: item.key, label: PARTY_LABELS[item.key], color: PARTY_COLORS[item.key], inShadow: true,
+        aSiege: aSiegePendant(item.key, affiliations, rows[0]?.period_start_date ?? endDate, endDate) };
     }
     const d = item.data;
     const amplified = Math.max(-1, Math.min(1, Number(d.tone_score || 0) * TONE_AMPLIFY));

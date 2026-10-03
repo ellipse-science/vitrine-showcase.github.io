@@ -260,19 +260,16 @@ export function construireJeu(
 
   // RARETÉ — calculée sur la série ENTIÈRE, avant tout filtre (--only), pour
   // qu'une carte tirée seule garde sa rareté.
-  // Les mots de la LÉGISLATURE, quelle que soit la période des cartes :
-  // même élu, retrouvé par nom et circonscription.
-  const motsLegislature = new Map<string, number>();
-  const vueLeg = data.periods.legislature;
-  for (const r of vueLeg ? [...vueLeg.rows.flatMap((x) => x.deputies ?? []), ...(vueLeg.independants ?? [])] : []) {
-    motsLegislature.set(`${r.name}|${r.circonscription}`, r.wordsRaw);
-  }
+  // Les mots de LA PÉRIODE DES CARTES (Jules, 3 oct.) : sur le site, la vue
+  // « dernière journée » ou « session » classe les élus sur ce qu'ils ont dit
+  // dans cette vue-là ; la série imprimée, celle de la législature, est
+  // inchangée. Les mots sont ceux de la personne, lignes réunies.
   const classes: { c: Carte; mots: number }[] = [];
   for (const c of cartes) {
     const titres = (ficheParCarte.get(c)?.fonctions_legislature ?? []).map((x) => x.titre);
     if (titres.some((t) => /^Premi(?:ère|er) ministre$/.test(t))) { c.rarete = "legendaire"; continue; }
     if (titres.some((t) => /^Président(?:e)? de l’Assemblée nationale$/.test(t))) { c.rarete = "commune"; c.presidente = true; continue; }
-    classes.push({ c, mots: motsLegislature.get(`${c.deputy.name}|${c.deputy.circonscription}`) ?? c.deputy.wordsRaw ?? 0 });
+    classes.push({ c, mots: c.deputy.wordsRaw ?? 0 });
   }
   classes.sort((a, b) => b.mots - a.mots || a.c.numero - b.c.numero);
   {
