@@ -34,6 +34,14 @@ tirage imprimé (trame des portraits, capture Chromium, planche, paquet).
 | `lib/cartes/site.ts` | `preparerCartesSite()` : au build, la série de chaque période sans les DeputyRow, pour le vestiaire |
 | `components/interactive/CarteDepute.tsx` | la face rendue dans l'ombre d'un élément (shadow DOM), réduite par `transform: scale()`, ajustements après chargement des polices |
 
+**Limite connue — éditions archivées.** Les sources lues sur disque
+(`scripts/social/donnees/` : fonctions, scrutins, carrière, genre) décrivent la
+43ᵉ législature entière, close le 27 août 2026 ; une édition archivée de la
+campagne montre donc les mêmes fonctions que la carte. À la 44ᵉ, ces fichiers
+devront être versionnés par législature, sans quoi une page d'édition
+ancienne afficherait les fonctions de la nouvelle (relecture d'Adrien,
+vitrine#917).
+
 Vérification de l'extraction (2 oct. 2026) : sur un échantillon de 6 cartes
 rendues avant et après, en web et en impression, les 12 rectos sont
 identiques au pixel près (au plus 437 px d'anticrénelage sur 6,4 millions),
