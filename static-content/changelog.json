@@ -1,5 +1,11 @@
 [
   {
+    "pr": 925,
+    "date": "2026-10-03T22:04:13Z",
+    "note": "Les cartes de huit députés avaient perdu leur photo à la suite d'une panne passagère du site de l'Assemblée nationale ; elles l'ont retrouvée, et une panne semblable ne fera plus disparaître un portrait.",
+    "version": "2.52.0-beta.1"
+  },
+  {
     "pr": 924,
     "date": "2026-10-03T19:13:39Z",
     "note": "Le vestiaire de l'Assemblée fait peau neuve : des casiers en métal au format des cartes, les chiffres de chaque parti à l'intérieur, et sur téléphone les cartes passent au premier plan avec un filtre par parti.",
