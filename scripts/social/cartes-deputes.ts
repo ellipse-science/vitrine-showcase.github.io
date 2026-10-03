@@ -66,7 +66,7 @@ import { ISSUE_META, buildEnjeuStack, loadAssemblee, type DeputyRow, type IssueK
 import { PARTY_COLORS, type PartyKey } from "@/lib/data/parties";
 import { COLORS, enjeuGlyph, fleur, loadLogos, parseArgs, txt, openInBrowser } from "./lib/reel";
 import { ajusterFonctions, ajusterLegende, ajusterNom, ajusterRubriques, ajusterVerso, mesurerCoupes, mesurerDebordement, mesurerRetours } from "@/lib/cartes/ajustements";
-import { chargerSources, etiquettesPeriodes, retirerExpressions } from "@/lib/cartes/donnees";
+import { chargerSources, etiquettesPeriodes, fusionnerLignesParParti, retirerExpressions } from "@/lib/cartes/donnees";
 import { documentHTML, recto, verso, type Rendu } from "@/lib/cartes/faces";
 import { LIBELLES_FONCTION, LIBELLE_RARETE, MONTANT, nomImprime, slugCirco } from "@/lib/cartes/fonctions";
 import { COEUR, ECHELLE_IMPRESSION, FLEURS_PAR_RARETE, FOND_PERDU, H, LOGO_VERSO, MARGE, PANNEAU, PLANCHER_IMPRESSION, RECTO_IMPRESSION_CSS, W, degradeMetalCSS, marquesInstitutions, ordinal } from "@/lib/cartes/gabarit";
@@ -576,67 +576,6 @@ function pagesPaquet(
   ];
 }
 
-/** UN ÉLU, UNE LIGNE (relevé du 23-09). Les données agora ont une ligne par
- *  élu ET PAR PARTI : un élu qui a changé d'allégeance en a plusieurs, et la
- *  carte n'en lisait qu'une, souvent la ligne « ind » de fin de mandat. Vincent
- *  Marissal sortait à 5 380 mots au lieu de 223 184 ; neuf élus touchés à la
- *  législature (Dubé, Marissal, Rizqy, Lakhoyan Olivier, Nichols, Blanchette
- *  Vézina, Poulet, Dufour, Lefebvre). Le site, qui range la parole par parti,
- *  n'est pas touché ; la carte, elle, parle d'un élu.
- *  · Interventions et mots : sommés (exact).
- *  · Ton et parts d'enjeux : moyennes pondérées par les mots (approximation :
- *    les parts brutes ne portent pas leur propre dénominateur).
- *  · Richesse lexicale et expression distinctive : ceux de la ligne la plus longue. Un
- *    MATTR ne se moyenne pas, et le niveau est relatif aux autres élus.
- *  Chaque ligne agora est retrouvée par ses mots et interventions, que le
- *  loader recopie tels quels. */
-async function fusionnerLignesParParti(data: NonNullable<Awaited<ReturnType<typeof loadAssemblee>>>): Promise<void> {
-  type Brute = { period_type: PeriodKey; deputy_id: string | number; n_interventions: number; word_count: number;
-                 tone_score: number } & Record<string, unknown>;
-  const brutes = JSON.parse(await fs.readFile(path.resolve(process.cwd(), "public/data/agora/agora_decideurs_qc_deputes.json"), "utf8")) as Brute[];
-  const groupes = new Map<string, Brute[]>();
-  for (const r of brutes) {
-    const cle = `${r.period_type}|${r.deputy_id}`;
-    groupes.set(cle, [...(groupes.get(cle) ?? []), r]);
-  }
-  let fusions = 0;
-  for (const [cle, lignes] of groupes) {
-    if (lignes.length < 2) continue;
-    const vueP = data.periods[cle.split("|")[0] as PeriodKey];
-    if (!vueP) continue;
-    const tous = [...vueP.rows.flatMap((x) => x.deputies ?? []), ...(vueP.independants ?? [])];
-    const cibles = tous.filter((d) => lignes.some((r) => Number(r.word_count) === d.wordsRaw && Number(r.n_interventions) === d.interventions));
-    if (!cibles.length) continue;
-    const mots = lignes.reduce((t, r) => t + Number(r.word_count || 0), 0);
-    const pond = (f: (r: Brute) => number) => mots > 0 ? lignes.reduce((t, r) => t + f(r) * Number(r.word_count || 0), 0) / mots : 0;
-    const principale = [...lignes].sort((x, y) => Number(y.word_count) - Number(x.word_count))[0];
-    const modele = cibles.find((d) => d.wordsRaw === Number(principale.word_count)) ?? cibles[0];
-    const parts = Object.fromEntries(Object.keys(modele.issueShares ?? {}).map((k) => [k, pond((r) => Number(r[k] || 0))])) as NonNullable<typeof modele.issueShares>;
-    for (const d of cibles) {
-      d.interventions = lignes.reduce((t, r) => t + Number(r.n_interventions || 0), 0);
-      d.wordsRaw = mots;
-      d.wordsFormatted = MONTANT.format(mots);
-      d.toneScore = pond((r) => Number(r.tone_score || 0));
-      d.issueShares = parts;
-      d.richnessLevel = modele.richnessLevel;
-      d.signatureWord = modele.signatureWord;
-      d.signatureWordContext = modele.signatureWordContext;
-    }
-    // MÊME ÉLU, MÊME PARTI, DEUX GRAPHIES (28-09, données reconstruites) :
-    // « Eric Girard » et « Éric Girard », même identifiant et même siège de
-    // Lac-Saint-Jean, sortaient en deux lignes du même parti, donc en deux
-    // cartes. Dans une même liste de parti, une seule ligne par élu : celle
-    // qui porte le plus de mots.
-    for (const liste of [...vueP.rows.map((x) => x.deputies ?? []), vueP.independants ?? []]) {
-      const doubles = liste.filter((d) => cibles.includes(d));
-      if (doubles.length < 2) continue;
-      const garde = doubles.includes(modele) ? modele : doubles[0];
-      for (const d of doubles) if (d !== garde) liste.splice(liste.indexOf(d), 1);
-    }
-    fusions++;
-  }
-  console.log(`  ${fusions} élu·période(s) réunis sur plusieurs lignes de parti`);
-}
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const periode = (typeof args.periode === "string" ? args.periode : "legislature") as PeriodKey;

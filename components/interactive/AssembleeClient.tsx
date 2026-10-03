@@ -14,20 +14,22 @@ import type { ContexteCartes } from "@/components/interactive/CarteDepute";
  *  pas — deux Éric Girard à la CAQ) et l'étendue du ton réellement observée,
  *  qui cale l'échelle. Les mêmes règles que le générateur imprimé. */
 function contexteCartes(data: AssembleeData, cartes: CartesSite, periode: PeriodKey): ContexteCartes {
+  // La fiche d'un élu dans chaque période, par circonscription (le nom ne
+  // suffit pas — deux Girard à la CAQ). Pour une personne qui a plusieurs
+  // lignes, la fiche RÉUNIE préparée au build remplace celle du casier : la
+  // carte parle de la personne (relecture d'Adrien, vitrine#917).
   const fiches = new Map<string, Partial<Record<PeriodKey, DeputyRow>>>();
-  const maxAbs = {} as Record<PeriodKey, number>;
   for (const cle of PERIODES) {
     const vue = data.periods[cle];
-    const tous = vue ? [...vue.rows.flatMap((r) => r.deputies ?? []), ...(vue.independants ?? [])] : [];
-    maxAbs[cle] = tous.reduce((m, r) => Math.max(m, Math.abs(r.toneScore)), 0);
-    for (const r of tous) {
+    const surcharges = cartes.personnes[cle] ?? {};
+    for (const r of vue ? vue.rows.flatMap((x) => x.deputies ?? []) : []) {
       const s = slugCirco(r);
-      fiches.set(s, { ...(fiches.get(s) ?? {}), [cle]: r });
+      fiches.set(s, { ...(fiches.get(s) ?? {}), [cle]: { ...r, ...surcharges[s] } });
     }
   }
   // « Dernière mise à jour du module : vendredi 12 juin 2026 » → la date seule.
   const derniereSeance = data.periods[periode].lastUpdated.replace(/^[^:]*:\s*/, "");
-  return { periode, fiches, maxAbs, libelles: cartes.libelles, derniereSeance, signatures: new Set(cartes.signatures) };
+  return { periode, fiches, maxAbs: cartes.maxAbs, libelles: cartes.libelles, derniereSeance, signatures: new Set(cartes.signatures) };
 }
 
 function SourceTip() {

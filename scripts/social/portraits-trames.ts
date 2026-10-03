@@ -107,7 +107,21 @@ async function accessoires(sharp: typeof import("sharp").default): Promise<void>
       .joinChannel(alpha, { raw: { width: w, height: h, channels: 1 } })
       .png().toFile(path.join(ACCESSOIRES, `signature-${f.slice(0, -4)}.png`));
   }
-  console.log(`  accessoires → ${path.relative(process.cwd(), ACCESSOIRES)} (3 logos, ${PARTIS.length} écussons, ${signatures.length} signature(s))`);
+  // LE GRAIN DU CARTON EN TEXTURE (site seulement) : les deux bruits des
+  // cartes (piqué fin et mouchetures), calculés une fois en PNG à motif
+  // raccordable. Sur le site, un filtre SVG feTurbulence est recalculé à
+  // chaque image d'une animation ; une texture ne coûte rien.
+  const bruit = (frequence: number, octaves: number, matrice: string, cote: number) => Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${cote}" height="${cote}"><filter id="f" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="${frequence}" numOctaves="${octaves}" stitchTiles="stitch"/><feColorMatrix values="${matrice}"/></filter><rect width="100%" height="100%" filter="url(#f)"/></svg>`);
+  await sharp(bruit(0.9, 3, "0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .2 .2 .2 0 -.08", 256)).webp({ quality: 80, alphaQuality: 80 }).toFile(path.join(ACCESSOIRES, "grain.webp"));
+  await sharp(bruit(0.045, 4, "0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .09 .09 .09 0 -.1", 512)).webp({ quality: 80, alphaQuality: 80 }).toFile(path.join(ACCESSOIRES, "mouchete.webp"));
+  // Pour les FACES de carte, au corps du carton (1071 px) : mêmes réglages que
+  // gabarit.ts, que le site réduit ensuite d'un facteur 0,27.
+  await sharp(bruit(0.82, 4, "0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .34 .33 .33 0 -.14", 512)).webp({ quality: 80, alphaQuality: 80 }).toFile(path.join(ACCESSOIRES, "grain-carte.webp"));
+  // Mouchetures : basse fréquence, donc tuile de 512 px affichée en 1 024
+  // (taille de fond doublée côté site) — même aspect, quatre fois plus léger.
+  await sharp(bruit(0.026, 4, "0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 .33 .33 0 -.42", 512)).webp({ quality: 80, alphaQuality: 80 }).toFile(path.join(ACCESSOIRES, "mouchete-carte.webp"));
+  console.log(`  accessoires → ${path.relative(process.cwd(), ACCESSOIRES)} (3 logos, ${PARTIS.length} écussons, ${signatures.length} signature(s), 4 textures)`);
 }
 
 main().catch((e) => { console.error(e instanceof Error ? e.message : e); process.exit(1); });

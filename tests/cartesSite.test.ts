@@ -44,6 +44,24 @@ describe("preparerCartesSite", () => {
   }, 60_000);
 });
 
+describe("fiches réunies par personne", () => {
+  it("le verso d'un élu à plusieurs lignes porte au moins la parole de chacune (vitrine#917)", async () => {
+    const data = await loadAssemblee();
+    if (!data) return;
+    const cartes = await preparerCartesSite(data);
+    for (const periode of ["legislature", "session", "last_pdq"] as const) {
+      const surcharges = cartes.personnes[periode] ?? {};
+      for (const r of data.periods[periode].rows) for (const d of r.deputies ?? []) {
+        const o = surcharges[slugCirco(d)];
+        if (!o) continue;
+        expect(o.wordsRaw ?? 0, `${periode} ${d.name}`).toBeGreaterThanOrEqual(d.wordsRaw);
+        expect(o.interventions ?? 0, `${periode} ${d.name}`).toBeGreaterThanOrEqual(d.interventions);
+      }
+    }
+    expect(cartes.maxAbs.legislature).toBeGreaterThan(0);
+  }, 60_000);
+});
+
 describe("portraits tramés", () => {
   it("chaque photo de public/images/deputes a sa trame WebP (scripts/social/portraits-trames.ts)", async () => {
     const fs = await import("node:fs/promises");

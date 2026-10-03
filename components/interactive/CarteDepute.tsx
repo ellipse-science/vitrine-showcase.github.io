@@ -65,8 +65,11 @@ export type ContexteCartes = {
 /** Reconstitue la Carte complète : la fiche de carte préparée au build, plus
  *  l'élu du casier. */
 export function carteComplete(c: CarteSite, deputy: DeputyRow, contexte: ContexteCartes): Carte {
-  const { elu: _elu, ...reste } = c;
-  return { ...reste, deputy, signature: contexte.signatures.has(c.slug) ? ASSETS.signature(c.slug) : null };
+  const { elu, ...reste } = c;
+  // L'élu de la carte : la ligne du casier, ou la fiche réunie de la personne
+  // quand elle en a plusieurs (voir CartesSite.personnes).
+  const personne = contexte.fiches.get(elu)?.[contexte.periode];
+  return { ...reste, deputy: personne ? { ...deputy, ...personne } : deputy, signature: contexte.signatures.has(c.slug) ? ASSETS.signature(c.slug) : null };
 }
 
 /** Les polices des faces, telles que le CSS les demande. Les AJUSTEMENTS ne

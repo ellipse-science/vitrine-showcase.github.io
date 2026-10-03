@@ -16,7 +16,7 @@ import {
   BANDE, BULLE, FLEURS_PAR_RARETE, FONCTION, H, LIBELLE_ENJEU_ENTIER, MARGE, METAUX, PANNEAU,
   PASTILLE_LEGENDAIRE, PHOTO_H, PLANCHER_IMPRESSION, RECTO_IMPRESSION_CSS, SCRIPT_PLANCHER, TOPPS,
   VERSO_IMPRESSION_CSS, W, cadreTopps, cheminFenetre, cheminOrigine, contourEnjeu, degradeMetal, degradeMetalCSS,
-  grainHTML, grilleStats, marquesInstitutions, ordinal, vagueBulle,
+  grainHTML, grilleStats, type Textures, marquesInstitutions, ordinal, vagueBulle,
 } from "./gabarit";
 import type { Carte, Etiquette } from "./types";
 
@@ -31,6 +31,8 @@ export type Rendu = {
   /** Période des chiffres du bloc « Fiche à l'Assemblée » ; la législature
    *  par défaut (carton imprimé). */
   periodeFiche?: PeriodKey;
+  /** Grain en textures plutôt qu'en filtres SVG (site). */
+  textures?: Textures;
 };
 
 /** La feuille des rectos. Oswald y figure depuis le 2 oct. 2026 : le code de
@@ -144,7 +146,7 @@ export function rectoLegendaire(c: Carte, portrait: string | null, ecusson: stri
   </div>
   <p class="pied"><span>${ordinal(txt(c.edition.split(" · ")[0]))}</span><span>${c.libelleFonction ? `*&nbsp;${txt(c.libelleFonction)}` : "vitrinedemocratique.com"}</span></p>
   ${marquesInstitutions(logoCapp, rendu.logoUlaval)}
-  ${grainHTML()}
+  ${grainHTML(rendu.textures)}
 `,
   };
 }
@@ -383,7 +385,7 @@ export function recto(
     <span>${c.libelleFonction ? `*&nbsp;${txt(c.libelleFonction)}` : "vitrinedemocratique.com"}</span>
   </p>
 
-  ${grainHTML()}
+  ${grainHTML(rendu.textures)}
 `,
   };
 }
@@ -847,7 +849,7 @@ export function verso(
     <span>${ordinal(txt(c.edition))} &middot; carte ${c.numero}${c.variante} de ${c.total}</span>
   </p>`}
   ${marquesInstitutions(logoCapp, rendu.logoUlaval)}
-  ${grainHTML()}
+  ${grainHTML(rendu.textures)}
 ${rendu.impression ? SCRIPT_PLANCHER : ""}
 `,
   };
