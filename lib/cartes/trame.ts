@@ -8,6 +8,8 @@
 /** ⚠️ Toute retouche de l'algorithme ci-dessous DOIT incrémenter cette
  *  version : elle entre dans la clé des caches, sinon l'ancienne trame
  *  resservira. */
+import path from "node:path";
+
 export const TRAME_VERSION = "1";
 
 export type OptionsTrame = {
@@ -112,4 +114,41 @@ export async function tramer(octets: Buffer, options: OptionsTrame): Promise<Buf
   }
   if (!buf) return null;
   return buf;
+}
+
+/** LE MONOGRAMME « VD » DE LA VITRINE, au bas du verso imprimé (Jules, 28-09) :
+ *  tiré du logo, son trait épaissi d'un disque de `rayon` px sans être
+ *  redessiné. Le générateur l'incruste en data: ; le site le sert en fichier
+ *  (scripts/social/portraits-trames.ts). */
+export async function monogrammePNG(rayon: number): Promise<Buffer | null> {
+  const sharp = (await import("sharp")).default;
+  const source = path.resolve(process.cwd(), "public/images/brand/logo_vitrinedemocratique_bg-none_theme-black.png");
+  // Le monogramme occupe les colonnes 376 à 919 et les lignes 8 à 582 du logo.
+  const r = rayon, x0 = 376 - r, y0 = 0, l = 544 + 2 * r, h = 591;
+  const lu = await sharp(source).ensureAlpha().extractChannel("alpha")
+    .extract({ left: x0, top: y0, width: l, height: h }).raw().toBuffer().catch(() => null);
+  if (!lu) return null;
+  // Le « E » final de VITRINE (colonnes 380 à 419) et le bord du « D » de
+  // DÉMOCRATIQUE (colonne 929) entrent dans ce rectangle : on les efface.
+  for (let y = 270; y < 358; y++) {
+    for (let x = 0; x < l; x++) if (x + x0 < 422 || x + x0 > 923) lu[(y - y0) * l + x] = 0;
+  }
+  // Épaississement : chaque point prend la valeur la plus opaque dans un
+  // disque de rayon r (dilatation). Le tracé garde sa forme et ses bords lissés.
+  const disque: [number, number][] = [];
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r) disque.push([dx, dy]);
+  const epais = Buffer.alloc(l * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < l; x++) {
+      let m = 0;
+      for (const [dx, dy] of disque) {
+        const xx = x + dx, yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= l || yy >= h) continue;
+        const v = lu[yy * l + xx];
+        if (v > m) { m = v; if (m === 255) break; }
+      }
+      epais[(y * l + x) * 4 + 3] = m;
+    }
+  }
+  return sharp(epais, { raw: { width: l, height: h, channels: 4 } }).trim().png().toBuffer();
 }

@@ -71,7 +71,7 @@ import { documentHTML, recto, verso, type Rendu } from "@/lib/cartes/faces";
 import { LIBELLES_FONCTION, LIBELLE_RARETE, MONTANT, nomImprime, slugCirco } from "@/lib/cartes/fonctions";
 import { COEUR, ECHELLE_IMPRESSION, FLEURS_PAR_RARETE, FOND_PERDU, H, LOGO_VERSO, MARGE, PANNEAU, PLANCHER_IMPRESSION, RECTO_IMPRESSION_CSS, W, degradeMetalCSS, marquesInstitutions, ordinal } from "@/lib/cartes/gabarit";
 import { construireJeu } from "@/lib/cartes/jeu";
-import { TRAME_VERSION, tramer } from "@/lib/cartes/trame";
+import { TRAME_VERSION, monogrammePNG, tramer } from "@/lib/cartes/trame";
 import { PERIODES, type Carte, type Rarete } from "@/lib/cartes/types";
 
 
@@ -102,37 +102,8 @@ function avecMention(html: string, mention: string | null, face: "recto" | "vers
 }
 
 async function monogrammeVitrine(rayon: number): Promise<string | null> {
-  const sharp = (await import("sharp")).default;
-  const source = path.resolve(process.cwd(), "public/images/brand/logo_vitrinedemocratique_bg-none_theme-black.png");
-  // Le monogramme occupe les colonnes 376 à 919 et les lignes 8 à 582 du logo.
-  const r = rayon, x0 = 376 - r, y0 = 0, l = 544 + 2 * r, h = 591;
-  const lu = await sharp(source).ensureAlpha().extractChannel("alpha")
-    .extract({ left: x0, top: y0, width: l, height: h }).raw().toBuffer().catch(() => null);
-  if (!lu) return null;
-  // Le « E » final de VITRINE (colonnes 380 à 419) et le bord du « D » de
-  // DÉMOCRATIQUE (colonne 929) entrent dans ce rectangle : on les efface.
-  for (let y = 270; y < 358; y++) {
-    for (let x = 0; x < l; x++) if (x + x0 < 422 || x + x0 > 923) lu[(y - y0) * l + x] = 0;
-  }
-  // Épaississement : chaque point prend la valeur la plus opaque dans un
-  // disque de rayon r (dilatation). Le tracé garde sa forme et ses bords lissés.
-  const disque: [number, number][] = [];
-  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r) disque.push([dx, dy]);
-  const epais = Buffer.alloc(l * h * 4);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < l; x++) {
-      let m = 0;
-      for (const [dx, dy] of disque) {
-        const xx = x + dx, yy = y + dy;
-        if (xx < 0 || yy < 0 || xx >= l || yy >= h) continue;
-        const v = lu[yy * l + xx];
-        if (v > m) { m = v; if (m === 255) break; }
-      }
-      epais[(y * l + x) * 4 + 3] = m;
-    }
-  }
-  const png = await sharp(epais, { raw: { width: l, height: h, channels: 4 } }).trim().png().toBuffer();
-  return `data:image/png;base64,${png.toString("base64")}`;
+  const png = await monogrammePNG(rayon);
+  return png ? `data:image/png;base64,${png.toString("base64")}` : null;
 }
 /** Séparation quadrichromique d'époque. Les quatre encres sont tramées à des
  * angles distincts et se multiplient sur le papier pour former la rosette

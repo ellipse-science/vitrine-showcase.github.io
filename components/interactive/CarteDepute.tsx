@@ -3,10 +3,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { DeputyRow, PeriodKey } from "@/lib/data/assemblee";
-import { ajusterFonctions, ajusterLegende, ajusterNom, ajusterRubriques, ajusterVerso } from "@/lib/cartes/ajustements";
+import { ajusterFonctions, ajusterLegende, ajusterNom, ajusterRubriques, ajusterVerso, appliquerPlancher } from "@/lib/cartes/ajustements";
 import { recto, verso, type Face, type Rendu } from "@/lib/cartes/faces";
 import { slugCirco } from "@/lib/cartes/fonctions";
-import { H, W } from "@/lib/cartes/gabarit";
+import { H, PLANCHER_IMPRESSION, W } from "@/lib/cartes/gabarit";
 import type { CarteSite } from "@/lib/cartes/site";
 import type { Carte, Etiquette } from "@/lib/cartes/types";
 import { symboleEnjeuSVG } from "@/lib/enjeux-glyphes";
@@ -35,6 +35,7 @@ const ASSETS = {
   capp: "/images/cartes/capp.png",
   ulaval: "/images/cartes/ulaval.png",
   vitrine: "/images/cartes/vitrine.png",
+  monogramme: "/images/cartes/monogramme.png",
   ecusson: (cle: Carte["cle"]) => (cle === "ind" ? null : `/images/cartes/ecusson-${cle}.png`),
   portrait: (deputy: DeputyRow) => {
     const asset = deputy.portrait?.match(/\/images\/deputes\/cartes\/web\/(.+)\.jpg$/)?.[1];
@@ -43,8 +44,16 @@ const ASSETS = {
   signature: (slug: string) => `/images/cartes/signature-${slug}.png`,
 };
 
+// LA MISE EN PAGE IMPRIMÉE, AUSSI À L'ÉCRAN (Jules, 3 oct.) : réduite à
+// 291 px, la mise en page « écran » du générateur donnait des textes de 4 à
+// 6 px et une note de méthode illisible au bas du verso. La mise en page
+// imprimée est pensée pour la petite taille : aucun texte sous 30 px du
+// carton, libellés d'enjeux en entier, logos au bas à la place des textes.
+// Et sans aucune note (`sansNote`) : la carte ne porte que les données, la
+// page Méthodologie est à un clic.
 const RENDU: Rendu = {
-  impression: false,
+  impression: true,
+  sansNote: true,
   glyphe: (cle, color, size) => symboleEnjeuSVG(cle, `width:${size}px;height:${size}px;color:${color};display:block`),
   logoUlaval: ASSETS.ulaval,
   // Le grain en textures précalculées : les filtres SVG du carton étaient
@@ -153,7 +162,7 @@ export function CarteDepute({ carte, face, contexte, actif = true }: {
     const ecusson = ASSETS.ecusson(carte.cle);
     if (face === "recto") return recto(carte, portrait, ecusson, ASSETS.capp, RENDU);
     const fiche = contexte.fiches.get(slugCirco(carte.deputy)) ?? { [contexte.periode]: carte.deputy };
-    return verso(carte, fiche, contexte.maxAbs, contexte.libelles, portrait, ecusson, ASSETS.vitrine, ASSETS.capp, contexte.derniereSeance, { ...RENDU, periodeFiche: contexte.periode });
+    return verso(carte, fiche, contexte.maxAbs, contexte.libelles, portrait, ecusson, ASSETS.monogramme, ASSETS.capp, contexte.derniereSeance, { ...RENDU, periodeFiche: contexte.periode });
   }, [carte, face, contexte, dessiner]);
 
   useLayoutEffect(() => {
@@ -172,6 +181,7 @@ export function CarteDepute({ carte, face, contexte, actif = true }: {
     let annule = false;
     chargerPolices(rendue.polices).then(() => {
       if (annule) return;
+      appliquerPlancher(racine);
       ajusterNom(racine);
       ajusterRubriques(racine);
       ajusterLegende(racine);
@@ -185,7 +195,7 @@ export function CarteDepute({ carte, face, contexte, actif = true }: {
   // hauteur qui va avec, et l'hôte y est réduit d'un seul facteur.
   return (
     <span ref={boite} className={`cd-boite${rendue ? "" : " est-attente"}`} aria-hidden="true">
-      <div ref={hote} className="cd-hote" style={{ width: W, height: H, transform: `scale(var(--cd-k))` }} />
+      <div ref={hote} className="cd-hote" data-plancher={PLANCHER_IMPRESSION} style={{ width: W, height: H, transform: `scale(var(--cd-k))` }} />
     </span>
   );
 }

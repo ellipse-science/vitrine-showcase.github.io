@@ -26,7 +26,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { FORMAT_PORTRAIT, TRAME_VERSION, tramer } from "@/lib/cartes/trame";
+import { FORMAT_PORTRAIT, TRAME_VERSION, monogrammePNG, tramer } from "@/lib/cartes/trame";
 
 const SOURCE = path.resolve(process.cwd(), "public/images/deputes");
 const SORTIE = path.resolve(process.cwd(), "public/images/deputes/cartes/trame");
@@ -114,6 +114,9 @@ async function accessoires(sharp: typeof import("sharp").default): Promise<void>
       .joinChannel(alpha, { raw: { width: w, height: h, channels: 1 } })
       .png().toFile(path.join(ACCESSOIRES, `signature-${f.slice(0, -4)}.png`));
   }
+  // Le monogramme du bas du verso (même rayon que LOGO_VERSO du gabarit).
+  const mono = await monogrammePNG(10);
+  if (mono) await sharp(mono).resize({ width: 240, withoutEnlargement: true }).png({ compressionLevel: 9 }).toFile(path.join(ACCESSOIRES, "monogramme.png"));
   // LE GRAIN DU CARTON EN TEXTURE (site seulement) : les deux bruits des
   // cartes (piqué fin et mouchetures), calculés une fois en PNG à motif
   // raccordable. Sur le site, un filtre SVG feTurbulence est recalculé à

@@ -33,6 +33,9 @@ export type Rendu = {
   periodeFiche?: PeriodKey;
   /** Grain en textures plutôt qu'en filtres SVG (site). */
   textures?: Textures;
+  /** Sans la note des sources ni de méthode au bas du verso : sur le site, la
+   *  page Méthodologie est à un clic ; la carte ne porte que les données. */
+  sansNote?: boolean;
 };
 
 /** La feuille des rectos. Oswald y figure depuis le 2 oct. 2026 : le code de
@@ -811,7 +814,7 @@ export function verso(
           sur une carte qui n'en a pas. « Relu à la main » engage le verrou de
           --png : les images ne sortent pas sans la planche de cette version.
           Détail : docs/reference/cartes-deputes.md. */ ""}
-    ${rendu.impression
+    ${rendu.sansNote ? "" : rendu.impression
       ? `<p class="metho metho-courte">Sources et méthode complète&nbsp;: vitrinedemocratique.com/methodologie</p>`
       : `<p class="metho">
       Sources&nbsp;: transcriptions du Salon bleu jusqu'au ${txt(derniereSeance.replace(/^\p{L}+ (?=\d)/u, ""))}, fiches de l'Assemblée nationale, résultats d'Élections Québec.
