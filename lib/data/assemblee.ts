@@ -262,8 +262,11 @@ function fmtWords(n: number): string {
 }
 
 function computeRichnessLevels(mattrs: Record<string, number>): Record<string, number> {
-  // Normalize MATTR values across active parties → 1–5 levels (relative
-  // scaling). Within 0.01 of each other → all 3.
+  // Étire les valeurs MATTR des PARTIS actifs de la période sur 1–5 (échelle
+  // relative : 1 = la plus faible, 5 = la plus forte). À moins de 0,01 d'écart,
+  // tout le monde à 3. Pour les ÉLUS, voir niveauxParQuintile : avec 129
+  // personnes, un min–max se fait écraser par deux ou trois valeurs extrêmes
+  // (120 élus sur 129 finissaient à 3 ou 4 points).
   const keys = Object.keys(mattrs);
   if (keys.length === 0) return {};
   const values = keys.map((k) => mattrs[k]);
@@ -692,7 +695,7 @@ function cleElu(r: DeputyAgoraRow): string {
 // au changement de casier, React laissait alors traîner une carte de l'ancien
 // parti dans le nouveau. Une seule ligne par élu : mots et interventions
 // additionnés, ton et parts d'enjeux pondérés par les mots, mot distinctif et
-// richesse de la ligne la plus bavarde (même règle que les cartes imprimées).
+// diversité lexicale de la ligne la plus bavarde (même règle que les cartes imprimées).
 function fusionnerLignesParElu(rows: DeputyAgoraRow[]): DeputyAgoraRow[] {
   const groupes = new Map<string, DeputyAgoraRow[]>();
   for (const r of rows) {
@@ -717,6 +720,83 @@ function fusionnerLignesParElu(rows: DeputyAgoraRow[]): DeputyAgoraRow[] {
   });
 }
 
+/** Niveaux 1–5 par QUINTILE : 1 = le cinquième des valeurs les plus faibles,
+ *  5 = le cinquième des plus fortes. Rang établi sur le nombre de valeurs
+ *  strictement inférieures, donc deux valeurs égales reçoivent le même niveau. */
+function niveauxParQuintile(valeurs: Record<string, number>): Record<string, number> {
+  const toutes = Object.values(valeurs).sort((a, b) => a - b);
+  const n = toutes.length;
+  const result: Record<string, number> = {};
+  for (const [k, v] of Object.entries(valeurs)) {
+    let dessous = 0;
+    while (dessous < n && toutes[dessous] < v) dessous++;
+    result[k] = Math.min(5, 1 + Math.floor((5 * dessous) / n));
+  }
+  return result;
+}
+
+/** Les lignes d'élus d'une période, tous partis confondus. */
+function lignesElusDeLaPeriode(deputyRows: DeputyAgoraRow[], period: PeriodKey, endDate: string): DeputyAgoraRow[] {
+  return deputyRows.filter(
+    (r) => r.period_type === period && r.period_end_date === endDate && !!r.party && !!r.deputy,
+  );
+}
+
+function cleDiversite(party: string, r: DeputyAgoraRow): string {
+  return `${party.toLowerCase()}|${cleElu(r)}`;
+}
+
+// DIVERSITÉ LEXICALE : UNE SEULE ÉCHELLE POUR TOUTE L'ASSEMBLÉE (2 oct. 2026).
+// Jusqu'ici l'échelle 1–5 était recalculée dans chaque parti (héritage du
+// tableau d'enquête de juillet 2026, où les élus n'apparaissaient qu'autour
+// de leur parti). Depuis que les cartes se comparent en main d'un parti à
+// l'autre, ça ne tenait plus : QS s'étale de 0,817 à 0,835 et la CAQ de
+// 0,772 à 0,848, donc cinq points chez l'un valaient quatre chez l'autre, et
+// la seule élue de la PCQ recevait trois points par défaut. Les niveaux sont
+// désormais calculés une fois par période sur TOUS les élus, après la fusion
+// des lignes d'un même élu dans chaque parti (même MATTR que sa carte), et par
+// quintile plutôt que par min–max : la bande observée est étroite (0,77–0,85)
+// mais trois élus très bas écrasaient tout le monde au centre. Cinq points =
+// le cinquième de l'Assemblée au vocabulaire le plus varié. Le ton était déjà
+// situé sur toute la période : les deux mesures se lisent pareil.
+function niveauxDiversiteElus(deputyRows: DeputyAgoraRow[], period: PeriodKey, endDate: string): Record<string, number> {
+  // Seuls les élus AFFICHÉS entrent dans le classement : ceux des cinq partis
+  // qui ont un casier. Les lignes « ind » (interventions prononcées sans
+  // affiliation) sont écartées comme partout ailleurs dans le module ;
+  // classées sans être montrées, elles déplaçaient les seuils de 11 cartes
+  // (relecture d'Adrien, vitrine#910).
+  const partis = new Set<string>(PARTY_KEYS);
+  const lignes = lignesElusDeLaPeriode(deputyRows, period, endDate).filter((r) => partis.has(r.party.toLowerCase()));
+  const parParti = new Map<string, DeputyAgoraRow[]>();
+  for (const r of lignes) {
+    const parti = r.party.toLowerCase();
+    parParti.set(parti, [...(parParti.get(parti) ?? []), r]);
+  }
+  // UNE PERSONNE, UN RANG. Un élu passé d'un parti à l'autre a une carte dans
+  // chaque casier ; classé deux fois, il comptait double dans les quintiles.
+  // On le classe une fois, sur sa valeur toutes allégeances confondues
+  // (moyenne des MATTR de ses lignes, pondérée par les mots), et ses deux
+  // cartes reçoivent le même nombre de points.
+  const parPersonne = new Map<string, { mots: number; somme: number; cles: string[] }>();
+  for (const [parti, rows] of parParti) {
+    for (const r of fusionnerLignesParElu(rows)) {
+      const personne = cleElu(r);
+      const mots = Math.max(1, Number(r.word_count || 0));
+      const p = parPersonne.get(personne) ?? { mots: 0, somme: 0, cles: [] };
+      p.mots += mots;
+      p.somme += Number(r.lexical_richness || 0) * mots;
+      p.cles.push(cleDiversite(parti, r));
+      parPersonne.set(personne, p);
+    }
+  }
+  const valeurs: Record<string, number> = {};
+  for (const [personne, p] of parPersonne) valeurs[personne] = p.somme / p.mots;
+  const rangs = niveauxParQuintile(valeurs);
+  const niveaux: Record<string, number> = {};
+  for (const [personne, p] of parPersonne) for (const cle of p.cles) niveaux[cle] = rangs[personne];
+  return niveaux;
+}
+
 function buildDeputyList(
   partyKey: PartyKey | "ind",
   period: PeriodKey,
@@ -725,13 +805,10 @@ function buildDeputyList(
   affiliations: AffiliationIndex,
   periodStart: string,
   endDate: string,
+  niveauxDiversite: Record<string, number>,
 ): DeputyRow[] {
-  const rows = deputyRows.filter(
-    (r) => r.period_type === period
-      && r.period_end_date === endDate
-      && r.party
-      && r.party.toLowerCase() === partyKey
-      && r.deputy,
+  const rows = lignesElusDeLaPeriode(deputyRows, period, endDate).filter(
+    (r) => r.party.toLowerCase() === partyKey,
   );
   if (rows.length === 0) return [];
 
@@ -742,10 +819,6 @@ function buildDeputyList(
   // actuelle du portrait faisait donc disparaître l'historique légitime.
   const sorted = fusionnerLignesParElu(rows).sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
   if (sorted.length === 0) return [];
-
-  const mattrs: Record<string, number> = {};
-  for (const r of sorted) mattrs[r.deputy] = Number(r.lexical_richness || 0);
-  const richnessLevels = computeRichnessLevels(mattrs);
 
   return sorted.map((r) => {
     const amplified = Math.max(-1, Math.min(1, Number(r.tone_score || 0) * TONE_AMPLIFY));
@@ -758,7 +831,7 @@ function buildDeputyList(
       name,
       wordsFormatted: fmtWords(r.word_count),
       wordsRaw: Number(r.word_count || 0),
-      richnessLevel: richnessLevels[r.deputy] || 1,
+      richnessLevel: niveauxDiversite[cleDiversite(partyKey, r)] || 1,
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       signatureWord: cleanText(r.signature_word),
       signatureWordContext: citationExtrait(r.signature_word_context, r.signature_word),
@@ -855,6 +928,7 @@ function buildPeriodView(
     }
   }
   const richnessLevels = computeRichnessLevels(mattrs);
+  const niveauxDiversite = niveauxDiversiteElus(deputyRows, period, endDate);
 
   const builtRows: AssembleeRow[] = sorted.map((item): AssembleeRow => {
     const isShadow = !(item.interventions > 0 && item.data);
@@ -889,6 +963,7 @@ function buildPeriodView(
         affiliations,
         rows[0]?.period_start_date ?? endDate,
         endDate,
+        niveauxDiversite,
       ),
     };
   });
@@ -907,6 +982,7 @@ function buildPeriodView(
       affiliations,
       rows[0]?.period_start_date ?? endDate,
       endDate,
+      niveauxDiversite,
     ),
   };
 }
@@ -1012,6 +1088,7 @@ export const __test__ = {
   fmtDateFr,
   fmtWords,
   computeRichnessLevels,
+  niveauxParQuintile,
   buildEnjeuStack,
   buildSubtitle,
   buildPeriodView,

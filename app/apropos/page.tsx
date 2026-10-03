@@ -85,7 +85,7 @@ export default function AproposPage() {
                 séance (lorsqu'une transcription est disponible) afin
                 d’analyser la participation des différents partis lors de la
                 période de questions, la présence des différents enjeux dans les
-                discours, le ton employé par les parlementaires et la richesse
+                discours, le ton employé par les parlementaires et la diversité
                 lexicale des discours législatifs. Ces deux flux de données,
                 jusqu'alors distincts, peuvent désormais être mis en regard au
                 sein de la Vitrine, offrant pour la première fois une vue
