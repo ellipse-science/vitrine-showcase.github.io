@@ -476,6 +476,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/kelley-gregory-17951/index.html"
     },
     {
+      "deputy_id": "17955",
+      "circonscription": "Jean-Lesage",
+      "circonscription_slug": "jean-lesage",
+      "asset_slug": "jean-lesage",
+      "nom": "Sol Zanetti",
+      "parti": "Québec solidaire",
+      "fichier": "/images/deputes/jean-lesage.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/zanetti-sol-17955/index.html"
+    },
+    {
       "deputy_id": "18561",
       "circonscription": "Jean-Talon",
       "circonscription_slug": "jean-talon",
@@ -494,6 +504,46 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/jean-talon.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/paradis-pascal-19999/index.html"
+    },
+    {
+      "deputy_id": "1171",
+      "circonscription": "Jeanne-Mance–Viger",
+      "circonscription_slug": "jeanne-mance-viger",
+      "asset_slug": "jeanne-mance-viger",
+      "nom": "Filomena Rotiroti",
+      "parti": "Parti libéral du Québec",
+      "fichier": "/images/deputes/jeanne-mance-viger.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/rotiroti-filomena-1171/index.html"
+    },
+    {
+      "deputy_id": "15401",
+      "circonscription": "Johnson",
+      "circonscription_slug": "johnson",
+      "asset_slug": "johnson",
+      "nom": "André Lamontagne",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/johnson.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lamontagne-andre-15401/index.html"
+    },
+    {
+      "deputy_id": "19321",
+      "circonscription": "Joliette",
+      "circonscription_slug": "joliette",
+      "asset_slug": "joliette",
+      "nom": "François St-Louis",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/joliette.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/st-louis-francois-19321/index.html"
+    },
+    {
+      "deputy_id": "19317",
+      "circonscription": "Jonquière",
+      "circonscription_slug": "jonquiere",
+      "asset_slug": "jonquiere",
+      "nom": "Yannick Gagnon",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/jonquiere.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/gagnon-yannick-19317/index.html"
     },
     {
       "deputy_id": "4131",
@@ -516,6 +566,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/caire-eric-485/index.html"
     },
     {
+      "deputy_id": "19313",
+      "circonscription": "La Pinière",
+      "circonscription_slug": "la-piniere",
+      "asset_slug": "la-piniere",
+      "nom": "Linda Caron",
+      "parti": "Parti libéral du Québec",
+      "fichier": "/images/deputes/la-piniere.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/caron-linda-19313/index.html"
+    },
+    {
       "deputy_id": "12223",
       "circonscription": "La Prairie",
       "circonscription_slug": "la-prairie",
@@ -536,6 +596,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/tanguay-marc-11789/index.html"
     },
     {
+      "deputy_id": "17959",
+      "circonscription": "Labelle",
+      "circonscription_slug": "labelle",
+      "asset_slug": "labelle",
+      "nom": "Chantale Jeannotte",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/labelle.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/jeannotte-chantale-17959/index.html"
+    },
+    {
       "deputy_id": "17957",
       "circonscription": "Lac-Saint-Jean",
       "circonscription_slug": "lac-saint-jean",
@@ -544,6 +614,16 @@
       "parti": "Coalition avenir Québec",
       "fichier": "/images/deputes/lac-saint-jean.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/girard-eric-17957/index.html"
+    },
+    {
+      "deputy_id": "19311",
+      "circonscription": "Laporte",
+      "circonscription_slug": "laporte",
+      "asset_slug": "laporte",
+      "nom": "Isabelle Poulet",
+      "parti": "Indépendante",
+      "fichier": "/images/deputes/laporte.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/poulet-isabelle-19311/index.html"
     },
     {
       "deputy_id": "17953",
