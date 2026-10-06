@@ -1,5 +1,11 @@
 [
   {
+    "pr": 932,
+    "date": "2026-10-06T20:44:08Z",
+    "note": "Sur tablette, le casier ouvert de l'alignement de l'Assemblée garde ses chiffres à l'intérieur de sa porte, sans recouvrir les cartes.",
+    "version": "2.52.0-beta.7"
+  },
+  {
     "pr": 936,
     "date": "2026-10-06T20:41:32Z",
     "note": "Le classement du pool de la Grande soirée électorale, réservé aux personnes inscrites, retire un essai de l'équipe : 63 pronostics.",
