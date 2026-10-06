@@ -85,7 +85,7 @@ const PERIOD_TAB_LABELS: Record<PeriodKey, string> = {
   legislature: "Cette législature",
 };
 
-type IssueShares = Partial<Record<IssueKey, number>>;
+export type IssueShares = Partial<Record<IssueKey, number>>;
 
 type AgoraRow = IssueShares & {
   period_type: PeriodKey;
@@ -151,6 +151,9 @@ export type EnjeuSegment = {
 };
 
 export type DeputyRow = {
+  /** Clé unique dans une liste de parti (identifiant ANQ, sinon siège et
+   *  graphie) : sert de clé React, le nom ne suffisant pas (deux Girard). */
+  id: string;
   /** Graphie de l'Assemblée nationale quand le portrait est apparié
    *  (« Jean-François Roberge ») ; sinon la graphie brute du référentiel,
    *  remise en capitales initiales (« Jean-Francois Roberge »). */
@@ -177,6 +180,10 @@ export type DeputyRow = {
   topIssueColor?: string;
   /** Répartition par enjeu, pour le verso statistique. */
   enjeuStack: EnjeuSegment[];
+  /** Parts brutes des 12 enjeux, pour qui doit recalculer la pile (cartes). */
+  /** Absent des données envoyées au navigateur (AssembleeSection) : seul le
+   *  générateur des cartes s'en sert. */
+  issueShares?: IssueShares;
   /** Parcours parlementaire pendant la législature courante. Présent seulement
    *  dans la vue « législature » lorsqu'un événement mérite d'être expliqué :
    *  changement d'affiliation, élection partielle ou démission. */
@@ -196,6 +203,10 @@ export type AssembleeRow = {
   label: string;
   color: string;
   inShadow: boolean;
+  /** Casier sans parole : le parti avait-il au moins un élu en fonction
+   *  pendant la période ? Dit pourquoi le casier est vide (n'a pas siégé, ou
+   *  a siégé sans prendre la parole). */
+  aSiege?: boolean;
   // Active-row fields (when not in shadow):
   enjeuStack?: EnjeuSegment[];
   editorialAngle?: string;
@@ -225,6 +236,9 @@ export type PeriodView = {
    *  plusieurs semaines (cf. SourceTip) — la date reflète la séance, pas le fetch. */
   lastUpdated: string;
   rows: AssembleeRow[];
+  /** Élus indépendants de la période : le site n'a pas de casier pour eux, mais
+   *  les cartes de député couvrent les 125 sièges. */
+  independants?: DeputyRow[];
 };
 
 export type AssembleeData = {
@@ -252,8 +266,11 @@ function fmtWords(n: number): string {
 }
 
 function computeRichnessLevels(mattrs: Record<string, number>): Record<string, number> {
-  // Normalize MATTR values across active parties → 1–5 levels (relative
-  // scaling). Within 0.01 of each other → all 3.
+  // Étire les valeurs MATTR des PARTIS actifs de la période sur 1–5 (échelle
+  // relative : 1 = la plus faible, 5 = la plus forte). À moins de 0,01 d'écart,
+  // tout le monde à 3. Pour les ÉLUS, voir niveauxParQuintile : avec 129
+  // personnes, un min–max se fait écraser par deux ou trois valeurs extrêmes
+  // (120 élus sur 129 finissaient à 3 ou 4 points).
   const keys = Object.keys(mattrs);
   if (keys.length === 0) return {};
   const values = keys.map((k) => mattrs[k]);
@@ -269,9 +286,16 @@ function computeRichnessLevels(mattrs: Record<string, number>): Record<string, n
   return result;
 }
 
-function buildEnjeuStack(row: IssueShares): EnjeuSegment[] {
-  const segments = ISSUE_META
-    .map((meta) => ({ meta, val: Number(row[meta.key] || 0) }))
+/** `exclus` retire des enjeux et répartit leur part entre les autres, qui
+ *  somment de nouveau à 100 %. Le site n'en passe aucun ; les cartes de député
+ *  s'en servent pour écarter les enjeux dont le classifieur est en révision. */
+export function buildEnjeuStack(row: IssueShares, exclus: readonly IssueKey[] = []): EnjeuSegment[] {
+  const gardes = ISSUE_META.filter((meta) => !exclus.includes(meta.key));
+  const total = exclus.length
+    ? gardes.reduce((t, meta) => t + Number(row[meta.key] || 0), 0)
+    : 1;
+  const segments = gardes
+    .map((meta) => ({ meta, val: total > 0 ? Number(row[meta.key] || 0) / total : 0 }))
     .filter((s) => s.val >= 0.04)
     .sort((a, b) => b.val - a.val);
 
@@ -337,6 +361,13 @@ function cleanText(value?: string): string | undefined {
 // marque la coupe. Un extrait assumé se lit ; une phrase tranchée net donne
 // l'impression d'un bogue.
 const CITATION_BUDGET = 95;
+/** Budget de l'extrait, lu À L'APPEL : le site garde 95 signes ; les cartes
+ *  imprimées, qui ont la place de deux lignes, demandent plus par
+ *  VITRINE_CITATION_BUDGET (scripts/social/cartes-deputes.ts). */
+function citationBudget(): number {
+  const demande = Number(process.env.VITRINE_CITATION_BUDGET);
+  return Number.isFinite(demande) && demande >= CITATION_BUDGET ? demande : CITATION_BUDGET;
+}
 
 function sansDiacritiques(value: string): string {
   return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
@@ -394,7 +425,7 @@ function findConceptSpan(text: string, concept?: string): ConceptSpan | undefine
   return undefined;
 }
 
-function citationExtrait(value?: string, concept?: string, budget = CITATION_BUDGET): string | undefined {
+function citationExtrait(value?: string, concept?: string, budget = citationBudget()): string | undefined {
   const v = cleanText(value);
   if (!v) return undefined;
   // Le raffineur laisse parfois une virgule ou une espace orpheline en fin de
@@ -652,21 +683,136 @@ function titleCaseName(raw: string): string {
     .join(" ");
 }
 
+/** Clé qui désigne un élu dans une liste de parti : l'identifiant ANQ quand le
+ *  raffineur le publie, sinon le siège et la graphie. Deux élus peuvent porter
+ *  le même nom (Eric Girard, Groulx ; Éric Girard, Lac-Saint-Jean) : le nom ne
+ *  suffit donc jamais à les distinguer. */
+function cleElu(r: DeputyAgoraRow): string {
+  if (r.deputy_id !== undefined && r.deputy_id !== null && String(r.deputy_id) !== "") return String(r.deputy_id);
+  return `${r.district_id ?? ""}|${r.deputy}`;
+}
+
+// MÊME ÉLU, MÊME PARTI, PLUSIEURS LIGNES : les données reconstruites (1er oct.
+// 2026) sortent « Eric Girard » et « Éric Girard », même identifiant 17957 et
+// même siège de Lac-Saint-Jean, en deux lignes du même parti. Deux lignes
+// font deux cartes, et deux cartes au même nom partagent la même clé React :
+// au changement de casier, React laissait alors traîner une carte de l'ancien
+// parti dans le nouveau. Une seule ligne par élu : mots et interventions
+// additionnés, ton et parts d'enjeux pondérés par les mots, mot distinctif et
+// diversité lexicale de la ligne la plus bavarde (même règle que les cartes imprimées).
+function fusionnerLignesParElu(rows: DeputyAgoraRow[]): DeputyAgoraRow[] {
+  const groupes = new Map<string, DeputyAgoraRow[]>();
+  for (const r of rows) {
+    const cle = cleElu(r);
+    groupes.set(cle, [...(groupes.get(cle) ?? []), r]);
+  }
+  return [...groupes.values()].map((lignes) => {
+    if (lignes.length === 1) return lignes[0];
+    const principale = [...lignes].sort((a, b) => (b.word_count || 0) - (a.word_count || 0))[0];
+    const mots = lignes.reduce((t, r) => t + Number(r.word_count || 0), 0);
+    const pond = (f: (r: DeputyAgoraRow) => number) =>
+      mots > 0 ? lignes.reduce((t, r) => t + f(r) * Number(r.word_count || 0), 0) / mots : 0;
+    const parts: IssueShares = {};
+    for (const meta of ISSUE_META) parts[meta.key] = pond((r) => Number(r[meta.key] || 0));
+    return {
+      ...principale,
+      ...parts,
+      n_interventions: lignes.reduce((t, r) => t + Number(r.n_interventions || 0), 0),
+      word_count: mots,
+      tone_score: pond((r) => Number(r.tone_score || 0)),
+    };
+  });
+}
+
+/** Niveaux 1–5 par QUINTILE : 1 = le cinquième des valeurs les plus faibles,
+ *  5 = le cinquième des plus fortes. Rang établi sur le nombre de valeurs
+ *  strictement inférieures, donc deux valeurs égales reçoivent le même niveau. */
+function niveauxParQuintile(valeurs: Record<string, number>): Record<string, number> {
+  const toutes = Object.values(valeurs).sort((a, b) => a - b);
+  const n = toutes.length;
+  const result: Record<string, number> = {};
+  for (const [k, v] of Object.entries(valeurs)) {
+    let dessous = 0;
+    while (dessous < n && toutes[dessous] < v) dessous++;
+    result[k] = Math.min(5, 1 + Math.floor((5 * dessous) / n));
+  }
+  return result;
+}
+
+/** Les lignes d'élus d'une période, tous partis confondus. */
+function lignesElusDeLaPeriode(deputyRows: DeputyAgoraRow[], period: PeriodKey, endDate: string): DeputyAgoraRow[] {
+  return deputyRows.filter(
+    (r) => r.period_type === period && r.period_end_date === endDate && !!r.party && !!r.deputy,
+  );
+}
+
+function cleDiversite(party: string, r: DeputyAgoraRow): string {
+  return `${party.toLowerCase()}|${cleElu(r)}`;
+}
+
+// DIVERSITÉ LEXICALE : UNE SEULE ÉCHELLE POUR TOUTE L'ASSEMBLÉE (2 oct. 2026).
+// Jusqu'ici l'échelle 1–5 était recalculée dans chaque parti (héritage du
+// tableau d'enquête de juillet 2026, où les élus n'apparaissaient qu'autour
+// de leur parti). Depuis que les cartes se comparent en main d'un parti à
+// l'autre, ça ne tenait plus : QS s'étale de 0,817 à 0,835 et la CAQ de
+// 0,772 à 0,848, donc cinq points chez l'un valaient quatre chez l'autre, et
+// la seule élue de la PCQ recevait trois points par défaut. Les niveaux sont
+// désormais calculés une fois par période sur TOUS les élus, après la fusion
+// des lignes d'un même élu dans chaque parti (même MATTR que sa carte), et par
+// quintile plutôt que par min–max : la bande observée est étroite (0,77–0,85)
+// mais trois élus très bas écrasaient tout le monde au centre. Cinq points =
+// le cinquième de l'Assemblée au vocabulaire le plus varié. Le ton était déjà
+// situé sur toute la période : les deux mesures se lisent pareil.
+function niveauxDiversiteElus(deputyRows: DeputyAgoraRow[], period: PeriodKey, endDate: string): Record<string, number> {
+  // Seuls les élus AFFICHÉS entrent dans le classement : ceux des cinq partis
+  // qui ont un casier. Les lignes « ind » (interventions prononcées sans
+  // affiliation) sont écartées comme partout ailleurs dans le module ;
+  // classées sans être montrées, elles déplaçaient les seuils de 11 cartes
+  // (relecture d'Adrien, vitrine#910).
+  const partis = new Set<string>(PARTY_KEYS);
+  const lignes = lignesElusDeLaPeriode(deputyRows, period, endDate).filter((r) => partis.has(r.party.toLowerCase()));
+  const parParti = new Map<string, DeputyAgoraRow[]>();
+  for (const r of lignes) {
+    const parti = r.party.toLowerCase();
+    parParti.set(parti, [...(parParti.get(parti) ?? []), r]);
+  }
+  // UNE PERSONNE, UN RANG. Un élu passé d'un parti à l'autre a une carte dans
+  // chaque casier ; classé deux fois, il comptait double dans les quintiles.
+  // On le classe une fois, sur sa valeur toutes allégeances confondues
+  // (moyenne des MATTR de ses lignes, pondérée par les mots), et ses deux
+  // cartes reçoivent le même nombre de points.
+  const parPersonne = new Map<string, { mots: number; somme: number; cles: string[] }>();
+  for (const [parti, rows] of parParti) {
+    for (const r of fusionnerLignesParElu(rows)) {
+      const personne = cleElu(r);
+      const mots = Math.max(1, Number(r.word_count || 0));
+      const p = parPersonne.get(personne) ?? { mots: 0, somme: 0, cles: [] };
+      p.mots += mots;
+      p.somme += Number(r.lexical_richness || 0) * mots;
+      p.cles.push(cleDiversite(parti, r));
+      parPersonne.set(personne, p);
+    }
+  }
+  const valeurs: Record<string, number> = {};
+  for (const [personne, p] of parPersonne) valeurs[personne] = p.somme / p.mots;
+  const rangs = niveauxParQuintile(valeurs);
+  const niveaux: Record<string, number> = {};
+  for (const [personne, p] of parPersonne) for (const cle of p.cles) niveaux[cle] = rangs[personne];
+  return niveaux;
+}
+
 function buildDeputyList(
-  partyKey: PartyKey,
+  partyKey: PartyKey | "ind",
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[],
   portraits: PortraitIndex,
   affiliations: AffiliationIndex,
   periodStart: string,
   endDate: string,
+  niveauxDiversite: Record<string, number>,
 ): DeputyRow[] {
-  const rows = deputyRows.filter(
-    (r) => r.period_type === period
-      && r.period_end_date === endDate
-      && r.party
-      && r.party.toLowerCase() === partyKey
-      && r.deputy,
+  const rows = lignesElusDeLaPeriode(deputyRows, period, endDate).filter(
+    (r) => r.party.toLowerCase() === partyKey,
   );
   if (rows.length === 0) return [];
 
@@ -675,12 +821,8 @@ function buildDeputyList(
   // de toute façon jamais passées à cette fonction (PARTY_KEYS ne contient
   // que les partis représentés par un casier). Filtrer ici sur l'affiliation
   // actuelle du portrait faisait donc disparaître l'historique légitime.
-  const sorted = [...rows].sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
+  const sorted = fusionnerLignesParElu(rows).sort((a, b) => (b.word_count || 0) - (a.word_count || 0));
   if (sorted.length === 0) return [];
-
-  const mattrs: Record<string, number> = {};
-  for (const r of sorted) mattrs[r.deputy] = Number(r.lexical_richness || 0);
-  const richnessLevels = computeRichnessLevels(mattrs);
 
   return sorted.map((r) => {
     const amplified = Math.max(-1, Math.min(1, Number(r.tone_score || 0) * TONE_AMPLIFY));
@@ -689,10 +831,11 @@ function buildDeputyList(
     const top = stack.find((s) => !s.isReste);
     const name = portrait ? portraitBaseName(portrait.nom) : titleCaseName(r.deputy);
     return {
+      id: cleElu(r),
       name,
       wordsFormatted: fmtWords(r.word_count),
       wordsRaw: Number(r.word_count || 0),
-      richnessLevel: richnessLevels[r.deputy] || 1,
+      richnessLevel: niveauxDiversite[cleDiversite(partyKey, r)] || 1,
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       signatureWord: cleanText(r.signature_word),
       signatureWordContext: citationExtrait(r.signature_word_context, r.signature_word),
@@ -706,6 +849,7 @@ function buildDeputyList(
       topIssueKey: top?.cle ?? undefined,
       topIssueColor: top?.color,
       enjeuStack: stack,
+      issueShares: Object.fromEntries(ISSUE_META.map((m) => [m.key, Number(r[m.key] || 0)])),
       affiliationHistory: affiliationHistoryFor(
         r.deputy,
         r.deputy_id,
@@ -727,6 +871,18 @@ function buildSubtitle(periodType: PeriodKey, endDate: string): string {
     return `Session ${String(endDate || "").slice(0, 4)} · Salon bleu`;
   }
   return `Législature ${String(endDate || "").slice(0, 4)} · Salon bleu`;
+}
+
+/** Vrai si au moins un élu du parti était en fonction sous sa bannière à un
+ *  moment de [debut, fin] (référentiel daté des affiliations). */
+function aSiegePendant(parti: PartyKey, affiliations: AffiliationIndex, debut: string, fin: string): boolean {
+  for (const lignes of affiliations.byId.values()) {
+    for (const a of lignes) {
+      if ((a.party ?? "").toLowerCase() !== parti) continue;
+      if (a.affiliation_start_date <= fin && (!a.affiliation_end_date || a.affiliation_end_date >= debut)) return true;
+    }
+  }
+  return false;
 }
 
 function buildPeriodView(
@@ -788,11 +944,13 @@ function buildPeriodView(
     }
   }
   const richnessLevels = computeRichnessLevels(mattrs);
+  const niveauxDiversite = niveauxDiversiteElus(deputyRows, period, endDate);
 
   const builtRows: AssembleeRow[] = sorted.map((item): AssembleeRow => {
     const isShadow = !(item.interventions > 0 && item.data);
     if (isShadow || !item.data) {
-      return { key: item.key, label: PARTY_LABELS[item.key], color: PARTY_COLORS[item.key], inShadow: true };
+      return { key: item.key, label: PARTY_LABELS[item.key], color: PARTY_COLORS[item.key], inShadow: true,
+        aSiege: aSiegePendant(item.key, affiliations, rows[0]?.period_start_date ?? endDate, endDate) };
     }
     const d = item.data;
     const amplified = Math.max(-1, Math.min(1, Number(d.tone_score || 0) * TONE_AMPLIFY));
@@ -822,6 +980,7 @@ function buildPeriodView(
         affiliations,
         rows[0]?.period_start_date ?? endDate,
         endDate,
+        niveauxDiversite,
       ),
     };
   });
@@ -832,6 +991,16 @@ function buildPeriodView(
     subtitle: buildSubtitle(period, endDate),
     lastUpdated: lastUpdatedLabel(endDate),
     rows: builtRows,
+    independants: buildDeputyList(
+      "ind",
+      period,
+      deputyRows,
+      portraits,
+      affiliations,
+      rows[0]?.period_start_date ?? endDate,
+      endDate,
+      niveauxDiversite,
+    ),
   };
 }
 
@@ -936,6 +1105,7 @@ export const __test__ = {
   fmtDateFr,
   fmtWords,
   computeRichnessLevels,
+  niveauxParQuintile,
   buildEnjeuStack,
   buildSubtitle,
   buildPeriodView,
