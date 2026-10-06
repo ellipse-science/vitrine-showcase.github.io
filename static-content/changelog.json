@@ -1,5 +1,11 @@
 [
   {
+    "pr": 929,
+    "date": "2026-10-06T18:45:30Z",
+    "note": "Dans le vestiaire de l'Assemblée, ouvrir un casier amène maintenant les cartes du parti au centre de l'écran.",
+    "version": "2.52.0-beta.3"
+  },
+  {
     "pr": 926,
     "date": "2026-10-03T23:03:36Z",
     "note": "Dans le vestiaire de l'Assemblée, les cartes de la présidente de l'Assemblée et des deux députés nommés Éric Girard retrouvent leur nom, leur circonscription et leur portrait.",
