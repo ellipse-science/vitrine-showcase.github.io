@@ -1,5 +1,17 @@
 [
   {
+    "pr": 934,
+    "date": "2026-10-06T20:12:05Z",
+    "note": "Dans le vestiaire de l'Assemblée, les portraits des cartes sont chargés à l'avance : les cartes s'affichent sans attendre leur photo.",
+    "version": "2.52.0-beta.5"
+  },
+  {
+    "pr": 933,
+    "date": "2026-10-06T20:05:29Z",
+    "note": "La page du pool de la Grande soirée électorale, réservée aux personnes inscrites, affiche maintenant le résultat officiel, les deux gagnants et le classement complet.",
+    "version": "2.52.0-beta.4"
+  },
+  {
     "pr": 929,
     "date": "2026-10-06T18:45:30Z",
     "note": "Dans le vestiaire de l'Assemblée, ouvrir un casier amène maintenant les cartes du parti au centre de l'écran.",
