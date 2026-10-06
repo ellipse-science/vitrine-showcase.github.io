@@ -1,5 +1,11 @@
 [
   {
+    "pr": 937,
+    "date": "2026-10-06T20:46:45Z",
+    "note": "Correction technique de la construction du site : la page de l'Assemblée se construit plus vite et sans épuiser la mémoire.",
+    "version": "2.52.0-beta.8"
+  },
+  {
     "pr": 932,
     "date": "2026-10-06T20:44:08Z",
     "note": "Sur tablette, le casier ouvert de l'alignement de l'Assemblée garde ses chiffres à l'intérieur de sa porte, sans recouvrir les cartes.",
