@@ -44,6 +44,39 @@ const ASSETS = {
   signature: (slug: string) => `/images/cartes/signature-${slug}.png`,
 };
 
+/** PRÉCHARGEMENT DES PORTRAITS (Adrien et Jules, 6 oct. : « il faut que le
+ *  site puisse les loader vite »). Une carte n'est dessinée qu'à l'approche
+ *  de l'écran (voir `observateur`) : sa photo partait donc au dernier moment,
+ *  et on voyait la carte grise. On met les photos dans le cache du navigateur
+ *  AVANT, à la même adresse que la carte demandera (`ASSETS.portrait`), quatre
+ *  à la fois, quand le navigateur est inoccupé. Rien si l'utilisateur a
+ *  demandé d'économiser les données. */
+const prechargees = new Set<string>();
+const fileAttente: string[] = [];
+let enCours = 0;
+function suivant() {
+  while (enCours < 4 && fileAttente.length) {
+    const url = fileAttente.shift()!;
+    enCours++;
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = img.onerror = () => { enCours--; suivant(); };
+    img.src = url;
+  }
+}
+export function prechargerPortraits(deputes: DeputyRow[], limite = Infinity) {
+  if (typeof window === "undefined") return;
+  const connexion = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  if (connexion?.saveData) return;
+  const nouvelles = deputes.slice(0, limite).map(ASSETS.portrait)
+    .filter((u): u is string => !!u && !prechargees.has(u));
+  if (!nouvelles.length) return;
+  for (const u of nouvelles) prechargees.add(u);
+  const lancer = () => { fileAttente.push(...nouvelles); suivant(); };
+  const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+  if (ric) ric(lancer, { timeout: 1500 }); else setTimeout(lancer, 200);
+}
+
 // LA MISE EN PAGE IMPRIMÉE, AUSSI À L'ÉCRAN (Jules, 3 oct.) : réduite à
 // 291 px, la mise en page « écran » du générateur donnait des textes de 4 à
 // 6 px et une note de méthode illisible au bas du verso. La mise en page

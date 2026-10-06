@@ -4,7 +4,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useId, useMemo, useRef,
 import type { AffiliationSegment, AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import { slugCirco } from "@/lib/cartes/fonctions";
 import type { CarteSite } from "@/lib/cartes/site";
-import { CarteDepute, carteComplete, chargerPolices, type ContexteCartes } from "@/components/interactive/CarteDepute";
+import { CarteDepute, carteComplete, chargerPolices, prechargerPortraits, type ContexteCartes } from "@/components/interactive/CarteDepute";
 import { POLICES_VERSO } from "@/lib/cartes/faces";
 import type { PartyKey } from "@/lib/data/parties";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
@@ -468,10 +468,12 @@ const DeputyCardMemo = memo(DeputyCard);
 /** Partis dont l'écusson est préparé (public/images/cartes/ecusson-<clé>.png). */
 const ECUSSONS = new Set<string>(["caq", "plq", "qs", "pq", "pcq"]);
 
-function LockerDoor({ row, open, onToggle, maxAbsTone }: {
+function LockerDoor({ row, open, onToggle, onApproche, maxAbsTone }: {
   row: AssembleeRow;
   open: boolean;
   onToggle: () => void;
+  /** Survol ou focus : le clic est probable, on précharge ses portraits. */
+  onApproche: () => void;
   maxAbsTone: number;
 }) {
   const deputies = row.deputies ?? [];
@@ -506,6 +508,8 @@ function LockerDoor({ row, open, onToggle, maxAbsTone }: {
       className={`casier${open ? " est-ouvert" : ""}${vide ? " est-vide" : ""}`}
       style={{ ["--pc" as string]: row.color }}
       onClick={onToggle}
+      onPointerEnter={onApproche}
+      onFocus={onApproche}
       aria-expanded={open}
       aria-label={open ? `Casier ${row.label}, ouvert` : `Ouvrir le casier ${row.label}`}
       aria-describedby={idBilan}
@@ -668,6 +672,25 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
     cible.scrollIntoView({ behavior: reduit ? "auto" : "smooth", block: "center" });
   }, [demandeCentrage, partiTiroir, openParty]);
 
+  // Les portraits du casier ouvert partent dès que le module approche de
+  // l'écran (1 500 px avant), pas au chargement de la page. Sur téléphone,
+  // les 16 premiers seulement : le reste suit à l'approche, comme avant,
+  // pour ne pas tirer 6 Mo de données mobiles pour le seul casier CAQ.
+  const vestiaireRef = useRef<HTMLDivElement>(null);
+  const [proche, setProche] = useState(false);
+  useEffect(() => {
+    const el = vestiaireRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setProche(true); return; }
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setProche(true); obs.disconnect(); } }, { rootMargin: "1500px 0px" });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!proche || !openRow) return;
+    const telephone = window.matchMedia("(max-width: 767px)").matches;
+    prechargerPortraits(openRow.deputies ?? [], telephone ? 16 : Infinity);
+  }, [proche, openRow]);
+
   const toggle = (key: PartyKey) => {
     aCentrer.current = true;
     setDemandeCentrage((n) => n + 1);
@@ -677,7 +700,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
   };
 
   return (
-    <div className="vestiaire">
+    <div className="vestiaire" ref={vestiaireRef}>
       {/* SUR TÉLÉPHONE, LES CARTES D'ABORD (Jules, 3 oct.) : pas de banc de
           casiers, un filtre par parti discret, puis le présentoir. Masqué sur
           ordinateur, où les casiers font ce travail. */}
@@ -705,6 +728,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
             row={row}
             open={openParty === row.key}
             onToggle={() => toggle(row.key)}
+            onApproche={() => prechargerPortraits(row.deputies ?? [], 8)}
             maxAbsTone={maxAbsTone}
           />
         ))}
