@@ -4158,6 +4158,28 @@
     .carte-pivot { transition: none; }
   }
 
+  /* Sur tablette (768 à 1023 px), le banc garde ses cinq casiers de front,
+     mais chacun ne fait plus que 144 à 184 px de large : les panneaux du
+     casier ouvert débordent sous le banc — à 816 px, « Part des
+     interventions » dépasse de 30 px et « A le plus parlé » de 106 px,
+     par-dessus l'en-tête du présentoir et la première carte (mesuré sur dev
+     le 6 oct. 2026). Même recette que le téléphone : « A le plus parlé » cède
+     la place (le présentoir commence justement par cet élu), deux enjeux
+     seulement, marges serrées ; la fiche rapetisse d'un cran pour que
+     « Député·es » tienne dans sa colonne. */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .casier-dedans { inset: 8px 7px; gap: 4px; }
+    /* Le panneau « A le plus parlé » se reconnaît à son nom d'élu : viser
+       le dernier enfant masquerait aussi la raison d'un casier vide. */
+    .casier-dedans > .dedans-bloc:has(> .dedans-nom) { display: none; }
+    .dedans-bloc { padding: 5px 7px 6px; }
+    .dedans-legende { gap: 1px 5px; margin-top: 4px; }
+    .dedans-legende > i { font-size: 9px; }
+    .dedans-legende > i:nth-child(n + 3) { display: none; }
+    .dedans-stats > i { font-size: 7px; letter-spacing: 0.02em; }
+    .dedans-stats > b { font-size: clamp(8px, 7cqw, 15px); }
+  }
+
   /* Sur téléphone, quatre casiers côte à côte deviennent illisibles : le banc
      passe à deux colonnes, et les cartes se réduisent juste assez pour qu'on en
      voie une entière plus l'amorce de la suivante (sinon rien ne dit que le
