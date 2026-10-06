@@ -1,5 +1,11 @@
 [
   {
+    "pr": 936,
+    "date": "2026-10-06T20:41:32Z",
+    "note": "Le classement du pool de la Grande soirée électorale, réservé aux personnes inscrites, retire un essai de l'équipe : 63 pronostics.",
+    "version": "2.52.0-beta.6"
+  },
+  {
     "pr": 934,
     "date": "2026-10-06T20:12:05Z",
     "note": "Dans le vestiaire de l'Assemblée, les portraits des cartes sont chargés à l'avance : les cartes s'affichent sans attendre leur photo.",
