@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useDeferredValue, useEffect, useId, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { AffiliationSegment, AssembleeRow, DeputyRow } from "@/lib/data/assemblee";
 import { slugCirco } from "@/lib/cartes/fonctions";
 import type { CarteSite } from "@/lib/cartes/site";
@@ -649,7 +649,28 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
   // UN CASIER TOUJOURS OUVERT (Jules, 3 oct.) : la hauteur du module ne doit
   // jamais changer. Cliquer un casier l'ouvre ; cliquer le casier ouvert ne
   // le referme pas (plus de « Refermer », plus d'Échap).
+  // CENTRER SUR LES CARTES (Jules, 6 oct.) : un clic sur un casier (ou sur
+  // une pastille du filtre, sur téléphone) amène la rangée de cartes au
+  // milieu de l'écran, même si le casier était déjà ouvert. Jamais au
+  // chargement : seulement après un clic. On attend que le tiroir montre le
+  // parti demandé (`partiTiroir` suit `openParty` d'un rendu, voir plus haut),
+  // sinon on centrerait l'ancien présentoir.
+  const tiroirRef = useRef<HTMLDivElement>(null);
+  const aCentrer = useRef(false);
+  const [demandeCentrage, setDemandeCentrage] = useState(0);
+  useEffect(() => {
+    if (!aCentrer.current || partiTiroir !== openParty) return;
+    aCentrer.current = false;
+    const tiroir = tiroirRef.current;
+    const cible = tiroir?.querySelector<HTMLElement>(".tiroir-presentoir, .tiroir-vide") ?? tiroir;
+    if (!cible) return;
+    const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    cible.scrollIntoView({ behavior: reduit ? "auto" : "smooth", block: "center" });
+  }, [demandeCentrage, partiTiroir, openParty]);
+
   const toggle = (key: PartyKey) => {
+    aCentrer.current = true;
+    setDemandeCentrage((n) => n + 1);
     if (openParty === key) return;
     setOpenParty(key);
     setFlipped(null);
@@ -668,7 +689,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
             className={openParty === row.key ? "est-choisi" : undefined}
             style={{ ["--pc" as string]: row.color }}
             aria-pressed={openParty === row.key}
-            onClick={() => { setOpenParty(row.key); setFlipped(null); }}
+            onClick={() => toggle(row.key)}
           >
             <span className="filtre-point" aria-hidden="true" />
             {row.label}
@@ -691,6 +712,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
 
       {openRow && (
         <div
+          ref={tiroirRef}
           className="vestiaire-tiroir"
           style={{
             ["--pc" as string]: openRow.color,
