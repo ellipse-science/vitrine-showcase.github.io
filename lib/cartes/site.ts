@@ -8,6 +8,7 @@
 // que les champs propres à la carte, et le navigateur ré-attache l'élu par la
 // clé de sa circonscription (slugCirco), la même que le générateur utilise
 // pour nommer les fichiers.
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { buildEnjeuStack, type DeputyRow, type PeriodKey } from "@/lib/data/assemblee";
@@ -51,8 +52,28 @@ const PERIODES_SITE: PeriodKey[] = ["legislature", "session", "last_pdq"];
  *  relus à la main (donnees/expressions-retirees.json) s'appliquent aux
  *  données elles-mêmes, comme pour les cartes imprimées : le site et le carton
  *  disent la même chose. */
+/** UNE FOIS PAR JEU DE DONNÉES (6 oct. 2026). Chaque page d'édition archivée
+ *  rend le vestiaire, et chacune refaisait tout le jeu de cartes : 83 fois par
+ *  build de dev, jusqu'à ce que le worker de build soit tué faute de mémoire
+ *  (SIGKILL, déploiement de dev du 6 oct.). Or l'Assemblée suit les jours de
+ *  séance, pas les éditions : la plupart de ces pages ont exactement les mêmes
+ *  données. On garde donc le résultat par empreinte des données reçues, prise
+ *  AVANT toute modification. Le retrait des expressions, lui, s'applique à
+ *  chaque appel : il modifie `data`, que les casiers affichent. */
+const parDonnees = new Map<string, Promise<CartesSite>>();
+
 export async function preparerCartesSite(data: DonneesAssemblee): Promise<CartesSite> {
+  const empreinte = createHash("sha1").update(JSON.stringify(data)).digest("hex");
   await retirerExpressions(data);
+  let cartes = parDonnees.get(empreinte);
+  if (!cartes) {
+    cartes = construireCartesSite(data);
+    parDonnees.set(empreinte, cartes);
+  }
+  return cartes;
+}
+
+async function construireCartesSite(data: DonneesAssemblee): Promise<CartesSite> {
   const sources = await chargerSources();
   // La série se construit sur une COPIE où les lignes d'une même personne
   // sont réunies, exactement comme dans le générateur : numéros, raretés et
