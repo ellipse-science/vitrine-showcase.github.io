@@ -1,5 +1,11 @@
 [
   {
+    "pr": 943,
+    "date": "2026-10-10T17:19:57Z",
+    "note": "Les éditions sont de nouveau publiées toutes les quatre heures : un fichier de données devenu trop lourd bloquait la mise à jour du site depuis vendredi midi.",
+    "version": "2.52.0-beta.9"
+  },
+  {
     "pr": 937,
     "date": "2026-10-06T20:46:45Z",
     "note": "Correction technique de la construction du site : la page de l'Assemblée se construit plus vite et sans épuiser la mémoire.",
