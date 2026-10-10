@@ -85,6 +85,13 @@ HEADLINE_KEEP_DAYS <- 14L
 # jusqu'au vote du 5 octobre 2026 avec de la marge.
 ISSUES_ARTICLES_KEEP_DAYS <- 45L
 
+# Profondeur du mode « promesses de la campagne » du Polimètre+, en jours
+# (cf. filtre promesses_neuves_dernier_instantane). L'archive des éditions
+# remonte de HEADLINE_KEEP_DAYS jours et chaque édition passée lit le dernier
+# window_end qui la précède (lib/data/promessesNeuves.ts, asOfIso) : 14 jours
+# plus une semaine de marge pour des runs manqués.
+NEUVES_KEEP_DAYS <- 21L
+
 # Thèmes CAP -> les 12 enjeux affichés.
 #
 # SOURCE DE VÉRITÉ : la page Notion « Catégories d'enjeux de la CLESSN et du
@@ -226,6 +233,37 @@ apply_filter <- function(df, filter_id) {
     out <- out[rowSums(out[, enjeux]) > 0, , drop = FALSE]
     message("  -> radar_annotated_issues: ", nrow(out), " article(s) québécois retenus")
     return(out)
+  }
+
+  if (filter_id == "promesses_neuves_dernier_instantane") {
+    # La table est en APPEND : chaque run de saillance (six par jour) republie
+    # la fenêtre entière sous le même window_end, et rien n'efface les runs
+    # précédents. Mesuré le 2026-10-10 sur develop : 59 177 lignes, 290
+    # instantanés pour 53 couples (window_key × window_end), 99,7 Mo, +3,5 Mo
+    # par jour. Le run du 2026-10-09 19:55Z a franchi les 100 Mo et GitHub a
+    # refusé le push (« exceeds GitHub's file size limit ») : plus aucune
+    # édition publiée pendant 25 h (vitrine#941).
+    #
+    # Le site ne lit QUE le dernier instantané de chaque (window_key,
+    # window_end) — dernierInstantane() dans lib/data/promessesNeuves.ts,
+    # départagé par computed_at. Ne garder que ces lignes laisse l'affichage
+    # identique, pour l'édition courante comme pour les éditions passées (#434
+    # remonte au dernier window_end ≤ jour d'édition). 10 641 lignes et 17,8 Mo
+    # mesurés sur le même fichier (−82 %).
+    #
+    # Fenêtre ancrée sur la DONNÉE (dernier window_end), pas sur l'horloge,
+    # même raison que les deux filtres précédents : un raffineur muet gèle le
+    # fichier au lieu de le vider ligne à ligne.
+    if (!all(c("window_key", "window_end", "computed_at") %in% names(df)) || nrow(df) == 0) return(df)
+    stamp   <- ifelse(is.na(df$computed_at), "", as.character(df$computed_at))
+    dernier <- stats::ave(stamp, df$window_key, as.character(df$window_end), FUN = max)
+    df      <- df[stamp == dernier, , drop = FALSE]
+    fin <- as.Date(substr(as.character(df$window_end), 1, 10))
+    if (any(!is.na(fin))) {
+      cutoff <- max(fin, na.rm = TRUE) - NEUVES_KEEP_DAYS
+      df <- df[!is.na(fin) & fin >= cutoff, , drop = FALSE]
+    }
+    return(df)
   }
 
   message("  !! Unknown filter id: ", filter_id, " — passing through")
