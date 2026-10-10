@@ -248,7 +248,7 @@ apply_filter <- function(df, filter_id) {
     # window_end) — dernierInstantane() dans lib/data/promessesNeuves.ts,
     # départagé par computed_at. Ne garder que ces lignes laisse l'affichage
     # identique, pour l'édition courante comme pour les éditions passées (#434
-    # remonte au dernier window_end ≤ jour d'édition). 10 644 lignes et 18,7 Mo
+    # remonte au dernier window_end ≤ jour d'édition). 10 641 lignes et 17,8 Mo
     # mesurés sur le même fichier (−82 %).
     #
     # Fenêtre ancrée sur la DONNÉE (dernier window_end), pas sur l'horloge,
