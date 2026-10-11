@@ -1,187 +1,187 @@
 {
-  "generatedAt": "2026-10-11T15:56:22Z",
-  "workflowRunUrl": "https://github.com/ellipse-science/vitrine-showcase.github.io/actions/runs/38153309789",
+  "generatedAt": "2026-10-11T19:56:08Z",
+  "workflowRunUrl": "https://github.com/ellipse-science/vitrine-showcase.github.io/actions/runs/38170018096",
   "tables": [
     {
       "name": "agora_decideurs_qc",
       "status": "ok",
       "rowCount": 14,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/agora_decideurs_qc.json"
     },
     {
       "name": "agora_decideurs_qc_deputes",
       "status": "ok",
       "rowCount": 297,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/agora_decideurs_qc_deputes.json"
     },
     {
       "name": "agora_decideurs_qc_affiliations",
       "status": "ok",
       "rowCount": 144,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/agora_decideurs_qc_affiliations.json"
     },
     {
       "name": "provincial_parties_salient_shadow_day",
       "status": "ok",
       "rowCount": 175,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/day/provincial_parties_salient_shadow_day.json"
     },
     {
       "name": "provincial_parties_salient_shadow_week",
       "status": "ok",
       "rowCount": 175,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/week/provincial_parties_salient_shadow_week.json"
     },
     {
       "name": "provincial_parties_salient_shadow_month",
       "status": "ok",
       "rowCount": 175,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/month/provincial_parties_salient_shadow_month.json"
     },
     {
       "name": "provincial_parties_salient_shadow_by_media_day",
       "status": "ok",
       "rowCount": 1050,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/day/provincial_parties_salient_shadow_by_media_day.json"
     },
     {
       "name": "provincial_parties_salient_shadow_by_media_week",
       "status": "ok",
       "rowCount": 1050,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/week/provincial_parties_salient_shadow_by_media_week.json"
     },
     {
       "name": "provincial_parties_salient_shadow_by_media_month",
       "status": "ok",
       "rowCount": 1050,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/month/provincial_parties_salient_shadow_by_media_month.json"
     },
     {
       "name": "issues_score_day",
       "status": "ok",
-      "rowCount": 3125,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 3127,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/day/issues_score_day.json"
     },
     {
       "name": "issues_score_week",
       "status": "ok",
       "rowCount": 1052,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/week/issues_score_week.json"
     },
     {
       "name": "issues_score_month",
       "status": "ok",
       "rowCount": 1098,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/month/issues_score_month.json"
     },
     {
       "name": "headline_events_4h",
       "status": "ok",
-      "rowCount": 762,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 771,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/headline-events.json"
     },
     {
       "name": "polimetre_plus",
       "status": "ok",
-      "rowCount": 4487,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 4529,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/week/polimetre_plus.json"
     },
     {
       "name": "polimetre_promesses_neuves",
       "status": "ok",
       "rowCount": 11545,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/day/polimetre_promesses_neuves.json"
     },
     {
       "name": "provincial_parties_salient_shadow_intraday",
       "status": "ok",
-      "rowCount": 405,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 410,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/day/provincial_parties_salient_shadow_intraday.json"
     },
     {
       "name": "parties_issues_salient_shadow_day",
       "status": "ok",
-      "rowCount": 3134,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 3137,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/day/parties_issues_salient_shadow_day.json"
     },
     {
       "name": "radar_annotated",
       "status": "ok",
-      "rowCount": 2185,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 2193,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/refined/issues_articles.json"
     },
     {
       "name": "agora_social_comptes",
       "status": "ok",
       "rowCount": 1085,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/agora_social_comptes.json"
     },
     {
       "name": "agora_social_publications_jour",
       "status": "ok",
-      "rowCount": 4304,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 4307,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/agora_social_publications_jour.json"
     },
     {
       "name": "agora_social_palmares",
       "status": "ok",
-      "rowCount": 1743,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 1748,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/agora_social_palmares.json"
     },
     {
       "name": "agora_social_fil",
       "status": "ok",
       "rowCount": 2540,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/agora_social_fil.json"
     },
     {
       "name": "agora_social_comptes_jour",
       "status": "ok",
-      "rowCount": 50679,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 50690,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/agora_social_comptes_jour.json"
     },
     {
       "name": "agora_social_candidats",
       "status": "ok",
       "rowCount": 635,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/agora_social_candidats.json"
     },
     {
       "name": "agora_social_fil_complet",
       "status": "ok",
-      "rowCount": 45556,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 45569,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/brut/agora_social_fil_complet.json"
     },
     {
       "name": "agora_social_fil_compteurs",
       "status": "ok",
-      "rowCount": 45556,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "rowCount": 45569,
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/agora/brut/agora_social_fil_compteurs.json"
     },
     {
@@ -189,7 +189,7 @@
       "status": "ok",
       "optional": true,
       "metrics": 11,
-      "generatedAt": "2026-10-11T15:56:22Z",
+      "generatedAt": "2026-10-11T19:56:08Z",
       "path": "public/data/salience_calibration.json"
     }
   ]
