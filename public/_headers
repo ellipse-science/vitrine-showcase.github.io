@@ -26,17 +26,14 @@
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
-# L'illustration et la musique sont ÉCRASÉES sur place toutes les 4 h, à URL
-# constante (latest.png, latest.mp3…). Impossible de les marquer immuables : il
+# L'illustration est ÉCRASÉE sur place toutes les 4 h, à URL
+# constante (latest.png…). Impossible de les marquer immuables : il
 # faut une fenêtre courte, alignée sur le cycle de rafraîchissement, sinon un
 # visiteur garderait l'image d'hier sur la une d'aujourd'hui.
 # Cette fenêtre ne suffit PAS à elle seule : `stale-while-revalidate` sert du
 # périmé jusqu'à une heure. La page de la Une y ajoute donc `?v=<empreinte du
 # fichier>` (UneDesUnesSection.tsx, artVersion) : l'adresse change avec l'image.
 /data/generated-art/*
-  Cache-Control: public, max-age=900, stale-while-revalidate=3600
-
-/audio/*
   Cache-Control: public, max-age=900, stale-while-revalidate=3600
 
 # Les polices et images de marque ne changent qu'au déploiement.
