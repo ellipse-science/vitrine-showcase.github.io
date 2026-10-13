@@ -66,8 +66,14 @@ describe("sync-athena — transformations pures", () => {
   // dépréciées. Aucun fichier de app/, components/ ou lib/ ne les lisait — le
   // module des partis tourne sur `provincial_parties_salient_shadow_*` — et les
   // laisser dans la whitelist faisait échouer la lecture du datamart PROD.
-  it("whitelist embarquée : 16 tables, champs requis, filtres connus", () => {
-    expect(TABLES).toHaveLength(16);
+  //
+  // 16 → 22 le 2026-10-13 (#944) : les six agora_social_* sans filtre entrent
+  // en « instantané seul » (R2, ni Neon ni API), lues dans le datamart DEV.
+  // Les 16 tables Neon restent EN TÊTE : leurs tranches ne bougent pas.
+  it("whitelist embarquée : 22 tables (16 Neon + 6 instantané seul), champs requis, filtres connus", () => {
+    expect(TABLES).toHaveLength(22);
+    expect(TABLES.slice(0, 16).every((t) => !t.instantaneSeul)).toBe(true);
+    expect(TABLES.filter((t) => t.instantaneSeul).every((t) => t.env === "DEV" && t.filter === null)).toBe(true);
     for (const t of TABLES) {
       expect(t.name.length).toBeGreaterThan(0);
       expect(t.athena.length).toBeGreaterThan(0);

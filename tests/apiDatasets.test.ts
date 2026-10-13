@@ -25,9 +25,17 @@ const lire = (p: string) => readFileSync(path.join(racine, p), "utf8");
 /** Les `name` de TABLES, lus dans la source — le fichier est du JSON inséré
  *  dans un littéral TypeScript, donc une regex suffit et évite d'importer du
  *  code Worker dans l'environnement de test. */
-function nomsSynchronises(): string[] {
+function specsDuWorker(): Array<{ name: string; instantaneSeul?: boolean }> {
   const src = lire("workers/api/src/tables.ts");
-  return [...src.matchAll(/"name":\s*"([a-z0-9_]+)"/g)].map((m) => m[1]);
+  const marque = "export const TABLES: TableSpec[] =";
+  const debut = src.indexOf("[", src.indexOf(marque) + marque.length);
+  return JSON.parse(src.slice(debut, src.lastIndexOf("]") + 1));
+}
+
+/** Tables que le Worker écrit dans NEON. Les « instantané seul » (#944) n'y
+ *  vont jamais : ni schéma, ni route /v1/datasets. */
+function nomsSynchronises(): string[] {
+  return specsDuWorker().filter((t) => !t.instantaneSeul).map((t) => t.name);
 }
 
 /** Les clés de l'objet `DATASETS`. */
@@ -64,6 +72,32 @@ function nomsDuContrat(): string[] {
 const ECARTS_DE_COLONNES_CONNUS: string[] = [];
 
 describe("listes blanches du Worker", () => {
+  it("« instantané seul » : même liste des deux côtés, jamais au contrat de l'API (#944)", () => {
+    // Le Worker dépose la table dans R2 (`instantaneSeul`), le build l'y cherche
+    // (`instantane`). Un côté sans l'autre : soit le Worker écrit pour
+    // personne, soit le build cherche une table qui n'arrive jamais.
+    const brut = JSON.parse(lire("scripts/tables.json")) as {
+      tables?: Array<{ name?: string; enabled?: boolean; api?: boolean; instantane?: boolean }>;
+    };
+    const cotesBuild = (brut.tables ?? [])
+      .filter((t) => t.enabled !== false && t.instantane === true)
+      .map((t) => t.name as string)
+      .sort();
+    const coteWorker = specsDuWorker()
+      .filter((t) => t.instantaneSeul)
+      .map((t) => t.name)
+      .sort();
+    expect(coteWorker).toEqual(cotesBuild);
+    // Même datamart des deux côtés : fetch_data.R (filet) et le Worker doivent
+    // lire la même source, sinon la comparaison de parité ne veut rien dire.
+    const envBuild = new Map((brut.tables ?? []).map((t) => [t.name, (t as { env?: string }).env]));
+    for (const t of TABLES.filter((x) => x.instantaneSeul)) {
+      expect(t.env, `${t.name} : env du Worker ≠ env de scripts/tables.json`).toBe(envBuild.get(t.name));
+    }
+    const auContrat = (brut.tables ?? []).filter((t) => t.instantane === true && t.api !== false);
+    expect(auContrat.map((t) => t.name), "une table « instantane » garde `api: false`").toEqual([]);
+  });
+
   it("toute table synchronisée ET au contrat public est servie par l'API", () => {
     const synchronisees = new Set(nomsSynchronises());
     const servies = new Set(nomsServis());

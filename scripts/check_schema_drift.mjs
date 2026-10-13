@@ -31,7 +31,8 @@ async function tablesFromWorker() {
   const marker = "export const TABLES: TableSpec[] =";
   const from = src.indexOf("[", src.indexOf(marker) + marker.length);
   const specs = JSON.parse(src.slice(from, src.lastIndexOf("]") + 1));
-  return new Map(specs.map((s) => [s.name, s.cols]));
+  // « Instantané seul » (#944) : jamais écrites dans Postgres, donc hors schéma.
+  return new Map(specs.filter((s) => !s.instantaneSeul).map((s) => [s.name, s.cols]));
 }
 
 /** Tables créées par le schéma, et leurs colonnes. */

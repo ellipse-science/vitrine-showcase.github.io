@@ -150,6 +150,11 @@ export const COLUMN_TYPES: Record<string, Record<string, ColumnKind>> = {
     previous_salience_index: "number",
     delta_index: "number"
   },
+  polimetre_promesses_neuves: {
+    rank_current: "number",
+    n_mentions: "number",
+    salience_index: "number"
+  },
   provincial_parties_salient_shadow_intraday: {
     block_hour: "number",
     weighted_mentions: "number",
@@ -161,5 +166,33 @@ export const COLUMN_TYPES: Record<string, Record<string, ColumnKind>> = {
     total_raw_score: "number",
     weighted_tone: "number"
   },
-  radar_annotated: {}
+  radar_annotated: {},
+  agora_social_comptes: {
+    abonnes: "number",
+    candidatures_parti: "number",
+    publications_7j: "number",
+    jaime_7j: "number",
+    publications_campagne: "number",
+    jaime_campagne: "number"
+  },
+  agora_social_publications_jour: {
+    publications: "number",
+    jaime: "number",
+    commentaires: "number",
+    jaime_median: "number"
+  },
+  agora_social_palmares: {
+    jaime: "number",
+    commentaires: "number"
+  },
+  agora_social_fil: {
+    jaime: "number",
+    commentaires: "number"
+  },
+  agora_social_comptes_jour: {
+    publications: "number",
+    jaime: "number",
+    commentaires: "number"
+  },
+  agora_social_candidats: {}
 }
