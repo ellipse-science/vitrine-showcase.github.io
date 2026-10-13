@@ -12,10 +12,11 @@ interface ShareButtonProps {
   // site plutôt que celle du module (#210).
   anchor?: string
   // Clé de l'édition affichée (« 2026-08-10T07 ») quand on est sur une page
-  // d'archive. Absente = édition courante. Elle bascule le partage vers
-  // /partage/<module>/<édition>/, qui porte la carte de CE moment : partager
-  // depuis une archive en publiant le chiffre du jour donnerait une image que
-  // la page pointée contredit (#265).
+  // d'archive. Absente = édition courante. ON NE PARTAGE QUE L'ÉDITION
+  // COURANTE (décision d'équipe, 2026-10-13, #944) : sur une archive, le
+  // bouton ne s'affiche pas. Les cartes par édition (6 modules × 82 éditions
+  // × page + aperçu + story = 1 476 fichiers) étaient redessinées à chaque
+  // build et faisaient l'essentiel de sa mémoire.
   editionKey?: string
 }
 
@@ -57,7 +58,13 @@ async function canShareFiles(): Promise<boolean> {
 // le lien directement — les deux artefacts sont désormais distincts. Sinon,
 // navigator.share() du lien reste immédiat ; en dernier repli, le panneau
 // desktop s'ouvre.
-export function ShareButton({ title, anchor, editionKey }: ShareButtonProps) {
+export function ShareButton({ editionKey, ...props }: ShareButtonProps) {
+  // Avant tout hook : le composant interne garde ses hooks inconditionnels.
+  if (editionKey) return null
+  return <ShareButtonCourant {...props} />
+}
+
+function ShareButtonCourant({ title, anchor }: Omit<ShareButtonProps, 'editionKey'>) {
   const [copied, setCopied] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
   const [igSupported, setIgSupported] = useState(false)
@@ -95,9 +102,7 @@ export function ShareButton({ title, anchor, editionKey }: ShareButtonProps) {
   // Mini-page /partage/<anchor>/ (carte OG dédiée + redirection vers
   // #<anchor>) plutôt que l'URL à fragment, ignorée par les réseaux sociaux
   // pour l'aperçu de lien (#210).
-  // Segment d'édition optionnel : les deux familles de routes ont la même
-  // forme, seul le préfixe change.
-  const shareBase = () => `${basePath}/partage/${anchor}${editionKey ? `/${editionKey}` : ''}`
+  const shareBase = () => `${basePath}/partage/${anchor}`
 
   const shareUrl = () => {
     if (!anchor) return window.location.href
