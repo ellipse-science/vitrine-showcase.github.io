@@ -610,7 +610,8 @@ export default {
         // périmée par le build — six jours de repli sur les fichiers (10-09).
         const { suivies, horsSynchro, plusAncienne } = santeDesTables(
           rows,
-          TABLES.map((t) => t.name),
+          // Les tables « instantané seul » n'entrent jamais dans Postgres (#944).
+          TABLES.filter((t) => !t.instantaneSeul).map((t) => t.name),
         )
         // PAS de cache partagé : la réponse est sous clé, et `caches.default`
         // est commun à tous les appelants — cf. le commentaire de cachePublic.

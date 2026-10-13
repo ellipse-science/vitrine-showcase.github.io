@@ -626,6 +626,7 @@
       "env": "DEV",
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
+      "instantane": true,
       "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
       "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
     },
@@ -648,6 +649,7 @@
       "env": "DEV",
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
+      "instantane": true,
       "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
       "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
     },
@@ -677,6 +679,7 @@
       "env": "DEV",
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
+      "instantane": true,
       "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
       "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
     },
@@ -707,6 +710,7 @@
       "env": "DEV",
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
+      "instantane": true,
       "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
       "used_by": "lib/data/social.ts + app/reseaux/fil/[fichier]/route.ts"
     },
@@ -726,6 +730,7 @@
       "env": "DEV",
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
+      "instantane": true,
       "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
       "used_by": "lib/data/social.ts (classement Par candidat et carte du module)"
     },
@@ -743,6 +748,7 @@
       "env": "DEV",
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
+      "instantane": true,
       "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
       "used_by": "lib/data/social.ts (loadPagesCirco)"
     },
