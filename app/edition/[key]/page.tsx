@@ -103,7 +103,7 @@ export default async function EditionPage({ params }: { params: Promise<Params> 
             L'absence d'illustration, elle, ne va pas de soi — l'image est un
             élément visible du module, et son absence demande une raison. */}
         <p className="archive-notice-aside">
-          L&apos;illustration et la musique ne sont pas conservées&nbsp;: elles n&apos;existent que
+          L&apos;illustration n&apos;est pas conservée&nbsp;: elle n&apos;existe que
           pour l&apos;édition courante.
         </p>
         </div>

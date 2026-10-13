@@ -38,7 +38,6 @@ on:
     # (vécu le 2 septembre 2026 à 21h18, dev « 16h » contre prod « 20h »).
     paths-ignore:
       - 'public/data/**'
-      - 'public/audio/**'
       - 'public/images/deputes/**'
   workflow_dispatch:
 
