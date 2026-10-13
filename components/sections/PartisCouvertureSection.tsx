@@ -1,5 +1,6 @@
 import { loadParties } from "@/lib/data/parties";
-import { groupeParAlbums, groupeParDiscographie, loadPochettes } from "@/lib/data/pochettes";
+import { groupeParAlbums, groupeParDiscographie, loadPochettes, type Discotheque } from "@/lib/data/pochettes";
+import { samediDeLaSemaine } from "@/lib/semaine";
 import { formatDateFr } from "@/lib/dates";
 import { instantPublicationBloc, loadHeadlineEvents } from "@/lib/data/headlineEvents";
 import { PartisCouvertureClient } from "@/components/interactive/PartisCouvertureClient";
@@ -56,7 +57,13 @@ export async function PartisCouvertureSection({ asOfIso, editionKey }: { asOfIso
   // Le formatage des dates est INJECTÉ plutôt qu'importé par le chargeur : ce
   // dernier ne fait que lire des fichiers, et n'a pas à connaître la langue de
   // l'affichage.
-  const discotheque = await loadPochettes(formatDateFr);
+  //
+  // ⚠️ LES ÉDITIONS PASSÉES N'EN REÇOIVENT AUCUNE. Le fonds lu ici est celui
+  // du build, pas celui de l'édition : une page du 9 octobre aurait montré
+  // les pochettes du 12. Comme l'illustration de la Une, la pochette n'existe
+  // que pour l'édition courante ; les autres gardent le repli géométrique.
+  const vide: Discotheque = { jourCourant: null, duJour: [], pile: [], fonds: [] };
+  const discotheque = editionKey ? vide : await loadPochettes(formatDateFr);
 
   // LE DISQUE D'OR DU PALMARÈS lit les MÊMES groupages que la page
   // `/discotheque` (`lib/data/pochettes.ts`), sur le même `fonds` — aucune
@@ -66,8 +73,20 @@ export async function PartisCouvertureSection({ asOfIso, editionKey }: { asOfIso
   // palmarès lui-même, jamais du fonds de pochettes — qui ne sert plus qu'à
   // fournir une COUVERTURE, en bonus, via `discotheque.duJour`/`albums`/
   // `discographies`.
-  const albums = groupeParAlbums(discotheque.fonds, formatDateFr);
-  const discographies = groupeParDiscographie(discotheque.fonds);
+  //
+  // ⚠️ SEULES LES COUVERTURES AFFICHÉES PARTENT AU CLIENT, quinze au plus :
+  // la pochette du jour, la piste de tête de l'album de la semaine courante et
+  // celle de la discographie, par parti. Tout le fonds était sérialisé dans la
+  // page (≈ 300 Ko et 500 entrées le 2026-10-13, cinq pochettes de plus
+  // chaque jour, sur la page d'accueil ET sur chaque édition passée).
+  const semaine = samediDeLaSemaine(data.lastDate);
+  const albums = groupeParAlbums(discotheque.fonds, formatDateFr)
+    .filter((a) => a.semaineDebut === semaine)
+    .map((a) => ({ ...a, pistes: a.pistes.slice(0, 1) }));
+  const discographies = groupeParDiscographie(discotheque.fonds).map((d) => ({
+    ...d,
+    pistes: d.pistes.slice(0, 1),
+  }));
 
   // `editionKey` vient de main (cartes de partage par édition, #partage-cartes),
   // `saillanceRang` de cette branche. Les deux cohabitent : l'un identifie la
@@ -75,7 +94,7 @@ export async function PartisCouvertureSection({ asOfIso, editionKey }: { asOfIso
   return (
     <PartisCouvertureClient
       data={data}
-      discotheque={discotheque}
+      discotheque={{ ...discotheque, pile: [], fonds: [] }}
       albums={albums}
       discographies={discographies}
       saillanceRang={saillanceRang}
