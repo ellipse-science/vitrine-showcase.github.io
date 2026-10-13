@@ -248,7 +248,7 @@ jobs:
       # images, une fois par jour.
       - name: Rebuild deputy cards (best-effort, non-blocking)
         id: deputy_cards
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success' && steps.deputy_photos.outputs.actualise != 'false'
         continue-on-error: true
         run: python scripts/build_deputy_cards.py --force
 
@@ -259,17 +259,17 @@ jobs:
       # carte à la fleur de lys à la place du portrait — et le test
       # tests/cartesSite.test.ts bloquerait la prochaine PR.
       - name: Set up Node for the card portraits
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success' && steps.deputy_photos.outputs.actualise != 'false'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - name: Install Node deps for the card portraits
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success' && steps.deputy_photos.outputs.actualise != 'false'
         run: npm ci
       - name: Refresh card portraits (trame WebP, best-effort, non-blocking)
         id: deputy_trames
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success' && steps.deputy_photos.outputs.actualise != 'false'
         continue-on-error: true
         run: npx tsx scripts/social/portraits-trames.ts
 
