@@ -20,7 +20,7 @@ les ridings sont uniques et stables, les graphies de noms ne le sont pas.
 
 Usage : python3 scripts/scrape_deputy_photos.py [--dry-run]
 """
-import json, re, sys, time, unicodedata, urllib.request
+import json, os, re, sys, time, unicodedata, urllib.request
 from html import unescape
 from pathlib import Path
 
@@ -51,13 +51,18 @@ ROW = re.compile(
     r'<a href="(/fr/deputes/[a-z0-9-]+-\d+/index\.html)">(.*?)</a>\s*</td>\s*'
     r'<td>\s*(.*?)\s*</td>\s*<td>\s*(.*?)\s*</td>', re.S)
 
+# Avis affiché par l'ANQ à la place de la liste après une dissolution :
+# « la lieutenante-gouverneure a proclamé la dissolution de l’Assemblée ».
+DISSOLUTION = re.compile(r"proclam\w*\s+la\s+dissolution\s+de\s+l\W\s*Assembl", re.I)
+
 def clean(s):
     return re.sub(r"\s+", " ", unescape(s).replace("\xa0", " ")).strip()
 
 def main():
     dry = "--dry-run" in sys.argv
     print("Index des députés…")
-    rows = ROW.findall(get(INDEX))
+    index_html = get(INDEX)
+    rows = ROW.findall(index_html)
     seen, deputies = set(), []
     for path, name, riding, party in rows:
         if path in seen:
@@ -81,6 +86,21 @@ def main():
     # Sans ce garde-fou, l'index serait réécrit vide et toutes les cartes
     # perdraient leur portrait jusqu'au passage suivant.
     if not rows:
+        # ENTRE DEUX LÉGISLATURES (constaté le 2026-10-05, soir d'élection) :
+        # l'ANQ remplace la liste par l'avis de dissolution jusqu'à ce que le
+        # DGE transmette les élus proclamés. C'est un état attendu, pas une
+        # panne : on garde l'index et on sort sans erreur, sinon l'alerte
+        # « deputy-photo refresh failed » sonne chaque nuit pour rien.
+        # `actualise=false` dit au workflow de ne pas refaire les cartes.
+        if DISSOLUTION.search(unescape(index_html)):
+            print("Assemblée dissoute : pas de liste de députés sur l'index de "
+                  "l'ANQ. L'index existant est conservé jusqu'à la publication "
+                  "des élus de la nouvelle législature.")
+            sortie = os.environ.get("GITHUB_OUTPUT")
+            if sortie:
+                with open(sortie, "a", encoding="utf-8") as f:
+                    f.write("actualise=false\n")
+            return
         sys.exit("Aucun député lu sur la page d'index : l'index existant est conservé.")
     if dry:
         for d in deputies[:5]:

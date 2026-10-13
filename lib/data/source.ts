@@ -354,7 +354,7 @@ async function localCopy(
  *  36 min puis « exceeded the time limit »), alors que le même build en
  *  mode fichiers tenait en 7,6 Go. Sans cette entrée dans la correspondance,
  *  le même build passe en 5 min. Mesures : issue vitrine#787. */
-type TableSpec = { name: string; out: string; enabled: boolean; api?: boolean };
+type TableSpec = { name: string; out: string; enabled: boolean; api?: boolean; instantane?: boolean };
 
 let datasetByPath: Map<string, string> | null = null;
 
@@ -369,8 +369,14 @@ async function loadMapping(): Promise<Map<string, string>> {
     "utf8",
   );
   const config = JSON.parse(raw) as { tables: TableSpec[] };
+  // `instantane: true` (#944) : table hors de l'API payante (`api: false`)
+  // mais déposée dans l'instantané R2 par le Worker. Le mode `snapshot` la
+  // cherche donc là ; absente du manifeste, elle retombe sur son fichier
+  // publié, comme avant. Le mode `api` ne la connaît pas (pas de route).
   datasetByPath = new Map(
-    config.tables.filter((t) => t.enabled && t.api !== false).map((t) => [t.out, t.name]),
+    config.tables
+      .filter((t) => t.enabled && (t.api !== false || (USE_SNAPSHOT && t.instantane === true)))
+      .map((t) => [t.out, t.name]),
   );
   return datasetByPath;
 }

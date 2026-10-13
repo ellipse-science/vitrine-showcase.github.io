@@ -25,6 +25,7 @@ import { Client } from '@neondatabase/serverless'
 import { AthenaClient } from './athena'
 import { DelaiDepasse, EXTERNE_MS, PG_CONNEXION_MS, PG_FERMETURE_MS, PG_REQUETE_MS, avecDelai } from './delai'
 import { avecReconnexion, messageDe, resumerErreur } from './reconnexion'
+import { synchroniserInstantaneSeul } from './instantane-seul'
 import { hasColumnTypes, putTableSnapshot, rowsToObjects, type SnapshotEnv } from './snapshot'
 import type { SnapshotTableEntry } from './snapshot-logic'
 import { TABLES, type TableSpec } from './tables'
@@ -136,7 +137,11 @@ async function fetchTableRows(
       }
     }
   } else if (spec.filter) {
-    console.warn(`filtre inconnu « ${spec.filter} » : passage tel quel`)
+    // ÉCHEC FRANC (#944). Un filtre inconnu laissait passer les lignes BRUTES
+    // avec un simple avertissement : une table déclarée filtrée (rétention,
+    // dernier instantané, agrégation) partait entière, sans que rien ne casse.
+    // Les filtres lourds se poussent dans Athena (vues), pas ici.
+    throw new Error(`filtre inconnu « ${spec.filter} » : rien n'est écrit`)
   }
   return rows
 }
@@ -316,22 +321,34 @@ export async function runAthenaSync(
   slice: { offset?: number; limit?: number; cycle?: string } = {},
 ): Promise<SyncAthenaResult> {
   const datamart = datamartEnv(env)
-  const creds = datamartCredentials(env, datamart)
   const offset = slice.offset ?? 0
   const limit = slice.limit ?? TABLES.length
   const cycle = slice.cycle
   const specs = TABLES.slice(offset, offset + limit)
   const next = offset + limit < TABLES.length ? offset + limit : null
 
-  const athena = new AthenaClient({
-    accessKeyId: creds.accessKeyId,
-    secretAccessKey: creds.secretAccessKey,
-    region: env.ATHENA_REGION ?? 'ca-central-1',
-    // La base Glue porte le même nom dans les deux comptes ; seuls les clés
-    // et le seau de sortie changent.
-    database: env.ATHENA_DATABASE ?? 'gluestackdatamartdbd046f685',
-    outputLocation: creds.outputLocation,
-  })
+  // UN CLIENT ATHENA PAR DATAMART, créé à la demande : une table peut lire
+  // un autre datamart que la passe (`spec.env`, cf. tables.ts). Des clés
+  // absentes font échouer les tables qui en ont besoin, pas toute la passe.
+  const clients = new Map<DatamartEnv, AthenaClient>()
+  const athenaPour = (spec: TableSpec): AthenaClient => {
+    const cible = spec.env ?? datamart
+    let client = clients.get(cible)
+    if (!client) {
+      const creds = datamartCredentials(env, cible)
+      client = new AthenaClient({
+        accessKeyId: creds.accessKeyId,
+        secretAccessKey: creds.secretAccessKey,
+        region: env.ATHENA_REGION ?? 'ca-central-1',
+        // La base Glue porte le même nom dans les deux comptes ; seuls les clés
+        // et le seau de sortie changent.
+        database: env.ATHENA_DATABASE ?? 'gluestackdatamartdbd046f685',
+        outputLocation: creds.outputLocation,
+      })
+      clients.set(cible, client)
+    }
+    return client
+  }
 
   // Une connexion PAR TABLE, ouverte après la lecture Athena (cf. reconnexion.ts).
   // Un écouteur 'error' est obligatoire : sans lui, l'EventEmitter du client
@@ -363,8 +380,30 @@ export async function runAthenaSync(
    *  remonte jusqu'à Slack pour que la dérive ne s'installe pas en silence. */
   const snapshotSkipped: string[] = []
   for (const [i, spec] of specs.entries()) {
+    if (spec.instantaneSeul) {
+      // INSTANTANÉ SEULEMENT : ni Postgres ni API (cf. ./instantane-seul).
+      // Un échec laisse la table hors du manifeste — le build lit alors son
+      // fichier publié — et remonte dans `snapshotSkipped` (Slack), jamais
+      // dans `failed` : il ne retient pas les Deploy Hooks.
+      const r = await synchroniserInstantaneSeul({
+        cycle,
+        seau: Boolean(env.ART_BUCKET),
+        lireLignes: () => fetchTableRows(athenaPour(spec), spec),
+        typesConnus: () => hasColumnTypes(spec.name),
+        enObjets: (rows) => rowsToObjects(spec.name, spec.cols, rows),
+        deposer: (c, objets) => putTableSnapshot(env.ART_BUCKET!, c, spec.name, objets),
+      })
+      if (r.ok) {
+        console.log(`${spec.name} : ${r.rows} lignes, instantané seul ${Math.round(r.snapshot.bytes / 1024)} Ko`)
+        synced.push({ table: spec.name, rows: r.rows, snapshot: r.snapshot })
+      } else {
+        console.warn(`${spec.name} (instantané seul) : hors instantané (${r.raison})`)
+        snapshotSkipped.push(`${spec.name} : ${r.raison}`)
+      }
+      continue
+    }
     try {
-      const rows = await fetchTableRows(athena, spec)
+      const rows = await fetchTableRows(athenaPour(spec), spec)
       const n = await avecReconnexion(ouvrirPg, fermerPg, (pg) => writeTable(pg, spec, rows), spec.name)
 
       // INSTANTANÉ R2, ÉCRIT AU PASSAGE. Les lignes sont déjà là, en

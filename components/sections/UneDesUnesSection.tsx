@@ -5,7 +5,6 @@ import path from "node:path";
 import React from "react";
 import { loadHeadlineEvents, listEditions, type UneEvent } from "@/lib/data/headlineEvents";
 import { editionHrefs } from "@/lib/editionLinks";
-import { AudioPlayer } from "@/components/interactive/AudioPlayer";
 import { SaillanceTip } from "@/components/interactive/SaillanceTip";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
@@ -13,20 +12,6 @@ import { SaillanceTrend } from "@/components/interactive/SaillanceTrend";
 import { SaillanceInfoCard } from "@/components/interactive/SaillanceInfoCard";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { HeadlineLink } from "@/components/interactive/HeadlineLink";
-
-// AMBIANCE MUSICALE RETIRÉE DE PROD, gardée sur dev (2026-08-31) — même régime
-// que les partis, le signalement et Doom (#544, #547), et même signal
-// d'environnement que `app/robots.ts` : un seul signal, pas de divergence.
-//
-// Deux raisons, pas une. D'abord le périmètre : la musique n'a jamais été
-// arbitrée pour le site public. Ensuite le fond : la légende affirme que
-// « l'humeur musicale est modulée en fonction de la une du jour », alors que
-// `public/audio/latest.mp3` n'a pas bougé depuis le 2026-06-16 — l'étape
-// `Generate ambient music` de refresh-data.yml est `continue-on-error` et
-// échoue en silence. La prod servait donc une composition de juin en la
-// présentant comme celle du jour. On ne publie pas une légende qui affirme un
-// faux ; le retour en prod passera par une génération qui fonctionne.
-const isProd = process.env.NEXT_PUBLIC_SITE_ENV === "prod";
 
 // Titre cliquable d'une Une : ouvre un article au hasard parmi les médias QC
 // qui la couvrent (chance égale). Repli sur l'article représentatif si besoin.
@@ -286,7 +271,7 @@ function HeroFigure({ src, sources = [], alt, variant }: {
   );
 }
 
-function MainUne({ event, secondEvent, generatedArtUrl, generatedArtSources, audioUrl, hrefs }: {
+function MainUne({ event, secondEvent, generatedArtUrl, generatedArtSources, hrefs }: {
   event: UneEvent;
   hrefs?: Record<string, string>;
   /** À 2 Unes (décision Adrien 2026-07-12) : la 2e nouvelle s'empile SOUS la
@@ -296,7 +281,6 @@ function MainUne({ event, secondEvent, generatedArtUrl, generatedArtSources, aud
   secondEvent?: UneEvent;
   generatedArtUrl?: string;
   generatedArtSources?: ArtSource[];
-  audioUrl?: string;
 }) {
   return (
     <div className="une-main">
@@ -330,13 +314,6 @@ function MainUne({ event, secondEvent, generatedArtUrl, generatedArtSources, aud
           )}
         </div>
 
-        {audioUrl && (
-          <div className="hero-audio-overlay">
-            <AudioPlayer src={audioUrl} compact />
-            <p className="hero-audio-desc"><i>Composition originale et éphémère générée par intelligence artificielle selon un morceau de l&apos;artiste Félix Doré. L&apos;humeur musicale est modulée en fonction de la une du jour, selon les recherches sur les émotions et la musique de Zentner et al. (2008). Le tout est supervisé par la professeure Josiane Bissonette de la Faculté de musique de l&apos;Université Laval.</i></p>
-          </div>
-        )}
-
         {generatedArtUrl && (
           <HeroFigure src={generatedArtUrl} sources={generatedArtSources} alt={event.title} variant="desktop" />
         )}
@@ -358,40 +335,24 @@ function SideUne({ event, hrefs }: { event: UneEvent; hrefs?: Record<string, str
   );
 }
 
-export async function UneDesUnesSection({
-  editionKey,
-  shareEditionKey,
-}: {
-  editionKey?: string;
-  shareEditionKey?: string;
-} = {}) {
-  // ÉDITIONS PASSÉES (#434). L'illustration et la musique ne sont PAS
-  // archivées : `generated-art/latest.png` et `audio/latest.mp3` sont écrasés à
-  // chaque rafraîchissement, et ne décrivent donc que l'édition courante. Les
+export async function UneDesUnesSection({ editionKey }: { editionKey?: string } = {}) {
+  // ÉDITIONS PASSÉES (#434). L'illustration n'est PAS archivée :
+  // `generated-art/latest.png` est écrasé à chaque rafraîchissement, et ne décrit donc que l'édition courante. Les
   // servir sur une édition passée collerait l'image d'aujourd'hui sur les Unes
   // d'avant-hier — une illustration qui affirme un faux. Une édition passée
-  // s'affiche donc sans image ni musique, et la mise en page « no-art » du
-  // module (déjà prévue pour les blocs sans illustration) s'en charge.
-  //
-  // La musique tombe pour une SECONDE raison, indépendante de celle-ci : elle
-  // est retirée de prod (voir `isProd` en tête de fichier). Les deux gardes
-  // sont volontairement séparées — lever l'une ne lève pas l'autre.
+  // s'affiche donc sans image, et la mise en page « no-art » du module (déjà
+  // prévue pour les blocs sans illustration) s'en charge.
   const isArchive = Boolean(editionKey);
   const artJsonPath = path.resolve(
     process.cwd(), "public", "data", "generated-art", "latest.json",
   );
-  const [data, editions, artMeta, artSources, artPngVersion, audioUrl] = await Promise.all([
+  const [data, editions, artMeta, artSources, artPngVersion] = await Promise.all([
     loadHeadlineEvents(editionKey),
     listEditions(),
     isArchive ? null : readArtMeta(artJsonPath),
     isArchive ? Promise.resolve<ArtSource[]>([]) : detectArtSources(),
     // PNG absent : adresse nue, comme avant — le manque se voit, il ne se cache pas.
     isArchive ? "" : artVersion("latest.png").catch(() => ""),
-    isArchive || isProd ? undefined : fs.access(path.resolve(process.cwd(), "public", "audio", "latest.mp3"))
-      .then(() => "audio/latest.mp3")
-      .catch(() => fs.access(path.resolve(process.cwd(), "public", "audio", "latest.wav"))
-        .then(() => "audio/latest.wav")
-        .catch(() => undefined)),
   ]);
   if (!data || data.top3.length === 0) return null;
 
@@ -464,7 +425,7 @@ export async function UneDesUnesSection({
             <ShareButton
               title={sectionTitle}
               anchor="une-des-unes"
-              editionKey={editionKey ?? shareEditionKey}
+              editionKey={editionKey}
             />
           </span>
         </div>
@@ -483,7 +444,6 @@ export async function UneDesUnesSection({
               secondEvent={sideLeft && !sideRight ? sideLeft : undefined}
               generatedArtUrl={generatedArtUrl}
               generatedArtSources={generatedArtSources}
-              audioUrl={audioUrl}
               hrefs={hrefs}
             />
           )}

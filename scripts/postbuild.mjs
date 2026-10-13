@@ -126,34 +126,6 @@ async function pruneShareBackgrounds() {
   console.log(`postbuild: ${removed} fond(s) Gratton retiré(s) du livrable prod`);
 }
 
-// AMBIANCE MUSICALE RETIRÉE DE PROD (2026-08-31) : UneDesUnesSection ne rend
-// plus le lecteur en prod — plus aucune page n'y réfère — mais `output: export`
-// copierait quand même public/audio/ dans out/audio/, à des URL devinables
-// (~4,5 Mo de mp3 + wav servis pour personne). Même geste que les fonds
-// Gratton ci-dessus : la garde de rendu retire l'affichage, celle-ci retire
-// les fichiers. Dev les garde.
-//
-// À noter : `pruneDataJson` ne couvre PAS ce cas — sa liste noire ne vise que
-// `out/data/`, et out/audio/latest.json vit ailleurs.
-async function pruneAudio() {
-  if (process.env.NEXT_PUBLIC_SITE_ENV !== "prod") return;
-  const audioDir = path.join(OUT_DIR, "audio");
-  let bytes = 0;
-  let removed = 0;
-  try {
-    for await (const file of filesWithSuffix(audioDir, "")) {
-      bytes += (await stat(file)).size;
-      removed++;
-    }
-  } catch (err) {
-    if (err.code === "ENOENT") return;
-    throw err;
-  }
-  await rm(audioDir, { recursive: true, force: true });
-  const mb = (bytes / 1024 / 1024).toFixed(1);
-  console.log(`postbuild: ${removed} fichier(s) audio retiré(s) du livrable prod (${mb} Mo)`);
-}
-
 // DOOM RETIRÉ DE PROD (#470, #547) : le déclencheur est gardé sur dev depuis
 // #547, mais les FICHIERS partaient quand même — `output: export` recopie tout
 // public/. Sur un site dont la crédibilité tient à l'apolitisme, un fichier de
@@ -198,11 +170,9 @@ async function pruneDoomAssets() {
 // prudence. Build prod du 2026-08-31 :
 //   - `webprboom` / `doom-seamless-wrap` : ABSENTS des chunks .js — l'arbre est
 //     bien secoué, le composant DOOM ne part pas. On peut donc l'exiger.
-//   - « Ambiance du moment » : PRÉSENT dans deux chunks .js malgré la garde.
-//     `AudioPlayer` est importé statiquement par un composant serveur ; Next
-//     enregistre la référence client même quand le JSX n'est jamais rendu.
-//     C'est du code mort — aucune page ne l'affiche, aucun fichier audio n'est
-//     servi — mais l'exiger en .js ferait échouer tous les builds prod.
+//   - « Ambiance du moment » : le lecteur d'ambiance a été RETIRÉ du site
+//     (musique abandonnée, 2026-10-13). Le marqueur reste en garde, limité
+//     au HTML comme avant, pour qu'il ne revienne pas en prod par mégarde.
 // D'où : le lecteur est interdit à l'ÉCRAN (HTML), DOOM est interdit partout.
 const MARQUEURS_INTERDITS_PROD = [
   { texte: "Ambiance du moment", quoi: "le lecteur d'ambiance", suffixes: [".html"] },
@@ -309,7 +279,6 @@ async function main() {
   // EN DERNIER : après la substitution de version, qui balaie tout out/.
   await pruneDataJson();
   await pruneShareBackgrounds();
-  await pruneAudio();
   await pruneDoomAssets();
   await assertProdPerimeter();
 

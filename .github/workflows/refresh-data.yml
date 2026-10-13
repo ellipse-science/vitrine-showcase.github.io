@@ -105,7 +105,7 @@ jobs:
       # SLACK_VITRINE_SONAR_WEBHOOK_URL -> #02_vitrine_sonar : ce qui rend le site
       #   FAUX ou VIEUX (rafraîchissement échoué, Une périmée). C'est ce qu'on lit.
       # SLACK_WEBHOOK_URL -> #02_hydration_watchdog : les échecs COSMÉTIQUES
-      #   (image, musique), fréquents et sans conséquence sur l'exactitude. On
+      #   (image, portraits), fréquents et sans conséquence sur l'exactitude. On
       #   laisse ce bruit où il est plutôt que de le déverser dans une chaîne
       #   qu'on veut pouvoir lire — consigne explicite d'Adrien.
       #
@@ -114,9 +114,6 @@ jobs:
       # à une alerte perdue. Le courriel Healthchecks reste le secours hors Slack.
       SLACK_VITRINE_SONAR_WEBHOOK_URL: ${{ secrets.SLACK_VITRINE_SONAR_WEBHOOK_URL }}
       SLACK_WEBHOOK_URL:     ${{ secrets.SLACK_WEBHOOK_URL }}
-      SLACK_MUSIC_WEBHOOK_URL:    ${{ secrets.SLACK_MUSIC_WEBHOOK_URL }}
-      OPENAI_API_KEY:        ${{ secrets.OPENAI_API_KEY }}
-      REPLICATE_API_TOKEN:   ${{ secrets.REPLICATE_API_TOKEN }}
 
     steps:
       - name: Checkout
@@ -196,8 +193,9 @@ jobs:
 
       - name: Install Python dependencies
         # pillow : cartes de député·es (build_deputy_cards.py). openai a suivi
-        # generate_art.py hors de ce workflow (raffineur vitrine-art).
-        run: pip install pillow python-dotenv replicate
+        # generate_art.py hors de ce workflow (raffineur vitrine-art) ; la
+        # musique d'ambiance (replicate, python-dotenv) a été retirée du site.
+        run: pip install pillow
 
       # Les portraits changent quelques fois par AN (partielles), pas toutes
       # les 4h : scraper à chaque déclenchement de ce workflow ferait ~250
@@ -210,7 +208,7 @@ jobs:
       # natif pour les données électorales plus haut, ne compte pas ici.
       #
       # Placé ICI, juste après le setup Python, et pas plus bas dans le job :
-      # les étapes qui suivent (Athena, art IA, musique IA) peuvent prendre
+      # les étapes qui suivent (Athena, portraits) peuvent prendre
       # plusieurs minutes chacune. Vérifier l'heure APRÈS elles risquerait de
       # lire 01h passé minuit UTC un jour de run lent, et de sauter la
       # fenêtre entière — décalant la fraîcheur des portraits d'un jour de
@@ -248,7 +246,7 @@ jobs:
       # images, une fois par jour.
       - name: Rebuild deputy cards (best-effort, non-blocking)
         id: deputy_cards
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success' && steps.deputy_photos.outputs.actualise != 'false'
         continue-on-error: true
         run: python scripts/build_deputy_cards.py --force
 
@@ -259,23 +257,23 @@ jobs:
       # carte à la fleur de lys à la place du portrait — et le test
       # tests/cartesSite.test.ts bloquerait la prochaine PR.
       - name: Set up Node for the card portraits
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success' && steps.deputy_photos.outputs.actualise != 'false'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - name: Install Node deps for the card portraits
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success' && steps.deputy_photos.outputs.actualise != 'false'
         run: npm ci
       - name: Refresh card portraits (trame WebP, best-effort, non-blocking)
         id: deputy_trames
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
+        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success' && steps.deputy_photos.outputs.actualise != 'false'
         continue-on-error: true
         run: npx tsx scripts/social/portraits-trames.ts
 
       # Portrait erroné = mauvais visage sous un nom : plus proche d'une
       # erreur éditoriale que d'un aléa cosmétique. Reste néanmoins routé au
-      # watchdog comme art/musique — même famille de défaillance (un
+      # watchdog comme l'illustration — même famille de défaillance (un
       # supplément visuel, pas le contenu de fond que sert la Une) — et la
       # fenêtre d'exposition réelle est bornée à un jour avant le prochain run.
       - name: Warn Slack if deputy-photo refresh failed
@@ -333,17 +331,12 @@ jobs:
       # rendu, issue #259), génère l'image et la dépose sur /v1/art (R2). Le
       # build la rapatrie via scripts/fetch_art.mjs. Ce workflow n'a donc plus
       # besoin ni de Node, ni d'OpenAI, ni de scripts/generate_art.py.
-      - name: Generate ambient music (best-effort, non-blocking)
-        id: music
-        continue-on-error: true
-        run: python scripts/generate_music.py
-
       - name: Commit updated data files
         id: commit
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/data/ public/audio/ public/images/deputes/
+          git add public/data/ public/images/deputes/
           if git diff --cached --quiet; then
             echo "No data changes — skipping commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -405,7 +398,7 @@ jobs:
         run: |
           # Dev/prod split: code is gated behind reviewed develop→main merges, but the
           # public prod site must stay fresh every 4h. This copies ONLY the data
-          # payload (public/data + public/audio + public/images/deputes) from the
+          # payload (public/data + public/images/deputes) from the
           # just-pushed develop onto main — never code. Replacing (not merging) the
           # paths means no conflicts.
           # No-op if the main branch does not exist.
@@ -419,11 +412,11 @@ jobs:
           # remote-tracking ref refs/remotes/origin/main may not exist. FETCH_HEAD
           # always points at the just-fetched tip.
           git checkout -B main FETCH_HEAD
-          # public/images/deputes/ included alongside data/audio: without it, a
+          # public/images/deputes/ included alongside data: without it, a
           # by-election winner's portrait would land on develop daily but never
           # reach the live prod site until someone happens to merge develop→main.
-          git checkout develop -- public/data/ public/audio/ public/images/deputes/
-          git add public/data/ public/audio/ public/images/deputes/
+          git checkout develop -- public/data/ public/images/deputes/
+          git add public/data/ public/images/deputes/
           if git diff --cached --quiet; then
             echo "prod data already current — nothing to sync."
           else
@@ -473,7 +466,3 @@ jobs:
               "$HOOK"
           fi
 
-      # Musique : plus d'avertissement Slack (#672). Hors du livrable prod depuis
-      # #658 et circuit vitrine-art cassé depuis aws-refiners#411 : le message
-      # « music generation failed » tombait six fois par jour sans rien dire de
-      # neuf. L'échec reste visible dans l'étape « Generate ambient music ».

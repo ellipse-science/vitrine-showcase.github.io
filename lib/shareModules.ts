@@ -3,7 +3,7 @@
 // balises Open Graph/Twitter, faute de quoi les réseaux sociaux ignorent le
 // fragment #module et affichent tous la carte globale du site (#209).
 
-import { listEditions, loadHeadlineEvents, loadTreemap } from "@/lib/data/headlineEvents";
+import { loadHeadlineEvents, loadTreemap } from "@/lib/data/headlineEvents";
 import { loadParties } from "@/lib/data/parties";
 import { loadAssemblee } from "@/lib/data/assemblee";
 import { loadPolimetre } from "@/lib/data/polimetre";
@@ -152,26 +152,6 @@ export type ShareEdition = {
   /** « mardi 19 août 2026 ». */
   dateLabel: string;
 };
-
-// Les éditions PARTAGEABLES sont exactement celles que le site expose déjà
-// (`listEditions`), jamais une liste parallèle : une carte pointant vers une
-// édition qu'on ne peut pas ouvrir serait un lien mort. La fenêtre est bornée
-// par l'instantané roulant, donc le nombre de cartes à générer l'est aussi.
-export async function listShareEditions(): Promise<ShareEdition[]> {
-  const editions = await listEditions();
-  return editions.map(({ key, navDateIso, pubInstantIso, label, dateLabel }) => ({
-    key,
-    navDateIso,
-    pubInstantIso,
-    label,
-    dateLabel,
-  }));
-}
-
-/** Pied de carte d'archive : « Édition du matin, mardi 19 août 2026 ». */
-export function shareEditionLabel(edition: ShareEdition): string {
-  return `${edition.label}, ${edition.dateLabel.toLowerCase()}`;
-}
 
 export async function getShareModuleContent(
   slug: ShareModuleSlug,

@@ -7,6 +7,19 @@ export interface TableSpec {
   athena: string
   cols: string[]
   filter: string | null
+  /** Datamart lu pour CETTE table, quand il diffère de DATAMART_ENV. Les
+   *  tables agora_social_* et polimetre_promesses_neuves n'existent qu'en DEV
+   *  (collecte et raffineurs DEV seulement) : fetch_data.R les y lit déjà
+   *  (`"env": "DEV"` dans scripts/tables.json). Absent = DATAMART_ENV. */
+  env?: 'DEV' | 'PROD'
+  /** INSTANTANÉ SEULEMENT (#944) : la table va dans l'instantané R2, jamais
+   *  dans Postgres ni dans l'API payante (`"api": false` reste vrai). Sert à
+   *  sortir du dépôt GitHub les jeux que le build lit encore en fichiers. Son
+   *  échec ne retient PAS les Deploy Hooks : absente du manifeste, la table
+   *  est lue dans son fichier publié, soit exactement le comportement
+   *  d'avant. Le pendant côté build est `"instantane": true` dans
+   *  scripts/tables.json. */
+  instantaneSeul?: boolean
 }
 
 export const TABLES: TableSpec[] = [
@@ -352,5 +365,122 @@ export const TABLES: TableSpec[] = [
       "coverage_summary_month"
     ],
     "filter": "polimetre_plus_recent"
+  },
+  {
+    "name": "agora_social_comptes",
+    "athena": "agora_datamart-social_comptes",
+    "cols": [
+      "compte",
+      "plateforme",
+      "pseudo",
+      "candidat",
+      "parti",
+      "circonscription",
+      "type",
+      "abonnes",
+      "releve",
+      "calcule_le",
+      "candidatures_parti",
+      "publications_7j",
+      "jaime_7j",
+      "publications_campagne",
+      "jaime_campagne",
+      "derniere_publication"
+    ],
+    "filter": null,
+    "env": "DEV",
+    "instantaneSeul": true
+  },
+  {
+    "name": "agora_social_publications_jour",
+    "athena": "agora_datamart-social_publications_jour",
+    "cols": [
+      "jour",
+      "parti",
+      "plateforme",
+      "type",
+      "publications",
+      "jaime",
+      "commentaires",
+      "jaime_median"
+    ],
+    "filter": null,
+    "env": "DEV",
+    "instantaneSeul": true
+  },
+  {
+    "name": "agora_social_palmares",
+    "athena": "agora_datamart-social_palmares",
+    "cols": [
+      "jour",
+      "plateforme",
+      "parti",
+      "type",
+      "candidat",
+      "pseudo",
+      "post_id",
+      "url",
+      "texte",
+      "jaime",
+      "commentaires",
+      "media_type",
+      "nature",
+      "texte_origine",
+      "vignette"
+    ],
+    "filter": null,
+    "env": "DEV",
+    "instantaneSeul": true
+  },
+  {
+    "name": "agora_social_fil",
+    "athena": "agora_datamart-social_fil",
+    "cols": [
+      "circonscription",
+      "jour",
+      "compte",
+      "candidat",
+      "parti",
+      "plateforme",
+      "pseudo",
+      "post_id",
+      "url",
+      "texte",
+      "jaime",
+      "commentaires",
+      "media_type",
+      "nature",
+      "texte_origine",
+      "vignette"
+    ],
+    "filter": null,
+    "env": "DEV",
+    "instantaneSeul": true
+  },
+  {
+    "name": "agora_social_comptes_jour",
+    "athena": "agora_datamart-social_comptes_jour",
+    "cols": [
+      "compte",
+      "jour",
+      "publications",
+      "jaime",
+      "commentaires"
+    ],
+    "filter": null,
+    "env": "DEV",
+    "instantaneSeul": true
+  },
+  {
+    "name": "agora_social_candidats",
+    "athena": "agora_datamart-social_candidats",
+    "cols": [
+      "circonscription",
+      "parti",
+      "candidat"
+    ],
+    "filter": null,
+    "env": "DEV",
+    "instantaneSeul": true
   }
 ]
