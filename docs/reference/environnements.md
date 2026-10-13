@@ -83,7 +83,7 @@ Cloudflare**.
 **`main` n'avance que de deux façons :**
 
 1. **les données**, automatiquement — `refresh-data.yml` y recopie
-   `public/data/` et `public/audio/` toutes les 4 h ;
+   `public/data/` et `public/images/deputes/` toutes les 4 h ;
 2. **le code**, uniquement par une **fusion délibérée `develop → main`**.
 
 ⚠️ **Le piège à connaître.** Le code fusionné dans `develop` n'est PAS en

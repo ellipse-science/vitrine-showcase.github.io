@@ -27,7 +27,7 @@
   Cache-Control: public, max-age=31536000, immutable
 
 # L'illustration est ÉCRASÉE sur place toutes les 4 h, à URL
-# constante (latest.png…). Impossible de les marquer immuables : il
+# constante (latest.png…). Impossible de la marquer immuable : il
 # faut une fenêtre courte, alignée sur le cycle de rafraîchissement, sinon un
 # visiteur garderait l'image d'hier sur la une d'aujourd'hui.
 # Cette fenêtre ne suffit PAS à elle seule : `stale-while-revalidate` sert du

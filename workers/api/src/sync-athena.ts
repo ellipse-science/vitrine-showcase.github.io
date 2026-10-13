@@ -25,6 +25,7 @@ import { Client } from '@neondatabase/serverless'
 import { AthenaClient } from './athena'
 import { DelaiDepasse, EXTERNE_MS, PG_CONNEXION_MS, PG_FERMETURE_MS, PG_REQUETE_MS, avecDelai } from './delai'
 import { avecReconnexion, messageDe, resumerErreur } from './reconnexion'
+import { synchroniserInstantaneSeul } from './instantane-seul'
 import { hasColumnTypes, putTableSnapshot, rowsToObjects, type SnapshotEnv } from './snapshot'
 import type { SnapshotTableEntry } from './snapshot-logic'
 import { TABLES, type TableSpec } from './tables'
@@ -380,32 +381,24 @@ export async function runAthenaSync(
   const snapshotSkipped: string[] = []
   for (const [i, spec] of specs.entries()) {
     if (spec.instantaneSeul) {
-      // INSTANTANÉ SEULEMENT : ni Postgres ni API. Tout échec (lecture, garde
-      // zéro-ligne, types, dépôt R2) laisse la table hors du manifeste — le
-      // build la lit alors dans son fichier publié, comme avant — et remonte
-      // dans `snapshotSkipped` (Slack), jamais dans `failed` : il ne retient
-      // pas les Deploy Hooks.
-      try {
-        if (!cycle || !env.ART_BUCKET) {
-          throw new Error('passe sans cycle ou sans seau R2 : rien à écrire')
-        }
-        const rows = await fetchTableRows(athenaPour(spec), spec)
-        // Garde zéro-ligne, jumelle de celle de writeTable : sans sync_state
-        // pour comparer, zéro ligne n'est jamais accepté pour ces tables.
-        if (rows.length === 0) throw new Error("0 ligne reçue d'Athena")
-        if (!hasColumnTypes(spec.name)) {
-          throw new Error('types de colonnes inconnus (régénérer column-types.ts)')
-        }
-        const objects = rowsToObjects(spec.name, spec.cols, rows)
-        const snapshot = await putTableSnapshot(env.ART_BUCKET, cycle, spec.name, objects)
-        console.log(
-          `${spec.name} : ${rows.length} lignes, instantané seul ${Math.round(snapshot.bytes / 1024)} Ko`,
-        )
-        synced.push({ table: spec.name, rows: rows.length, snapshot })
-      } catch (err) {
-        const message = resumerErreur(messageDe(err))
-        console.warn(`${spec.name} (instantané seul) : hors instantané (${message})`)
-        snapshotSkipped.push(`${spec.name} : ${message}`)
+      // INSTANTANÉ SEULEMENT : ni Postgres ni API (cf. ./instantane-seul).
+      // Un échec laisse la table hors du manifeste — le build lit alors son
+      // fichier publié — et remonte dans `snapshotSkipped` (Slack), jamais
+      // dans `failed` : il ne retient pas les Deploy Hooks.
+      const r = await synchroniserInstantaneSeul({
+        cycle,
+        seau: Boolean(env.ART_BUCKET),
+        lireLignes: () => fetchTableRows(athenaPour(spec), spec),
+        typesConnus: () => hasColumnTypes(spec.name),
+        enObjets: (rows) => rowsToObjects(spec.name, spec.cols, rows),
+        deposer: (c, objets) => putTableSnapshot(env.ART_BUCKET!, c, spec.name, objets),
+      })
+      if (r.ok) {
+        console.log(`${spec.name} : ${r.rows} lignes, instantané seul ${Math.round(r.snapshot.bytes / 1024)} Ko`)
+        synced.push({ table: spec.name, rows: r.rows, snapshot: r.snapshot })
+      } else {
+        console.warn(`${spec.name} (instantané seul) : hors instantané (${r.raison})`)
+        snapshotSkipped.push(`${spec.name} : ${r.raison}`)
       }
       continue
     }

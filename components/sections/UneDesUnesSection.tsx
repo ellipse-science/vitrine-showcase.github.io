@@ -335,15 +335,9 @@ function SideUne({ event, hrefs }: { event: UneEvent; hrefs?: Record<string, str
   );
 }
 
-export async function UneDesUnesSection({
-  editionKey,
-  shareEditionKey,
-}: {
-  editionKey?: string;
-  shareEditionKey?: string;
-} = {}) {
+export async function UneDesUnesSection({ editionKey }: { editionKey?: string } = {}) {
   // ÉDITIONS PASSÉES (#434). L'illustration n'est PAS archivée :
-  // `generated-art/latest.png` est écrasé à chaque rafraîchissement, et ne décrivent donc que l'édition courante. Les
+  // `generated-art/latest.png` est écrasé à chaque rafraîchissement, et ne décrit donc que l'édition courante. Les
   // servir sur une édition passée collerait l'image d'aujourd'hui sur les Unes
   // d'avant-hier — une illustration qui affirme un faux. Une édition passée
   // s'affiche donc sans image, et la mise en page « no-art » du module (déjà
@@ -431,7 +425,7 @@ export async function UneDesUnesSection({
             <ShareButton
               title={sectionTitle}
               anchor="une-des-unes"
-              editionKey={editionKey ?? shareEditionKey}
+              editionKey={editionKey}
             />
           </span>
         </div>

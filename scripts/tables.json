@@ -627,7 +627,7 @@
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
       "instantane": true,
-      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "_note_api": "Jamais demandée à l'API (api:false) : le Worker la lit dans le datamart DEV et la dépose SEULEMENT dans l'instantané R2 (instantaneSeul dans workers/api/src/tables.ts : ni Postgres ni /v1/data). En mode snapshot, le build la lit dans l'instantané (instantane:true) ; instantané indisponible, ou en mode files/api, il lit le fichier de fetch_data.R, qui reste le filet jusqu'à la bascule.",
       "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
     },
     {
@@ -650,7 +650,7 @@
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
       "instantane": true,
-      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "_note_api": "Jamais demandée à l'API (api:false) : le Worker la lit dans le datamart DEV et la dépose SEULEMENT dans l'instantané R2 (instantaneSeul dans workers/api/src/tables.ts : ni Postgres ni /v1/data). En mode snapshot, le build la lit dans l'instantané (instantane:true) ; instantané indisponible, ou en mode files/api, il lit le fichier de fetch_data.R, qui reste le filet jusqu'à la bascule.",
       "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
     },
     {
@@ -680,7 +680,7 @@
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
       "instantane": true,
-      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "_note_api": "Jamais demandée à l'API (api:false) : le Worker la lit dans le datamart DEV et la dépose SEULEMENT dans l'instantané R2 (instantaneSeul dans workers/api/src/tables.ts : ni Postgres ni /v1/data). En mode snapshot, le build la lit dans l'instantané (instantane:true) ; instantané indisponible, ou en mode files/api, il lit le fichier de fetch_data.R, qui reste le filet jusqu'à la bascule.",
       "used_by": "lib/data/social.ts + components/sections/SocialSection.tsx"
     },
     {
@@ -711,7 +711,7 @@
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
       "instantane": true,
-      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "_note_api": "Jamais demandée à l'API (api:false) : le Worker la lit dans le datamart DEV et la dépose SEULEMENT dans l'instantané R2 (instantaneSeul dans workers/api/src/tables.ts : ni Postgres ni /v1/data). En mode snapshot, le build la lit dans l'instantané (instantane:true) ; instantané indisponible, ou en mode files/api, il lit le fichier de fetch_data.R, qui reste le filet jusqu'à la bascule.",
       "used_by": "lib/data/social.ts + app/reseaux/fil/[fichier]/route.ts"
     },
     {
@@ -731,7 +731,7 @@
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
       "instantane": true,
-      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "_note_api": "Jamais demandée à l'API (api:false) : le Worker la lit dans le datamart DEV et la dépose SEULEMENT dans l'instantané R2 (instantaneSeul dans workers/api/src/tables.ts : ni Postgres ni /v1/data). En mode snapshot, le build la lit dans l'instantané (instantane:true) ; instantané indisponible, ou en mode files/api, il lit le fichier de fetch_data.R, qui reste le filet jusqu'à la bascule.",
       "used_by": "lib/data/social.ts (classement Par candidat et carte du module)"
     },
     {
@@ -749,7 +749,7 @@
       "_note_env": "Lue dans le datamart DEV quel que soit DATAMART_ENV : la collecte a-social-accounts n'est active qu'en DEV (aws-infra pipelines.ts, active: !isProd), donc le raffineur agora-social aussi (aws-infra refiners.ts).",
       "api": false,
       "instantane": true,
-      "_note_api": "Pas dans la whitelist du Worker (workers/api/src/tables.ts) : le build la lit dans le fichier, sans la demander à l'API. Même régime que polimetre_promesses_neuves (étape 1).",
+      "_note_api": "Jamais demandée à l'API (api:false) : le Worker la lit dans le datamart DEV et la dépose SEULEMENT dans l'instantané R2 (instantaneSeul dans workers/api/src/tables.ts : ni Postgres ni /v1/data). En mode snapshot, le build la lit dans l'instantané (instantane:true) ; instantané indisponible, ou en mode files/api, il lit le fichier de fetch_data.R, qui reste le filet jusqu'à la bascule.",
       "used_by": "lib/data/social.ts (loadPagesCirco)"
     },
     {

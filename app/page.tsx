@@ -33,7 +33,7 @@ export default async function Home() {
 
       {!isProd && <PaletteScrollLab />}
       <div id="une-des-unes" data-section="Une des Unes">
-        <UneDesUnesSection shareEditionKey={editions[0]?.key} />
+        <UneDesUnesSection />
       </div>
 
       <div id="deux-solitudes" data-section="Deux solitudes">
