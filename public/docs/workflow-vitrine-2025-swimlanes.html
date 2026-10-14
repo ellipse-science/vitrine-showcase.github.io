@@ -1197,7 +1197,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🗳️ Polimètre+ — mode «&nbsp;promesses de la campagne&nbsp;» (DEV seulement)</span>
-                <span class="frequency">Détection 4×/jour aux&nbsp;:05 (9, 13, 17, 21&nbsp;h) • saillance 6×/jour aux&nbsp;:45, un bloc de 4&nbsp;h par run • rattrapage depuis le bref à&nbsp;:00 et&nbsp;:20 des heures libres (temporaire) • fenêtres <code>day</code>, <code>week</code> et <code>campaign</code> = sommes de blocs</span>
+                <span class="frequency">Saillance 6×/jour aux&nbsp;:45, un bloc de 4&nbsp;h par run • détection et rattrapage débranchés depuis le 14&nbsp;octobre 2026 (fin de la détection, aws-infra#655) • fenêtres <code>day</code>, <code>week</code> et <code>campaign</code> = sommes de blocs</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="a-qc-press-releases" data-env-source="PROD">
@@ -1402,7 +1402,7 @@
                 },
                 'polimetre_promesses_neuves_detections': {
                     title: 'Table: polimetre_promesses_neuves_detections',
-                    description: 'Étage de DÉTECTION du mode « promesses de la campagne ». ⛔ N\'est plus alimentée depuis le 14 octobre 2026 (fin de la détection, aws-infra #655) : liste close aux communiqués publiés jusqu\'au 5 octobre, toujours lue par la saillance, hors sonar. Une ligne par promesse extraite d\'un communiqué ou d\'une plateforme, plus un TÉMOIN (promesse_id vide) par communiqué examiné sans promesse — sinon « jamais examiné » et « examiné, rien trouvé » seraient indistinguables. Écriture en APPEND, 4×/jour.',
+                    description: 'Étage de DÉTECTION du mode « promesses de la campagne ». ⛔ N\'est plus alimentée depuis le 14 octobre 2026 (fin de la détection, aws-infra #655) : liste close aux communiqués publiés jusqu\'au 5 octobre, toujours lue par la saillance, hors sonar. Une ligne par promesse extraite d\'un communiqué ou d\'une plateforme, plus un TÉMOIN (promesse_id vide) par communiqué examiné sans promesse — sinon « jamais examiné » et « examiné, rien trouvé » seraient indistinguables. Était écrite en APPEND, 4×/jour, jusqu\'à la fin de la détection.',
                     columns: [
                         'promesse_id - Identifiant de la promesse (vide sur un témoin)',
                         'party_id - Parti émetteur (clé de PARTY_COLORS côté site)',
