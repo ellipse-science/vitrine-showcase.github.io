@@ -272,8 +272,9 @@ async function repliFichier(
  *
  *  Le dossier est nommé par le cycle (synchro la plus ancienne en mode api,
  *  `cycle` du manifeste en mode instantané) : un build local qui suit une
- *  synchro ne relit jamais le cycle précédent. Les autres cycles sont
- *  effacés à la première lecture. L'écriture est atomique (fichier temporaire
+ *  synchro ne relit jamais le cycle précédent. Les cycles vieux de plus
+ *  d'une demi-heure sont effacés à la première lecture — jamais un dossier
+ *  que le build en cours pourrait encore lire (cf. AGE_MIN_POUR_EFFACER_MS). L'écriture est atomique (fichier temporaire
  *  puis `rename`) : deux workers qui téléchargent la même table en même temps
  *  écrivent le même contenu, et aucun lecteur ne voit un fichier partiel. */
 const LOCAL_ROOT = path.resolve(process.cwd(), ".next", "cache", "vitrine-data");
@@ -285,19 +286,63 @@ const localCopies = new Map<string, Promise<string | null>>();
 
 let pruned: Promise<void> | null = null;
 
-/** Efface les dossiers des cycles précédents, une fois par build. */
+/** Âge en deçà duquel un dossier de cycle appartient peut-être à un AUTRE
+ *  processus du build en cours : on ne l'efface pas.
+ *
+ *  INCIDENT DU 27 SEPTEMBRE 2026 (et, selon toute vraisemblance, du 17). Le
+ *  build de l'édition de minuit est le seul qui chevauche la synchro du Worker
+ *  de 00 h 10, parce que refresh-data prend dix minutes de plus à 4 h UTC pour
+ *  les portraits des député·es. Pendant ce chevauchement, `/v1/health` change
+ *  d'une seconde à l'autre : deux workers de `next build` calculaient deux clés
+ *  de cycle différentes, et le second effaçait le dossier que le premier lisait
+ *  encore. La lecture échouait, `loadHeadlineEvents` répondait « rien », et la
+ *  prod a publié un accueil sans Une des Unes ni Deux solitudes, et des pages
+ *  d'édition en 404 — avec des données complètes des deux côtés, et sans la
+ *  moindre alerte. Un build dure moins de dix minutes : un dossier plus jeune
+ *  que ceci est vivant, on le laisse ; les vrais restes d'anciens builds ont
+ *  des heures. */
+const AGE_MIN_POUR_EFFACER_MS = 30 * 60 * 1000;
+
+/** Efface les dossiers des cycles précédents, une fois par build — jamais un
+ *  dossier assez récent pour appartenir au build en cours. */
 function pruneOtherCycles(currentDir: string): Promise<void> {
   pruned ??= (async () => {
     try {
       for (const entry of await fs.readdir(LOCAL_ROOT)) {
         const full = path.join(LOCAL_ROOT, entry);
-        if (full !== currentDir) await fs.rm(full, { recursive: true, force: true });
+        if (full === currentDir) continue;
+        if (Date.now() - (await fs.stat(full)).mtimeMs < AGE_MIN_POUR_EFFACER_MS) continue;
+        await fs.rm(full, { recursive: true, force: true });
       }
     } catch {
       // Dossier absent au premier build : rien à effacer.
     }
   })();
   return pruned;
+}
+
+/** Lit la copie locale ; si elle a DISPARU entre-temps, on la retélécharge une
+ *  fois plutôt que de laisser un loader conclure « aucune donnée ». Ceinture
+ *  sous les bretelles de AGE_MIN_POUR_EFFACER_MS : ce cas ne devrait plus se
+ *  produire, et s'il se produit, il se voit dans le journal du build. */
+async function lireCopieLocale(
+  local: string,
+  dataset: string,
+  obtenir: () => Promise<string | null>,
+  absolute: string,
+  raison: string,
+): Promise<string> {
+  try {
+    return await fs.readFile(local, "utf8");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+    console.warn(
+      `[source] ${dataset}\u00a0: copie locale disparue en cours de build. Retéléchargement.`,
+    );
+    localCopies.delete(dataset);
+    const again = await obtenir();
+    return again ? fs.readFile(again, "utf8") : repliFichier(absolute, dataset, raison);
+  }
 }
 
 async function localCopy(
@@ -421,13 +466,17 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     const manifest = await loadManifest();
     if (!manifest) return repliFichier(absolute, dataset, "instantané indisponible");
 
-    const local = await localCopy(
-      dataset,
-      `instantane-${manifest.cycle}`,
-      () => fetchSnapshotRows(dataset, manifest),
-      "instantané",
-    );
-    return local ? fs.readFile(local, "utf8") : repliFichier(absolute, dataset, "instantané indisponible");
+    const obtenir = () =>
+      localCopy(
+        dataset,
+        `instantane-${manifest.cycle}`,
+        () => fetchSnapshotRows(dataset, manifest),
+        "instantané",
+      );
+    const local = await obtenir();
+    return local
+      ? lireCopieLocale(local, dataset, obtenir, absolute, "instantané indisponible")
+      : repliFichier(absolute, dataset, "instantané indisponible");
   }
 
   if (!(await apiIsFresh())) return repliFichier(absolute, dataset, "API périmée");
@@ -439,7 +488,7 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     return repliFichier(absolute, dataset, "clé d'API absente");
   }
 
-  const local = await localCopy(
+  const obtenir = () => localCopy(
     dataset,
     `api-${apiCycleKey || "sans-cycle"}`,
     async () => {
@@ -455,5 +504,8 @@ export async function readDatasetText(repoRelativePath: string): Promise<string>
     },
     "API",
   );
-  return local ? fs.readFile(local, "utf8") : repliFichier(absolute, dataset, "API indisponible");
+  const local = await obtenir();
+  return local
+    ? lireCopieLocale(local, dataset, obtenir, absolute, "API indisponible")
+    : repliFichier(absolute, dataset, "API indisponible");
 }
