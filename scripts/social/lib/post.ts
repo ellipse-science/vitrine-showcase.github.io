@@ -16,7 +16,7 @@ export const HASHTAGS = ["#LaUnedesUnes", "#CAPP", "#CLESSN", "#Élections2026",
 /** Le rappel, sous le trait. Tout y est vérifiable sur le site public. */
 export const RAPPEL = [
   "Toutes les 4 heures, la Vitrine démocratique mesure ce qui occupe l’espace médiatique québécois.",
-  "La première page de 13 médias québécois et canadiens est enregistrée toutes les dix minutes, sans interruption depuis septembre 2018. Gratuit, sans publicité, méthodologie publique.",
+  "La première page de 13 médias québécois et canadiens est enregistrée toutes les dix minutes, depuis septembre 2019. Gratuit, sans publicité, méthodologie publique.",
   "vitrinedemocratique.com",
 ].join("\n\n");
 
