@@ -45,7 +45,9 @@ export async function RawMaquette({ chunk, sansPartenaires = false }: { chunk: C
   html = html.replace(/href="methodologie\/"/g, `href="${basePath}/methodologie/"`);
   html = html.replace(/href="apropos\/"/g, `href="${basePath}/apropos/"`);
   html = html.replace(/href="apropos\/(equipe|partenaires)\/"/g, `href="${basePath}/apropos/$1/"`);
-  html = html.replace(/href="methodologie\/modeles\/"/g, `href="${basePath}/methodologie/modeles/"`);
+  // Sous-pages de la Méthodologie : une seule règle pour toutes, sinon une nouvelle
+  // page oubliée dans la liste donne un 404 depuis les sous-pages (infrastructure, 2026-10-26).
+  html = html.replace(/href="methodologie\/(modeles|infrastructure)\/"/g, `href="${basePath}/methodologie/$1/"`);
   html = html.replace(/href="\/abonnement"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="abonnement\/"/g, `href="${basePath}/abonnement/"`);
   html = html.replace(/href="journal\/"/g, `href="${basePath}/journal/"`);
