@@ -78,6 +78,8 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    outputs:
+      photo_window: ${{ steps.photo_window.outputs.run }}
     # Filet anti-zombie : sans plafond, un step d'infra gelé (« Setup R » bloqué
     # ~1h30 le 2026-08-18) tourne jusqu'à la limite dure de 6h de GitHub. Couplé
     # à concurrency.cancel-in-progress: false, ce zombie met toutes les éditions
@@ -228,65 +230,8 @@ jobs:
             *)     echo "run=false" >> "$GITHUB_OUTPUT" ;;
           esac
 
-      - name: Install Python deps for deputy portraits (numpy, Pillow already present)
-        if: steps.photo_window.outputs.run == 'true'
-        run: pip install numpy
-
-      - name: Refresh deputy portraits (best-effort, non-blocking)
-        id: deputy_photos
-        if: steps.photo_window.outputs.run == 'true'
-        continue-on-error: true
-        run: python scripts/scrape_deputy_photos.py
-
-      # --force : sans ça, build_deputy_cards.py saute toute circonscription
-      # dont la carte de sortie existe déjà — y compris après une partielle,
-      # où scrape_deputy_photos.py vient de réécrire la photo SOURCE sous le
-      # même nom de fichier (clé = siège, pas personne). Sans --force, la
-      # carte traitée que le site affiche resterait celle de l'ANCIEN
-      # titulaire alors que la source brute est déjà à jour. Le coût — tout
-      # regénérer plutôt que le nécessaire — est négligeable ici : 125
-      # images, une fois par jour.
-      - name: Rebuild deputy cards (best-effort, non-blocking)
-        id: deputy_cards
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
-        continue-on-error: true
-        run: python scripts/build_deputy_cards.py --force
-
-      # LES TRAMES DES CARTES DU VESTIAIRE (vitrine#917) suivent les photos :
-      # le script ne recalcule que les portraits dont la source a changé
-      # (manifeste d'empreintes), soit rien la plupart des jours, et quelques
-      # secondes par nouveau visage. Sans cette étape, un nouvel élu aurait sa
-      # carte à la fleur de lys à la place du portrait — et le test
-      # tests/cartesSite.test.ts bloquerait la prochaine PR.
-      - name: Set up Node for the card portraits
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Install Node deps for the card portraits
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
-        run: npm ci
-      - name: Refresh card portraits (trame WebP, best-effort, non-blocking)
-        id: deputy_trames
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
-        continue-on-error: true
-        run: npx tsx scripts/social/portraits-trames.ts
-
-      # Portrait erroné = mauvais visage sous un nom : plus proche d'une
-      # erreur éditoriale que d'un aléa cosmétique. Reste néanmoins routé au
-      # watchdog comme art/musique — même famille de défaillance (un
-      # supplément visuel, pas le contenu de fond que sert la Une) — et la
-      # fenêtre d'exposition réelle est bornée à un jour avant le prochain run.
-      - name: Warn Slack if deputy-photo refresh failed
-        if: steps.photo_window.outputs.run == 'true' && (steps.deputy_photos.outcome == 'failure' || steps.deputy_cards.outcome == 'failure' || steps.deputy_trames.outcome == 'failure')
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            curl -fsS -X POST -H 'Content-Type: application/json' \
-              -d "{\"text\":\"🟡 *Vitrine deputy-photo refresh failed* — data was refreshed normally; deputy portraits may be stale until tomorrow's run.\nRun: ${RUN_URL}\"}" \
-              "$SLACK_WEBHOOK_URL"
-          fi
+      # Les étapes des portraits tournent dans le job `portraits`, en fin de
+      # fichier, APRÈS l'édition : seule l'heure est lue ici.
 
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
@@ -477,3 +422,115 @@ jobs:
       # #658 et circuit vitrine-art cassé depuis aws-refiners#411 : le message
       # « music generation failed » tombait six fois par jour sans rien dire de
       # neuf. L'échec reste visible dans l'étape « Generate ambient music ».
+
+  # LES PORTRAITS DE DÉPUTÉ ONT LEUR PROPRE JOB, APRÈS L'ÉDITION.
+  # Ils tournaient dans `refresh`, AVANT le fetch Athena, sous son plafond de
+  # 25 min. Le 15-10-2026, la nouvelle législature a changé les 131 photos
+  # d'un coup : 126 trames à refaire (~14 min), le fetch partait vers la 21e
+  # minute et le plafond tuait le job avant le commit. Rien n'était donc
+  # enregistré, et la nuit suivante tout recommençait : l'édition de minuit
+  # (Montréal) a manqué CHAQUE nuit jusqu'au 28-10, et la garde de fraîcheur
+  # sonnait vers 2 h 30. Une étape « best-effort » ne doit pas pouvoir coûter
+  # une édition : ici, au pire, ce job échoue seul.
+  #
+  # Les portraits poussés sur `develop` atteignent `main` à la passe suivante
+  # (07:53 UTC) : « Sync fresh data to main branch » recopie
+  # public/images/deputes/.
+  portraits:
+    needs: refresh
+    # !cancelled() : un fetch Athena raté ne prive pas les cartes de leurs
+    # portraits du jour ; un run annulé, si.
+    if: ${{ !cancelled() && needs.refresh.outputs.photo_window == 'true' }}
+    runs-on: ubuntu-latest
+    # Passe normale ~7 min (le scrape prend 5 min, par politesse envers
+    # l'ANQ) ; une législature entière à retramer, ~22 min.
+    timeout-minutes: 35
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # `develop` et non le SHA du déclenchement : `refresh` vient d'y
+          # pousser les données de l'édition.
+          ref: develop
+          ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install Python deps for deputy portraits
+        run: pip install pillow numpy
+
+      - name: Refresh deputy portraits (best-effort, non-blocking)
+        id: deputy_photos
+        continue-on-error: true
+        run: python scripts/scrape_deputy_photos.py
+
+      # --force : sans ça, build_deputy_cards.py saute toute circonscription
+      # dont la carte de sortie existe déjà — y compris après une partielle,
+      # où scrape_deputy_photos.py vient de réécrire la photo SOURCE sous le
+      # même nom de fichier (clé = siège, pas personne). Sans --force, la
+      # carte traitée que le site affiche resterait celle de l'ANCIEN
+      # titulaire alors que la source brute est déjà à jour. Le coût — tout
+      # regénérer plutôt que le nécessaire — est négligeable ici : 125
+      # images, une fois par jour.
+      - name: Rebuild deputy cards (best-effort, non-blocking)
+        id: deputy_cards
+        if: steps.deputy_photos.outcome == 'success'
+        continue-on-error: true
+        run: python scripts/build_deputy_cards.py --force
+
+      # LES TRAMES DES CARTES DU VESTIAIRE (vitrine#917) suivent les photos :
+      # le script ne recalcule que les portraits dont la source a changé
+      # (manifeste d'empreintes), soit rien la plupart des jours, et quelques
+      # secondes par nouveau visage. Sans cette étape, un nouvel élu aurait sa
+      # carte à la fleur de lys à la place du portrait — et le test
+      # tests/cartesSite.test.ts bloquerait la prochaine PR.
+      - name: Set up Node for the card portraits
+        if: steps.deputy_photos.outcome == 'success'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Node deps for the card portraits
+        if: steps.deputy_photos.outcome == 'success'
+        run: npm ci
+      - name: Refresh card portraits (trame WebP, best-effort, non-blocking)
+        id: deputy_trames
+        if: steps.deputy_photos.outcome == 'success'
+        continue-on-error: true
+        run: npx tsx scripts/social/portraits-trames.ts
+
+      # Portrait erroné = mauvais visage sous un nom : plus proche d'une
+      # erreur éditoriale que d'un aléa cosmétique. Reste néanmoins routé au
+      # watchdog comme art/musique — même famille de défaillance (un
+      # supplément visuel, pas le contenu de fond que sert la Une) — et la
+      # fenêtre d'exposition réelle est bornée à un jour avant le prochain run.
+      - name: Warn Slack if deputy-photo refresh failed
+        if: (steps.deputy_photos.outcome == 'failure' || steps.deputy_cards.outcome == 'failure' || steps.deputy_trames.outcome == 'failure')
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"🟡 *Vitrine deputy-photo refresh failed* — data was refreshed normally; deputy portraits may be stale until tomorrow's run.\nRun: ${RUN_URL}\"}" \
+              "$SLACK_WEBHOOK_URL"
+          fi
+
+      - name: Commit deputy portraits
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/images/deputes/
+          if git diff --cached --quiet; then
+            echo "Portraits inchangés — rien à pousser."
+          else
+            git commit -m "data: portraits $(date -u +%Y-%m-%dT%H:%MZ)"
+            git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
+            git pull --rebase origin develop
+            git push origin HEAD:develop
+          fi
