@@ -552,7 +552,7 @@
         <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
           <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
         </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 14 octobre 2026 (fin de la détection du mode « promesses de la campagne »&nbsp;: la liste est close aux communiqués publiés jusqu'au 5 octobre, détection et rattrapage débranchés, la saillance continue, aws-infra#655 ; le module « Les candidats sur les réseaux » entre au diagramme&nbsp;: collecte <code>a-social-accounts</code> (DEV), raffineur <code>agora-social</code> 6×/jour à :30 et ses huit tables <code>social_*</code>, lues en DEV par le filet de publication, aws-refiners#586 / #590, aws-infra#651 ; le mode « promesses de la campagne » réunit les promesses en double avant la saillance, par les embeddings de l'infer-api — <code>qwen3-embedding:0.6b</code> s'il est servi, sinon <code>bge-m3</code>, aws-refiners#592 ; il lit aussi <code>dict-political-parties-qc</code>&nbsp;: une reprise exige que le paragraphe nomme le parti, aws-refiners#580 ; fenêtre <code>campaign</code> du mode « promesses de la campagne », cumul depuis le bref, publiée seulement à couverture entière, aws-refiners#535 ; étage de rattrapage temporaire depuis le 27 août, 30 départs par jour hors des créneaux LLM des autres raffineurs, aws-infra#636 ; la Vitrine lit le datamart de production&nbsp;: les deux couloirs « Publication Vitrine » passent en PROD et leur décompte est remis à jour, 18 tables au filet, 16 au Worker, vitrine-showcase#827 ; le mode « promesses de la campagne » du Polimètre+ entre au diagramme&nbsp;: raffineur <code>polimetre-promesses-neuves</code>, ses trois tables dont la nouvelle <code>polimetre_promesses_neuves_hits</code>, saillance 6×/jour par bloc de 4&nbsp;h, aws-refiners#511 / aws-infra#580 ; quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">Architecture complète • Dernière mise à jour le 28 octobre 2026 (horaires de la chaîne Radar+ recalés sur le code : radar-salient-objects :06, radar-object-extraction :26, radar-salient-index :39, radar-event-salience :45, en vigueur depuis le 10 septembre, aws-infra#572 ; la garde le signalait depuis le 11 septembre, aws-infra#578 ; fin de la détection du mode « promesses de la campagne »&nbsp;: la liste est close aux communiqués publiés jusqu'au 5 octobre, détection et rattrapage débranchés, la saillance continue, aws-infra#655 ; le module « Les candidats sur les réseaux » entre au diagramme&nbsp;: collecte <code>a-social-accounts</code> (DEV), raffineur <code>agora-social</code> 6×/jour à :30 et ses huit tables <code>social_*</code>, lues en DEV par le filet de publication, aws-refiners#586 / #590, aws-infra#651 ; le mode « promesses de la campagne » réunit les promesses en double avant la saillance, par les embeddings de l'infer-api — <code>qwen3-embedding:0.6b</code> s'il est servi, sinon <code>bge-m3</code>, aws-refiners#592 ; il lit aussi <code>dict-political-parties-qc</code>&nbsp;: une reprise exige que le paragraphe nomme le parti, aws-refiners#580 ; fenêtre <code>campaign</code> du mode « promesses de la campagne », cumul depuis le bref, publiée seulement à couverture entière, aws-refiners#535 ; étage de rattrapage temporaire depuis le 27 août, 30 départs par jour hors des créneaux LLM des autres raffineurs, aws-infra#636 ; la Vitrine lit le datamart de production&nbsp;: les deux couloirs « Publication Vitrine » passent en PROD et leur décompte est remis à jour, 18 tables au filet, 16 au Worker, vitrine-showcase#827 ; le mode « promesses de la campagne » du Polimètre+ entre au diagramme&nbsp;: raffineur <code>polimetre-promesses-neuves</code>, ses trois tables dont la nouvelle <code>polimetre_promesses_neuves_hits</code>, saillance 6×/jour par bloc de 4&nbsp;h, aws-refiners#511 / aws-infra#580 ; quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
         <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>PROD</strong> pour la lecture du site; depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a> les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> étaient DEV-only ; ils passent en PROD le 3 septembre 2026 (aws-infra#558).</p>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
@@ -656,10 +656,10 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="radar-object-extraction" data-ecr="radar-object-extraction" data-active="true" data-cron="19:24,23:24,03:24,07:24,11:24,15:24">
+                <div class="node node-refiner" data-type="refiner" data-refiner="radar-object-extraction" data-ecr="radar-object-extraction" data-active="true" data-cron="19:26,23:26,03:26,07:26,11:26,15:26">
                     radar-object-extraction.R
                     <div class="node-detail">NER + normalisation</div>
-                    <div class="node-schedule">⏰ 19:24, 23:24, 03:24, 07:24, 11:24, 15:24</div>
+                    <div class="node-schedule">⏰ 19:26, 23:26, 03:26, 07:26, 11:26, 15:26</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -676,7 +676,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🔵 Salient Index (Indices de Saillance)</span>
-                <span class="frequency">6x/jour — radar-salient-objects: 19:16, 23:16, 03:16, 07:16, 11:16, 15:16 • radar-salient-index: 19:42, 23:42, 03:42, 07:42, 11:42, 15:42 (heure du Québec)</span>
+                <span class="frequency">6x/jour — radar-salient-objects: 19:06, 23:06, 03:06, 07:06, 11:06, 15:06 • radar-salient-index: 19:39, 23:39, 03:39, 07:39, 11:39, 15:39 (heure du Québec)</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="r-media-headlines" data-env-source="PROD">
@@ -685,10 +685,10 @@
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="salient-objects" data-ecr="radar-salient-objects" data-active="true" data-cron="19:16,23:16,03:16,07:16,11:16,15:16">
+                <div class="node node-refiner" data-type="refiner" data-refiner="salient-objects" data-ecr="radar-salient-objects" data-active="true" data-cron="19:06,23:06,03:06,07:06,11:06,15:06">
                     radar-salient-objects.R
                     <div class="node-detail">Extraction objets saillants</div>
-                    <div class="node-schedule">⏰ 19:16, 23:16, 03:16, 07:16, 11:16, 15:16</div>
+                    <div class="node-schedule">⏰ 19:06, 23:06, 03:06, 07:06, 11:06, 15:06</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -698,10 +698,10 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="salient-index" data-ecr="radar-salient-index" data-active="true" data-cron="19:42,23:42,03:42,07:42,11:42,15:42">
+                <div class="node node-refiner" data-type="refiner" data-refiner="salient-index" data-ecr="radar-salient-index" data-active="true" data-cron="19:39,23:39,03:39,07:39,11:39,15:39">
                     radar-salient-index.R
                     <div class="node-detail">Calcul indices</div>
-                    <div class="node-schedule">⏰ 19:42, 23:42, 03:42, 07:42, 11:42, 15:42</div>
+                    <div class="node-schedule">⏰ 19:39, 23:39, 03:39, 07:39, 11:39, 15:39</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -924,7 +924,7 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>🎯 Event Salience (Événements 4h par pays)</span>
-                <span class="frequency">6x/jour: 19:51, 23:51, 03:51, 07:51, 11:51, 15:51 (heure du Québec) — 9 min après radar-salient-index</span>
+                <span class="frequency">6x/jour: 19:45, 23:45, 03:45, 07:45, 11:45, 15:45 (heure du Québec) — 6 min après radar-salient-index</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-table" data-type="table" data-table="salient_headlines_objects" data-env-source="DEV">
@@ -939,10 +939,10 @@
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="event-salience" data-ecr="radar-event-salience" data-active="true" data-cron="19:51,23:51,03:51,07:51,11:51,15:51">
+                <div class="node node-refiner" data-type="refiner" data-refiner="event-salience" data-ecr="radar-event-salience" data-active="true" data-cron="19:45,23:45,03:45,07:45,11:45,15:45">
                     radar-event-salience.R
                     <div class="node-detail">Clustering BFS + scoring</div>
-                    <div class="node-schedule">⏰ 19:51, 23:51, 03:51, 07:51, 11:51, 15:51</div>
+                    <div class="node-schedule">⏰ 19:45, 23:45, 03:45, 07:45, 11:45, 15:45</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -2125,7 +2125,7 @@
                         '• entities_detail - JSON [{sid, text, label, score, normalized_en, normalized_fr}]',
                         '• tag - timestamp publication',
                         '',
-                        '⏰ HORAIRES: 19:24, 23:24, 03:24, 07:24, 11:24, 15:24 (heure du Québec, 18 min après radar-data-preparation)',
+                        '⏰ HORAIRES: 19:26, 23:26, 03:26, 07:26, 11:26, 15:26 (heure du Québec, 20 min après radar-data-preparation)',
                         '',
                         '💾 MÉMOIRE: 10 GB (10240 MB)',
                         '⏳ TIMEOUT: 15 minutes',
@@ -2433,7 +2433,7 @@
                         '',
                         '📋 OUTPUT: headline_events_4h - 63 colonnes (45 déterministes + 7 agrégats 24h + 8 LLM/audit + 2 divergence + tag), ~270 lignes/jour',
                         '',
-                        '⏰ HORAIRES: 19:51, 23:51, 03:51, 07:51, 11:51, 15:51 (heure du Québec) — 9 min après radar-salient-index',
+                        '⏰ HORAIRES: 19:45, 23:45, 03:45, 07:45, 11:45, 15:45 (heure du Québec) — 6 min après radar-salient-index',
                         '',
                         '🌐 CONSOMMATION: headline_events_4h alimente DEUX modules du site — « Une des Unes » (UneDesUnesSection) et « Deux solitudes » (DeuxSolitudesSection, via coverage_qc_in_can / coverage_can_in_qc / interval_convergence_score / top_objects_divergence)',
                         '',
