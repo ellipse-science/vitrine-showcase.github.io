@@ -1,5 +1,11 @@
 [
   {
+    "pr": 971,
+    "date": "2026-11-04T06:25:14Z",
+    "note": "L'édition de minuit de la Une, qui manquait toutes les nuits depuis le 15 octobre, est rétablie.",
+    "version": "2.52.0-beta.11"
+  },
+  {
     "pr": 982,
     "date": "2026-11-04T06:22:11Z",
     "note": "Les éditions de la Une paraissent de nouveau à l'heure depuis le passage à l'heure normale.",
