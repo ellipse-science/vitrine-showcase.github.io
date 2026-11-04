@@ -1,5 +1,11 @@
 [
   {
+    "pr": 994,
+    "date": "2026-11-04T06:47:11Z",
+    "note": "Quand le site tarde à se mettre à jour, l'alerte interne de l'équipe en indique maintenant la cause plus précisément.",
+    "version": null
+  },
+  {
     "pr": 971,
     "date": "2026-11-04T06:25:14Z",
     "note": "L'édition de minuit de la Une, qui manquait toutes les nuits depuis le 15 octobre, est rétablie.",
