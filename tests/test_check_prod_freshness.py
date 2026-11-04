@@ -40,14 +40,15 @@ def _passe(id_, il_y_a_h, refresh="success", saison="success", etape=None):
     }
     pas = [{"name": etape, "conclusion": "failure"}] if etape else []
     jobs = [
-        {"name": "saison", "conclusion": saison},
-        {"name": "refresh", "conclusion": refresh, "steps": pas},
+        {"name": "saison", "status": "completed", "conclusion": saison},
+        {"name": "refresh", "status": "completed", "conclusion": refresh, "steps": pas},
     ]
     return run, jobs
 
 
-def _brancher(monkeypatch, une, build_age_h=1.0, passes=None):
-    """`passes` : liste de _passe(), plus récente d'abord ; None = API muette.
+def _brancher(monkeypatch, une, build_age_h=1.0, passes=None, jobs_muets=False):
+    """`passes` : liste de _passe(), plus récente d'abord ; « muette » = API muette ;
+    « jobs_muets » = la liste des runs répond, pas leurs jobs.
 
     Par défaut, une passe livrée il y a 1 h : le filet a fait son travail, ce
     qui laisse le diagnostic d'origine (build vieux / cascade AWS) décider.
@@ -70,6 +71,8 @@ def _brancher(monkeypatch, une, build_age_h=1.0, passes=None):
             raise OSError("API muette")
         if "/workflows/refresh-data.yml/runs" in url:
             return {"workflow_runs": [run for run, _ in passes]}
+        if jobs_muets:
+            raise OSError("jobs muets")
         return {"jobs": jobs_par_run[int(url.split("/runs/")[1].split("/")[0])]}
 
     monkeypatch.setattr(garde, "_lire_json", faux)
@@ -169,12 +172,13 @@ def test_portraits_rouges_mais_edition_livree(monkeypatch):
 
 def test_grille_decalee(monkeypatch):
     """01→04-11 : passes réussies, mais parties AVANT la sortie du bloc suivant."""
-    # Bloc fini il y a 7,4 h ; la dernière passe a 3,5 h, donc partie 3,9 h
-    # après la fin du bloc servi : avant les 4 h 47 de la cascade suivante.
+    # La fin du bloc est arrondie à l'heure inférieure : son âge réel va de
+    # 7,4 h à 8,4 h selon la minute. Une passe vieille de 4 h est donc partie
+    # entre 3,4 h et 4,4 h après la fin du bloc : toujours avant les 4 h 47.
     _brancher(
         monkeypatch,
         _un_bloc_termine_il_y_a(7.4),
-        passes=[_passe(9, 3.5), _passe(8, 7.5)],
+        passes=[_passe(9, 4.0), _passe(8, 8.5)],
     )
     _, _, diag = garde.mesurer()
     assert "grille du cron est décalée" in diag
@@ -193,3 +197,42 @@ def test_api_muette_garde_l_ancien_diagnostic(monkeypatch):
     stale, _, diag = garde.mesurer()
     assert stale is True
     assert "cascade AWS" in diag and "illisibles" in diag
+
+
+def test_jobs_illisibles_ne_supposent_rien(monkeypatch):
+    """Sans les jobs, une passe verte peut n'avoir rien livré : on le dit."""
+    _brancher(
+        monkeypatch,
+        _un_bloc_termine_il_y_a(9.0),
+        passes=[_passe(9, 2.6, refresh="cancelled")],
+        jobs_muets=True,
+    )
+    _, _, diag = garde.mesurer()
+    assert "illisibles" in diag and "runs/9" not in diag
+
+
+def test_livree_pendant_que_les_portraits_tournent(monkeypatch):
+    """Le run reste « en cours » jusqu'à 35 min après la livraison."""
+    run, jobs = _passe(10, 0.3)
+    run["status"], run["conclusion"] = "in_progress", None
+    jobs.append({"name": "portraits", "status": "in_progress", "conclusion": None})
+    _brancher(
+        monkeypatch,
+        _un_bloc_termine_il_y_a(9.0),
+        passes=[(run, jobs), _passe(9, 4.6, refresh="cancelled")],
+    )
+    _, _, diag = garde.mesurer()
+    assert "runs/9" not in diag and "livrée" in diag
+
+
+def test_passe_en_file_n_est_pas_jugee(monkeypatch):
+    """Un run en file n'a pas de jobs : on regarde la passe d'avant."""
+    run, _ = _passe(10, 0.2)
+    run["status"], run["conclusion"] = "queued", None
+    _brancher(
+        monkeypatch,
+        _un_bloc_termine_il_y_a(9.0),
+        passes=[(run, []), _passe(9, 4.6, refresh="cancelled")],
+    )
+    _, _, diag = garde.mesurer()
+    assert "runs/9" in diag

@@ -141,22 +141,26 @@ def _heure(instant: datetime.datetime) -> str:
 
 
 def _issue_de_la_passe(run: dict) -> tuple[str, str]:
-    """(« livree » | « sautee » | « ratee », détail) d'une passe terminée.
+    """(« livree » | « sautee » | « ratee » | « en_cours » | « inconnue », détail).
 
     On juge le job `refresh`, pas le run : depuis vitrine#971, un échec du job
-    `portraits` rend le run rouge alors que l'édition est partie, et depuis
-    vitrine#982 la passe de la grille hors saison finit « success » sans rien
-    livrer (job `refresh` sauté).
+    `portraits` rend le run rouge alors que l'édition est partie (et le run
+    reste « en cours » jusqu'à 35 min après la livraison) ; depuis vitrine#982,
+    la passe de la grille hors saison finit « success » sans rien livrer (job
+    `refresh` sauté). La conclusion du run seule tromperait dans les deux sens :
+    jobs illisibles = « inconnue », jamais une supposition.
     """
     try:
         jobs = {j["name"]: j for j in _lire_api(f"{API}/runs/{run['id']}/jobs")["jobs"]}
     except Exception:
-        jobs = {}
+        return "inconnue", ""
     refresh = jobs.get("refresh")
-    if refresh is None:  # jobs illisibles : on s'en tient au run
-        if run.get("conclusion") in ECHECS:
-            return "ratee", f"a fini « {run['conclusion']} »"
-        return "livree", ""
+    if refresh is None:
+        # Un run en file n'a pas encore ses jobs ; un run terminé sans job
+        # `refresh` n'est pas une forme connue.
+        return ("en_cours" if run.get("status") != "completed" else "inconnue"), ""
+    if refresh.get("status") != "completed":
+        return "en_cours", ""
     conclusion = refresh.get("conclusion")
     if conclusion == "success":
         return "livree", ""
@@ -192,10 +196,14 @@ def etat_du_filet(
         )["workflow_runs"]
     except Exception:
         return None
+    en_cours = []
     for run in runs:  # l'API rend les plus récents d'abord
-        if run.get("status") != "completed":
-            continue
         issue, detail = _issue_de_la_passe(run)
+        if issue == "inconnue":
+            return None
+        if issue == "en_cours":
+            en_cours.append(run)
+            continue
         if issue == "sautee":
             continue
         heure = _heure(_instant(run["created_at"]))
@@ -218,7 +226,6 @@ def etat_du_filet(
                 f"d'heure ?) ou une passe a sauté. Passes : {PAGE_FILET}"
             )
         return "livree", f"dernière passe refresh-data livrée à {heure} ({run['html_url']})"
-    en_cours = [r for r in runs if r.get("status") != "completed"]
     if en_cours:
         r = en_cours[-1]
         return "absente", (
