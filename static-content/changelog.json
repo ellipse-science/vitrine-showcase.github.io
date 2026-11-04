@@ -1,5 +1,11 @@
 [
   {
+    "pr": 982,
+    "date": "2026-11-04T06:22:11Z",
+    "note": "Les éditions de la Une paraissent de nouveau à l'heure depuis le passage à l'heure normale.",
+    "version": "2.52.0-beta.10"
+  },
+  {
     "pr": 951,
     "date": "2026-10-14T17:17:12Z",
     "note": "Le volet « promesses de la campagne » du Polimètre+ ne s'enrichit plus de nouvelles promesses depuis le jour du scrutin ; l'écho dans les médias des promesses retenues continue d'être mesuré chaque jour.",
