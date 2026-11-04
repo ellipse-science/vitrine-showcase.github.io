@@ -297,7 +297,7 @@ jobs:
             # Use SSH so pushes are authenticated with the dedicated deploy key.
             git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
             # Rebase first: defensive against any concurrent push to main.
-            git pull --rebase origin develop
+            git pull --rebase --autostash origin develop
             git push
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
@@ -521,16 +521,22 @@ jobs:
               "$SLACK_WEBHOOK_URL"
           fi
 
+      # Les étapes ci-dessus écrivent AUSSI hors de public/images/deputes/ :
+      # l'historique des titulaires (scripts/deputy_portrait_history.json) et
+      # les accessoires des cartes (public/images/cartes/). Non ajoutés, ils
+      # laissaient l'arbre sale et `git pull --rebase` refusait (« You have
+      # unstaged changes ») : run 41770046504 du 2026-11-04, rien poussé.
+      # --autostash : filet si une autre étape salit l'arbre un jour.
       - name: Commit deputy portraits
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/images/deputes/
+          git add public/images/deputes/ public/images/cartes/ scripts/deputy_portrait_history.json
           if git diff --cached --quiet; then
             echo "Portraits inchangés — rien à pousser."
           else
             git commit -m "data: portraits $(date -u +%Y-%m-%dT%H:%MZ)"
             git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
-            git pull --rebase origin develop
+            git pull --rebase --autostash origin develop
             git push origin HEAD:develop
           fi
