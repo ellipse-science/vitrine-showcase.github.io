@@ -88,6 +88,7 @@ une redécouverte.
 | Type | Source(s) actuelle(s) | Statut | Note |
 |---|---|---|---|
 | Catégories d'enjeux (12 CAPP / 21+ CAP-Lexicoder) | `aws-refiners` : 5 copies conscientes (`radar-data-preparation`, `radar-issues-score`, `agora-decideurs-qc`, `agora-decideurs-qc-phrases`, vitrine `lib/enjeux.ts`), verrouillées par tests ; `aws-infra` : `dict-issues`, `dict-issues-categories-capp-cap-lexicoder` (12 `capp_category` + 26 `lexicoder_category`), `dict-issues-two-categories` (CSV de test apparemment identique au précédent — doublon interne probable, à vérifier séparément) ; vitrine : `lib/enjeux.ts` se déclare « SOURCE DE VÉRITÉ » mais `polimetre-meta.ts` recopie quand même les libellés | DUPLIQUÉ, en grande partie assumé et verrouillé par tests | le risque est une 6ᵉ copie non testée, pas les 5 déjà connues |
+| Guide des catégories d'enjeux (codage humain) | `aws-refiners/docs/enjeux/` (`.qmd`, français et anglais); PDF publiés dans la Trousse étudiante | LIVRÉ, source unique | remplace le codebook du dépôt `vitrine` et le guide de codage de SharePoint |
 | Dictionnaires de mots-clés par enjeu | `dict-issues-two-categories` (Athena, `aws-infra`), chargé seulement par `radar-headlines-issues` (**DÉPRÉCIÉ**, `active:false`) | MOURANT — plus aucune dépendance vivante | pas de remplaçant actif identifié pour un futur classifieur par mots-clés |
 
 ## Dette déjà identifiée
