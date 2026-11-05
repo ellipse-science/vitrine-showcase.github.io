@@ -1,0 +1,611 @@
+---
+title: "Guide des catégories d'enjeux de politiques publiques"
+subtitle: "Taxonomie, règles de codage et écarts connus"
+author: "Centre d'analyse des politiques publiques (CAPP)"
+date: 2026-11-05
+date-format: "D MMMM YYYY"
+lang: fr
+format:
+  pdf:
+    documentclass: scrartcl
+    papersize: letter
+    fontsize: 11pt
+    geometry: margin=1in
+    toc: true
+    toc-depth: 2
+    colorlinks: true
+    pdf-engine: xelatex
+    mainfont: texgyrepagella-regular.otf
+    mainfontoptions:
+      - BoldFont=texgyrepagella-bold.otf
+      - ItalicFont=texgyrepagella-italic.otf
+      - BoldItalicFont=texgyrepagella-bolditalic.otf
+    monofont: lmmono10-regular.otf
+    monofontoptions:
+      - BoldFont=lmmonolt10-bold.otf
+      - Scale=0.95
+---
+
+# À quoi sert ce guide
+
+Ce guide, version 2.0, est la référence du Centre d’analyse des politiques publiques (CAPP) pour classer des textes par enjeu. Il sert d’étalon (*gold standard*) : en cas de divergence avec un autre document du CAPP, il prévaut pour le codage humain.
+
+Les 12 catégories d’enjeux du CAPP servent au Polimètre, à la Vitrine démocratique et aux dictionnaires d’enjeux du CAPP. **Utilisez-les chaque fois que vous analysez quelque chose de thématique.** Les résultats restent ainsi comparables d’un projet à l’autre.
+
+Le guide réunit trois choses :
+
+- la structure des catégories et la description de chaque sous-catégorie;
+- les règles de codage, avec des exemples annotés;
+- les écarts connus entre ce guide et les modèles de la Vitrine, et ce qui a été produit à partir de versions antérieures.
+
+# Définition de politique publique
+
+Le CAPP adopte la même définition de politique publique que le Polimètre :
+
+> « Une politique publique est d’abord et avant tout une décision gouvernementale d’agir ou de ne pas agir (Dye, 1972), donc de maintenir ou de changer le statu quo par rapport à un enjeu nécessitant potentiellement l’action publique. » (Polimètre, 2021)
+
+# Structure des catégories
+
+Notre structure est une version modifiée de celle du *Comparative Agendas Project* (CAP). Nous avons réorganisé son *codebook* en fonction des catégories d’enjeux du CAPP. Les noms des 21 catégories (*Major Topics*) du CAP et la structure de ses sous-catégories ont été adaptés par les membres du CAPP à leurs objectifs de recherche et au contexte canado-québécois. Pour plus d’informations, consultez le [*codebook* du CAP](https://www.comparativeagendas.net/pages/master-codebook).
+
+La structure comprend trois niveaux de granularité.
+
+## Niveau 1 : les 12 catégories du CAPP
+
+Ce niveau sert de vue d’ensemble (*front end*) et de cadre principal pour présenter les résultats :
+
+1. Loi et crime
+2. Immigration
+3. Technologie
+4. Économie et travail
+5. Terres publiques et agriculture
+6. Environnement et énergie
+7. Affaires internationales et défense
+8. Gouvernements et gouvernance
+9. Culture et nationalisme
+10. Droits, libertés, minorités et discrimination
+11. Éducation
+12. Santé et politiques sociales
+
+## Niveau 2 : les 21 thèmes du CAP
+
+Ce niveau appartient au *back end* : c’est à ce niveau qu’on code. Chaque thème est inclus dans l’une des 12 catégories du CAPP. Le regroupement se fait de manière automatique, en aval du codage manuel.
+
+| Thèmes du CAP (niveau 2) | Catégorie du CAPP (niveau 1) |
+|-------------------------------------------|-------------------------------|
+| Loi et crime | Loi et crime |
+| Immigration | Immigration |
+| Technologie | Technologie |
+| Macroéconomie, Travail, Transport, Logement, Commerce intérieur, Commerce extérieur | Économie et travail |
+| Terres publiques, Agriculture | Terres publiques et agriculture |
+| Environnement, Énergie | Environnement et énergie |
+| Affaires internationales, Défense | Affaires internationales et défense |
+| Opérations gouvernementales | Gouvernements et gouvernance |
+| Culture | Culture et nationalisme |
+| Droits civils | Droits, libertés, minorités et discrimination |
+| Éducation | Éducation |
+| Santé, Politiques sociales | Santé et politiques sociales |
+
+## Niveau 3 : les sous-catégories
+
+Ce guide compte 213 sous-catégories issues du CAP. Elles restent rattachées à leur thème d’origine, à deux exceptions près :
+
+- *Affaires autochtones*, auparavant sous *Terres publiques*, est rattachée à *Droits civils*;
+- *Eau potable*, auparavant sous *Environnement*, est rattachée à *Terres publiques* (règle R4).
+
+## Pourquoi passer de 21 à 12 catégories
+
+La transition vers les 12 catégories du CAPP a été faite pour plusieurs raisons : uniformisation, triangulation, vulgarisation, diffusion et simplification des données de la CLESSN et du CAPP. Comme le *codebook* reste celui du CAP, le passage aux 12 catégories s’automatise.
+
+Par exemple, un enjeu lié aux taxes fédérales est d’abord classé dans le thème « Macroéconomie » du CAP, puis automatiquement dans la catégorie « Économie et travail » du CAPP, qui regroupe six thèmes du CAP. On obtient ainsi plusieurs niveaux de granularité, de « Économie et travail » pour le CAPP à « Macroéconomie » pour le CAP, jusqu’à des sous-catégories précises comme « Code des impôts ».
+
+En passant de 21 à 12 catégories, nous rendons cette classification plus accessible au grand public, y compris aux personnes extérieures au milieu de la recherche, tout en conservant la granularité et la robustesse du *codebook* du CAP.
+
+## Lire un code
+
+Les codes suivent le format 1.1.1 (niveau 1, niveau 2, niveau 3). Par exemple, 4.5.4 désigne :
+
+- la quatrième catégorie du CAPP : **Économie et travail**;
+- le cinquième thème de cette catégorie : **Commerce intérieur**;
+- la quatrième sous-catégorie de ce thème : **Réglementation des assurances**.
+
+# Coder une phrase
+
+## Principes
+
+On code au niveau de la phrase, pas de l’article. Pour chaque phrase, identifiez la présence des 21 thèmes. Le codage est multi-étiquette : une phrase peut contenir plusieurs enjeux, mais une seule fois un même enjeu. Si aucun enjeu n’est présent, sélectionnez `NULL`. Les sous-catégories servent de référence; on code au niveau du thème.
+
+On applique un thème dès que la phrase touche aux politiques publiques ou aux affaires politiques de ce domaine. Selon la phrase, des doubles étiquettes sont possibles.
+
+## Les 21 thèmes
+
+| # | Étiquette | Description |
+|--|------------------|--------------------------------------------|
+| 1 | `law_and_crime` | Droit, criminalité, enjeux familiaux (agences, crime en col blanc, drogues illégales, tribunaux, prisons, criminalité juvénile, police…). |
+| 2 | `immigration` | Immigration, réfugiés, citoyenneté. |
+| 3 | `technology` | Espace, science, technologie et communications (télécoms, radiodiffusion, informatique, cybersécurité, R&D, météo, coopération scientifique internationale…). |
+| 4 | `macroeconomics` | Taux d’intérêt, chômage, politique monétaire, budget national, fiscalité, politique industrielle, contrôle des prix. |
+| 5 | `labor` | Travail, emploi, retraites : sécurité au travail, formation, avantages sociaux, syndicats, normes du travail, emploi des jeunes, travailleurs migrants et saisonniers. |
+| 6 | `transportation` | Transport collectif, autoroutes, aérien, ferroviaire, maritime, infrastructures. |
+| 7 | `housing` | Logement et affaires urbaines : développement communautaire/urbain/rural, logements pour les personnes à faible revenu/vétérans/aînés, itinérance. |
+| 8 | `domestic_commerce` | Commerce intérieur : banques, valeurs mobilières, crédit, assurances, faillite, PME, brevets, tourisme, sécurité des consommateurs, réglementation du sport, gestion d’entreprise, aide aux sinistrés. |
+| 9 | `foreign_trade` | Commerce extérieur : accords, exportations, investissements, compétitivité, tarifs/importations, taux de change. |
+| 10 | `public_lands` | Terres publiques, gestion de l’eau, eau potable, territoires : parcs nationaux, ressources naturelles, ressources hydriques. |
+| 11 | `agriculture` | Commerce agricole, subventions, inspection/sécurité alimentaire, maladies animales et végétales, pêches. |
+| 12 | `environment` | Gestion des déchets, déchets dangereux, pollution de l’air et changement climatique, recyclage, espèces et forêts, conservation, risques liés à l’environnement intérieur. |
+| 13 | `energy` | Nucléaire, électricité, gaz naturel et pétrole, charbon, énergies alternatives et renouvelables, efficacité énergétique. |
+| 14 | `international_affairs` | Affaires internationales et aide étrangère : finance internationale, pays spécifiques, droits de la personne, organisations internationales, terrorisme international, diplomatie, ressources internationales (océans…). **Seule catégorie à indiquer si la phrase concerne uniquement un pays étranger plutôt que le Canada.** |
+| 15 | `defense` | Alliances, renseignement, état de préparation, armes nucléaires, aide militaire, personnel militaire, approvisionnement, opérations militaires canadiennes à l’étranger. |
+| 16 | `governments_governance` | Opérations gouvernementales : relations intergouvernementales, bureaucratie, fonction publique, nominations, scandales, encadrement des campagnes électorales et des référendums, règles électorales, éthique et transparence, imputabilité gouvernementale, capitale. |
+| 17 | `culture_nationalism` | Culture et nationalisme (enjeux culturels généraux), identité culturelle, laïcité, chanson francophone, indépendance d’une province… |
+| 18 | `\texttt{rights\_liberties\_\allowbreak{}minorities\_\allowbreak{}discrimination}`{=latex} | Discrimination (minorités, genre, âge, handicap), droit de vote, liberté d’expression, vie privée, affaires autochtones. |
+| 19 | `education` | Supérieure, primaire/secondaire, défavorisés, professionnelle, spéciale, excellence, R&D. |
+| 20 | `health` | Réforme, assurances, pharmaceutique, établissements, responsabilité médicale, prévention, santé mentale, soins de longue durée, tabac, drogues. |
+| 21 | `social_welfare` | Politique sociale : aide aux faibles revenus, aînés, personnes handicapées, associations bénévoles, garde d’enfants. |
+
+## Thèmes spécifiques
+
+Ces étiquettes s’ajoutent aux 21 thèmes. Elles peuvent se combiner entre elles et avec n’importe quel thème. `NULL` si aucune.
+
+- `welfare_state` (État-providence) — rôle du gouvernement dans le bien-être économique et social (santé, éducation, sécurité sociale), pour atténuer les risques sociaux : pauvreté, maladie, naissance, vieillesse, perte d’emploi.
+- `public_finance` (finances publiques) — collecte, allocation et gestion des ressources financières de l’État : fiscalité, dépenses publiques, budgétisation, gestion de la dette, politique budgétaire.
+- `early_learning_childcare` (préscolaire et garde d’enfants) — garde subventionnée, congés parentaux, conciliation travail-famille, crédits d’impôt, réglementations de qualité.
+
+## Règles de désambiguïsation
+
+Appliquez ces règles dans l’ordre.
+
+**R1** — Fiscal = `macroeconomics` (pas `governments_governance`) : budget, déficit, surplus, impôts, taxes, dépenses publiques. Le gouvernement comme acteur fiscal = macroéconomie.
+
+**R2** — Étranger = `international_affairs` : gouvernements/dirigeants étrangers, conflits armés, guerres, terrorisme à l’étranger, élections étrangères. `governments_governance` est réservé au Canada.
+
+**R3** — `law_and_crime` = crime canadien DOMESTIQUE seulement (police, tribunaux, prisons, peines, armes à feu, droit familial). Conflit ou terrorisme à l’étranger → `international_affairs`. Ajouter `defense` seulement si le Canada est impliqué dans l’opération militaire.
+
+**R4** — Eau (gestion de l’eau, eau potable, bassins) → `public_lands` (pas `environment`).
+
+**R5** — Taxe carbone / tarification → toujours `environment` + `macroeconomics`; ajouter `energy` si lié à l’essence, au chauffage, aux carburants, à l’industrie ou au coût de l’énergie. Remise carbone → `macroeconomics` + `environment` + `energy`.
+
+**R6** — `governments_governance` est ÉTROIT : seulement le processus politique/institutionnel (élections, campagnes, courses à la direction, démissions/nominations, scandales/éthique, procédure parlementaire comme sujet, réforme de la fonction publique, appareil gouvernemental, relations fédéral-provincial, dynamiques inter-partis comme sujet). Ne PAS l’appliquer juste parce qu’on nomme « le gouvernement / le ministre » en parlant d’un domaine : codez le domaine. Pique partisane + vrai sujet → codez le sujet seulement.
+
+**R6b** — Lignes de procédure pures (« la motion est adoptée », « je partage mon temps ») → thèmes = NULL.
+
+**R7** — Transferts fédéral-provincial → `governments_governance` + le domaine concerné (santé, éducation…) + `macroeconomics` si montant.
+
+**R8** — `public_finance` s’applique quand l’angle central de la phrase est l’argent public (revenus, dépenses, dette) : montant présenté comme le sujet, débat sur une taxe comme instrument fiscal, mention explicite de l’argent des contribuables ou des fonds publics, gaspillage de fonds publics. Une mention au passage (« la taxe carbone était de 23 % ») ne suffit pas.
+
+**R9** — Grève de médecins/infirmières → `health` + `labor`.
+
+**R10** — Pipelines, projets pétrole/gaz → `energy` (+ `environment` si pollution/climat, + `foreign_trade` si transfrontalier).
+
+**R11** — Vol d’auto / lutte au vol de véhicules → `law_and_crime` seulement (ne pas ajouter `transportation`).
+
+**R11b** — Cybercrime, rançongiciel, fraude en ligne → `law_and_crime` + `technology` (+ `domestic_commerce` si coût/impact pour les entreprises).
+
+**R12** — Affaires autochtones → `rights_liberties_minorities_discrimination` (+ `public_lands` si territoire, `health`, `social_welfare` selon le cas).
+
+**R13** — Approvisionnement militaire (avions de chasse, sous-marins, NORAD) → `defense` + `macroeconomics` quand la dépense est le sujet.
+
+**R14** — Coût de la vie (liste essence/nourriture/logement) → `housing` + `energy` + `macroeconomics` (+ `social_welfare` si familles/aînés à faible revenu).
+
+**R15** — Coût/disponibilité des garderies → `social_welfare` + `early_learning_childcare` (+ `labor` si lié à la participation au marché du travail, + `education` si cadré comme éducation préscolaire).
+
+**R16** — `welfare_state` s’applique quand le sujet central est l’État-providence comme SYSTÈME de protection sociale (programmes piliers : SV, SRG, RPC/RRQ, AE, aide sociale, banques alimentaires; système de santé publique comme pilier; aînés comme bénéficiaires). Exclut les anecdotes privées sans cadrage de politique.
+
+**R17** — Dans le doute sur un thème secondaire : l’inclure s’il est clairement évoqué, sinon l’omettre. Préférer moins de thèmes, mais justes (exception : `macroeconomics` dès qu’un montant d’argent public dépensé, à dépenser ou à couper est mentionné explicitement).
+
+**R17b** — Sport : l’ancienne convention disait « sport → `culture_nationalism` ». Comme dans le CAP, la promotion et la réglementation du sport vont sous `domestic_commerce` (« sports business »). Si on parle d’un évènement sportif de manière plus générale, cette catégorie ne s’applique pas.
+
+## Exemples annotés
+
+Le symbole † signale les exemples dont les étiquettes diffèrent de celles du prompt v11 (voir [Écarts avec les modèles](#écarts-avec-les-modèles)).
+
+1. « Pierre Poilievre a vivement dénoncé la nouvelle mesure du gouvernement imposant des normes environnementales strictes sur l’industrie pétrolière. » → `environment`, `energy`, `macroeconomics` †
+2. « Va-t-il annoncer qu’il annule ces coupes? » (R1) → `macroeconomics`
+3. « The maelstrom of killing that left almost 1,200 Israelis and foreigners dead… » (R3) → `international_affairs`
+4. « Israel’s campaign… has killed 42,438 Palestinians… » (R3) → `international_affairs` †
+5. « Officials are asking Calgarians to limit their non-essential water use. » (R4) → `public_lands`
+6. « …will receive the new Canada carbon rebate amounts. » (R5) → `macroeconomics`, `environment`, `energy`
+7. « …claimed that the carbon tax was 23%. » (R5, sans cadrage énergie) → `environment`, `macroeconomics`
+8. « À cause des dépenses inflationnistes…, l’essence, la nourriture, le logement, tout coûte plus cher. » (R14) → `energy`, `housing`, `macroeconomics` †
+9. « Canadian businesses spent $1.2 billion recovering from cybersecurity incidents… » (R11b) → `domestic_commerce`, `law_and_crime`, `technology` †
+10. « The NDP and the Liberals have agreed on a confidence-and-supply agreement… » (R6) → `governments_governance`
+11. « Le gouvernement conservateur propose de couper dans les programmes d’aide sociale… » → `social_welfare` + spécifique `welfare_state` †
+12. « The federal childcare program has reduced fees to an average of $10 a day, making early childhood education more accessible to working families. » → `social_welfare`, `education` + spécifique `early_learning_childcare`
+13. « Le Parti Québécois a dénoncé l’insuffisance des transferts fédéraux en santé… » (R7) → `health`, `governments_governance` †
+14. « Le voyage des deux VP de cinq jours, dont trois à la COP, a coûté 24 000$. » (R8) → `environment`, `governments_governance`, `international_affairs` + spécifique `public_finance`
+15. « Mr. Speaker, on a point of order, I would like to share my time… » (R6b) → NULL
+
+# Sous-catégories
+
+Les descriptions sont traduites de l’anglais à l’aide de DeepL.
+
+## 1. Loi et crime
+
+### 1.1 Loi et crime (`law_and_crime`)
+
+- **1.1.0 Général.** Comprend les questions relatives au droit général, à la criminalité et à la famille.
+- **1.1.1 Agences.** Comprend les questions relatives à toutes les agences chargées de l’application de la loi, y compris les agences chargées des frontières, des douanes et d’autres agences spécialisées chargées de l’application de la loi, ainsi que leurs crédits.
+- **1.1.2 Criminalité en col blanc.** Comprend les questions relatives à la criminalité en col blanc, au crime organisé, à la contrefaçon et à la fraude, à la cybercriminalité et au blanchiment d’argent.
+- **1.1.3 Drogues illicites.** Questions relatives à la criminalité liée aux drogues illégales et à la répression, aux sanctions pénales pour les crimes liés à la drogue, y compris les efforts internationaux de lutte contre le trafic de drogue.
+- **1.1.4 Administration des tribunaux.** Comprend les questions relatives à l’administration des tribunaux, les crédits judiciaires, les lignes directrices relatives à la mise en liberté sous caution, à la mise en liberté provisoire, aux amendes et à la représentation légale.
+- **1.1.5 Prisons.** Comprend les questions relatives aux prisons, aux systèmes de libération conditionnelle et aux crédits.
+- **1.1.6 Criminalité juvénile.** Comprend les questions relatives à la criminalité et à la justice des mineurs, les prisons et les centres de détention pour mineurs, et les efforts visant à réduire la criminalité et la récidive chez les mineurs.
+- **1.1.7 Maltraitance des enfants.** Comprend les questions liées à la maltraitance des enfants, à la pornographie enfantine, à l’exploitation sexuelle des enfants et à l’enlèvement parental.
+- **1.1.8 Questions familiales.** Comprend les questions liées aux problèmes familiaux, à la violence domestique, à la protection de l’enfance et au droit de la famille.
+- **1.1.9 Code pénal et civil.** Comprend les questions liées aux codes pénal et civil nationaux, y compris les crimes non mentionnés dans d’autres sous-thèmes.
+- **1.1.10 Contrôle de la criminalité.** Comprend les questions relatives au contrôle, à la prévention et à l’impact de la criminalité.
+- **1.1.11 Police.** Comprend les questions relatives à la police et aux autres mesures générales de sécurité intérieure prises pour lutter contre le terrorisme, telles que les forces de police spéciales.
+- **1.1.99 Autres.** Comprend les questions liées à d’autres sous-thèmes du droit, de la criminalité et de la famille.
+
+## 2. Immigration
+
+### 2.1 Immigration (`immigration`)
+
+- **2.1.0 Immigration.** Comprend les questions liées à l’immigration, aux réfugiés et à la citoyenneté.
+
+## 3. Technologie
+
+### 3.1 Technologie (`technology`)
+
+- **3.1.0 Général.** Comprend les questions liées à l’espace en général, à la science, à la technologie et aux communications.
+- **3.1.1 Espace.** Comprend les questions liées à l’utilisation gouvernementale de l’espace et aux accords d’exploitation des ressources spatiales, aux programmes spatiaux gouvernementaux et à l’exploration spatiale, à l’utilisation militaire de l’espace.
+- **3.1.2 Utilisation commerciale de l’espace.** Comprend les questions liées à la réglementation et à la promotion de l’utilisation commerciale de l’espace, à la technologie des satellites commerciaux et aux efforts des gouvernements pour encourager le développement commercial de l’espace.
+- **3.1.3 Transfert de science.** Comprend les questions liées au transfert de science et de technologie et à la coopération scientifique internationale.
+- **3.1.4 Télécommunications.** Comprend les questions relatives à la réglementation des téléphones et des télécommunications, à l’infrastructure de l’internet à haut débit et aux autres formes de télécommunications (par exemple, les téléphones mobiles).
+- **3.1.5 Radiodiffusion.** Comprend les questions relatives à l’industrie de la radiodiffusion, aux médias publiés et au contrôle du spectre électromagnétique.
+- **3.1.6 Prévisions météorologiques.** Comprend les questions relatives aux prévisions météorologiques, à l’océanographie, aux études géologiques, à la recherche et à la technologie en matière de prévisions météorologiques.
+- **3.1.7 Ordinateurs.** Comprend les questions relatives à l’industrie informatique, à la réglementation de l’internet et à la cybersécurité.
+- **3.1.98 R&D.** Comprend les questions relatives à la recherche et au développement dans les domaines de l’espace, de la science, de la technologie et de la communication qui ne sont pas mentionnées dans d’autres sous-thèmes.
+- **3.1.99 Autres.** Comprend les questions liées à d’autres activités de recherche et de développement dans les domaines de l’espace, des sciences, des technologies et des communications.
+
+## 4. Économie et travail
+
+### 4.1 Macroéconomie (`macroeconomics`)
+
+- **4.1.0 Général.** Comprend les questions liées à la politique macroéconomique intérieure générale.
+- **4.1.1 Taux d’intérêt.** Comprend les questions relatives à l’inflation, au coût de la vie, aux prix et aux taux d’intérêt.
+- **4.1.2 Taux de chômage.** Inclut les questions relatives au taux de chômage, à l’impact du chômage. Voir aussi : 4.2.2 (formation professionnelle) et 4.2.3 (avantages sociaux, y compris l’assurance chômage).
+- **4.1.3 Politique monétaire.** Comprend les questions relatives à la politique monétaire, à la banque centrale et au Trésor.
+- **4.1.4 Budget national.** Questions relatives à la dette publique, à la budgétisation et aux efforts de réduction des déficits.
+- **4.1.5 Code des impôts.** Comprend les questions relatives à la politique fiscale, à l’impact des impôts et à l’application de la législation fiscale. Note : les modifications fiscales spécifiques sont codées selon leur domaine de fond. Par exemple, les taxes sur les billets d’avion vont sous Transport aérien (4.3.3). Les questions fiscales générales, y compris les modifications touchant plusieurs domaines, sont codées 4.1.5.
+- **4.1.6 Politique industrielle.** Comprend les questions relatives à la politique de fabrication, à la revitalisation et à la croissance industrielles.
+- **4.1.7 Contrôle des prix.** Inclut les questions relatives au contrôle des salaires ou des prix, au contrôle des prix en cas d’urgence.
+- **4.1.99 Autres.** Comprend les questions liées à d’autres sous-thèmes de la macroéconomie.
+
+### 4.2 Travail (`labor`)
+
+- **4.2.0 Général.** Comprend les questions généralement liées au travail, à l’emploi et aux pensions, y compris les crédits pour les agences gouvernementales qui réglementent la politique du travail.
+- **4.2.1 Sécurité des travailleurs.** Comprend les questions liées à la sécurité et à la protection des travailleurs, ainsi qu’à l’indemnisation des accidents du travail et des maladies professionnelles.
+- **4.2.2 Formation professionnelle.** Comprend les questions relatives à la formation professionnelle des travailleurs adultes, au développement de la main-d’œuvre et aux efforts de reconversion des travailleurs déplacés.
+- **4.2.3 Avantages sociaux.** Comprend les questions relatives à tous les avantages sociaux, pensions et comptes de retraite, y compris l’assurance chômage fournie par l’État.
+- **4.2.4 Syndicats.** Comprend les questions relatives aux syndicats, à la négociation collective et aux relations entre employeurs et employés.
+- **4.2.5 Normes de travail équitables.** Comprend les questions relatives aux normes de travail équitables, telles que le salaire minimum et la rémunération des heures supplémentaires, ainsi que le droit du travail.
+- **4.2.6 Emploi des jeunes.** Comprend les questions liées à l’emploi des jeunes, au travail des enfants et à la formation professionnelle des jeunes.
+- **4.2.7 Migrants et travailleurs saisonniers.** Inclut les questions relatives aux travailleurs migrants, invités et saisonniers.
+- **4.2.99 Autres.** Questions relatives aux autres politiques du travail.
+
+### 4.3 Transport (`transportation`)
+
+- **4.3.0 Général.** Comprend les questions liées aux transports en général, y compris les crédits pour les agences gouvernementales qui réglementent la politique des transports.
+- **4.3.1 Transports de masse.** Comprend les questions relatives à la construction, à la réglementation, à la sécurité et à la disponibilité des transports de masse.
+- **4.3.2 Autoroutes.** Comprend les questions relatives à la construction, à l’entretien et à la sécurité des routes publiques.
+- **4.3.3 Transport aérien.** Comprend les questions relatives au transport aérien, à la réglementation et à la sécurité de l’aviation, aux aéroports, au contrôle du trafic aérien, à la formation des pilotes et à la technologie de l’aviation.
+- **4.3.4 Transport ferroviaire.** Comprend les questions relatives aux chemins de fer, au transport ferroviaire, au fret ferroviaire, et au développement et au déploiement de nouvelles technologies ferroviaires.
+- **4.3.5 Maritime.** Comprend les questions liées au transport maritime, y compris le fret maritime et la navigation, la sécurité et la sûreté, ainsi que les voies navigables intérieures et les canaux.
+- **4.3.6 Infrastructures.** Comprend les questions liées aux infrastructures et aux travaux publics, y compris les initiatives en matière d’emploi.
+- **4.3.98 R&D.** Comprend les questions liées à la recherche et au développement dans le domaine des transports.
+- **4.3.99 Autres.** Comprend les questions liées à d’autres sous-thèmes des transports.
+
+### 4.4 Logement (`housing`)
+
+- **4.4.0 Général.** Comprend les questions liées de manière générale au logement et aux affaires urbaines.
+- **4.4.1 Développement communautaire.** Comprend les questions relatives au logement et au développement communautaire, au développement des quartiers et à la politique nationale du logement.
+- **4.4.2 Développement urbain.** Comprend les questions liées au développement urbain et les questions urbaines générales.
+- **4.4.3 Logement rural.** Comprend les questions relatives au logement rural.
+- **4.4.4 Développement rural.** Comprend les questions non liées au logement, axées sur l’économie, l’infrastructure et d’autres développements dans les zones non urbaines.
+- **4.4.5 Aide aux personnes à faibles revenus.** Comprend les questions liées au logement des personnes et des familles à faible revenu, y compris les projets de logements publics et les programmes d’accessibilité au logement.
+- **4.4.6 Anciens combattants.** Comprend les questions relatives au logement des anciens combattants et de leurs familles, y compris les subventions accordées aux anciens combattants.
+- **4.4.7 Personnes âgées.** Comprend les questions relatives au logement des personnes âgées, y compris les installations de logement pour les personnes âgées handicapées.
+- **4.4.8 Sans-abri.** Comprend les questions relatives au logement des sans-abri et aux efforts visant à réduire le nombre de sans-abri.
+- **4.4.98 R&D.** Comprend les questions liées à la recherche et au développement en matière de logement et de développement communautaire.
+- **4.4.99 Autres.** Autres questions liées au logement et au développement communautaire.
+
+### 4.5 Commerce intérieur (`domestic_commerce`)
+
+- **4.5.0 Général.** Comprend les questions généralement liées au commerce intérieur, y compris les crédits pour les agences gouvernementales réglementant le commerce intérieur.
+- **4.5.1 Banques.** Comprend les questions liées à la réglementation des systèmes bancaires nationaux et des autres institutions financières non bancaires.
+- **4.5.2 Valeurs mobilières et produits de base.** Comprend les questions liées à la réglementation et à la facilitation du commerce des valeurs mobilières et des produits de base, à la réglementation des investissements et des industries connexes, ainsi qu’aux échanges.
+- **4.5.3 Finances de la consommation.** Comprend les questions liées au financement de la consommation, aux hypothèques, aux cartes de crédit, à l’accès aux dossiers de crédit et à la fraude en matière de crédit à la consommation.
+- **4.5.4 Réglementation des assurances.** Comprend les questions relatives à la réglementation des assurances, à la fraude et aux abus dans le secteur des assurances, à la santé financière du secteur des assurances et à la disponibilité et au coût des assurances.
+- **4.5.5 Faillite.** Comprend les questions relatives aux faillites personnelles, commerciales et municipales.
+- **4.5.6 Gestion d’entreprise.** Comprend les questions relatives aux fusions d’entreprises, à la réglementation antitrust, à la comptabilité et à la gouvernance d’entreprise, et à la gestion d’entreprise.
+- **4.5.7 Petites entreprises.** Comprend les questions relatives aux petites entreprises, y compris les programmes visant à promouvoir et à subventionner les petites entreprises.
+- **4.5.8 Droits d’auteur et brevets.** Comprend les questions relatives aux droits d’auteur et aux brevets, à la réforme des brevets et à la propriété intellectuelle.
+- **4.5.9 Secours en cas de catastrophe.** Comprend les questions relatives aux secours en cas de catastrophe naturelle nationale, à l’assurance contre les catastrophes ou les inondations et à la préparation aux catastrophes naturelles.
+- **4.5.10 Tourisme.** Questions liées à la réglementation, à la promotion et à l’impact du tourisme.
+- **4.5.11 Sécurité des consommateurs.** Comprend les questions liées à la fraude et à la sécurité des consommateurs dans le commerce intérieur.
+- **4.5.12 Réglementation des sports.** Comprend les questions liées à la réglementation et à la promotion des sports, des jeux d’argent et de la forme physique.
+- **4.5.98 R&D.** Comprend les questions relatives à la recherche et au développement dans le domaine du commerce intérieur.
+- **4.5.99 Autres.** Comprend les questions liées à d’autres sous-thèmes de la politique commerciale intérieure.
+
+### 4.6 Commerce extérieur (`foreign_trade`)
+
+- **4.6.0 Général.** Comprend les questions généralement liées au commerce extérieur et les crédits pour les agences gouvernementales qui réglementent généralement le commerce extérieur.
+- **4.6.1 Accords commerciaux.** Comprend les questions relatives aux négociations, aux différends et aux accords commerciaux, y compris les conventions fiscales.
+- **4.6.2 Exportations.** Comprend les questions relatives à la réglementation, aux subventions, à la promotion et au contrôle des exportations.
+- **4.6.3 Investissements privés.** Comprend les questions liées à l’investissement privé international et au développement des entreprises.
+- **4.6.4 Compétitivité.** Comprend les questions liées à la productivité et à la compétitivité des entreprises nationales et les questions liées à la balance des paiements.
+- **4.6.5 Tarifs et importations.** Comprend les questions liées aux tarifs et autres barrières aux importations, à la réglementation des importations et à l’impact des importations sur les industries nationales.
+- **4.6.6 Taux de change.** Comprend les questions relatives aux taux de change et aux questions connexes.
+- **4.6.99 Autres.** Comprend les questions liées à d’autres sous-thèmes de la politique du commerce extérieur.
+
+## 5. Terres publiques et agriculture
+
+### 5.1 Terres publiques (`public_lands`)
+
+- **5.1.0 Général.** Comprend les questions relatives aux terres publiques générales, à la gestion de l’eau et aux questions territoriales.
+- **5.1.1 Parcs nationaux.** Comprend les questions relatives aux parcs nationaux, aux mémoriaux, aux sites historiques et aux loisirs, y compris la gestion et la dotation en personnel des sites culturels.
+- **5.1.2 Terres publiques.** Comprend les questions relatives aux ressources naturelles, aux terres publiques et à la gestion des forêts, y compris les incendies de forêt et le pâturage du bétail.
+- **5.1.3 Ressources en eau.** Comprend les questions relatives aux ressources en eau, au développement des ressources en eau et aux travaux de génie civil, à la lutte contre les inondations et à la recherche.
+- **5.1.4 Dépendances et territoires.** Comprend les questions liées aux territoires et aux dépendances, ainsi qu’à la dévolution.
+- **5.1.5 Eau potable.** Comprend les questions relatives à la sécurité de l’eau potable, à l’approvisionnement, à la pollution et aux additifs (par exemple, la fluoration).
+- **5.1.99 Autres.** Comprend les questions relatives aux autres sous-thèmes de la politique des terres publiques.
+
+### 5.2 Agriculture (`agriculture`)
+
+- **5.2.0 Général.** Comprend les questions liées à la politique agricole générale, y compris les crédits pour les agences gouvernementales de l’agriculture générale.
+- **5.2.1 Commerce.** Comprend les questions liées à la réglementation et à l’impact du commerce extérieur agricole.
+- **5.2.2 Subventions aux agriculteurs.** Comprend les questions liées aux subventions gouvernementales accordées aux agriculteurs et aux éleveurs, y compris l’assurance contre les catastrophes agricoles.
+- **5.2.3 Inspection et sécurité des aliments.** Comprend les questions relatives à l’inspection et à la sécurité des aliments, y compris les produits de la mer et les exigences en matière d’étiquetage.
+- **5.2.4 Marketing et promotion des produits alimentaires.** Comprend les questions liées à la réglementation de la commercialisation des produits agricoles et à la fourniture d’informations aux consommateurs concernant un régime alimentaire sain.
+- **5.2.5 Maladies des animaux et des cultures.** Comprend les questions liées aux maladies des animaux et des cultures, à la lutte contre les parasites et à la réglementation des pesticides, ainsi qu’au bien-être des animaux domestiques.
+- **5.2.6 Pêcherie et pêche.** Comprend les questions liées à la pêche, à la réglementation de la pêche commerciale et à la conservation.
+- **5.2.98 R&D.** Comprend les questions liées à la recherche et au développement dans le domaine de l’agriculture.
+- **5.2.99 Autres.** Comprend les questions liées à d’autres sous-thèmes agricoles.
+
+## 6. Environnement et énergie
+
+### 6.1 Environnement (`environment`)
+
+- **6.1.0 Général.** Comprend les questions liées à la politique générale de l’environnement, y compris les crédits pour les agences gouvernementales qui réglementent la politique de l’environnement.
+- **6.1.2 Élimination des déchets.** Comprend les questions relatives à l’élimination et au traitement des eaux usées, des déchets solides et des eaux de ruissellement.
+- **6.1.3 Déchets dangereux.** Comprend les questions liées à la réglementation, au traitement et à l’élimination des déchets dangereux et des produits chimiques toxiques.
+- **6.1.4 Pollution atmosphérique.** Comprend les questions liées à la pollution de l’air, au changement climatique et à la pollution sonore.
+- **6.1.5 Recyclage.** Comprend les questions liées au recyclage, à la réutilisation et à la conservation des ressources.
+- **6.1.6 Dangers intérieurs.** Comprend les questions liées aux risques environnementaux intérieurs, à la contamination de l’air intérieur (y compris dans les compagnies aériennes) et aux substances dangereuses à l’intérieur des bâtiments, telles que l’amiante.
+- **6.1.7 Espèces et forêts.** Comprend les questions relatives à la protection des espèces et des forêts, aux espèces menacées, au contrôle du commerce intérieur illicite des produits de la faune et de la flore sauvages, et à la réglementation des animaux de laboratoire ou de spectacle.
+- **6.1.8 Conservation des terres et des eaux.** Comprend les questions relatives à la conservation des terres et des ressources en eau. Pour l’eau, voir R4.
+- **6.1.98 R&D.** Comprend les questions liées à la recherche et au développement dans le domaine des technologies environnementales, à l’exclusion des énergies alternatives.
+- **6.1.99 Autres.** Comprend les questions liées à d’autres sous-thèmes environnementaux.
+
+### 6.2 Énergie (`energy`)
+
+- **6.2.0 Général.** Comprend les questions généralement liées à la politique énergétique, y compris les crédits pour les agences gouvernementales qui réglementent la politique énergétique.
+- **6.2.1 Nucléaire.** Comprend les questions liées à l’énergie nucléaire, à la sûreté et à la sécurité, ainsi qu’à l’élimination des déchets nucléaires.
+- **6.2.2 Électricité.** Comprend les questions relatives à l’électricité en général, à l’hydroélectricité et à la réglementation des services publics d’électricité.
+- **6.2.3 Gaz naturel et pétrole.** Comprend les questions relatives au gaz naturel et au pétrole, au forage, aux déversements de pétrole et au torchage, aux prix du pétrole et du gaz, aux pénuries et à la réglementation de l’essence.
+- **6.2.4 Charbon.** Comprend les questions relatives à la production, à l’utilisation, au commerce et à la réglementation du charbon, y compris la gazéification du charbon et les technologies du charbon propre.
+- **6.2.5 Alternatives et renouvelables.** Comprend les questions liées aux énergies alternatives et renouvelables, aux biocarburants, à l’hydrogène et à l’énergie géothermique.
+- **6.2.6 Conservation.** Comprend les questions liées à la conservation de l’énergie et à l’efficacité énergétique, y compris les véhicules, les maisons, l’utilisation commerciale et le gouvernement.
+- **6.2.98 R&D.** Comprend les questions liées à la recherche et au développement dans le domaine de l’énergie.
+- **6.2.99 Autres.** Comprend les questions liées à d’autres sous-thèmes de l’énergie.
+
+## 7. Affaires internationales et défense
+
+### 7.1 Affaires internationales (`international_affairs`)
+
+- **7.1.0 Général.** Comprend les questions liées aux affaires internationales générales et à l’aide à l’étranger, y compris les crédits pour les agences des affaires étrangères du gouvernement général.
+- **7.1.1 Aide étrangère.** Comprend les questions relatives à l’aide étrangère qui ne vise pas directement à accroître le développement international.
+- **7.1.2 Exploitation des ressources.** Comprend les questions liées à l’exploitation des ressources internationales et aux accords sur les ressources, au droit de la mer et aux efforts internationaux de conservation des océans.
+- **7.1.3 Pays en développement.** Comprend les questions liées spécifiquement aux pays en développement (pour les questions financières, voir 7.1.4).
+- **7.1.4 Finance internationale.** Comprend les questions liées à la finance internationale et au développement économique, à la Banque mondiale et au Fonds monétaire international, aux banques régionales de développement, à la dette souveraine et aux implications pour les institutions internationales de prêt.
+- **7.1.5 Europe occidentale.** Comprend les questions relatives à l’Europe occidentale et à l’Union européenne.
+- **7.1.6 Pays spécifiques.** Comprend les questions liées spécifiquement à un pays ou à une région étrangère qui ne peuvent être codées à l’aide d’autres codes, l’évaluation des questions politiques dans d’autres pays, les relations entre les différents pays.
+- **7.1.7 Droits de l’homme.** Comprend les questions relatives aux droits de l’homme, aux violations des droits de l’homme, aux traités et conventions sur les droits de l’homme, aux rapports des Nations unies sur les droits de l’homme, aux crimes associés au génocide ou aux crimes contre l’humanité.
+- **7.1.8 Organisations.** Organisations internationales, ONG, Nations unies, Croix-Rouge internationale, UNESCO, Comité international olympique, Cour pénale internationale.
+- **7.1.9 Terrorisme.** Comprend les questions liées au terrorisme international, aux détournements et aux actes de piraterie dans d’autres pays, les efforts déployés pour lutter contre le terrorisme international, les mécanismes juridiques internationaux de lutte contre le terrorisme.
+- **7.1.10 Diplomates.** Comprend les questions relatives aux diplomates, à la diplomatie, aux ambassades, aux citoyens à l’étranger, aux diplomates étrangers dans le pays, aux visas et aux passeports.
+- **7.1.99 Autres.** Comprend les questions liées aux autres sous-thèmes de la politique des affaires internationales.
+
+### 7.2 Défense (`defense`)
+
+- **7.2.0 Général.** Comprend les questions liées de manière générale à la politique de défense et les crédits pour les agences qui supervisent la politique générale de défense.
+- **7.2.1 Alliances.** Comprend les questions relatives aux alliances et accords de défense, à l’assistance à la sécurité et aux activités de maintien de la paix de l’ONU.
+- **7.2.2 Renseignement.** Comprend les questions relatives au renseignement militaire, à l’espionnage et aux opérations secrètes.
+- **7.2.3 Préparation.** Comprend les questions relatives à la préparation militaire, à la coordination des capacités de soutien aérien et de transport maritime des forces armées, et aux stocks nationaux de matériaux stratégiques.
+- **7.2.4 Armes nucléaires.** Comprend les questions relatives aux armes nucléaires, à la prolifération nucléaire, à la modernisation des équipements nucléaires.
+- **7.2.5 Aide militaire.** Comprend les questions relatives à l’aide militaire aux autres pays et au contrôle des ventes d’armes à d’autres pays.
+- **7.2.6 Questions relatives au personnel.** Comprend les questions relatives à la main-d’œuvre militaire, au personnel militaire et aux personnes à leur charge, aux tribunaux militaires et aux questions générales relatives aux anciens combattants.
+- **7.2.7 Achats.** Comprend les questions relatives aux achats militaires, à la conversion des anciens équipements et à l’évaluation des systèmes d’armes.
+- **7.2.8 Installations et terrains.** Comprend les questions relatives aux installations militaires, à la construction et aux transferts de terrains.
+- **7.2.9 Forces de réserve.** Questions relatives aux réserves militaires et aux affaires de réserve.
+- **7.2.10 Déchets dangereux.** Comprend les questions relatives à l’élimination des déchets nucléaires et dangereux et au respect de l’environnement par l’armée.
+- **7.2.11 Civil.** Comprend les questions relatives à la défense civile intérieure, aux mesures de sécurité nationale face au terrorisme et aux autres questions liées à la sécurité intérieure.
+- **7.2.12 Personnel civil.** Comprend les questions relatives au personnel civil non contractuel, à l’emploi civil dans l’industrie de la défense et à la fermeture des bases militaires.
+- **7.2.13 Entrepreneurs.** Comprend les questions relatives aux entrepreneurs militaires et aux contrats, à la surveillance des entrepreneurs militaires et aux fraudes commises par les entrepreneurs militaires.
+- **7.2.14 Opérations à l’étranger.** Comprend les questions relatives aux opérations militaires étrangères directement liées à la guerre, aux prisonniers de guerre et aux dommages collatéraux causés aux populations civiles.
+- **7.2.15 Réclamations contre les militaires.** Comprend les questions relatives aux réclamations contre les militaires, aux règlements pour les personnes à charge des militaires et à l’indemnisation des civils blessés au cours d’opérations militaires.
+- **7.2.98 R&D.** Comprend les questions liées à la recherche et au développement dans le domaine de la défense.
+- **7.2.99 Autres.** Comprend les questions liées à d’autres sous-thèmes de la politique de défense.
+
+## 8. Gouvernements et gouvernance
+
+### 8.1 Opérations gouvernementales (`governments_governance`)
+
+- **8.1.0 Général.** Comprend les questions liées aux opérations générales du gouvernement, y compris les crédits pour les agences gouvernementales multiples.
+- **8.1.1 Relations intergouvernementales.** Comprend les questions relatives aux relations intergouvernementales, les questions relatives aux gouvernements locaux.
+- **8.1.2 Bureaucratie.** Comprend les questions relatives à l’efficacité des administrations publiques et à la surveillance bureaucratique.
+- **8.1.3 Service postal.** Comprend les questions relatives aux services postaux, à la réglementation du courrier et à la fonction publique.
+- **8.1.4 Employés.** Comprend les questions relatives aux employés civils qui ne sont pas mentionnées dans d’autres sous-thèmes, les pensions du gouvernement et les questions générales relatives à la fonction publique.
+- **8.1.5 Nominations.** Comprend les questions relatives aux nominations et aux engagements qui ne sont pas mentionnées ailleurs.
+- **8.1.6 Monnaie.** Comprend les questions relatives à la monnaie, aux monnaies nationales, aux médailles et aux pièces commémoratives.
+- **8.1.7 Marchés publics et entrepreneurs.** Comprend les questions relatives aux marchés publics, aux entrepreneurs publics, à la fraude aux entrepreneurs et aux marchés publics, ainsi qu’aux processus et systèmes de passation de marchés.
+- **8.1.8 Gestion des biens.** Comprend les questions relatives à la gestion, à la construction et à la réglementation des biens immobiliers de l’État.
+- **8.1.9 Administration fiscale.** Comprend les questions liées à l’administration fiscale, à l’application et à l’audit pour les particuliers et les entreprises.
+- **8.1.10 Scandales.** Comprend les questions liées aux scandales publics et à la destitution.
+- **8.1.11 Relations entre les branches.** Comprend les questions relatives aux relations entre les branches du gouvernement, les questions administratives et les réformes constitutionnelles.
+- **8.1.12 Campagnes politiques.** Comprend les questions relatives à la réglementation des campagnes politiques, au financement des campagnes, à la publicité politique et à l’inscription sur les listes électorales.
+- **8.1.13 Recensement et statistiques.** Comprend les questions relatives au recensement et à la collecte de statistiques par le gouvernement.
+- **8.1.14 Capitale.** Comprend les questions relatives à la capitale.
+- **8.1.15 Réclamations contre le gouvernement.** Comprend les questions relatives aux réclamations contre le gouvernement, à l’indemnisation des victimes d’attaques terroristes, aux politiques d’indemnisation sans autres dispositions substantielles.
+- **8.1.16 Fêtes nationales.** Comprend les questions relatives aux fêtes nationales et à leur observation.
+- **8.1.99 Autres.** Comprend les questions liées à d’autres sous-thèmes des opérations gouvernementales.
+
+## 9. Culture et nationalisme
+
+### 9.1 Culture (`culture_nationalism`)
+
+- **9.1.0 Général.** Comprend les questions relatives aux politiques culturelles générales.
+
+## 10. Droits, libertés, minorités et discrimination
+
+### 10.1 Droits civils (`rights_liberties_minorities_discrimination`)
+
+- **10.1.0 Général.** Inclut les questions liées de manière générale aux droits civils et aux droits des minorités.
+- **10.1.1 Discrimination des minorités.** Comprend les questions relatives à la discrimination des minorités, des groupes ethniques et des groupes raciaux.
+- **10.1.2 Discrimination fondée sur le genre (discrimination fondée sur le sexe).** Comprend les questions liées à la discrimination fondée sur le sexe, le genre et l’orientation sexuelle.
+- **10.1.3 Discrimination fondée sur l’âge.** Comprend les questions liées à la discrimination fondée sur l’âge, y compris les politiques relatives à l’âge de la retraite obligatoire.
+- **10.1.4 Discrimination fondée sur le handicap.** Comprend les questions liées à la discrimination fondée sur le handicap et la maladie.
+- **10.1.5 Droits de vote.** Comprend les questions relatives au droit de vote, à l’élargissement ou à la contraction du droit de vote, à la participation et aux questions connexes.
+- **10.1.6 Liberté d’expression.** Questions relatives à la liberté d’expression, aux libertés religieuses et à d’autres types de liberté d’expression.
+- **10.1.7 Droit à la vie privée.** Comprend les questions relatives au droit à la vie privée, y compris la confidentialité des dossiers, l’accès aux informations gouvernementales et le droit à l’avortement.
+- **10.1.8 Anti-gouvernement.** Comprend les questions relatives aux groupes d’activités antigouvernementales, tels que le parti communiste et les groupes d’insurrection locaux.
+- **10.1.9 Affaires autochtones.** Comprend les questions liées aux affaires autochtones, aux terres autochtones et à l’assistance aux populations autochtones.
+- **10.1.99 Autres.** Comprend les questions liées à d’autres sous-thèmes des droits civils.
+
+## 11. Éducation
+
+### 11.1 Éducation (`education`)
+
+- **11.1.0 Général.** Comprend les questions liées à la politique générale de l’éducation, y compris les crédits pour les agences gouvernementales qui réglementent la politique de l’éducation.
+- **11.1.1 Enseignement supérieur.** Comprend les questions relatives à l’enseignement supérieur, aux prêts étudiants et au financement de l’éducation, ainsi qu’à la réglementation des établissements d’enseignement supérieur.
+- **11.1.2 Enseignement primaire et secondaire.** Comprend les questions relatives aux écoles primaires et élémentaires, à la réforme des écoles, à la sécurité dans les écoles et aux efforts visant à améliorer de manière générale les normes et les résultats en matière d’éducation.
+- **11.1.3 Défavorisés.** Comprend les questions liées à l’éducation des étudiants défavorisés, y compris les programmes d’alphabétisation des adultes, les besoins en matière d’éducation bilingue et les initiatives en matière d’éducation rurale.
+- **11.1.4 Enseignement professionnel.** Comprend les questions liées à l’enseignement professionnel pour les enfants et les adultes et leur impact.
+- **11.1.5 Spécial.** Comprend les questions relatives à l’éducation spéciale et à l’éducation pour les personnes handicapées physiquement ou mentalement.
+- **11.1.6 Excellence.** Comprend les questions liées à l’excellence de l’éducation, y compris les efforts visant à améliorer la qualité dans des domaines spécifiques, tels que les mathématiques, les sciences ou les compétences en langues étrangères.
+- **11.1.98 R&D.** Comprend les questions liées à la recherche et au développement dans le domaine de l’éducation.
+- **11.1.99 Autres.** Comprend les questions liées à d’autres sous-thèmes de la politique de l’éducation.
+
+## 12. Santé et politiques sociales
+
+### 12.1 Santé (`health`)
+
+- **12.1.0 Général.** Comprend les questions liées aux soins de santé en général, y compris les crédits pour les agences gouvernementales de soins de santé en général.
+- **12.1.1 Réforme des soins de santé.** Comprend les questions liées aux changements généraux et complets du système de soins de santé.
+- **12.1.2 Assurance.** Comprend les questions liées à la réforme de l’assurance maladie, à la réglementation, à la disponibilité et au coût.
+- **12.1.3 Industrie pharmaceutique.** Comprend les questions liées à la réglementation et à la promotion des produits pharmaceutiques, des dispositifs médicaux et des laboratoires cliniques.
+- **12.1.4 Établissements médicaux.** Questions liées à la construction, à la réglementation et aux paiements des installations, y compris les listes d’attente et les services d’ambulance.
+- **12.1.5 Fournisseurs d’assurance.** Comprend les questions liées aux paiements et à la réglementation des prestataires et des assureurs, y compris les autres types de prestations ou les prestations multiples.
+- **12.1.6 Responsabilité médicale.** Comprend les questions relatives à la responsabilité médicale, aux fautes professionnelles, aux fraudes et abus médicaux et aux pratiques déloyales.
+- **12.1.7 Main-d’œuvre.** Questions relatives à l’offre et à la quantité de main-d’œuvre dans le secteur des soins de santé, à la formation et à l’octroi de licences.
+- **12.1.8 Prévention des maladies.** Questions relatives à la prévention des maladies, au traitement et à la promotion de la santé, y compris les maladies spécifiques non couvertes par d’autres sous-thèmes.
+- **12.1.9 Nourrissons et enfants.** Comprend les questions relatives aux nourrissons et aux enfants, y compris la couverture et la qualité des soins, la promotion de la santé et les programmes de santé scolaire.
+- **12.1.10 Santé mentale.** Comprend les questions relatives aux soins de santé mentale et aux maladies mentales.
+- **12.1.11 Soins de longue durée.** Comprend les questions relatives aux soins de longue durée, aux soins de santé à domicile, aux malades en phase terminale et aux services de réadaptation. Voir aussi : 12.2.2 (assistance aux personnes âgées) et 12.2.3 (assistance aux personnes handicapées).
+- **12.1.12 Couverture et coût des médicaments.** Comprend les questions relatives à la couverture des médicaments sur ordonnance, aux programmes de paiement des médicaments sur ordonnance et aux politiques visant à réduire le coût des médicaments sur ordonnance.
+- **12.1.13 Abus du tabac.** Comprend les questions relatives à l’abus de tabac, au traitement, à l’éducation et aux effets sur la santé.
+- **12.1.14 Abus de drogues et d’alcool.** Comprend les questions liées à l’abus d’alcool et de drogues illégales, au traitement, à l’éducation et aux effets sur la santé.
+- **12.1.98 R&D.** Comprend les questions liées à la recherche et au développement dans le domaine des soins de santé.
+- **12.1.99 Autres.** Inclut les questions relatives à la politique des autres sujets liés aux soins de santé.
+
+### 12.2 Politiques sociales (`social_welfare`)
+
+- **12.2.0 Général.** Comprend les questions généralement liées aux politiques sociales.
+- **12.2.1 Aide aux bas revenus.** Comprend les questions liées à l’aide à la pauvreté pour les familles à faible revenu, y compris les programmes d’aide alimentaire, les programmes visant à évaluer ou à atténuer la dépendance à l’égard de l’aide sociale et les crédits d’impôt destinés aux familles à faible revenu.
+- **12.2.2 Assistance aux personnes âgées.** Comprend les questions relatives aux personnes âgées et à l’aide aux personnes âgées, y compris les pensions gouvernementales.
+- **12.2.3 Assistance aux handicapés.** Comprend les questions relatives à l’aide aux personnes souffrant d’un handicap physique ou mental.
+- **12.2.4 Associations de bénévoles.** Comprend les questions relatives aux associations de bénévoles, aux organisations caritatives et aux organisations de jeunesse.
+- **12.2.5 Garde d’enfants.** Comprend les questions relatives aux congés parentaux et à la garde d’enfants.
+- **12.2.99 Autres.** Inclut les questions liées à d’autres sous-thèmes des politiques sociales.
+
+
+# Écarts connus et historique
+
+## Écarts avec les modèles
+
+Les 21 modèles de thèmes de la Vitrine (`cap_theme_*`) ont été distillés à partir d’annotations produites en mai 2026 par gpt-5.4 avec le prompt `prompt_EN_long_v11.txt`. Ce guide a évolué depuis. Aucune réannotation n’est prévue à court terme : les modèles continuent d’appliquer les règles du prompt v11.
+
+| Point | Modèles (prompt v11) | Ce guide |
+|--------------------|--------------------------|--------------------------|
+| Conflits à l’étranger (R3) | `defense` ajouté pour toute opération militaire d’un État | `defense` seulement si le Canada est impliqué |
+| Argent public (R17) | `macroeconomics` dès un cadrage fiscal explicite | `macroeconomics` dès qu’un montant d’argent public est mentionné |
+| Cybercrime (R11b) | `domestic_commerce` et `macroeconomics` si coût pour les entreprises | `domestic_commerce` seulement |
+| Sport (R17b) | Pas de règle : `domestic_commerce` couvre le *sports business* | Réglementation et promotion sous `domestic_commerce`; évènement sportif général exclu |
+| Exemple 1 | `labor` présent | `labor` retiré |
+| Exemple 4 | `defense` présent | `defense` retiré |
+| Exemple 8 | `social_welfare` présent | `social_welfare` retiré |
+| Exemples 9, 11 et 13 | `macroeconomics` présent | `macroeconomics` retiré |
+
+Le prompt v11 contient aussi des précisions que ce guide ne reproduit pas : R12b (un « droit au logement » n’est pas un enjeu de droits civils), les exclusions de R8 et de R16, et le cadrage fiscal de R7. Elles expliquent certains résultats des modèles, mais ne sont pas des règles de ce guide.
+
+Conséquences à garder en tête :
+
+- **Lecture des résultats.** Les modèles peuvent coder `macroeconomics`, `defense`, `labor` et `social_welfare` plus souvent que ce guide ne le prévoit. Cette tendance se déduit des règles; elle n’a pas été mesurée.
+- **Comparaison avec le modèle.** Un désaccord sur ces points est un écart de règle, pas une erreur de codage.
+- **Catégories affichées.** Trois des six exemples modifiés (8, 11 et 13) changeraient une des 12 catégories. Les autres restent dans la même catégorie.
+- **Prompt v11.** Il documente ce que les modèles ont appris. Il n’est pas modifié, et il n’est pas la référence pour le codage humain.
+
+## Productions issues d’une version antérieure
+
+| Production | Version utilisée | Effet |
+|----------------------|----------------------|----------------------------|
+| Modèles `cap_theme_*` (juin à août 2026) | Prompt v11 | Voir le tableau précédent |
+| Rapport de validation du 30 août 2026 (F1 de 0,656 sur les thèmes) | Benchmark de 1 549 phrases, dont sont tirés les exemples du prompt; Doccano 57 (724 phrases), version à confirmer | Score mesuré contre une référence qui peut mêler deux états des règles |
+| Catalogue de données du CAPP (`capp_catalogue`) | *Codebook* du 7 août 2024 | 2 512 questions classées avec d’anciens libellés, dont « Santé et Services Sociaux ». Aucune catégorie n’a changé depuis |
+| API de `aws-infra` et `metho.Rmd` | Anciens libellés | « Santé et services sociaux » et « Droit et criminalité » au lieu de « Santé et politiques sociales » et « Loi et crime » |
+
+## Corrections apportées par cette version
+
+**Taxonomie**
+
+- L’exemple de code était faux : 4.3.5 est devenu 4.5.4.
+- Dix sous-catégories françaises portaient le code 8.1.0 : elles sont renumérotées de 8.1.0 à 8.1.16.
+- La sous-catégorie *R&D* du transport était codée 4.3.7 : elle devient 4.3.98.
+- Les renvois aux anciens codes du CAP (44202, 44203, 1906, 1003, 107, 12203, 12204) utilisent maintenant les codes de ce guide.
+- Le texte annonçait 220 sous-catégories, alors que la liste en compte 213.
+- *Eau potable* passe de 6.1.1 à 5.1.5, conformément à la règle R4.
+- « Économie et travail » regroupe six thèmes, et non « six autres ».
+
+**Règles**
+
+- R6 inclut maintenant la réforme de la fonction publique et l’appareil gouvernemental, comme le thème 16.
+- R3 et l’exemple 4 se contredisaient : `defense` suppose maintenant que le Canada soit impliqué.
+- L’eau potable figurait sous `environment` dans le tableau des thèmes, contrairement à R4.
+- R8 manquait, alors que l’exemple 14 la cite.
+- La sous-catégorie 6.1.8 renvoie à R4 pour l’eau.
+- L’exemple 12 retrouve la fin de sa phrase, qui justifie `education`.
+- R11b ajoutait `macroeconomics`, contrairement à l’exemple 9.
+- R17 précise qu’il s’agit d’argent public.
+- La règle sur le sport, numérotée R18, devient R17b, car R18 désigne le sentiment dans le prompt v11.
+
+**Forme**
+
+- Le titre doublé (« # # ») et les lignes de tirets dans le tableau ont disparu du PDF.
+- La date imprimée est fixe : elle ne dépend plus du jour du rendu.
+- Les apostrophes, guillemets, espaces et points de fin de description sont uniformisés.
+
+## Points à trancher
+
+- **Exemple 14.** La phrase mentionne un montant (24 000 $), mais ses étiquettes n’incluent pas `macroeconomics`, contrairement à R17.
+- **`macroeconomics` et les coupes.** L’exemple 2 garde `macroeconomics` pour « ces coupes », l’exemple 11 le retire pour une coupe dans l’aide sociale, et l’exemple 1 le garde sans montant ni taxe.
+- **Gouvernements étrangers.** R2 réserve `governments_governance` au Canada, alors que le prompt v11 (R6 j) l’ajoute pour la destitution ou la chute d’un gouvernement étranger.
+- **Précisions du prompt.** Faut-il reporter ici R12b et les exclusions de R8 et de R16?
+- **Sous-catégorie 8.1.6 (Monnaie).** Elle reste sous *Opérations gouvernementales* comme dans le CAP, alors que le résumé du thème ne mentionne plus la monnaie.
+
+## Historique des versions
+
+| Date | Document | Changement |
+|-------------|----------------------|----------------------------------|
+| 7 août 2024 | `beta_codebook_capp_fr.Rmd` | Version copiée dans `capp_catalogue` |
+| 16 novembre 2024 | *Codebook* bêta (Quarto, PDF) | Dernière révision du texte : « Santé et politiques sociales » |
+| 12 novembre 2025 | `Codebook_Catego_enjeux` (Rmd, PDF) | Recréation, même texte |
+| 30 juin 2026 | `GUIDE_CODAGE_ENJEUX.docx`, version 1.0 | Guide de validation, règles R1 à R17 |
+| Après le 30 juin 2026 | Guide sur SharePoint | Note CAP/CAPP, sport tranché, 10 thèmes enrichis, 6 exemples modifiés |
+| 5 novembre 2026 | Ce guide, version 2.0 | Fusion du *codebook* et du guide de codage |
+
+# Bibliographie
+
+Comparative Agendas Project. (2022). *Master Topics Codebook Version 1.1*. <https://www.comparativeagendas.net/pages/master-codebook>
+
+Dye, Thomas R. (1972). *Understanding Public Policy*. Prentice-Hall.
