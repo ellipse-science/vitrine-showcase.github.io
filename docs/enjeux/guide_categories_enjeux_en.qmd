@@ -1,0 +1,610 @@
+---
+title: "Guide to Public Policy Issue Categories"
+subtitle: "Taxonomy, coding rules and known gaps"
+author: "Center for Public Policy Analysis (CAPP)"
+date: 2026-11-05
+date-format: "MMMM D, YYYY"
+lang: en-CA
+format:
+  pdf:
+    documentclass: scrartcl
+    papersize: letter
+    fontsize: 11pt
+    geometry: margin=1in
+    toc: true
+    toc-depth: 2
+    colorlinks: true
+    pdf-engine: xelatex
+    mainfont: texgyrepagella-regular.otf
+    mainfontoptions:
+      - BoldFont=texgyrepagella-bold.otf
+      - ItalicFont=texgyrepagella-italic.otf
+      - BoldItalicFont=texgyrepagella-bolditalic.otf
+    monofont: lmmono10-regular.otf
+    monofontoptions:
+      - BoldFont=lmmonolt10-bold.otf
+      - Scale=0.95
+---
+
+# What this guide is for
+
+This guide, version 2.0, is the reference of the Center for Public Policy Analysis (CAPP) for classifying texts by issue. It serves as the gold standard: if it differs from another CAPP document, this guide prevails for human coding.
+
+CAPP’s 12 issue categories are used by the Polimeter, the Vitrine démocratique and CAPP’s issue dictionaries. **Use them whenever you analyze anything thematic.** This keeps results comparable from one project to the next.
+
+The guide brings together three things:
+
+- the structure of the categories and a description of each sub-category;
+- the coding rules, with annotated examples;
+- the known gaps between this guide and the Vitrine models, and what was produced from earlier versions.
+
+# Definition of public policy
+
+CAPP adopts the same definition of public policy as the Polimeter:
+
+> “A public policy is first and foremost a governmental decision about whether to act or not (Dye, 1972), and therefore about whether to maintain or change the status quo when it comes to an issue that potentially requires public action.” (Polimeter, 2021)
+
+# Structure of the categories
+
+Our structure is a modified version of the one used by the *Comparative Agendas Project* (CAP). We have reorganized its codebook according to CAPP’s issue categories. CAPP members adapted the names of the CAP’s 21 categories (Major Topics) and the structure of its sub-categories to their research goals and to the Canada-Quebec context. For more information, see the [CAP codebook](https://www.comparativeagendas.net/pages/master-codebook).
+
+The structure has three levels of granularity.
+
+## Level 1: CAPP’s 12 categories
+
+This level serves as the overview (*front end*) and as the main framework for presenting results:
+
+1. Law and Crime
+2. Immigration
+3. Technology
+4. Economy and Labour
+5. Public Lands and Agriculture
+6. Environment and Energy
+7. International Affairs and Defence
+8. Governments and Governance
+9. Culture and Nationalism
+10. Rights, Liberties, Minorities and Discrimination
+11. Education
+12. Health and Social Policy
+
+## Level 2: the CAP’s 21 themes
+
+This level belongs to the *back end*: this is the level at which coding happens. Each theme belongs to one of CAPP’s 12 categories. The grouping is automatic and takes place after manual coding.
+
+| CAP themes (level 2) | CAPP category (level 1) |
+|-------------------------------------------|-------------------------------|
+| Law and Crime | Law and Crime |
+| Immigration | Immigration |
+| Technology | Technology |
+| Macroeconomics, Labour, Transportation, Housing, Domestic Commerce, Foreign Trade | Economy and Labour |
+| Public Lands, Agriculture | Public Lands and Agriculture |
+| Environment, Energy | Environment and Energy |
+| International Affairs, Defence | International Affairs and Defence |
+| Government Operations | Governments and Governance |
+| Culture | Culture and Nationalism |
+| Civil Rights | Rights, Liberties, Minorities and Discrimination |
+| Education | Education |
+| Health, Social Policy | Health and Social Policy |
+
+## Level 3: the sub-categories
+
+This guide contains 213 sub-categories from the CAP. They remain attached to their original theme, with two exceptions:
+
+- *Indigenous Affairs*, formerly under *Public Lands*, is attached to *Civil Rights*;
+- *Drinking Water*, formerly under *Environment*, is attached to *Public Lands* (rule R4).
+
+## Why move from 21 to 12 categories
+
+The transition to CAPP’s 12 categories was made for several reasons: standardization, triangulation, popularization, dissemination and simplification of CLESSN and CAPP data. Because the codebook remains the CAP’s, the move to the 12 categories can be automated.
+
+For example, an issue related to federal taxes is first classified under the CAP theme “Macroeconomics”, then automatically under the CAPP category “Economy and Labour”, which groups six CAP themes. This provides several levels of granularity, from “Economy and Labour” for CAPP to “Macroeconomics” for the CAP, down to specific sub-categories such as “Tax Code”.
+
+By moving from 21 to 12 categories, we make this classification more accessible to the general public, including people outside research, while keeping the granularity and robustness of the CAP codebook.
+
+## Reading a code
+
+Codes follow the format 1.1.1 (level 1, level 2, level 3). For example, 4.5.4 refers to:
+
+- the fourth CAPP category: **Economy and Labour**;
+- the fifth theme in that category: **Domestic Commerce**;
+- the fourth sub-category of that theme: **Insurance Regulation**.
+
+# Coding a sentence
+
+## Principles
+
+Coding happens at the sentence level, not the article level. For each sentence, identify which of the 21 themes are present. Coding is multi-label: a sentence can contain several issues, but the same issue only once. If no issue is present, select `NULL`. Sub-categories are there for reference; coding happens at the theme level.
+
+Apply a theme as soon as the sentence relates to public policy or political affairs in that area. Depending on the sentence, double labels are possible.
+
+## The 21 themes
+
+| # | Label | Description |
+|--|------------------|--------------------------------------------|
+| 1 | `law_and_crime` | Law, crime and family issues (agencies, white-collar crime, illegal drugs, courts, prisons, juvenile crime, police…). |
+| 2 | `immigration` | Immigration, refugees, citizenship. |
+| 3 | `technology` | Space, science, technology and communications (telecommunications, broadcasting, computing, cybersecurity, R&D, weather forecasting, international science cooperation…). |
+| 4 | `macroeconomics` | Interest rates, unemployment, monetary policy, national budget, taxation, industrial policy, price control. |
+| 5 | `labor` | Work, employment, pensions: workplace safety, training, employee benefits, unions, labour standards, youth employment, migrant and seasonal workers. |
+| 6 | `transportation` | Public transit, highways, air, rail, maritime, infrastructure. |
+| 7 | `housing` | Housing and urban affairs: community, urban and rural development, housing for low-income people, veterans and seniors, homelessness. |
+| 8 | `domestic_commerce` | Domestic commerce: banks, securities, credit, insurance, bankruptcy, small businesses, patents, tourism, consumer safety, sports regulation, corporate management, disaster relief. |
+| 9 | `foreign_trade` | Foreign trade: agreements, exports, investment, competitiveness, tariffs and imports, exchange rates. |
+| 10 | `public_lands` | Public lands, water management, drinking water, territories: national parks, natural resources, water resources. |
+| 11 | `agriculture` | Agricultural trade, subsidies, food inspection and safety, animal and plant diseases, fisheries. |
+| 12 | `environment` | Waste management, hazardous waste, air pollution and climate change, recycling, species and forests, conservation, indoor environmental hazards. |
+| 13 | `energy` | Nuclear, electricity, natural gas and oil, coal, alternative and renewable energy, energy efficiency. |
+| 14 | `international_affairs` | International affairs and foreign aid: international finance, specific countries, human rights, international organizations, international terrorism, diplomacy, international resources (oceans…). **Only category to use when the sentence concerns solely a foreign country rather than Canada.** |
+| 15 | `defense` | Alliances, intelligence, readiness, nuclear arms, military aid, military personnel, procurement, Canadian military operations abroad. |
+| 16 | `governments_governance` | Government operations: intergovernmental relations, bureaucracy, public service, appointments, scandals, regulation of election campaigns and referendums, electoral rules, ethics and transparency, government accountability, capital city. |
+| 17 | `culture_nationalism` | Culture and nationalism (general cultural issues), cultural identity, secularism, francophone song, independence of a province… |
+| 18 | `\texttt{rights\_liberties\_\allowbreak{}minorities\_\allowbreak{}discrimination}`{=latex} | Discrimination (minorities, gender, age, disability), voting rights, freedom of expression, privacy, Indigenous affairs. |
+| 19 | `education` | Higher, elementary and secondary, underprivileged, vocational, special, excellence, R&D. |
+| 20 | `health` | Reform, insurance, pharmaceuticals, facilities, medical liability, prevention, mental health, long-term care, tobacco, drugs. |
+| 21 | `social_welfare` | Social policy: low-income assistance, seniors, people with disabilities, volunteer associations, child care. |
+
+## Specific themes
+
+These labels are added to the 21 themes. They can be combined with each other and with any theme. `NULL` if none applies.
+
+- `welfare_state` (welfare state) — the government’s role in economic and social well-being (health, education, social security), to mitigate social risks: poverty, illness, birth, old age, job loss.
+- `public_finance` (public finance) — collection, allocation and management of the state’s financial resources: taxation, public spending, budgeting, debt management, fiscal policy.
+- `early_learning_childcare` (early learning and child care) — subsidized child care, parental leave, work-family balance, tax credits, quality regulations.
+
+## Disambiguation rules
+
+Apply these rules in order.
+
+**R1** — Fiscal = `macroeconomics` (not `governments_governance`): budget, deficit, surplus, income and other taxes, public spending. Government as a fiscal actor = `macroeconomics`.
+
+**R2** — Foreign = `international_affairs`: foreign governments and leaders, armed conflicts, wars, terrorism abroad, foreign elections. `governments_governance` is reserved for Canada.
+
+**R3** — `law_and_crime` = DOMESTIC Canadian crime only (police, courts, prisons, sentences, firearms, family law). Conflict or terrorism abroad → `international_affairs`. Add `defense` only if Canada is involved in the military operation.
+
+**R4** — Water (water management, drinking water, watersheds) → `public_lands` (not `environment`).
+
+**R5** — Carbon tax or pricing → always `environment` + `macroeconomics`; add `energy` if linked to gasoline, heating, fuels, industry or the cost of energy. Carbon rebate → `macroeconomics` + `environment` + `energy`.
+
+**R6** — `governments_governance` is NARROW: only the political or institutional process itself (elections, campaigns, leadership races, resignations and appointments, scandals and ethics, parliamentary procedure as a topic, public service reform, machinery of government, federal-provincial relations, inter-party dynamics as a topic). Do NOT apply it just because “the government” or “the minister” is named when discussing a policy area: code the policy area. Partisan jab + real topic → code the topic only.
+
+**R6b** — Pure procedural lines (“the motion is adopted”, “I am sharing my time”) → themes = NULL.
+
+**R7** — Federal-provincial transfers → `governments_governance` + the policy area concerned (health, education…) + `macroeconomics` if an amount is given.
+
+**R8** — `public_finance` applies when the central angle of the sentence is public money (revenue, spending, debt): an amount presented as the topic, a debate about a tax as a fiscal instrument, explicit mention of taxpayers’ money or public funds, waste of public funds. A passing mention (“the carbon tax was 23%”) is not enough.
+
+**R9** — Doctors’ or nurses’ strike → `health` + `labor`.
+
+**R10** — Pipelines, oil and gas projects → `energy` (+ `environment` if pollution or climate, + `foreign_trade` if cross-border).
+
+**R11** — Auto theft and the fight against vehicle theft → `law_and_crime` only (do not add `transportation`).
+
+**R11b** — Cybercrime, ransomware, online fraud → `law_and_crime` + `technology` (+ `domestic_commerce` if there is a cost or impact for businesses).
+
+**R12** — Indigenous affairs → `rights_liberties_minorities_discrimination` (+ `public_lands` if territory, `health`, `social_welfare` as applicable).
+
+**R13** — Military procurement (fighter jets, submarines, NORAD) → `defense` + `macroeconomics` when spending is the topic.
+
+**R14** — Cost of living (list of gas, food, housing) → `housing` + `energy` + `macroeconomics` (+ `social_welfare` if low-income families or seniors).
+
+**R15** — Child care cost or availability → `social_welfare` + `early_learning_childcare` (+ `labor` if linked to labour-force participation, + `education` if framed as early childhood education).
+
+**R16** — `welfare_state` applies when the central topic is the welfare state as a SYSTEM of social protection (pillar programs: OAS, GIS, CPP/QPP, EI, social assistance, food banks; the public health system as a pillar; seniors as beneficiaries). Excludes private anecdotes with no policy framing.
+
+**R17** — When in doubt about a secondary theme: include it if it is clearly evoked, otherwise omit it. Prefer fewer but accurate themes (exception: `macroeconomics` as soon as an amount of public money spent, to be spent or to be cut is explicitly mentioned).
+
+**R17b** — Sports: the former convention was “sports → `culture_nationalism`”. As in the CAP, the promotion and regulation of sports go under `domestic_commerce` (“sports business”). When a sporting event is discussed more generally, this category does not apply.
+
+## Annotated examples
+
+The symbol † marks examples whose labels differ from those of prompt v11 (see [Gaps with the models](#gaps-with-the-models)).
+
+1. “Pierre Poilievre a vivement dénoncé la nouvelle mesure du gouvernement imposant des normes environnementales strictes sur l’industrie pétrolière.” → `environment`, `energy`, `macroeconomics` †
+2. “Va-t-il annoncer qu’il annule ces coupes?” (R1) → `macroeconomics`
+3. “The maelstrom of killing that left almost 1,200 Israelis and foreigners dead…” (R3) → `international_affairs`
+4. “Israel’s campaign… has killed 42,438 Palestinians…” (R3) → `international_affairs` †
+5. “Officials are asking Calgarians to limit their non-essential water use.” (R4) → `public_lands`
+6. “…will receive the new Canada carbon rebate amounts.” (R5) → `macroeconomics`, `environment`, `energy`
+7. “…claimed that the carbon tax was 23%.” (R5, no energy framing) → `environment`, `macroeconomics`
+8. “À cause des dépenses inflationnistes…, l’essence, la nourriture, le logement, tout coûte plus cher.” (R14) → `energy`, `housing`, `macroeconomics` †
+9. “Canadian businesses spent $1.2 billion recovering from cybersecurity incidents…” (R11b) → `domestic_commerce`, `law_and_crime`, `technology` †
+10. “The NDP and the Liberals have agreed on a confidence-and-supply agreement…” (R6) → `governments_governance`
+11. “Le gouvernement conservateur propose de couper dans les programmes d’aide sociale…” → `social_welfare` + specific `welfare_state` †
+12. “The federal childcare program has reduced fees to an average of $10 a day, making early childhood education more accessible to working families.” → `social_welfare`, `education` + specific `early_learning_childcare`
+13. “Le Parti Québécois a dénoncé l’insuffisance des transferts fédéraux en santé…” (R7) → `health`, `governments_governance` †
+14. “Le voyage des deux VP de cinq jours, dont trois à la COP, a coûté 24 000$.” (R8) → `environment`, `governments_governance`, `international_affairs` + specific `public_finance`
+15. “Mr. Speaker, on a point of order, I would like to share my time…” (R6b) → NULL
+
+# Sub-categories
+
+## 1. Law and Crime
+
+### 1.1 Law and Crime (`law_and_crime`)
+
+- **1.1.0 General.** Includes issues related to general law, crime, and family issues.
+- **1.1.1 Agencies.** Includes issues related to all law enforcement agencies, including border, customs, and other specialized enforcement agencies and their appropriations.
+- **1.1.2 White Collar Crime.** Includes issues related to white collar crime, organized crime, counterfeiting and fraud, cybercrime, and money laundering.
+- **1.1.3 Illegal Drugs.** Issues related to illegal drug crime and enforcement, criminal penalties for drug crimes, including international efforts to combat drug trafficking.
+- **1.1.4 Court Administration.** Includes issues related to court administration, judiciary appropriations, guidelines for bail, pre-release, fines and legal representation.
+- **1.1.5 Prisons.** Includes issues related to prisons and jails, parole systems, and appropriations.
+- **1.1.6 Juvenile Crime.** Includes issues related to juvenile crime and justice, juvenile prisons and jails, and efforts to reduce juvenile crime and recidivism.
+- **1.1.7 Child Abuse.** Includes issues related to child abuse, child pornography, sexual exploitation of children and parental kidnapping.
+- **1.1.8 Family Issues.** Includes issues related to family issues, domestic violence, child welfare, family law.
+- **1.1.9 Criminal & Civil Code.** Includes issues related to domestic criminal and civil codes, including crimes not mentioned in other subtopics.
+- **1.1.10 Crime Control.** Includes issues related to the control, prevention, and impact of crime.
+- **1.1.11 Police.** Includes issues related to Police and other general domestic security responses to terrorism, such as special police.
+- **1.1.99 Other.** Includes issues related to other law, crime, and family subtopics.
+
+## 2. Immigration
+
+### 2.1 Immigration (`immigration`)
+
+- **2.1.0 Immigration.** Includes issues related to immigration, refugees, and citizenship.
+
+## 3. Technology
+
+### 3.1 Technology (`technology`)
+
+- **3.1.0 General.** Includes issues related to general space, science, technology, and communications.
+- **3.1.1 Space.** Includes issues related to the government use of space and space resource exploitation agreements, government space programs and space exploration, military use of space.
+- **3.1.2 Commercial Use of Space.** Includes issues related to the regulation and promotion of commercial use of space, commercial satellite technology, and government efforts to encourage commercial space development.
+- **3.1.3 Science Transfer.** Includes issues related to science and technology transfer and international science cooperation.
+- **3.1.4 Telecommunications.** Includes issues related to telephones and telecommunication regulation, infrastructure for high-speed internet, and other forms of telecommunication (e.g., mobile phones).
+- **3.1.5 Broadcast.** Includes issues related to the broadcast industry, published media, and control of the electromagnetic spectrum.
+- **3.1.6 Weather Forecasting.** Includes issues related to weather forecasting, oceanography, geological surveys, and weather forecasting research and technology.
+- **3.1.7 Computers.** Includes issues relating to the computer industry, regulation of the internet, and cybersecurity.
+- **3.1.98 R&D.** Includes issues related to space, science, technology, and communication research and development not mentioned in other subtopics.
+- **3.1.99 Other.** Includes issues related to other space, science, technology, and communication research and development.
+
+## 4. Economy and Labour
+
+### 4.1 Macroeconomics (`macroeconomics`)
+
+- **4.1.0 General.** Includes issues related to general domestic macroeconomic policy.
+- **4.1.1 Interest Rates.** Includes issues related to inflation, cost of living, prices, and interest rates.
+- **4.1.2 Unemployment Rate.** Includes issues related to the unemployment rate, impact of unemployment. See also: 4.2.2 (employment training) and 4.2.3 (employee benefits, including unemployment insurance).
+- **4.1.3 Monetary Policy.** Includes issues related to the monetary policy, central bank, and the treasury.
+- **4.1.4 National Budget.** Issues related to public debt, budgeting, and efforts to reduce deficits.
+- **4.1.5 Tax Code.** Includes issues related to tax policy, the impact of taxes, and tax enforcement. Note: specific tax changes are coded according to their substantive area. For instance, airfare taxes go under Air Travel (4.3.3). General tax issues, including changes affecting several areas, are coded 4.1.5.
+- **4.1.6 Industrial Policy.** Includes issues related to manufacturing policy, industrial revitalization and growth.
+- **4.1.7 Price Control.** Includes issues related to wage or price control, emergency price controls.
+- **4.1.99 Other.** Includes issues related to other macroeconomics subtopics.
+
+### 4.2 Labour (`labor`)
+
+- **4.2.0 General.** Includes issues generally related to labour, employment, and pensions, including appropriations for government agencies regulating labour policy.
+- **4.2.1 Worker Safety.** Includes issues related to worker safety and protection and compensation for work-related injury and disease.
+- **4.2.2 Employment Training.** Includes issues related to job training for adult workers, workforce development, and efforts to retrain displaced workers.
+- **4.2.3 Employee Benefits.** Includes issues related to all employee benefits, pensions, and retirement accounts, including government-provided unemployment insurance.
+- **4.2.4 Labour Unions.** Includes issues related to labour unions, collective bargaining, and employer-employee relations.
+- **4.2.5 Fair Labour Standards.** Includes issues related to fair labour standards such as the minimum wage and overtime compensation, and labour law.
+- **4.2.6 Youth Employment.** Includes issues related to youth employment, child labour and job training for youths.
+- **4.2.7 Migrant and Seasonal.** Includes issues related to migrant, guest and seasonal workers.
+- **4.2.99 Other.** Issues related to other labour policy.
+
+### 4.3 Transportation (`transportation`)
+
+- **4.3.0 General.** Includes issues related generally to transportation, including appropriations for government agencies regulating transportation policy.
+- **4.3.1 Mass.** Includes issues related to mass transportation construction, regulation, safety, and availability.
+- **4.3.2 Highways.** Includes issues related to public highway construction, maintenance, and safety.
+- **4.3.3 Air Travel.** Includes issues related to air travel, regulation and safety of aviation, airports, air traffic control, pilot training, and aviation technology.
+- **4.3.4 Railroad Travel.** Includes issues related to railroads, rail travel, rail freight, and the development and deployment of new rail technologies.
+- **4.3.5 Maritime.** Includes issues related to maritime transportation, including maritime freight and shipping, safety and security, and inland waterways and channels.
+- **4.3.6 Infrastructure.** Includes issues related to infrastructure and public works, including employment initiatives.
+- **4.3.98 R&D.** Includes issues related to transportation research and development.
+- **4.3.99 Other.** Includes issues related to other transportation subtopics.
+
+### 4.4 Housing (`housing`)
+
+- **4.4.0 General.** Includes issues related generally to housing and urban affairs.
+- **4.4.1 Community Development.** Includes issues related to housing and community development, neighbourhood development, and national housing policy.
+- **4.4.2 Urban Development.** Includes issues related to urban development and general urban issues.
+- **4.4.3 Rural Housing.** Includes issues related to rural housing.
+- **4.4.4 Rural Development.** Includes non-housing issues focused on economic, infrastructure, and other developments in non-urban areas.
+- **4.4.5 Low-Income Assistance.** Includes issues related to housing for low-income individuals and families, including public housing projects and housing affordability programs.
+- **4.4.6 Veterans.** Includes issues related to housing for military veterans and their families, including subsidies for veterans.
+- **4.4.7 Elderly.** Includes issues related to housing for the elderly, including housing facilities for the handicapped elderly.
+- **4.4.8 Homeless.** Includes issues related to housing for the homeless and efforts to reduce homelessness.
+- **4.4.98 R&D.** Includes issues related to housing and community development research and development.
+- **4.4.99 Other.** Other issues related to housing and community development.
+
+### 4.5 Domestic Commerce (`domestic_commerce`)
+
+- **4.5.0 General.** Includes issues generally related to domestic commerce, including appropriations for government agencies regulating domestic commerce.
+- **4.5.1 Banking.** Includes issues related to the regulation of national banking systems and other non-bank financial institutions.
+- **4.5.2 Securities & Commodities.** Includes issues related to the regulation and facilitation of securities and commodities trading, regulation of investments and related industries, and exchanges.
+- **4.5.3 Consumer Finance.** Includes issues related to consumer finance, mortgages, credit cards, access to credit records, and consumer credit fraud.
+- **4.5.4 Insurance Regulation.** Includes issues related to insurance regulation, fraud and abuse in the insurance industry, the financial health of the insurance industry, and insurance availability and cost.
+- **4.5.5 Bankruptcy.** Includes issues related to personal, commercial, and municipal bankruptcies.
+- **4.5.6 Corporate Management.** Includes issues related to corporate mergers, antitrust regulation, corporate accounting and governance, and corporate management.
+- **4.5.7 Small Businesses.** Includes issues related to small businesses, including programs to promote and subsidize small businesses.
+- **4.5.8 Copyrights and Patents.** Includes issues related to copyrights and patents, patent reform, and intellectual property.
+- **4.5.9 Disaster Relief.** Includes issues related to domestic natural disaster relief, disaster or flood insurance, and natural disaster preparedness.
+- **4.5.10 Tourism.** Issues related to tourism regulation, promotion, and impact.
+- **4.5.11 Consumer Safety.** Includes issues related to consumer fraud and safety in domestic commerce.
+- **4.5.12 Sports Regulation.** Includes issues related to the regulation and promotion of sports, gambling, and personal fitness.
+- **4.5.98 R&D.** Includes issues related to domestic commerce research and development.
+- **4.5.99 Other.** Includes issues related to other domestic commerce policy subtopics.
+
+### 4.6 Foreign Trade (`foreign_trade`)
+
+- **4.6.0 General.** Includes issues generally related to foreign trade and appropriations for government agencies generally regulating foreign trade.
+- **4.6.1 Trade Agreements.** Includes issues related to trade negotiations, disputes, and agreements, including tax treaties.
+- **4.6.2 Exports.** Includes issues related to export regulation, subsidies, promotion, and control.
+- **4.6.3 Private Investments.** Includes issues related to international private business investment and corporate development.
+- **4.6.4 Competitiveness.** Includes issues related to productivity and competitiveness of domestic businesses and balance of payments issues.
+- **4.6.5 Tariff & Imports.** Includes issues related to tariffs and other barriers to imports, import regulation and impact of imports on domestic industries.
+- **4.6.6 Exchange Rates.** Includes issues related to exchange rate and related issues.
+- **4.6.99 Other.** Includes issues related to other foreign trade policy subtopics.
+
+## 5. Public Lands and Agriculture
+
+### 5.1 Public Lands (`public_lands`)
+
+- **5.1.0 General.** Includes issues related to general public lands, water management, and territorial issues.
+- **5.1.1 National Parks.** Includes issues related to national parks, memorials, historic sites, and recreation, including the management and staffing of cultural sites.
+- **5.1.2 Public Lands.** Includes issues related to natural resources, public lands, and forest management, including forest fires, livestock grazing.
+- **5.1.3 Water Resources.** Includes issues related to water resources, water resource development and civil works, flood control, and research.
+- **5.1.4 Dependencies & Territories.** Includes issues related to territorial and dependency issues and devolution.
+- **5.1.5 Drinking Water.** Includes issues related to domestic drinking water safety, supply, pollution, and additives (e.g., fluoridation).
+- **5.1.99 Other.** Includes issues related to other public lands policy subtopics.
+
+### 5.2 Agriculture (`agriculture`)
+
+- **5.2.0 General.** Includes issues related to general agriculture policy, including appropriations for general agriculture government agencies.
+- **5.2.1 Trade.** Includes issues related to the regulation and impact of agricultural foreign trade.
+- **5.2.2 Subsidies to Farmers.** Includes issues related to government subsidies to farmers and ranchers, including agricultural disaster insurance.
+- **5.2.3 Food Inspection & Safety.** Includes issues related to food inspection and safety, including seafood, and labeling requirements.
+- **5.2.4 Food Marketing & Promotion.** Includes issues related to the regulation of agricultural marketing and providing information to consumers regarding a healthy diet.
+- **5.2.5 Animal and Crop Disease.** Includes issues related to animal and crop disease, pest control and pesticide regulation, and welfare for domesticated animals.
+- **5.2.6 Fisheries & Fishing.** Includes issues related to fishing, commercial fishery regulation and conservation.
+- **5.2.98 R&D.** Includes issues related to agricultural research and development.
+- **5.2.99 Other.** Includes issues related to other agricultural subtopics.
+
+## 6. Environment and Energy
+
+### 6.1 Environment (`environment`)
+
+- **6.1.0 General.** Includes issues related to general environmental policy, including appropriations for government agencies regulating environmental policy.
+- **6.1.2 Waste Disposal.** Includes issues related to the disposal and treatment of wastewater, solid waste and runoff.
+- **6.1.3 Hazardous Waste.** Includes issues related to hazardous waste and toxic chemical regulation, treatment, and disposal.
+- **6.1.4 Air Pollution.** Includes issues related to air pollution, climate change, and noise pollution.
+- **6.1.5 Recycling.** Includes issues related to recycling, reuse, and resource conservation.
+- **6.1.6 Indoor Hazards.** Includes issues related to indoor environmental hazards, indoor air contamination (including on airlines), and indoor hazardous substances such as asbestos.
+- **6.1.7 Species & Forest.** Includes issues related to species and forest protection, endangered species, control of the domestic illicit trade in wildlife products, and regulation of labouratory or performance animals.
+- **6.1.8 Land and Water Conservation.** Includes issues related to land and water resource conservation. For water, see R4.
+- **6.1.98 R&D.** Includes issues related to research and development in environmental technology, not including alternative energy.
+- **6.1.99 Other.** Includes issues related to other environmental subtopics.
+
+### 6.2 Energy (`energy`)
+
+- **6.2.0 General.** Includes issues generally related to energy policy, including appropriations for government agencies regulating energy policy.
+- **6.2.1 Nuclear.** Includes issues related to nuclear energy, safety and security, and disposal of nuclear waste.
+- **6.2.2 Electricity.** Includes issues related to general electricity, hydropower, and regulation of electrical utilities.
+- **6.2.3 Natural Gas & Oil.** Includes issues related to natural gas and oil, drilling, oil spills and flaring, oil and gas prices, shortages and gasoline regulation.
+- **6.2.4 Coal.** Includes issues related to coal production, use, trade, and regulation, including coal gasification and clean coal technologies.
+- **6.2.5 Alternative & Renewable.** Includes issues related to alternative and renewable energy, biofuels, hydrogen and geothermal power.
+- **6.2.6 Conservation.** Includes issues related to energy conservation and energy efficiency, including vehicles, homes, commercial use and government.
+- **6.2.98 R&D.** Includes issues related to energy research and development.
+- **6.2.99 Other.** Includes issues related to other energy subtopics.
+
+## 7. International Affairs and Defence
+
+### 7.1 International Affairs (`international_affairs`)
+
+- **7.1.0 General.** Includes issues related to general international affairs and foreign aid, including appropriations for general government foreign affairs agencies.
+- **7.1.1 Foreign Aid.** Includes issues related to foreign aid not directly targeted at increasing international development.
+- **7.1.2 Resources Exploitation.** Includes issues related to international resources exploitation and resources agreements, law of the sea and international ocean conservation efforts.
+- **7.1.3 Developing Countries.** Includes issues related specifically to developing countries (for Financial Issues see 7.1.4).
+- **7.1.4 International Finance.** Includes issues related to international finance and economic development, the World Bank and International Monetary Fund, regional development banks, sovereign debt and implications for international lending institutions.
+- **7.1.5 Western Europe.** Includes issues related to Western Europe and the European Union.
+- **7.1.6 Specific Country.** Includes issues related specifically to a foreign country or region not codable using other codes, assessment of political issues in other countries, relations between individual countries.
+- **7.1.7 Human Rights.** Includes issues related to human rights, human rights violations, human rights treaties and conventions, UN reports on human rights, crimes associated with genocide or crimes against humanity.
+- **7.1.8 Organizations.** International organizations, NGOs, the United Nations, International Red Cross, UNESCO, International Olympic Committee, International Criminal Court.
+- **7.1.9 Terrorism.** Includes issues related to international terrorism, hijacking, and acts of piracy in other countries, efforts to fight international terrorism, international legal mechanisms to combat terrorism.
+- **7.1.10 Diplomats.** Includes issues related to diplomats, diplomacy, embassies, citizens abroad, foreign diplomats in the country, visas and passports.
+- **7.1.99 Other.** Includes issues related to other international affairs policy subtopics.
+
+### 7.2 Defence (`defense`)
+
+- **7.2.0 General.** Includes issues related generally to defence policy, and appropriations for agencies that oversee general defence policy.
+- **7.2.1 Alliances.** Includes issues related to defence alliance and agreement, security assistance, and UN peacekeeping activities.
+- **7.2.2 Intelligence.** Includes issues related to military intelligence, espionage, and covert operations.
+- **7.2.3 Readiness.** Includes issues related to military readiness, coordination of armed services air support and sealift capabilities, and national stockpiles of strategic materials.
+- **7.2.4 Nuclear Arms.** Includes issues related to nuclear weapons, nuclear proliferation, modernization of nuclear equipment.
+- **7.2.5 Military Aid.** Includes issues related to military aid to other countries and the control of arms sales to other countries.
+- **7.2.6 Personnel Issues.** Includes issues related to military manpower, military personnel and their dependents, military courts, and general veterans’ issues.
+- **7.2.7 Procurement.** Includes issues related to military procurement, conversion of old equipment, and weapons systems evaluation.
+- **7.2.8 Installations & Land.** Includes issues related to military installations, construction, and land transfers.
+- **7.2.9 Reserve Forces.** Issues related to military reserves and reserve affairs.
+- **7.2.10 Hazardous Waste.** Includes issues related to military nuclear and hazardous waste disposal and military environmental compliance.
+- **7.2.11 Civil.** Includes issues related to domestic civil defence, national security responses to terrorism, and other issues related to homeland security.
+- **7.2.12 Civilian Personnel.** Includes issues related to non-contractor civilian personnel, civilian employment in the defence industry, and military base closings.
+- **7.2.13 Contractors.** Includes issues related to military contractors and contracting, oversight of military contractors and fraud by military contractors.
+- **7.2.14 Foreign Operations.** Includes issues related to direct war-related foreign military operations, prisoners of war and collateral damage to civilian populations.
+- **7.2.15 Claims against Military.** Includes issues related to claims against the military, settlements for military dependents, and compensation for civilians injured in military operations.
+- **7.2.98 R&D.** Includes issues related to defence research and development.
+- **7.2.99 Other.** Includes issues related to other defence policy subtopics.
+
+## 8. Governments and Governance
+
+### 8.1 Government Operations (`governments_governance`)
+
+- **8.1.0 General.** Includes issues related to general government operations, including appropriations for multiple government agencies.
+- **8.1.1 Intergovernmental Relations.** Includes issues related to intergovernmental relations, local government issues.
+- **8.1.2 Bureaucracy.** Includes issues related to general government efficiencies and bureaucratic oversight.
+- **8.1.3 Postal Service.** Includes issues related to postal services, regulation of mail, and post-civil service.
+- **8.1.4 Employees.** Includes issues related to civil employees not mentioned in other subtopics, government pensions and general civil service issues.
+- **8.1.5 Appointments.** Includes issues related to nominations and appointments not mentioned elsewhere.
+- **8.1.6 Currency.** Includes issues related to the currency, national mints, medals, and commemorative coins.
+- **8.1.7 Procurement & Contractors.** Includes issues related to government procurement, government contractors, contractor and procurement fraud, and procurement processes and systems.
+- **8.1.8 Property Management.** Includes issues related to government property management, construction, and regulation.
+- **8.1.9 Tax Administration.** Includes issues related to tax administration, enforcement, and auditing for both individuals and corporations.
+- **8.1.10 Scandals.** Includes issues related to public scandal and impeachment.
+- **8.1.11 Branch Relations.** Includes issues related to government branch relations, administrative issues, and constitutional reforms.
+- **8.1.12 Political Campaigns.** Includes issues related to the regulation of political campaigns, campaign finance, political advertising and voter registration.
+- **8.1.13 Census & Statistics.** Includes issues related to census and statistics collection by government.
+- **8.1.14 Capital City.** Includes issues related to the capital city.
+- **8.1.15 Claims against the Government.** Includes issues related to claims against the government, compensation for the victims of terrorist attacks, compensation policies without other substantive provisions.
+- **8.1.16 National Holidays.** Includes issues related to national holidays and their observation.
+- **8.1.99 Other.** Includes issues related to other government operations subtopics.
+
+## 9. Culture and Nationalism
+
+### 9.1 Culture (`culture_nationalism`)
+
+- **9.1.0 General.** Includes issues related to general cultural policy issues.
+
+## 10. Rights, Liberties, Minorities and Discrimination
+
+### 10.1 Civil Rights (`rights_liberties_minorities_discrimination`)
+
+- **10.1.0 General.** Includes issues related generally to civil rights and minority rights.
+- **10.1.1 Minority Discrimination.** Includes issues related to minority, ethnic, and racial group discrimination.
+- **10.1.2 Gender Discrimination.** Includes issues related to sex, gender, and sexual orientation discrimination.
+- **10.1.3 Age Discrimination.** Includes issues related to age discrimination, including mandatory retirement age policies.
+- **10.1.4 Handicap Discrimination.** Includes issues related to handicap and disease discrimination.
+- **10.1.5 Voting Rights.** Includes issues related to voting rights, expanding or contracting the franchise, participation and related issues.
+- **10.1.6 Freedom of Speech.** Issues related to freedom of speech, religious freedoms, and other types of freedom of expression.
+- **10.1.7 Right to Privacy.** Includes issues related to privacy rights, including privacy of records, access to government information, and abortion rights.
+- **10.1.8 Anti-Government.** Includes issues related to anti-government activity groups, such as the communist party and local insurgency groups.
+- **10.1.9 Indigenous Affairs.** Includes issues related to indigenous affairs, indigenous lands, and assistance to indigenous people.
+- **10.1.99 Other.** Includes issues related to other civil rights subtopics.
+
+## 11. Education
+
+### 11.1 Education (`education`)
+
+- **11.1.0 General.** Includes issues related to general education policy, including appropriations for government agencies regulating education policy.
+- **11.1.1 Higher.** Includes issues related to higher education, student loans and education finance, and the regulation of colleges and universities.
+- **11.1.2 Elementary & Secondary.** Includes issues related to elementary and primary schools, school reform, safety in schools, and efforts to generally improve educational standards and outcomes.
+- **11.1.3 Underprivileged.** Includes issues related to education of underprivileged students, including adult literacy programs, bilingual education needs, and rural education initiatives.
+- **11.1.4 Vocational.** Includes issues related to vocational education for children and adults and their impact.
+- **11.1.5 Special.** Includes issues related to special education and education for the physically or mentally handicapped.
+- **11.1.6 Excellence.** Includes issues related to education excellence, including efforts to increase the quality of specific areas, such as math, science or foreign language skills.
+- **11.1.98 R&D.** Includes issues related to research and development in education.
+- **11.1.99 Other.** Includes issues related to other subtopics in education policy.
+
+## 12. Health and Social Policy
+
+### 12.1 Health (`health`)
+
+- **12.1.0 General.** Includes issues related generally to health care, including appropriations for general health care government agencies.
+- **12.1.1 Health Care Reform.** Includes issues related to broad, comprehensive changes in the health care system.
+- **12.1.2 Insurance.** Includes issues related to health insurance reform, regulation, availability, and cost.
+- **12.1.3 Drug Industry.** Includes issues related to the regulation and promotion of pharmaceuticals, medical devices, and clinical labs.
+- **12.1.4 Medical Facilities.** Issues related to facilities construction, regulation and payments, including waitlists and ambulance services.
+- **12.1.5 Insurance Providers.** Includes issues related to provider and insurer payments and regulation, including other types of benefits or multiple benefits.
+- **12.1.6 Medical Liability.** Includes issues related to medical liability, malpractice issues, medical fraud and abuse, and unfair practices.
+- **12.1.7 Manpower.** Issues related to the supply and quantity of labour in the health care industry, training and licensing.
+- **12.1.8 Disease Prevention.** Issues related to disease prevention, treatment, and health promotion, including specific diseases not covered in other subtopics.
+- **12.1.9 Infants and Children.** Includes issues related to infants and children, including coverage and quality of care, health promotion, and school health programs.
+- **12.1.10 Mental Health.** Includes issues related to mental health care and mental health disease.
+- **12.1.11 Long-term Care.** Includes issues related to long-term care, home health care, the terminally ill, and rehabilitation services. See also: 12.2.2 (elderly assistance) and 12.2.3 (disabled assistance).
+- **12.1.12 Drug Coverage and Cost.** Includes issues related to prescription drug coverage, programs to pay for prescription drugs, and policy to reduce the cost of prescription drugs.
+- **12.1.13 Tobacco Abuse.** Includes issues related to tobacco abuse, treatment, education, and health effects.
+- **12.1.14 Drug and Alcohol Abuse.** Includes issues related to alcohol and illegal drug abuse, treatment, education, and health effects.
+- **12.1.98 R&D.** Includes issues related to health care research and development.
+- **12.1.99 Other.** Includes issues related to other health care topics.
+
+### 12.2 Social Policy (`social_welfare`)
+
+- **12.2.0 General.** Includes issues generally related to social policy.
+- **12.2.1 Low-Income Assistance.** Includes issues related to poverty assistance for low-income families, including food assistance programs, programs to assess or alleviate welfare dependency and tax credits directed at low-income families.
+- **12.2.2 Elderly Assistance.** Includes issues related to elderly issues and elderly assistance, including government pensions.
+- **12.2.3 Disabled Assistance.** Includes issues related to aid for people with physical or mental disabilities.
+- **12.2.4 Volunteer Associations.** Includes issues related to domestic volunteer associations, charities, and youth organizations.
+- **12.2.5 Child Care.** Includes issues related to parental leave and child care.
+- **12.2.99 Other.** Includes issues related to other social policy subtopics.
+
+
+# Known gaps and history
+
+## Gaps with the models
+
+The Vitrine’s 21 theme models (`cap_theme_*`) were distilled from annotations produced in May 2026 by gpt-5.4 with the prompt `prompt_EN_long_v11.txt`. This guide has evolved since. No re-annotation is planned in the short term: the models keep applying the rules of prompt v11.
+
+| Point | Models (prompt v11) | This guide |
+|--------------------|--------------------------|--------------------------|
+| Conflicts abroad (R3) | `defense` added for any state’s military operation | `defense` only if Canada is involved |
+| Public money (R17) | `macroeconomics` for any explicit fiscal framing | `macroeconomics` when an amount of public money is mentioned |
+| Cybercrime (R11b) | `domestic_commerce` and `macroeconomics` if there is a cost to businesses | `domestic_commerce` only |
+| Sports (R17b) | No rule: `domestic_commerce` covers sports business | Regulation and promotion under `domestic_commerce`; general sporting events excluded |
+| Example 1 | `labor` present | `labor` removed |
+| Example 4 | `defense` present | `defense` removed |
+| Example 8 | `social_welfare` present | `social_welfare` removed |
+| Examples 9, 11 and 13 | `macroeconomics` present | `macroeconomics` removed |
+
+Prompt v11 also contains details that this guide does not reproduce: R12b (a “right to housing” is not a civil-rights issue), the exclusions in R8 and R16, and the fiscal framing in R7. They explain some model results, but they are not rules of this guide.
+
+Consequences to keep in mind:
+
+- **Reading results.** The models may code `macroeconomics`, `defense`, `labor` and `social_welfare` more often than this guide calls for. This tendency follows from the rules; it has not been measured.
+- **Comparing with the model.** A disagreement on these points is a gap between rules, not a coding error.
+- **Displayed categories.** Three of the six modified examples (8, 11 and 13) would change one of the 12 categories. The others stay in the same category.
+- **Prompt v11.** It documents what the models learned. It is not being modified, and it is not the reference for human coding.
+
+## What was produced from an earlier version
+
+| Output | Version used | Effect |
+|----------------------|----------------------|----------------------------|
+| `cap_theme_*` models (June to August 2026) | Prompt v11 | See the table above |
+| Validation report of August 30, 2026 (F1 of 0.656 on themes) | Benchmark of 1,549 sentences, the source of the prompt’s examples; Doccano 57 (724 sentences), version to be confirmed | Score measured against a reference that may mix two states of the rules |
+| CAPP data catalogue (`capp_catalogue`) | Codebook of August 7, 2024 | 2,512 questions classified with older labels, including “Santé et Services Sociaux”. No category has changed since |
+| `aws-infra` API and `metho.Rmd` | Older labels | “Santé et services sociaux” and “Droit et criminalité” instead of “Santé et politiques sociales” and “Loi et crime” |
+
+## Corrections made in this version
+
+**Taxonomy**
+
+- The code example was wrong: 4.3.5 became 4.5.4.
+- Ten French sub-categories carried the code 8.1.0: the French list now uses 8.1.0 to 8.1.16, like the English one.
+- The French code for transportation *R&D* was 4.3.7: it is now 4.3.98.
+- References to older CAP codes (44202, 44203, 1906, 1003, 107, 12203, 12204) now use the codes in this guide.
+- The text announced 220 sub-categories, while the list contains 213.
+- *Drinking Water* moves from 6.1.1 to 5.1.5, in line with rule R4.
+- “Economy and Labour” groups six themes, not “six other” themes.
+- The English labels are now consistent: *Health and Social Policy*; *Rights, Liberties, Minorities and Discrimination*; *Center for Public Policy Analysis*.
+
+**Rules**
+
+- R6 now includes public service reform and the machinery of government, like theme 16.
+- R3 and example 4 contradicted each other: `defense` now requires Canada’s involvement.
+- Drinking water appeared under `environment` in the theme table, contrary to R4.
+- R8 was missing, even though example 14 cites it.
+- Sub-category 6.1.8 refers to R4 for water.
+- Example 12 regains the end of its sentence, which justifies `education`.
+- R11b added `macroeconomics`, contrary to example 9.
+- R17 now specifies public money.
+- The sports rule, numbered R18, becomes R17b, because R18 refers to sentiment in prompt v11.
+
+**Form**
+
+- The doubled heading and the rows of dashes in the table no longer appear in the PDF.
+- The printed date is fixed: it no longer depends on the rendering day.
+- Spelling follows Canadian usage, and typos in the descriptions are corrected.
+
+## Open points
+
+- **Example 14.** The sentence mentions an amount ($24,000), but its labels do not include `macroeconomics`, contrary to R17.
+- **`macroeconomics` and cuts.** Example 2 keeps `macroeconomics` for “these cuts”, example 11 removes it for a cut to social assistance, and example 1 keeps it with no amount or tax.
+- **Foreign governments.** R2 reserves `governments_governance` for Canada, while prompt v11 (R6 j) adds it for the impeachment or collapse of a foreign government.
+- **Prompt details.** Should R12b and the exclusions in R8 and R16 be carried over here?
+- **Sub-category 8.1.6 (Currency).** It remains under *Government Operations* as in the CAP, while the theme summary no longer mentions currency.
+
+## Version history
+
+| Date | Document | Change |
+|-------------|----------------------|----------------------------------|
+| August 7, 2024 | `beta_codebook_capp_fr.Rmd` | Version copied into `capp_catalogue` |
+| November 16, 2024 | Beta codebook (Quarto, PDF) | Last text revision: “Santé et politiques sociales” |
+| November 12, 2025 | `Codebook_Catego_enjeux` (Rmd, PDF) | Re-created, same text |
+| June 30, 2026 | `GUIDE_CODAGE_ENJEUX.docx`, version 1.0 | Validation guide, rules R1 to R17 |
+| After June 30, 2026 | Guide on SharePoint | CAP/CAPP note, sports settled, 10 themes expanded, 6 examples modified |
+| November 5, 2026 | This guide, version 2.0 | Merger of the codebook and the coding guide |
+
+# Bibliography
+
+Comparative Agendas Project. (2022). *Master Topics Codebook Version 1.1*. <https://www.comparativeagendas.net/pages/master-codebook>
+
+Dye, Thomas R. (1972). *Understanding Public Policy*. Prentice-Hall.
