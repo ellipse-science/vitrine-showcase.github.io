@@ -549,7 +549,7 @@ Consequences to keep in mind:
 | Output | Version used | Effect |
 |----------------------|----------------------|----------------------------|
 | `cap_theme_*` models (June to August 2026) | Prompt v11 | See the table above |
-| Validation report of August 30, 2026 (F1 of 0.656 on themes) | Benchmark of 1,549 sentences, the source of the prompt’s examples; Doccano 57 (724 sentences), version to be confirmed | Score measured against a reference that may mix two states of the rules |
+| Validation report of August 30, 2026 (F1 of 0.656 on themes) | Benchmark of 1,549 sentences, the source of the prompt’s examples; Doccano 57 (724 sentences), coded under the corrected rules (checked on R3 and R17b) | Score measured against a reference that mixes two states of the rules. Mean F1 at the served threshold: 0.687 on the benchmark, 0.608 on Doccano 57 |
 | CAPP data catalogue (`capp_catalogue`) | Codebook of August 7, 2024 | 2,512 questions classified with older labels, including “Santé et Services Sociaux”. No category has changed since |
 | `aws-infra` API and `metho.Rmd` | Older labels | “Santé et services sociaux” and “Droit et criminalité” instead of “Santé et politiques sociales” and “Loi et crime” |
 
