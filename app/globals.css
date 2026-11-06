@@ -8500,12 +8500,19 @@
       box-shadow: 4px 5px 0 var(--rule);
     }
   }
+  /* Sur téléphone, les colonnes s'empilent : tout le tableau tient dans
+     l'écran, on le lit de haut en bas sans défiler de côté. */
   @media (max-width: 820px) {
     .ppl-kanban {
-      grid-template-columns: repeat(var(--kanban-n, 5), 78%);
+      grid-template-columns: 1fr;
+      gap: 16px;
       padding: 12px;
       box-shadow: 3px 3px 0 var(--rule);
+      overflow-x: visible;
+      scroll-snap-type: none;
     }
+    .ppl-kanban__tete { min-height: 0; }
+    .ppl-kanban__carte { height: auto; min-height: 84px; }
   }
 
   @media (max-width: 820px) {
