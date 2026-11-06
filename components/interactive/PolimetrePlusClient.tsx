@@ -268,8 +268,8 @@ function EnjeuDropdown({
 }
 
 /* ========================================================================== *
- * Kanban du module unifié. Idée d'Adrien : le module en tableau de gestion de
- * projet Agile. Les promesses deviennent des cartes, rangées en colonnes : par
+ * Kanban du module unifié : le module en tableau de gestion de projet Agile.
+ * Les promesses deviennent des cartes, rangées en colonnes : par
  * verdict pour les mandats (PQ 2026, CAQ 2022), par parti pour la campagne.
  * Dans une colonne, les cartes suivent le rang d'écho médiatique.
  * ========================================================================== */
@@ -302,7 +302,7 @@ function LienMetho() {
 // (résultats préliminaires : PQ 59, PLQ 40, PCQ 19, QS 9, CAQ 0).
 const KANBAN_PARTIS: PartiKey[] = ["pq", "plq", "pcq", "qs", "caq"];
 
-// Retour d'Alex : trop de cartes « fait peur ». On en montre 3 par colonne, et
+// Trop de cartes d'un coup alourdit le tableau. On en montre 3 par colonne, et
 // « Voir plus » ouvre jusqu'à 5.
 const KANBAN_N_COURT = 3;
 const KANBAN_N_LONG = 5;
@@ -368,7 +368,7 @@ function KanbanBoard({ colonnes, label }: { colonnes: ColonneKanban[]; label: st
 }
 
 // Les colonnes portent les verdicts du Polimètre tels quels, de rompue à
-// réalisée (demande de Thomas).
+// réalisée.
 const KANBAN_VERDICTS: { slug: VerdictSlug; titre: string }[] = [
   { slug: "rompue", titre: "Rompue" },
   { slug: "en-suspens", titre: "En suspens" },
@@ -844,11 +844,10 @@ function NeuvesView({
  * Coquille — un seul module, un filtre pour passer d'une vue à l'autre.
  *
  * Les deux vues ne sont plus empilées : rendues l'une sous l'autre, elles se
- * lisaient comme deux modules distincts (retour de Yannick, relayé par
- * Adrien). Un seul panneau, donc, et des onglets de classeur posés dessus qui
- * servent de filtre : « Campagne 2026 », choisi par défaut, ou « Promesses de
- * 2022 ». Chaque vue garde ses propres onglets de période et son rail ; seul le
- * titre h2 est commun.
+ * lisaient comme deux modules distincts. Un seul panneau, donc, et des onglets
+ * de classeur posés dessus qui servent de filtre : « PQ 2026 », choisi par
+ * défaut, « CAQ 2022 » ou « Campagne 2026 ». Chaque vue garde ses propres
+ * onglets de période ; seul le titre h2 est commun.
  *
  * `neuves` est optionnel et vaut null tant que le raffineur n'a rien publié (le
  * cas hors campagne, où les communiqués sont des annonces de candidature sans
@@ -934,7 +933,7 @@ export function PolimetrePlusClient({
     </button>
   );
   // Deux familles, séparées par une barre oblique : les bilans de mandat
-  // (PQ 2026, CAQ 2022), puis la campagne, d'une autre nature (maquette de Thomas).
+  // (PQ 2026, CAQ 2022), puis la campagne, d'une autre nature.
   const bascule = (
     <div className="ppl-onglets" role="tablist" aria-label="Promesses affichées">
       {onglet("pq", "PQ 2026")}
