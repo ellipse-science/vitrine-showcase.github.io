@@ -551,7 +551,7 @@ Conséquences à garder en tête :
 | Production | Version utilisée | Effet |
 |----------------------|----------------------|----------------------------|
 | Modèles `cap_theme_*` (juin à août 2026) | Prompt v11 | Voir le tableau précédent |
-| Rapport de validation du 30 août 2026 (F1 de 0,656 sur les thèmes) | Benchmark de 1 549 phrases, dont sont tirés les exemples du prompt; Doccano 57 (724 phrases), version à confirmer | Score mesuré contre une référence qui peut mêler deux états des règles |
+| Rapport de validation du 30 août 2026 (F1 de 0,656 sur les thèmes) | Benchmark de 1 549 phrases, dont sont tirés les exemples du prompt; Doccano 57 (724 phrases), codé selon les règles corrigées (vérifié sur R3 et R17b) | Score mesuré contre une référence qui mêle deux états des règles. F1 moyen au seuil servi : 0,687 sur le benchmark, 0,608 sur Doccano 57 |
 | Catalogue de données du CAPP (`capp_catalogue`) | *Codebook* du 7 août 2024 | 2 512 questions classées avec d’anciens libellés, dont « Santé et Services Sociaux ». Aucune catégorie n’a changé depuis |
 | API de `aws-infra` et `metho.Rmd` | Anciens libellés | « Santé et services sociaux » et « Droit et criminalité » au lieu de « Santé et politiques sociales » et « Loi et crime » |
 
