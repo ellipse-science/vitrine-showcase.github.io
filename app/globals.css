@@ -8264,8 +8264,7 @@
   /* Panneau du module : celui de « Deux solitudes » (.solitudes : filet 0.5px
      var(--rule), fond var(--paper-deep), coins droits), qui rapproche le
      Polimètre+ des autres modules au lieu de le laisser à plat sur la page.
-     L'ombre franche le décale de la page ; c'est une des touches ludiques, avec
-     le glissement au survol ci-dessous. */
+     L'ombre franche le décale de la page. */
   .polimeter-plus .ppl-grid {
     border: 0.5px solid var(--rule);
     background: var(--paper-deep);
