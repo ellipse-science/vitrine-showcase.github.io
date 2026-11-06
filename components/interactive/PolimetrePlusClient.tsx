@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   CATEGORY_ORDER,
   NEUVE_RANGE_ORDER,
   NEUVE_RANGE_TAB_LABELS,
   PARTI_FULL_LABELS,
   PARTI_LABELS,
-  PARTI_ORDER,
   RANGE_TAB_LABELS,
   type NeuveRangeKey,
   type PartiKey,
@@ -268,21 +267,140 @@ function EnjeuDropdown({
   );
 }
 
+/* ========================================================================== *
+ * Kanban du module unifié : le module en tableau de gestion de projet Agile.
+ * Les promesses deviennent des cartes, rangées en colonnes : par
+ * verdict pour les mandats (PQ 2026, CAQ 2022), par parti pour la campagne.
+ * Dans une colonne, les cartes suivent le rang d'écho médiatique.
+ * ========================================================================== */
+type CarteKanban = {
+  id: string;
+  rang: number;
+  titre: string;
+  categorie: string | null;
+  pied: ReactNode;
+  url?: string;
+};
+type ColonneKanban = { cle: string; titre: string; detail?: string; cartes: CarteKanban[] };
+
+// Sous chaque kanban : le guide du Polimètre, qui définit ce qu'est une
+// promesse et chaque verdict. L'ancien tableau le portait dans son rail.
+function LienMetho() {
+  return (
+    <a
+      className="ppl-metho-kanban"
+      href="https://polimeter.org/guide/GuidePolimetre2026.pdf"
+      target="_blank"
+      rel="noopener"
+    >
+      Méthodologie du Polimètre
+    </a>
+  );
+}
+
+// Colonnes de la campagne dans l'ordre des sièges obtenus le 5 octobre 2026
+// (résultats préliminaires : PQ 59, PLQ 40, PCQ 19, QS 9, CAQ 0).
+const KANBAN_PARTIS: PartiKey[] = ["pq", "plq", "pcq", "qs", "caq"];
+
+// Trop de cartes d'un coup alourdit le tableau. On en montre 3 par colonne, et
+// « Voir plus » ouvre jusqu'à 5.
+const KANBAN_N_COURT = 3;
+const KANBAN_N_LONG = 5;
+
+function KanbanBoard({ colonnes, label }: { colonnes: ColonneKanban[]; label: string }) {
+  const [ouvertes, setOuvertes] = useState<Set<string>>(new Set());
+  const basculer = (cle: string) =>
+    setOuvertes((prev) => {
+      const next = new Set(prev);
+      if (next.has(cle)) next.delete(cle);
+      else next.add(cle);
+      return next;
+    });
+  return (
+    <div
+      className="ppl-kanban"
+      role="list"
+      aria-label={label}
+      // Le nombre de colonnes varie : 5 pour le PQ et la campagne, 3 pour la CAQ.
+      style={{ "--kanban-n": colonnes.length } as CSSProperties}
+    >
+      {colonnes.map((col) => (
+        <section key={col.cle} className={`ppl-kanban__col ppl-kanban__col--${col.cle}`} role="listitem">
+          <header className="ppl-kanban__tete">
+            <span className="ppl-kanban__titre">{col.titre}</span>
+            <span className="ppl-kanban__compte">{col.cartes.length}</span>
+            {col.detail && <span className="ppl-kanban__detail">{col.detail}</span>}
+          </header>
+          <ol className="ppl-kanban__cartes">
+            {col.cartes.length === 0 ? (
+              <li className="ppl-kanban__vide">Aucune promesse</li>
+            ) : (
+              col.cartes.slice(0, ouvertes.has(col.cle) ? KANBAN_N_LONG : KANBAN_N_COURT).map((c) => (
+                <li key={c.id} className="ppl-kanban__carte">
+                  <span className="ppl-kanban__rang">#{c.rang}</span>
+                  <span className="ppl-kanban__texte" title={c.titre}>
+                    {c.categorie && <SymboleEnjeu libelle={c.categorie} className="ppl-symbole" />}
+                    {c.url ? (
+                      <a href={c.url} target="_blank" rel="noopener">{c.titre}</a>
+                    ) : (
+                      c.titre
+                    )}
+                  </span>
+                  <span className="ppl-kanban__pied">{c.pied}</span>
+                </li>
+              ))
+            )}
+          </ol>
+          {col.cartes.length > KANBAN_N_COURT && (
+            <button
+              type="button"
+              className="ppl-kanban__plus"
+              aria-expanded={ouvertes.has(col.cle)}
+              onClick={() => basculer(col.cle)}
+            >
+              {ouvertes.has(col.cle) ? "Voir moins" : "Voir plus"}
+            </button>
+          )}
+        </section>
+      ))}
+    </div>
+  );
+}
+
+// Les colonnes portent les verdicts du Polimètre tels quels, de rompue à
+// réalisée.
+const KANBAN_VERDICTS: { slug: VerdictSlug; titre: string }[] = [
+  { slug: "rompue", titre: "Rompue" },
+  { slug: "en-suspens", titre: "En suspens" },
+  { slug: "en-cours", titre: "En cours" },
+  { slug: "partielle", titre: "Partiellement réalisée" },
+  { slug: "realisee", titre: "Réalisée" },
+];
+// Mandat de la CAQ terminé : une promesse n'y est plus « en suspens » ni « en
+// cours ». Ces deux colonnes restent pour le PQ, dont le mandat commence.
+const KANBAN_VERDICTS_MANDAT_TERMINE = KANBAN_VERDICTS.filter(
+  (v) => v.slug !== "en-suspens" && v.slug !== "en-cours",
+);
+
 /* Vue « promesses de 2022 » — le module historique.
 
-   `sousModule` : la vue se rend SOUS le bloc « campagne » (cf. PolimetrePlusClient
-   plus bas). Elle garde ses contrôles et son rail, mais cède le titre h2 au bloc
-   du dessus : ne restent que son sous-titre et son infobulle, promus en h3 pour
-   que le plan de la page nomme encore le bloc. Sans second bloc, la vue est le
-   module entier et porte son h2 comme avant. */
+   `sousModule` : la vue est le volet « 2022 » d'un module qui a aussi des
+   promesses de campagne. Sans `bascule`, elle se rend SOUS le bloc « campagne »
+   et lui cède le titre h2 : ne restent que son sous-titre et son infobulle,
+   promus en h3. Avec `bascule` (module unifié, cf. PolimetrePlusClient), elle
+   porte le titre commun et les onglets du filtre. Sans second bloc, la vue est
+   le module entier et porte son h2 comme avant. */
 function PolimetreView({
   data,
   editionKey,
   sousModule = false,
+  bascule,
 }: {
   data: PolimetreData;
   editionKey?: string;
   sousModule?: boolean;
+  /** Onglets du module unifié (campagne / CAQ 2022 / PQ 2026), posés sur le panneau. */
+  bascule?: ReactNode;
 }) {
   const [range, setRange] = useState<RangeKey>("week");
   const [verdict, setVerdict] = useState<VerdictSlug | "all">("all");
@@ -339,12 +457,12 @@ function PolimetreView({
 
   return (
     <section
-      className={sousModule ? "polimeter-plus polimeter-plus--second" : "polimeter-plus"}
+      className={bascule ? "polimeter-plus polimeter-plus--unifie" : sousModule ? "polimeter-plus polimeter-plus--second" : "polimeter-plus"}
       aria-label={sousModule ? "Polimètre+ : promesses de 2022" : "Polimètre+"}
     >
       <div className="partis-title-row">
         <div className="title-block">
-          {sousModule ? (
+          {sousModule && !bascule ? (
             <h3 className="period-subtitle ppl-sous-titre">{sousTitre}</h3>
           ) : (
             <>
@@ -381,6 +499,30 @@ function PolimetreView({
         </div>
       </div>
 
+      {bascule}
+      {bascule ? (
+        <>
+          <KanbanBoard
+            label="Promesses de la CAQ de 2022, rangées par verdict"
+            colonnes={KANBAN_VERDICTS_MANDAT_TERMINE.map((v) => ({
+              cle: v.slug,
+              titre: v.titre,
+              cartes: promises
+                .map((p, idx) => ({ p, rang: idx + 1 }))
+                .filter(({ p }) => p.verdict === v.slug)
+                .map(({ p, rang }) => ({
+                  id: p.pledgeNumber,
+                  rang,
+                  titre: p.title,
+                  categorie: p.category,
+                  url: p.url,
+                  pied: <TrendBadge trend={p.trend} />,
+                })),
+            }))}
+          />
+          <LienMetho />
+        </>
+      ) : (
       <div className="ppl-grid">
         {/* Rail gauche : légende des verdicts + catégories d'enjeux */}
         <aside className="ppl-filters">
@@ -538,6 +680,7 @@ function PolimetreView({
           </div>
         </div>
       </div>
+      )}
       <div className="module-last-updated">{data.lastUpdated}</div>
     </section>
   );
@@ -593,70 +736,21 @@ export function messageEtatVide(range: NeuveRangeKey, ranges: PromessesNeuvesDat
   }
 }
 
-/** Badge de parti — sigle sur fond de la couleur du parti. Le nom complet part
- *  en title/aria : « QS » seul ne se lit pas à voix haute, et la couleur ne dit
- *  rien à qui ne voit pas. */
-function PartiBadge({ parti }: { parti: PartiKey }) {
-  const full = PARTI_FULL_LABELS[parti];
-  return (
-    <span className={`ppl-parti-badge ppl-parti-badge--${parti}`} title={full} aria-label={full}>
-      {PARTI_LABELS[parti]}
-    </span>
-  );
-}
-
-/** « annoncée le 3 septembre » — repère de fraîcheur. En mode « neuves », la date
- *  d'annonce est une donnée du module, pas une métadonnée : c'est elle qui dit
- *  qu'on regarde une promesse neuve et non une promesse de 2022. */
-function formatAnnonce(iso: string): string {
-  const d = new Date(`${iso}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", timeZone: "UTC" });
-}
-
 function NeuvesView({
   data,
   editionKey,
+  bascule,
 }: {
   data: PromessesNeuvesData;
   editionKey?: string;
+  /** Onglets du module unifié (campagne / CAQ 2022 / PQ 2026), posés sur le panneau. */
+  bascule?: ReactNode;
 }) {
   const [range, setRange] = useState<NeuveRangeKey>("day");
-  const [parti, setParti] = useState<PartiKey | "all">("all");
-  const [enjeu, setEnjeu] = useState<string>("all");
-  const [openId, setOpenId] = useState<string | null>(null);
-
   const promesses = data.ranges[range];
 
-  // Les cinq partis sont toujours listés, mais ceux qui n'ont rien formulé sur la
-  // période sont grisés et non cliquables — comme les catégories d'enjeux du mode
-  // « 2022 ». Un filtre qui vide la liste sans prévenir se lit comme un bogue.
-  const partiItems = useMemo(() => {
-    const present = new Set(promesses.map((p) => p.parti));
-    return PARTI_ORDER.map((k) => ({ key: k, present: present.has(k) }));
-  }, [promesses]);
-
-  // Les douze catégories sont toujours listées, dans l'ordre alphabétique
-  // français, celles sans promesse sur la période étant grisées — même règle que
-  // les partis juste au-dessus, et que le filtre du mode « 2022 ».
-  const enjeuItems = useMemo(() => {
-    const present = new Set(
-      promesses.map((p) => p.enjeu).filter((e): e is string => !!e),
-    );
-    // MÊME liste que le mode « 2022 » : les 12 libellés canoniques. Une seule
-    // source d'ordre pour les deux modes, sinon ils divergeraient.
-    return CATEGORY_ORDER
-      .map((libelle) => ({ value: libelle, label: libelle, present: present.has(libelle) }))
-      .sort((a, b) => a.label.localeCompare(b.label, "fr"));
-  }, [promesses]);
-
-  const filtered = promesses
-    .filter((p) => parti === "all" || p.parti === parti)
-    .filter((p) => enjeu === "all" || p.enjeu === enjeu)
-    .slice(0, TOP_N);
-
   return (
-    <section className="polimeter-plus polimeter-plus--neuves" aria-label="Polimètre+ : promesses de la campagne">
+    <section className={bascule ? "polimeter-plus polimeter-plus--neuves polimeter-plus--unifie" : "polimeter-plus polimeter-plus--neuves"} aria-label="Polimètre+ : promesses de la campagne">
       {/* Bandeau de développement. Le module ne peut pas être travaillé sur la
           donnée réelle — la table est désactivée et le raffineur n'est pas
           fiable — donc on développe sur fixtures. Ce bandeau existe pour qu'une
@@ -670,7 +764,7 @@ function NeuvesView({
       )}
       <div className="partis-title-row">
         <div className="title-block">
-          <h2 className="partis-title">Polimètre+&nbsp;: les promesses de la campagne</h2>
+          <h2 className="partis-title">{bascule ? <>Polimètre+&nbsp;: promesses électorales à la Une</> : <>Polimètre+&nbsp;: les promesses de la campagne</>}</h2>
           <div className="period-subtitle">
             Promesses repérées dans les communiqués des partis, classées selon leur écho médiatique
             <InfoTip size="sm" label="À propos des promesses de la campagne">
@@ -712,205 +806,48 @@ function NeuvesView({
         </div>
       </div>
 
-      <div className="ppl-grid">
-        {/* Rail gauche : filtres de parti — à la place des verdicts */}
-        <aside className="ppl-filters">
-          <nav className="ppl-verdicts ppl-partis" aria-label="Filtrer par parti">
-            <button
-              type="button"
-              className={`ppl-verdict${parti === "all" ? " active" : ""}`}
-              aria-pressed={parti === "all"}
-              onClick={() => setParti("all")}
-            >
-              Tous les partis
-            </button>
-            {partiItems.map(({ key, present }) => {
-              const cls = `ppl-verdict ppl-verdict--parti-${key}`;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`${cls}${parti === key ? " active" : ""}${present ? "" : " ppl-verdict--empty"}`}
-                  aria-pressed={parti === key}
-                  aria-disabled={!present}
-                  disabled={!present}
-                  title={PARTI_FULL_LABELS[key]}
-                  onClick={present ? () => setParti(key) : undefined}
-                >
-                  <span className="ppl-verdict__full">{PARTI_FULL_LABELS[key]}</span>
-                  <span className="ppl-verdict__short">{PARTI_LABELS[key]}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Même filtre que le mode « 2022 », même composant. La différence est
-              la NATURE de la catégorie, pas le filtre : ici elle est inférée du
-              texte de la promesse, là-bas codée à la main — d'où l'infobulle. */}
-          <div className="ppl-rail-head">
-            Enjeu probable
-            <InfoTip size="sm" label="Enjeu probable">
-              Ces enjeux sont déterminés automatiquement à partir du texte de chaque
-              promesse. Ils n&apos;ont pas été attribués par une personne, contrairement
-              à ceux des promesses de 2022.
-            </InfoTip>
-          </div>
-          <EnjeuDropdown
-            value={enjeu}
-            onChange={setEnjeu}
-            options={enjeuItems}
-          />
-          {/* Pas de lien « Méthodologie du Polimètre » ici : le bloc « 2022 »,
-              juste en dessous, le porte pour le module entier. */}
-        </aside>
-
-        {/* Rail droit : liste des promesses neuves */}
-        <div className="ppl-list">
-          <div className="ppl-promise header" aria-hidden="true">
-            <div style={{ textAlign: "center" }}>Rang</div>
-            <div style={{ textAlign: "center" }}>Promesse</div>
-            <div style={{ textAlign: "center" }}>Parti</div>
-          </div>
-
-          {filtered.length === 0 ? (
-            <p style={{ padding: "18px 0", opacity: 0.6, fontStyle: "italic" }}>
-              {/* Deux vides qui ne disent pas la même chose : la FENÊTRE est
-                  vide (messageEtatVide), ou ce sont les filtres parti + enjeu
-                  qui ont tout écarté d'une fenêtre qui a des promesses. */}
-              {promesses.length === 0
-                ? messageEtatVide(range, data.ranges)
-                : "Aucune promesse ne correspond à ces filtres sur cette période."}
-            </p>
-          ) : (
-            <ol className="ppl-promises">
-              {filtered.map((p, i) => {
-                const open = openId === p.promesseId;
-                const cls = `ppl-promise ppl-promise--parti-${p.parti}${open ? " ppl-promise--open" : ""}`;
-                const nom = PARTI_FULL_LABELS[p.parti];
-                return (
-                  <li
-                    key={p.promesseId}
-                    className={cls}
-                    /* Le nom accessible nomme d'abord la promesse, puis le parti :
-                       le parti n'est porté que par la couleur de la pastille, donc
-                       invisible sans la vue. Même raisonnement que pour le verdict
-                       dans le mode « 2022 ». */
-                    aria-label={nom ? `${p.title}, ${nom}` : p.title}
-                    role="button"
-                    tabIndex={0}
-                    aria-expanded={open}
-                    onClick={() => setOpenId(open ? null : p.promesseId)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setOpenId(open ? null : p.promesseId);
-                      }
-                    }}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {open ? (
-                      <>
-                        <div className="ppl-promise__head">
-                          <span className="ppl-rank">{i + 1}</span>
-                          {/* Même symbole d'enjeu que le mode « 2022 » (issue #425).
-                              L'enjeu est ici inféré : `p.enjeu` vaut null hors des
-                              douze libellés, et le symbole s'efface alors sans bruit. */}
-                          <PromiseTitle title={p.title} categorie={p.enjeu} />
-                          <PartiBadge parti={p.parti} />
-                        </div>
-                        <div className="ppl-promise__detail" onClick={(e) => e.stopPropagation()}>
-                          <p className="ppl-detail__eyebrow">
-                            Ce que le parti a écrit
-                            <InfoTip size="sm" label="Texte d'origine">
-                              Cette phrase est reprise mot pour mot du communiqué&nbsp;: elle
-                              n&apos;est ni résumée ni reformulée.
-                            </InfoTip>
-                          </p>
-                          <blockquote className="ppl-detail__verbatim">{p.verbatim}</blockquote>
-                          {/* La catégorie d'enjeu est INFÉRÉE ici, alors que celle du mode
-                              « 2022 » est codée à la main. Le libellé le dit (« Enjeu
-                              probable ») plutôt que de laisser croire à un codage humain :
-                              une promesse sans enjeu reconnu n'affiche simplement rien. */}
-                          {p.enjeu && (
-                            <p className="ppl-detail__enjeu">
-                              <span
-                                className="ppl-enjeu-puce"
-                                style={{
-                                  backgroundColor: couleurEnjeu(p.enjeu),
-                                }}
-                                aria-hidden="true"
-                              />
-                              <span className="ppl-enjeu-label">
-                                Enjeu probable&nbsp;: {p.enjeu}
-                              </span>
-                              <InfoTip size="sm" label="Enjeu probable">
-                                Cet enjeu est déterminé automatiquement à partir du texte de la
-                                promesse. Il n&apos;a pas été attribué par une personne,
-                                contrairement à ceux des promesses de 2022.
-                              </InfoTip>
-                            </p>
-                          )}
-                          <p className="ppl-detail__meta">
-                            Annoncée le {formatAnnonce(p.announceDate)}
-                            {p.nMentions > 0 ? (
-                              <>
-                                {" · "}
-                                {p.nMentions} reprise{p.nMentions > 1 ? "s" : ""} dans les Unes
-                              </>
-                            ) : null}
-                          </p>
-                          {p.articles.length > 0 && (
-                            <p className="ppl-detail__coverage">
-                              <span className="ppl-detail__coverage-label">À lire sur</span>{" "}
-                              <span className="ppl-detail__coverage-media">
-                                {p.articles.map((article, idx) => (
-                                  <span key={`${article.media}-${article.url}`}>
-                                    <a href={article.url} target="_blank" rel="noopener">
-                                      {article.media}
-                                    </a>
-                                    {idx < p.articles.length - 1 && <span className="sep">,</span>}
-                                  </span>
-                                ))}
-                              </span>
-                            </p>
-                          )}
-                          {p.sourceUrl && (
-                            <a
-                              className="ppl-detail__link"
-                              href={p.sourceUrl}
-                              target="_blank"
-                              rel="noopener"
-                            >
-                              Lire le communiqué {nom ? `du ${nom}` : "d'origine"} →
-                            </a>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <span className="ppl-rank">{i + 1}</span>
-                        <PromiseTitle title={p.title} categorie={p.enjeu} />
-                        <PartiBadge parti={p.parti} />
-                      </>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-        </div>
-      </div>
+      {bascule}
+      {promesses.length === 0 ? (
+        <p className="ppl-kanban-vide">{messageEtatVide(range, data.ranges)}</p>
+      ) : (
+        <KanbanBoard
+          label="Promesses de la campagne, rangées par parti"
+          colonnes={KANBAN_PARTIS.map((parti) => ({
+            cle: `parti-${parti}`,
+            titre: PARTI_LABELS[parti],
+            detail: PARTI_FULL_LABELS[parti],
+            cartes: promesses
+              .map((p, idx) => ({ p, rang: idx + 1 }))
+              .filter(({ p }) => p.parti === parti)
+              .map(({ p, rang }) => ({
+                id: p.promesseId,
+                rang,
+                titre: p.title,
+                categorie: p.enjeu,
+                url: p.sourceUrl,
+                pied: (
+                  <span className="ppl-kanban__reprises">
+                    {p.nMentions} reprise{p.nMentions > 1 ? "s" : ""}
+                  </span>
+                ),
+              })),
+          }))}
+        />
+      )}
+      <LienMetho />
       <div className="module-last-updated">{data.lastUpdated}</div>
     </section>
   );
 }
 
 /* ========================================================================== *
- * Coquille — empile les deux vues, campagne AU-DESSUS de 2022.
+ * Coquille — un seul module, un filtre pour passer d'une vue à l'autre.
  *
- * Pas d'inverseur de mode : les deux blocs sont visibles en même temps, chacun
- * avec ses onglets et son rail. Le bloc « campagne » porte le titre h2 du
- * module ; le bloc « 2022 » n'a que son sous-titre (cf. `sousModule`).
+ * Les deux vues ne sont plus empilées : rendues l'une sous l'autre, elles se
+ * lisaient comme deux modules distincts. Un seul panneau, donc, et des onglets
+ * de classeur posés dessus qui servent de filtre : « PQ 2026 », choisi par
+ * défaut, « CAQ 2022 » ou « Campagne 2026 ». Chaque vue garde ses propres
+ * onglets de période ; seul le titre h2 est commun.
  *
  * `neuves` est optionnel et vaut null tant que le raffineur n'a rien publié (le
  * cas hors campagne, où les communiqués sont des annonces de candidature sans
@@ -918,23 +855,98 @@ function NeuvesView({
  * qu'une liste vide se lit comme une panne. Le module redevient exactement
  * celui d'avant, h2 compris, tant qu'il n'y a pas de promesse neuve à montrer.
  * ========================================================================== */
+/* Onglet « PQ 2026 » : le kanban du nouveau mandat.
+   Les promesses du PQ repérées pendant la campagne partent toutes « en
+   suspens » : aucune n'a encore de verdict. Elles changeront de colonne au fil
+   du mandat, quand le Polimètre les évaluera. */
+function PqView({ data, bascule }: { data: PromessesNeuvesData; bascule: ReactNode }) {
+  const promessesPq = data.ranges.campaign.filter((p) => p.parti === "pq");
+  return (
+    <section
+      className="polimeter-plus polimeter-plus--neuves polimeter-plus--unifie"
+      aria-label="Polimètre+ : promesses du PQ, mandat 2026"
+    >
+      <div className="partis-title-row">
+        <div className="title-block">
+          <h2 className="partis-title">Polimètre+&nbsp;: promesses électorales à la Une</h2>
+          <div className="period-subtitle">
+            Promesses du Parti québécois pendant la campagne 2026, rangées selon leur avancement et classées selon leur écho médiatique
+          </div>
+        </div>
+      </div>
+      {bascule}
+      <KanbanBoard
+        label="Promesses du PQ de 2026, rangées par verdict"
+        colonnes={KANBAN_VERDICTS.map((v) => ({
+          cle: v.slug,
+          titre: v.titre,
+          cartes:
+            v.slug !== "en-suspens"
+              ? []
+              : promessesPq.map((p, idx) => ({
+                  id: p.promesseId,
+                  rang: idx + 1,
+                  titre: p.title,
+                  categorie: p.enjeu,
+                  url: p.sourceUrl,
+                  pied: (
+                    <span className="ppl-kanban__reprises">
+                      {p.nMentions} reprise{p.nMentions > 1 ? "s" : ""}
+                    </span>
+                  ),
+                })),
+        }))}
+      />
+      <LienMetho />
+    </section>
+  );
+}
+
 export function PolimetrePlusClient({
   data,
   neuves,
   editionKey,
+  ongletInitial = "pq",
 }: {
   data: PolimetreData;
   neuves?: PromessesNeuvesData | null;
   editionKey?: string;
+  /** Onglet ouvert au premier rendu : le mandat du PQ, en premier. */
+  ongletInitial?: "pq" | "campagne" | "2022";
 }) {
   const hasNeuves = !!neuves && NEUVE_RANGE_ORDER.some((r) => neuves.ranges[r].length > 0);
 
+  const [mode, setMode] = useState<"campagne" | "2022" | "pq">(ongletInitial);
+
   if (!hasNeuves) return <PolimetreView data={data} editionKey={editionKey} />;
 
-  return (
-    <>
-      <NeuvesView data={neuves!} editionKey={editionKey} />
-      <PolimetreView data={data} editionKey={editionKey} sousModule />
-    </>
+  const onglet = (cle: "pq" | "2022" | "campagne", libelle: string) => (
+    <button
+      key={cle}
+      type="button"
+      role="tab"
+      aria-selected={mode === cle}
+      className={`ppl-onglet ppl-onglet--${cle}${mode === cle ? " active" : ""}`}
+      onClick={() => setMode(cle)}
+    >
+      {libelle}
+    </button>
+  );
+  // Deux familles, séparées par une barre oblique : les bilans de mandat
+  // (PQ 2026, CAQ 2022), puis la campagne, d'une autre nature.
+  const bascule = (
+    <div className="ppl-onglets" role="tablist" aria-label="Promesses affichées">
+      {onglet("pq", "PQ 2026")}
+      {onglet("2022", "CAQ 2022")}
+      <span className="ppl-onglets__barre" aria-hidden="true" />
+      {onglet("campagne", "Campagne 2026")}
+    </div>
+  );
+
+  if (mode === "pq") return <PqView data={neuves!} bascule={bascule} />;
+  return mode === "campagne" ? (
+    <NeuvesView data={neuves!} editionKey={editionKey} bascule={bascule} />
+  ) : (
+    <PolimetreView data={data} editionKey={editionKey} sousModule bascule={bascule} />
   );
 }
