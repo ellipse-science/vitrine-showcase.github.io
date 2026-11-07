@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1007,
+    "date": "2026-11-07T21:33:39Z",
+    "note": "Le rafraîchissement automatique des données reprend après une interruption de quelques heures le 7 novembre.",
+    "version": null
+  },
+  {
     "pr": 994,
     "date": "2026-11-04T06:47:11Z",
     "note": "Quand le site tarde à se mettre à jour, l'alerte interne de l'équipe en indique maintenant la cause plus précisément.",
