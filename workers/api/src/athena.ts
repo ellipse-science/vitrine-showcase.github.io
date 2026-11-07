@@ -8,6 +8,7 @@
 // (directive d'émancipation du 2026-08-19 : la chaîne planifiée vit chez
 // Cloudflare, cf. docs/superpowers/specs/2026-08-19-emancipation-totale-design.md).
 import { AwsClient } from 'aws4fetch'
+import { ATHENA_APPEL_MS, ATHENA_PAGES_MAX, avecDelai } from './delai'
 
 export interface AthenaConfig {
   accessKeyId: string
@@ -46,19 +47,27 @@ export class AthenaClient {
     this.endpoint = `https://athena.${cfg.region}.amazonaws.com/`
   }
 
+  /** Un appel Athena, borné par ATHENA_APPEL_MS (réponse ET corps) : sans
+   *  borne, une connexion tombée sans erreur pendait toute la passe (cf. delai.ts). */
   private async call<T>(target: string, body: unknown): Promise<T> {
-    const res = await this.aws.fetch(this.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-amz-json-1.1',
-        'X-Amz-Target': `AmazonAthena.${target}`,
-      },
-      body: JSON.stringify(body),
-    })
-    if (!res.ok) {
-      throw new Error(`Athena ${target} : HTTP ${res.status} ${await res.text()}`)
-    }
-    return (await res.json()) as T
+    return avecDelai(
+      (async () => {
+        const res = await this.aws.fetch(this.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-amz-json-1.1',
+            'X-Amz-Target': `AmazonAthena.${target}`,
+          },
+          body: JSON.stringify(body),
+        })
+        if (!res.ok) {
+          throw new Error(`Athena ${target} : HTTP ${res.status} ${await res.text()}`)
+        }
+        return (await res.json()) as T
+      })(),
+      ATHENA_APPEL_MS,
+      `Athena ${target}`,
+    )
   }
 
   async start(query: string): Promise<string> {
@@ -101,7 +110,11 @@ export class AthenaClient {
   async *rows(id: string): AsyncGenerator<(string | null)[]> {
     let token: string | undefined
     let first = true
+    let pages = 0
     do {
+      if (++pages > ATHENA_PAGES_MAX) {
+        throw new Error(`Résultats Athena ${id} : plus de ${ATHENA_PAGES_MAX} pages, pagination interrompue`)
+      }
       const body: Record<string, unknown> = { QueryExecutionId: id, MaxResults: 1000 }
       if (token) body.NextToken = token
       const res = await this.call<ResultsResponse>('GetQueryResults', body)

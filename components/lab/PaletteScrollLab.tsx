@@ -60,8 +60,8 @@ const MODULES: {
   { id: "deux-solitudes", nom: "Deux solitudes" },
   { id: "enjeux-saillants", nom: "12 enjeux" },
   { id: "partis-et-couverture", nom: "Partis", sombre: true },
-  { id: "polimetre-plus", nom: "Polimètre+" },
   { id: "assemblee-nationale", nom: "Assemblée" },
+  { id: "polimetre-plus", nom: "Polimètre+" },
 ] as { id: CleModule; nom: string; papierPur?: boolean; sombre?: boolean }[]).map((m) => ({
   ...m,
   accent: IDENTITES[m.id].accent,

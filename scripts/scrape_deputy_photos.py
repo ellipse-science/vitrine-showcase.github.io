@@ -77,6 +77,11 @@ def main():
         deputies.extend({**d, "historique": True} for d in history
                         if str(d["deputy_id"]) not in known_ids)
     print(f"  {len(deputies)} députés")
+    # Page d'index illisible (site en panne, gabarit changé) : on n'écrit RIEN.
+    # Sans ce garde-fou, l'index serait réécrit vide et toutes les cartes
+    # perdraient leur portrait jusqu'au passage suivant.
+    if not rows:
+        sys.exit("Aucun député lu sur la page d'index : l'index existant est conservé.")
     if dry:
         for d in deputies[:5]:
             print("  ", d["nom_index"], "|", d["circonscription"], "|", d["parti"])
@@ -86,13 +91,25 @@ def main():
     IMG = re.compile(r'<img[^>]*class="photoDepute"[^>]*>')
     SRC = re.compile(r'src="([^"]+)"')
     ALT = re.compile(r'alt="([^"]*)"')
-    out, echecs = [], []
+    # L'INDEX DE LA VEILLE (3 oct. 2026). Le script réécrivait l'index avec les
+    # seuls députés réussis : une erreur passagère de l'ANQ sur une fiche
+    # (délai, refus) faisait disparaître l'entrée, et la carte perdait son
+    # portrait alors que la photo était toujours dans le dépôt. Le 3 oct., 8
+    # élus sur 129 (Zanetti, Lamontagne, Rotiroti…). Un échec garde désormais
+    # l'entrée de la veille, si sa photo est bien là.
+    veille = {}
+    if OUT_INDEX.exists():
+        try:
+            veille = {str(x["deputy_id"]): x for x in json.loads(OUT_INDEX.read_text(encoding="utf-8")).get("deputes", [])}
+        except (ValueError, KeyError):
+            veille = {}
+    out, echecs, conserves = [], [], []
     for i, d in enumerate(deputies, 1):
         try:
             page = get(d["profil"])
             tag = IMG.search(page)
             if not tag:
-                echecs.append((d["nom_index"], "pas de portrait")); continue
+                raise ValueError("pas de portrait")
             src = unescape(SRC.search(tag.group(0)).group(1))
             # Certaines fiches portent un alt="" vide (vu sur Saint-Henri–Sainte-Anne).
             # On teste le CONTENU, pas la présence de l'attribut, sinon le nom
@@ -115,6 +132,10 @@ def main():
             print(f"  [{i}/{len(deputies)}] {alt} — {d['circonscription']}")
         except Exception as e:
             echecs.append((d["nom_index"], str(e)[:70]))
+            ancien = veille.get(str(d["deputy_id"]))
+            if ancien and (OUT_DIR / f"{ancien['asset_slug']}.jpg").exists():
+                out.append(ancien)
+                conserves.append(d["nom_index"])
         time.sleep(DELAY)
 
     OUT_INDEX.write_text(json.dumps({
@@ -125,7 +146,7 @@ def main():
         "recupere_le": time.strftime("%Y-%m-%d"),
         "deputes": sorted(out, key=lambda x: (x["circonscription"], x["deputy_id"])),
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"\n{len(out)} portraits, {len(echecs)} échecs")
+    print(f"\n{len(out)} portraits, {len(echecs)} échecs, dont {len(conserves)} gardés de la veille")
     for n, e in echecs:
         print("  échec:", n, "—", e)
 

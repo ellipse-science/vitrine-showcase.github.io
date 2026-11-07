@@ -57,14 +57,11 @@ function nomsDuContrat(): string[] {
  *  TABLES sans elle fait échouer la synchro de la table entière
  *  (`recordDefinition`, workers/api/src/sync.ts).
  *
- *  ⚠️ Probablement un défaut ACTIF, du même type que `representative_url` :
- *  lib/data/assemblee.ts lit `deputy_id` et `district_id` par
- *  `readDatasetText`, donc par l'API en prod. Signalé le 2026-09-11. Le test
- *  compare à l'égalité : corriger l'écart oblige à le retirer d'ici. */
-const ECARTS_DE_COLONNES_CONNUS = [
-  "agora_decideurs_qc_deputes.deputy_id",
-  "agora_decideurs_qc_deputes.district_id",
-];
+ *  Le dernier écart (`deputy_id` et `district_id` d'agora_decideurs_qc_deputes,
+ *  signalé le 2026-09-11) est corrigé le 2026-10-03 : en mode api, la carte de
+ *  la présidente et celles des deux Éric Girard restaient sans portrait. Le
+ *  test compare à l'égalité : un nouvel écart doit être ajouté ici, expliqué. */
+const ECARTS_DE_COLONNES_CONNUS: string[] = [];
 
 describe("listes blanches du Worker", () => {
   it("toute table synchronisée ET au contrat public est servie par l'API", () => {

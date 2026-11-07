@@ -79,6 +79,14 @@ CREATE TABLE IF NOT EXISTS vitrine."agora_decideurs_qc_deputes" (
   "signature_word" text,
   "signature_word_context" text
 );
+-- `deputy_id` et `district_id` étaient au schéma mais pas dans la liste du
+-- Worker (tables.ts) : en mode api, le vestiaire ne recevait ni identifiant ni
+-- siège, et une carte sans nom d'élu reconnaissable (« La Présidente ») ou
+-- homonyme (les deux Éric Girard) restait sans portrait (2026-10-03). L'ALTER
+-- couvre une table créée avant ces colonnes. À appliquer à Neon AVANT de
+-- redéployer le Worker (voir representative_url plus bas).
+ALTER TABLE vitrine."agora_decideurs_qc_deputes" ADD COLUMN IF NOT EXISTS "deputy_id" text;
+ALTER TABLE vitrine."agora_decideurs_qc_deputes" ADD COLUMN IF NOT EXISTS "district_id" text;
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_period_type_idx" ON vitrine."agora_decideurs_qc_deputes" ("period_type");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_period_start_date_idx" ON vitrine."agora_decideurs_qc_deputes" ("period_start_date");
 CREATE INDEX IF NOT EXISTS "agora_decideurs_qc_deputes_period_end_date_idx" ON vitrine."agora_decideurs_qc_deputes" ("period_end_date");

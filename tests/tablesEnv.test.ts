@@ -28,6 +28,19 @@ describe("exception d'environnement par table", () => {
     expect(t?.api).toBe(false);
   });
 
+  it("les trois tables sociales (agora-social) sont lues en DEV, par fichier seulement", () => {
+    // La collecte a-social-accounts n'est active qu'en DEV, donc son raffineur
+    // aussi : sans `env: "DEV"`, la bascule du site sur PROD viderait le module.
+    for (const nom of ["comptes", "publications_jour", "palmares"]) {
+      const t = tables.find((x) => x.name === `agora_social_${nom}`);
+      expect(t?.enabled).toBe(true);
+      expect(t?.env).toBe("DEV");
+      expect(t?.api).toBe(false);
+    }
+    // La présence se calcule au build depuis social_comptes : plus de table à part.
+    expect(tables.find((x) => x.name === "agora_social_presence")).toBeUndefined();
+  });
+
   it("fetch_data.R lit `env` par table, bascule les clés le temps de l'appel, et refuse un env inconnu", () => {
     expect(fetchData).toMatch(/env_de_table <- function\(entry, datamart_env\)/);
     expect(fetchData).toMatch(/fetch_table\(connexion_pour\(env_table\), entry\)/);

@@ -73,13 +73,19 @@ describe("le petit vumètre de ton, sous chaque colonne", () => {
     expect(html).toContain("console-sourdine");
   });
 
-  it("la colonne en sourdine montre SA PART, en gris, à la même échelle, sans vaciller", () => {
+  it("la colonne en sourdine montre SA PART, en gris, à la même échelle", () => {
     // La part lue dans la phrase de la colonne, celle des lecteurs d'écran.
     const part = Number(/parlent le moins sur cette période : (\d+) %/.exec(html)![1]);
     expect(part).toBeGreaterThan(0);
-    const gris = (html.match(/class="seg mute on"/g) ?? []).length;
+    const gris = (html.match(/class="seg mute on(?: vu vu--[123])?"/g) ?? []).length;
     expect(gris).toBe(Math.max(1, Math.round((part / 100) * 20)));
-    expect(html).not.toContain("seg mute on vu");
+  });
+
+  it("la barre grise de la sourdine vacille comme les autres — même cascade, jusqu'à trois segments", () => {
+    const gris = (html.match(/class="seg mute on(?: vu vu--[123])?"/g) ?? []).length;
+    const vacillants = (html.match(/class="seg mute on vu vu--[123]"/g) ?? []).length;
+    expect(gris).toBeGreaterThan(0);
+    expect(vacillants).toBe(Math.min(3, gris));
   });
 
   it("une sourdine à 0 % reste vide : un segment allumé serait un niveau inventé", () => {

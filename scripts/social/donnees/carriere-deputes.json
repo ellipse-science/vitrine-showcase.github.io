@@ -1,0 +1,651 @@
+{
+ "_note": "Ancienneté des élus de la 43e législature, pour le verso des cartes : année de la première élection et nombre de mandats (élections générales et partielles distinctes). Source : pplmatch, inst/extdata/mandates_qc.csv (main 93531ed), par identifiant de l'Assemblée nationale ; couvre depuis 1989.",
+ "source": "pplmatch mandates_qc.csv",
+ "deputes": {
+  "17827": {
+   "nom": "Agnès Grondin",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19263": {
+   "nom": "Alejandra Zaga Mendez",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "20141": {
+   "nom": "Alex Boissonneault",
+   "premiere_election": "2025",
+   "mandats": 1
+  },
+  "17935": {
+   "nom": "Alexandre Leduc",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19315": {
+   "nom": "Alice Abou-Khalil",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19273": {
+   "nom": "Amélie Dionne",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19253": {
+   "nom": "André Albert Morin",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17859": {
+   "nom": "André Bachand",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "15383": {
+   "nom": "André Fortin",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "15401": {
+   "nom": "André Lamontagne",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "17913": {
+   "nom": "Andrée Laforest",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17953": {
+   "nom": "Andrés Fontecilla",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19325": {
+   "nom": "Audrey Bogemans",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "195": {
+   "nom": "Benoit Charette",
+   "premiere_election": "2008",
+   "mandats": 4
+  },
+  "209": {
+   "nom": "Bernard Drainville",
+   "premiere_election": "2007",
+   "mandats": 5
+  },
+  "19271": {
+   "nom": "Brigitte B. Garceau",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19351": {
+   "nom": "Carole Mallette",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17837": {
+   "nom": "Caroline Proulx",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19251": {
+   "nom": "Catherine Blouin",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "20131": {
+   "nom": "Catherine Gentilcore",
+   "premiere_election": "2025",
+   "mandats": 1
+  },
+  "17931": {
+   "nom": "Chantal Rouleau",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "15417": {
+   "nom": "Chantal Soucy",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "17959": {
+   "nom": "Chantale Jeannotte",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "12223": {
+   "nom": "Christian Dubé",
+   "premiere_election": "2012",
+   "mandats": 4
+  },
+  "19269": {
+   "nom": "Christine Fréchette",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17889": {
+   "nom": "Christine Labrie",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17873": {
+   "nom": "Christopher Skeete",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17833": {
+   "nom": "Claude Reid",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19309": {
+   "nom": "Céline Haytayan",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "13": {
+   "nom": "Daniel Bernard",
+   "premiere_election": "2003",
+   "mandats": 3
+  },
+  "17901": {
+   "nom": "Denis Lamothe",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "12165": {
+   "nom": "Donald Martel",
+   "premiere_election": "2012",
+   "mandats": 4
+  },
+  "19283": {
+   "nom": "Désirée McGraw",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19301": {
+   "nom": "Elisabeth Prass",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17943": {
+   "nom": "Enrico Ciccone",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17929": {
+   "nom": "Eric Girard",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17957": {
+   "nom": "Eric Girard",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19267": {
+   "nom": "Etienne Grandmont",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "1171": {
+   "nom": "Filomena Rotiroti",
+   "premiere_election": "2008",
+   "mandats": 5
+  },
+  "19257": {
+   "nom": "France-Élaine Duranceau",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17909": {
+   "nom": "Frantz Benjamin",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "11": {
+   "nom": "François Bonnardel",
+   "premiere_election": "2007",
+   "mandats": 6
+  },
+  "17937": {
+   "nom": "François Jacques",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "4131": {
+   "nom": "François Legault",
+   "premiere_election": "1998",
+   "mandats": 8
+  },
+  "19321": {
+   "nom": "François St-Louis",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17917": {
+   "nom": "François Tremblay",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19307": {
+   "nom": "Frédéric Beauchemin",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "16827": {
+   "nom": "Gabriel Nadeau-Dubois",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "16885": {
+   "nom": "Geneviève Guilbault",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17877": {
+   "nom": "Geneviève Hébert",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17925": {
+   "nom": "Gilles Bélanger",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17951": {
+   "nom": "Gregory Kelley",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19593": {
+   "nom": "Guillaume Cliche-Rivard",
+   "premiere_election": "2023",
+   "mandats": 1
+  },
+  "19305": {
+   "nom": "Haroun Bouazzi",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17903": {
+   "nom": "Ian Lafrenière",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17845": {
+   "nom": "Isabelle Charest",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17945": {
+   "nom": "Isabelle Lecours",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19311": {
+   "nom": "Isabelle Poulet",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17899": {
+   "nom": "Jean Boulet",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17857": {
+   "nom": "Jean-Bernard Émond",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "15361": {
+   "nom": "Jean-François Roberge",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "5369": {
+   "nom": "Jean-François Simard",
+   "premiere_election": "1998",
+   "mandats": 3
+  },
+  "17911": {
+   "nom": "Jennifer Maccarone",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17855": {
+   "nom": "Jonatan Julien",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17947": {
+   "nom": "Joël Arseneau",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "18561": {
+   "nom": "Joëlle Boutin",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19291": {
+   "nom": "Kariane Bourassa",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19255": {
+   "nom": "Karine Boivin Roy",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19303": {
+   "nom": "Kateri Champagne Jourdain",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19313": {
+   "nom": "Linda Caron",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17893": {
+   "nom": "Lionel Carmant",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17879": {
+   "nom": "Louis Lemieux",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "18073": {
+   "nom": "Louis-Charles Thouin",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17829": {
+   "nom": "Luc Provençal",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17949": {
+   "nom": "Lucie Lecours",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19261": {
+   "nom": "Madwa-Nika Cadet",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "15421": {
+   "nom": "Manon Massé",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "11789": {
+   "nom": "Marc Tanguay",
+   "premiere_election": "2012",
+   "mandats": 4
+  },
+  "19293": {
+   "nom": "Marie-Belle Gendron",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "15439": {
+   "nom": "Marie-Claude Nichols",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "20193": {
+   "nom": "Marie-Karlynn Laflamme",
+   "premiere_election": "2026",
+   "mandats": 1
+  },
+  "18071": {
+   "nom": "Marie-Louise Tardif",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17891": {
+   "nom": "Marilyne Picard",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17905": {
+   "nom": "Mario Asselin",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "15357": {
+   "nom": "Mario Laframboise",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "19297": {
+   "nom": "Martine Biron",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17883": {
+   "nom": "Marwah Rizqy",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17927": {
+   "nom": "Mathieu Lacombe",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "15403": {
+   "nom": "Mathieu Lemay",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "17851": {
+   "nom": "Mathieu Lévesque",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19299": {
+   "nom": "Mathieu Rivest",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19275": {
+   "nom": "Maïté Blanchette Vézina",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19285": {
+   "nom": "Michelle Setlakwe",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17923": {
+   "nom": "Monsef Derraji",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "18247": {
+   "nom": "Nancy Guillemette",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "12187": {
+   "nom": "Nathalie Roy",
+   "premiere_election": "2012",
+   "mandats": 4
+  },
+  "991": {
+   "nom": "Pascal Bérubé",
+   "premiere_election": "2007",
+   "mandats": 6
+  },
+  "19999": {
+   "nom": "Pascal Paradis",
+   "premiere_election": "2023",
+   "mandats": 1
+  },
+  "19277": {
+   "nom": "Pascale Déry",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19289": {
+   "nom": "Paul St-Pierre Plamondon",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17823": {
+   "nom": "Pierre Dufour",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17897": {
+   "nom": "Pierre Fitzgibbon",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17921": {
+   "nom": "Robert Bussière",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17933": {
+   "nom": "Ruba Ghazal",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17831": {
+   "nom": "Samuel Poulin",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19063": {
+   "nom": "Shirley Dorismond",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17941": {
+   "nom": "Simon Allaire",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "15359": {
+   "nom": "Simon Jolin-Barrette",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "17955": {
+   "nom": "Sol Zanetti",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19295": {
+   "nom": "Sona Lakhoyan Olivier",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19281": {
+   "nom": "Sonia Bélanger",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17847": {
+   "nom": "Sonia LeBel",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19319": {
+   "nom": "Stéphane Sainte-Croix",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17835": {
+   "nom": "Stéphanie Lachance",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17825": {
+   "nom": "Suzanne Blais",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19265": {
+   "nom": "Suzanne Roy",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19323": {
+   "nom": "Suzanne Tremblay",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "12213": {
+   "nom": "Sylvain Lévesque",
+   "premiere_election": "2012",
+   "mandats": 3
+  },
+  "15399": {
+   "nom": "Sylvie D'Amours",
+   "premiere_election": "2014",
+   "mandats": 3
+  },
+  "5909": {
+   "nom": "Sébastien Schneeberger",
+   "premiere_election": "2007",
+   "mandats": 5
+  },
+  "19259": {
+   "nom": "Valérie Schmaltz",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17849": {
+   "nom": "Vincent Caron",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "17867": {
+   "nom": "Vincent Marissal",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19287": {
+   "nom": "Virginie Dufour",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "19317": {
+   "nom": "Yannick Gagnon",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "17881": {
+   "nom": "Youri Chassin",
+   "premiere_election": "2018",
+   "mandats": 2
+  },
+  "19279": {
+   "nom": "Yves Montigny",
+   "premiere_election": "2022",
+   "mandats": 1
+  },
+  "485": {
+   "nom": "Éric Caire",
+   "premiere_election": "2007",
+   "mandats": 6
+  },
+  "16777": {
+   "nom": "Éric Lefebvre",
+   "premiere_election": "2018",
+   "mandats": 2
+  }
+ }
+}

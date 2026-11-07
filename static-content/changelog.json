@@ -1,5 +1,287 @@
 [
   {
+    "pr": 1007,
+    "date": "2026-11-07T21:33:39Z",
+    "note": "Le rafraîchissement automatique des données reprend après une interruption de quelques heures le 7 novembre.",
+    "version": null
+  },
+  {
+    "pr": 994,
+    "date": "2026-11-04T06:47:11Z",
+    "note": "Quand le site tarde à se mettre à jour, l'alerte interne de l'équipe en indique maintenant la cause plus précisément.",
+    "version": null
+  },
+  {
+    "pr": 971,
+    "date": "2026-11-04T06:25:14Z",
+    "note": "L'édition de minuit de la Une, qui manquait toutes les nuits depuis le 15 octobre, est rétablie.",
+    "version": "2.52.0-beta.11"
+  },
+  {
+    "pr": 982,
+    "date": "2026-11-04T06:22:11Z",
+    "note": "Les éditions de la Une paraissent de nouveau à l'heure depuis le passage à l'heure normale.",
+    "version": "2.52.0-beta.10"
+  },
+  {
+    "pr": 951,
+    "date": "2026-10-14T17:17:12Z",
+    "note": "Le volet « promesses de la campagne » du Polimètre+ ne s'enrichit plus de nouvelles promesses depuis le jour du scrutin ; l'écho dans les médias des promesses retenues continue d'être mesuré chaque jour.",
+    "version": null
+  },
+  {
+    "pr": 943,
+    "date": "2026-10-10T17:19:57Z",
+    "note": "Les éditions sont de nouveau publiées toutes les quatre heures : un fichier de données devenu trop lourd bloquait la mise à jour du site depuis vendredi midi.",
+    "version": "2.52.0-beta.9"
+  },
+  {
+    "pr": 937,
+    "date": "2026-10-06T20:46:45Z",
+    "note": "Correction technique de la construction du site : la page de l'Assemblée se construit plus vite et sans épuiser la mémoire.",
+    "version": "2.52.0-beta.8"
+  },
+  {
+    "pr": 932,
+    "date": "2026-10-06T20:44:08Z",
+    "note": "Sur tablette, le casier ouvert de l'alignement de l'Assemblée garde ses chiffres à l'intérieur de sa porte, sans recouvrir les cartes.",
+    "version": "2.52.0-beta.7"
+  },
+  {
+    "pr": 936,
+    "date": "2026-10-06T20:41:32Z",
+    "note": "Le classement du pool de la Grande soirée électorale, réservé aux personnes inscrites, retire un essai de l'équipe : 63 pronostics.",
+    "version": "2.52.0-beta.6"
+  },
+  {
+    "pr": 934,
+    "date": "2026-10-06T20:12:05Z",
+    "note": "Dans le vestiaire de l'Assemblée, les portraits des cartes sont chargés à l'avance : les cartes s'affichent sans attendre leur photo.",
+    "version": "2.52.0-beta.5"
+  },
+  {
+    "pr": 933,
+    "date": "2026-10-06T20:05:29Z",
+    "note": "La page du pool de la Grande soirée électorale, réservée aux personnes inscrites, affiche maintenant le résultat officiel, les deux gagnants et le classement complet.",
+    "version": "2.52.0-beta.4"
+  },
+  {
+    "pr": 929,
+    "date": "2026-10-06T18:45:30Z",
+    "note": "Dans le vestiaire de l'Assemblée, ouvrir un casier amène maintenant les cartes du parti au centre de l'écran.",
+    "version": "2.52.0-beta.3"
+  },
+  {
+    "pr": 926,
+    "date": "2026-10-03T23:03:36Z",
+    "note": "Dans le vestiaire de l'Assemblée, les cartes de la présidente de l'Assemblée et des deux députés nommés Éric Girard retrouvent leur nom, leur circonscription et leur portrait.",
+    "version": "2.52.0-beta.2"
+  },
+  {
+    "pr": 925,
+    "date": "2026-10-03T22:04:13Z",
+    "note": "Les cartes de huit députés avaient perdu leur photo à la suite d'une panne passagère du site de l'Assemblée nationale ; elles l'ont retrouvée, et une panne semblable ne fera plus disparaître un portrait.",
+    "version": "2.52.0-beta.1"
+  },
+  {
+    "pr": 924,
+    "date": "2026-10-03T19:13:39Z",
+    "note": "Le vestiaire de l'Assemblée fait peau neuve : des casiers en métal au format des cartes, les chiffres de chaque parti à l'intérieur, et sur téléphone les cartes passent au premier plan avec un filtre par parti.",
+    "version": "2.52.0-beta.0"
+  },
+  {
+    "pr": 917,
+    "date": "2026-10-03T18:37:26Z",
+    "note": "Les cartes des député·es dans le vestiaire sont maintenant les cartes de collection imprimées, recto et verso : numéro, rareté, fonction, fiche électorale, parcours et rémunération, et les mêmes mesures de parole qu'avant.",
+    "version": "2.51.0-beta.0"
+  },
+  {
+    "pr": 858,
+    "date": "2026-10-03T14:51:23Z",
+    "note": "Documentation interne des pipelines mise à jour : rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 910,
+    "date": "2026-10-03T14:35:24Z",
+    "note": "Sur les cartes des députés, la « richesse lexicale » s'appelle désormais « diversité lexicale », et ses points comparent chaque élu à l'ensemble de l'Assemblée plutôt qu'aux seuls membres de son parti. La méthodologie explique maintenant en détail comment cette mesure est calculée et ce qu'elle ne dit pas.",
+    "version": "2.50.0-beta.0"
+  },
+  {
+    "pr": 798,
+    "date": "2026-10-03T02:30:14Z",
+    "note": "La barre grise du parti dont les médias parlent le moins s'anime désormais comme celles des autres partis.",
+    "version": "2.49.0-beta.11"
+  },
+  {
+    "pr": 912,
+    "date": "2026-10-03T02:22:30Z",
+    "note": "Rien ne change sur le site.",
+    "version": null
+  },
+  {
+    "pr": 907,
+    "date": "2026-10-03T01:47:21Z",
+    "note": "Dans le vestiaire de l'Assemblée, une carte de député restait affichée en ouvrant le casier d'un autre parti ; c'est corrigé. Un élu dont le nom apparaît sous deux graphies n'a plus qu'une seule carte, qui réunit toutes ses prises de parole.",
+    "version": "2.49.0-beta.10"
+  },
+  {
+    "pr": 923,
+    "date": "2026-10-03T00:24:05Z",
+    "note": "Les fiches du module La guerre des clics se parcourent mieux au clavier.",
+    "version": null
+  },
+  {
+    "pr": 919,
+    "date": "2026-10-02T19:17:58Z",
+    "note": "La page Méthodologie présente La guerre des clics, qui suit les comptes des personnes candidates et des partis sur Facebook, Instagram et TikTok, comme un module expérimental du site.",
+    "version": null
+  },
+  {
+    "pr": 918,
+    "date": "2026-10-02T18:39:48Z",
+    "note": "Dans le module des réseaux sociaux (miroir de travail seulement), la fiche d'une circonscription affiche ses candidats un par ligne.",
+    "version": null
+  },
+  {
+    "pr": 916,
+    "date": "2026-10-02T18:19:57Z",
+    "note": "Dans le module des réseaux sociaux (miroir de travail seulement), la fiche d'une circonscription s'ouvre maintenant au centre de l'écran.",
+    "version": null
+  },
+  {
+    "pr": 915,
+    "date": "2026-10-02T18:12:10Z",
+    "note": "Le module des réseaux sociaux (miroir de travail seulement) gagne une bulle d'explication à côté de son titre, et sa section de la Méthodologie décrit son nouvel affichage.",
+    "version": null
+  },
+  {
+    "pr": 914,
+    "date": "2026-10-02T17:54:28Z",
+    "note": "Sur l'accueil, le Polimètre+ passe à la fin de la page, après l'Assemblée nationale.",
+    "version": "2.49.0-beta.9"
+  },
+  {
+    "pr": 913,
+    "date": "2026-10-02T17:49:45Z",
+    "note": "Dans le module des réseaux sociaux (miroir de travail seulement), tout se passe désormais dans l'appareil : plus de pages à part pour les candidats et les circonscriptions, et le téléphone garde sa taille.",
+    "version": null
+  },
+  {
+    "pr": 911,
+    "date": "2026-10-02T16:57:12Z",
+    "note": "Le module des réseaux sociaux, visible sur le miroir de travail seulement, change de visage : les indicateurs en grand, une vue par parti, par candidat, par publication ou par circonscription, et une carte qui suit l'indicateur et la période choisis.",
+    "version": null
+  },
+  {
+    "pr": 900,
+    "date": "2026-09-30T19:20:40Z",
+    "note": "Dans le Polimètre+ en campagne, une promesse formulée plusieurs fois par un parti est désormais, dans la plupart des cas, regroupée en une seule entrée.",
+    "version": "2.49.0-beta.8"
+  },
+  {
+    "pr": 898,
+    "date": "2026-09-30T17:22:31Z",
+    "note": "La page Équipe présente un nouveau professeur collaborateur, Benjamin Guinaudeau.",
+    "version": null
+  },
+  {
+    "pr": 897,
+    "date": "2026-09-30T17:06:42Z",
+    "note": "Sur le miroir de travail : chaque candidate et chaque candidat a sa page, et la liste des comptes se fouille par nom, avec les dernières publications au survol.",
+    "version": null
+  },
+  {
+    "pr": 902,
+    "date": "2026-09-30T16:38:43Z",
+    "note": "La page Méthodologie décrit le nouveau module sur l'activité des candidates et des candidats sur les réseaux sociaux, affiché pour l'instant sur le miroir de travail seulement.",
+    "version": null
+  },
+  {
+    "pr": 895,
+    "date": "2026-09-30T01:34:01Z",
+    "note": "Sur le miroir de travail : chaque circonscription a sa page, la carte se fouille et se zoome, et les vidéos se regardent sans quitter le site.",
+    "version": null
+  },
+  {
+    "pr": 894,
+    "date": "2026-09-29T21:19:56Z",
+    "note": "Nouveau sur le miroir de travail : une carte des circonscriptions montre quel parti récolte le plus de mentions « j'aime » sur les réseaux, avec les comptes et les dernières publications des candidats de chacune.",
+    "version": null
+  },
+  {
+    "pr": 891,
+    "date": "2026-09-29T19:33:26Z",
+    "note": "Rien ne change sur le site public : un nouveau module sur les comptes des candidats dans les réseaux sociaux est à l'essai sur le miroir de travail.",
+    "version": null
+  },
+  {
+    "pr": 890,
+    "date": "2026-09-29T19:20:07Z",
+    "note": "Rien ne change sur le site : la mise à jour automatique des données devient plus robuste.",
+    "version": null
+  },
+  {
+    "pr": 886,
+    "date": "2026-09-28T22:33:42Z",
+    "note": "Le Pool de la Grande Soirée reste ouvert jusqu'à la fermeture des bureaux de vote, le 5 octobre à 20h : il pourra être rempli sur place pendant la soirée. Les logos de ses partenaires sont présentés dans des cases de taille égale.",
+    "version": null
+  },
+  {
+    "pr": 884,
+    "date": "2026-09-27T18:28:04Z",
+    "note": "La page du Pool de la Grande Soirée nomme maintenant au long le laboratoire PARDUR parmi les partenaires de la soirée, avec un lien vers sa page.",
+    "version": null
+  },
+  {
+    "pr": 883,
+    "date": "2026-09-27T18:19:28Z",
+    "note": "Le logo d'Amazon Web Services s'affiche désormais parmi les partenaires de la page du Pool de la Grande Soirée.",
+    "version": null
+  },
+  {
+    "pr": 882,
+    "date": "2026-09-27T18:03:55Z",
+    "note": "Le Pool de la Grande Soirée refuse désormais tout envoi après sa date limite, ses logos de partenaires mènent aux sites, et ses commandes ont été agrandies pour l'usage au doigt.",
+    "version": null
+  },
+  {
+    "pr": 881,
+    "date": "2026-09-27T17:19:47Z",
+    "note": "Le Pool de la Grande Soirée affiche les logos de ses partenaires en pied de page, ceux de la soirée du 5 octobre et ceux des projets du CAPP. Un défilement du doigt ne déplace plus les glissières de sièges, et un bouton remet les six compteurs à zéro.",
+    "version": null
+  },
+  {
+    "pr": 878,
+    "date": "2026-09-27T02:43:27Z",
+    "note": "L'avertissement de la page du Pool de la Grande Soirée précise que le pool s'adresse aux personnes qui ont un billet pour la soirée du 5 octobre à l'Université Laval, et que les prix se remettent dans la salle en main propre uniquement.",
+    "version": null
+  },
+  {
+    "pr": 877,
+    "date": "2026-09-27T02:17:11Z",
+    "note": "La page du Pool de la Grande Soirée affiche désormais, pour chaque circonscription et pour chaque parti, la projection de Qc125 mise à jour le 26 septembre, à côté du résultat de 2022 recalculé sur la carte de 2026. Un avertissement rappelle que le pool s'adresse aux personnes qui ont un billet et que les prix se remettent sur place.",
+    "version": null
+  },
+  {
+    "pr": 876,
+    "date": "2026-09-27T02:02:30Z",
+    "note": "Le Pool de la Grande Soirée est réservé aux personnes qui ont un billet pour la soirée du 5 octobre, et les prix se remettent dans la salle ce soir-là.",
+    "version": null
+  },
+  {
+    "pr": 875,
+    "date": "2026-09-27T01:50:16Z",
+    "note": "Le Pool de la Grande Soirée passe de six défis à trois. Les trois retirés ne demandaient rien de plus que l'addition des sièges déjà répartie plus haut dans la page.",
+    "version": null
+  },
+  {
+    "pr": 874,
+    "date": "2026-09-27T01:26:03Z",
+    "note": "Le Pool de la Grande Soirée ferme maintenant le vendredi 2 octobre à 23h59. La page empêche désormais de répartir plus de 127 sièges, et deux de ses six défis ont été remplacés par des questions dont la réponse est moins évidente.",
+    "version": null
+  },
+  {
     "pr": 818,
     "date": "2026-09-24T16:36:07Z",
     "note": "Quand une source de données revient vide, le site garde en ligne sa dernière édition complète plutôt que de publier une page d'accueil incomplète.",

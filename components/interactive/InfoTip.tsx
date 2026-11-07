@@ -14,10 +14,17 @@ export function InfoTip({
   children,
   label,
   size = "sm",
+  dans,
+  interactive = false,
 }: {
   children: ReactNode;
   label: string;
   size?: "sm" | "lg";
+  /** Sélecteur d'un ancêtre dans lequel la bulle doit tenir (par défaut : la fenêtre). */
+  dans?: string;
+  /** La bulle porte un lien : ce n'est plus une infobulle (`role="tooltip"`,
+   *  qui ne doit rien contenir d'interactif) mais une note où le focus entre. */
+  interactive?: boolean;
 }) {
   const [open, setOpen]               = useState(false);
   const [bubbleStyle, setBubbleStyle] = useState<CSSProperties>({});
@@ -45,15 +52,18 @@ export function InfoTip({
     if (!open) return;
     if (!wrapRef.current) return;
     const wrap = wrapRef.current.getBoundingClientRect();
-    const vw   = window.innerWidth;
-    const w    = Math.min(300, vw - 16);
+    // Les bornes : la fenêtre, ou l'ancêtre demandé (l'écran d'un appareil dessiné).
+    const cadre  = dans ? wrapRef.current.closest(dans)?.getBoundingClientRect() : undefined;
+    const gauche = cadre ? cadre.left : 0;
+    const droite = cadre ? cadre.right : window.innerWidth;
+    const w    = Math.min(300, droite - gauche - 16);
     let left   = 0;
-    const overflowRight = (wrap.left + w) - (vw - 8);
+    const overflowRight = (wrap.left + w) - (droite - 8);
     if (overflowRight > 0) left = -overflowRight;
-    const overflowLeft = 8 - (wrap.left + left);
+    const overflowLeft = gauche + 8 - (wrap.left + left);
     if (overflowLeft > 0) left += overflowLeft;
     setBubbleStyle(left !== 0 ? { left: `${left}px`, width: `${w}px` } : {});
-  }, [open]);
+  }, [open, dans]);
 
   // Desktop : hover (souris uniquement via pointerType).
   const handlePointerEnter = (e: React.PointerEvent) => {
@@ -117,18 +127,23 @@ export function InfoTip({
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       onPointerDown={handlePointerDown}
+      // Le focus peut passer du bouton à un lien de la bulle : on ne ferme que
+      // s'il quitte l'ensemble.
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open) {
+          e.stopPropagation();
+          setOpen(false);
+          e.currentTarget.querySelector("button")?.focus();
+        }
+      }}
     >
       <button
         type="button"
         className={`saillance-info-btn info-${size}`}
         onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === "Escape" && open) {
-            e.stopPropagation();
-            setOpen(false);
-          }
-        }}
-        onBlur={() => setOpen(false)}
         aria-label={label}
         aria-expanded={open}
       >
@@ -137,7 +152,7 @@ export function InfoTip({
       {open && (
         <span
           className="saillance-info-bubble"
-          role="tooltip"
+          role={interactive ? "note" : "tooltip"}
           style={bubbleStyle}
         >
           {children}

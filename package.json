@@ -1,10 +1,10 @@
 {
   "name": "vitrine-showcase",
-  "version": "2.49.0-beta.7",
+  "version": "2.52.0-beta.11",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/fetch_art.mjs && tsx scripts/ensure_art.ts",
+    "prebuild": "node scripts/fetch_art.mjs && node scripts/fetch_social_vignettes.mjs && tsx scripts/ensure_art.ts",
     "build": "next build",
     "postbuild": "node scripts/postbuild.mjs",
     "start": "next start",
@@ -16,24 +16,25 @@
     "reel:enjeux-semaine": "tsx scripts/social/enjeux-semaine.ts",
     "reel:partis": "tsx scripts/social/partis.ts",
     "reel:partis-court": "tsx scripts/social/partis-court.ts",
-    "reel:vitrine": "tsx scripts/social/vitrine.ts"
+    "reel:vitrine": "tsx scripts/social/vitrine.ts",
+    "carte:deputes": "tsx scripts/social/cartes-deputes.ts"
   },
   "dependencies": {
-    "next": "16.3.5",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "next": "16.4.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
-    "@neondatabase/serverless": "^1.1.0",
+    "@neondatabase/serverless": "^1.2.0",
     "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "aws4fetch": "^1.0.20",
     "ffmpeg-static": "^5.3.0",
-    "playwright": "^1.63.0",
-    "sharp": "^0.35.4",
+    "playwright": "^1.64.1",
+    "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "^7",
-    "vitest": "^5.0.1"
+    "vitest": "^5.1.0"
   }
 }

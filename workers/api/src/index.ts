@@ -54,6 +54,7 @@ import {
 import type { SnapshotTableEntry } from './snapshot-logic'
 import { publierSelectionUne, SOURCE_TABLE as HERO_SOURCE_TABLE } from './hero-selection'
 import { ATHENA_SYNC_MINUTES, isTargetHourInNY, shouldRunAthenaSync } from './schedule'
+import { ORCHESTRATION_MS, TRANCHE_MS, tempsRestant } from './delai'
 
 interface Env extends SyncAthenaEnv, ArtEnv, SnapshotEnv {
   DATABASE_URL: string
@@ -212,13 +213,24 @@ export default {
           const cycle = cycleId(now)
           const snapshotTables: Record<string, SnapshotTableEntry> = {}
           const snapshotSkipped: string[] = []
+          // BUDGET DE L'ORCHESTRATION, et un délai PAR TRANCHE (cf. delai.ts) :
+          // une tranche pendue coupait toute la passe sans rien dire d'utile
+          // (« code had hung », 27 et 29 septembre 2026). Désormais elle échoue
+          // à son délai, avec son offset, et la passe s'arrête proprement.
+          const echeance = Date.now() + ORCHESTRATION_MS
           try {
             while (offset !== null) {
+              const restant = tempsRestant(echeance)
+              if (restant < 60_000) {
+                failed.push(`orchestration : budget de ${ORCHESTRATION_MS / 60_000} min épuisé avant la tranche offset=${offset}`)
+                break
+              }
               const res = await env.SELF.fetch(
                 `https://api.vitrinedemocratique.com/v1/sync-athena?offset=${offset}&limit=2&cycle=${cycle}`,
                 {
                   method: 'POST',
                   headers: { Authorization: `Bearer interne:${env.SYNC_INTERNAL_TOKEN}` },
+                  signal: AbortSignal.timeout(Math.min(TRANCHE_MS, restant)),
                 },
               )
               if (!res.ok && res.status !== 207) {
@@ -244,7 +256,7 @@ export default {
             // Une exception ici (réseau, boucle coupée, JSON invalide) était
             // le SILENCE TOTAL : waitUntil l'avalait, ni Slack ni journal.
             const message = err instanceof Error ? err.message : String(err)
-            failed.push(`orchestration : ${message}`)
+            failed.push(`orchestration (tranche offset=${offset}) : ${message}`)
           }
           console.log(`sync-athena (cron) : ${synced} tables, ${failed.length} échec(s)`)
 
@@ -357,7 +369,7 @@ export default {
           if (failed.length > 0) {
             await notifySlack(
               env,
-              `sync-athena : échec(s) : ${failed.join(', ')} ; builds NON déclenchés.`,
+              `sync-athena : échec(s) : ${failed.join(' ; ')} ; builds NON déclenchés.`,
             )
             return
           }
@@ -553,7 +565,9 @@ export default {
           {
             synced: synced.length,
             tables: synced,
-            failed: failed.map((f) => f.table),
+            // Table ET cause : l'alerte Slack disait seulement « agora_decideurs_qc », la
+            // cause (« Connection terminated unexpectedly ») restait dans les journaux.
+            failed: failed.map((f) => `${f.table} (${f.error})`),
             snapshotSkipped,
             offset,
             total,
