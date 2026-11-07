@@ -1,5 +1,11 @@
 [
   {
+    "pr": 996,
+    "date": "2026-11-07T22:33:30Z",
+    "note": "Quand un même événement était suivi sous deux noms différents, il pouvait occuper deux places de la Une. Il n'en occupe plus qu'une dès que les deux partagent au moins trois articles.",
+    "version": "2.52.0-beta.12"
+  },
+  {
     "pr": 1007,
     "date": "2026-11-07T21:33:39Z",
     "note": "Le rafraîchissement automatique des données reprend après une interruption de quelques heures le 7 novembre.",
