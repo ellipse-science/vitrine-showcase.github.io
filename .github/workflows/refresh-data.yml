@@ -82,8 +82,16 @@ jobs:
   # retard, parfois de plus d'une heure, et un retard peut enjamber la bascule
   # (1er novembre : la passe d'hiver de 04h53 UTC, prévue à 0h53 HAE, doit
   # être sautée même si elle n'arrive qu'après 6h UTC).
+  # ubuntu-24.04 ÉPINGLÉ, pas ubuntu-latest (7 nov. 2026) : GitHub fait basculer
+  # ubuntu-latest vers Ubuntu 26.04 (actions/runner-images#14748). Sur 26.04,
+  # tube::ellipse_connect échoue en 1 s avec « clés d'accès non valides » alors que
+  # CloudTrail montre l'appel ListBuckets accepté : l'erreur est dans la pile R/paws
+  # de l'image, pas dans la clé. Trois passes perdues le 7 nov. (08:56, 12:57, 16:57 UTC),
+  # prod figée 16 h. radar-plus tourne déjà en 24.04 et n'a rien vu. Lever l'épingle
+  # seulement après un essai manuel réussi sur 26.04.
+
   saison:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     outputs:
       run: ${{ steps.grille.outputs.run }}
@@ -125,7 +133,7 @@ jobs:
           PY
 
   refresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       photo_window: ${{ steps.photo_window.outputs.run }}
     # Filet anti-zombie : sans plafond, un step d'infra gelé (« Setup R » bloqué
@@ -493,7 +501,7 @@ jobs:
     # !cancelled() : un fetch Athena raté ne prive pas les cartes de leurs
     # portraits du jour ; un run annulé, si.
     if: ${{ !cancelled() && needs.refresh.outputs.photo_window == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Passe normale ~7 min (le scrape prend 5 min, par politesse envers
     # l'ANQ) ; une législature entière à retramer, ~22 min.
     timeout-minutes: 35
