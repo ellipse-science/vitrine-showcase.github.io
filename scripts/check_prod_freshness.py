@@ -23,6 +23,11 @@ aurait répondu « tout va bien ». Celle-ci non.
      pour la sonde ActualisationAuto. DIAGNOSTIC seulement : il dit si le site
      a cessé de se reconstruire, ou s'il se reconstruit avec de vieilles
      données. Deux pannes différentes, deux remèdes différents.
+  3. Les passes de `refresh-data.yml` depuis la fin du bloc servi (API
+     Actions). DIAGNOSTIC seulement, consulté quand la prod est périmée. Sans
+     lui, la garde accusait « la cascade AWS » pour des pannes qui étaient
+     dans GitHub Actions : run annulé au plafond (nuits du 15 au 28-10), commit
+     refusé (04-11), grille du cron restée à l'heure d'été (01→04-11).
 
 SEUIL. Un bloc de 4 h est publié ~1 h après sa fin et reste affiché jusqu'à
 l'édition suivante : l'âge de sa FIN oscille donc NORMALEMENT entre ~1 h et
@@ -41,7 +46,9 @@ outputs.
 import datetime
 import json
 import os
+import urllib.parse
 import urllib.request
+from zoneinfo import ZoneInfo
 
 # Une seule définition de « fin d'un bloc », partagée avec l'alarme #412 —
 # y compris son bord legacy « 20-24 ». Deux copies divergeraient un jour.
@@ -62,6 +69,16 @@ URL_BUILD = f"{BASE}/build-id.json"
 
 SEUIL_H = 7.0  # cf. docstring : normal ≤ 5 h, édition manquée ≈ 9 h
 TIMEOUT_S = 20
+
+REPO = os.environ.get("GITHUB_REPOSITORY", "ellipse-science/vitrine-showcase.github.io")
+API = f"https://api.github.com/repos/{REPO}/actions"
+PAGE_FILET = f"https://github.com/{REPO}/actions/workflows/refresh-data.yml"
+ECHECS = {"failure", "cancelled", "timed_out", "startup_failure"}
+MONTREAL = ZoneInfo("America/Montreal")
+# Un bloc qui finit à H:00 sort de la cascade AWS vers H:47 ; les passes de
+# refresh-data sont calées à :53 pour le prendre (calage du 10-09).
+CASCADE = datetime.timedelta(hours=4, minutes=47)
+_PAS_CONSULTE = object()
 
 
 def _lire_json(url: str) -> dict:
@@ -99,13 +116,142 @@ def age_du_build() -> tuple[float | None, str]:
         return None, f"âge du build inconnu ({type(e).__name__})"
 
 
-def diagnostiquer(build_age: float | None) -> str:
-    """Oriente vers le bon remède : ça ne rebâtit plus, ou ça rebâtit du vieux."""
+def _lire_api(url: str) -> dict:
+    """GET sur l'API GitHub, avec le jeton du job s'il y en a un."""
+    entetes = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "vitrine-garde-fraicheur",
+    }
+    jeton = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if jeton:
+        entetes["Authorization"] = f"Bearer {jeton}"
+    req = urllib.request.Request(url, headers=entetes)
+    with urllib.request.urlopen(req, timeout=TIMEOUT_S) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def _instant(iso: str) -> datetime.datetime:
+    return datetime.datetime.fromisoformat(iso.replace("Z", "+00:00"))
+
+
+def _heure(instant: datetime.datetime) -> str:
+    """« 22h55 », heure de Montréal."""
+    t = instant.astimezone(MONTREAL)
+    return f"{t.hour}h{t.minute:02d}"
+
+
+def _issue_de_la_passe(run: dict) -> tuple[str, str]:
+    """(« livree » | « sautee » | « ratee » | « en_cours » | « inconnue », détail).
+
+    On juge le job `refresh`, pas le run : depuis vitrine#971, un échec du job
+    `portraits` rend le run rouge alors que l'édition est partie (et le run
+    reste « en cours » jusqu'à 35 min après la livraison) ; depuis vitrine#982,
+    la passe de la grille hors saison finit « success » sans rien livrer (job
+    `refresh` sauté). La conclusion du run seule tromperait dans les deux sens :
+    jobs illisibles = « inconnue », jamais une supposition.
+    """
+    try:
+        jobs = {j["name"]: j for j in _lire_api(f"{API}/runs/{run['id']}/jobs")["jobs"]}
+    except Exception:
+        return "inconnue", ""
+    refresh = jobs.get("refresh")
+    if refresh is None:
+        # Un run en file n'a pas encore ses jobs ; un run terminé sans job
+        # `refresh` n'est pas une forme connue.
+        return ("en_cours" if run.get("status") != "completed" else "inconnue"), ""
+    if refresh.get("status") != "completed":
+        return "en_cours", ""
+    conclusion = refresh.get("conclusion")
+    if conclusion == "success":
+        return "livree", ""
+    if conclusion == "skipped":
+        if jobs.get("saison", {}).get("conclusion") == "success":
+            return "sautee", ""
+        return "ratee", "n'a rien livré : la garde de saison a échoué"
+    if conclusion == "cancelled":
+        return "ratee", "a été annulée (plafond de durée ou annulation manuelle)"
+    etape = next(
+        (s["name"] for s in refresh.get("steps", []) if s.get("conclusion") == "failure"),
+        None,
+    )
+    if etape:
+        return "ratee", f"a échoué à l'étape « {etape} »"
+    return "ratee", f"a fini « {conclusion} »"
+
+
+def etat_du_filet(
+    fin: datetime.datetime, jusqua: datetime.datetime | None = None
+) -> tuple[str, str] | None:
+    """Ce qu'ont fait les passes de refresh-data depuis la fin du bloc servi.
+
+    (« ratee » | « absente » | « decalee » | « livree », message), ou None si
+    l'API n'a pas répondu. `jusqua` borne la fenêtre pour rejouer un incident.
+    """
+    f = "%Y-%m-%dT%H:%M:%SZ"
+    borne = f">={fin:{f}}" if jusqua is None else f"{fin:{f}}..{jusqua:{f}}"
+    try:
+        runs = _lire_api(
+            f"{API}/workflows/refresh-data.yml/runs?per_page=30"
+            f"&created={urllib.parse.quote(borne)}"
+        )["workflow_runs"]
+    except Exception:
+        return None
+    en_cours = []
+    for run in runs:  # l'API rend les plus récents d'abord
+        issue, detail = _issue_de_la_passe(run)
+        if issue == "inconnue":
+            return None
+        if issue == "en_cours":
+            en_cours.append(run)
+            continue
+        if issue == "sautee":
+            continue
+        heure = _heure(_instant(run["created_at"]))
+        if issue == "ratee":
+            return "ratee", (
+                f"la passe refresh-data de {heure} {detail} : l'édition suivante "
+                "n'a jamais été poussée. La panne est dans GitHub Actions, PAS "
+                f"dans la cascade AWS. Journal : {run['html_url']} ; relance : "
+                "`gh workflow run refresh-data.yml --ref develop`"
+            )
+        # La dernière passe a livré, et la prod est pourtant vieille. Si elle
+        # est partie AVANT que le bloc suivant sorte de la cascade, elle ne
+        # pouvait pas l'avoir : c'est l'horaire du filet, pas AWS.
+        pret = fin + CASCADE
+        if _instant(run["created_at"]) < pret:
+            return "decalee", (
+                f"la dernière passe refresh-data ({heure}) est partie AVANT que "
+                f"le bloc suivant sorte de la cascade AWS (~{_heure(pret)}), et "
+                "aucune ne l'a suivie : la grille du cron est décalée (changement "
+                f"d'heure ?) ou une passe a sauté. Passes : {PAGE_FILET}"
+            )
+        return "livree", f"dernière passe refresh-data livrée à {heure} ({run['html_url']})"
+    if en_cours:
+        r = en_cours[-1]
+        return "absente", (
+            f"aucune passe refresh-data terminée depuis la fin du bloc servi "
+            f"({_heure(fin)}) ; un run est « {r.get('status')} » depuis "
+            f"{_heure(_instant(r['created_at']))}, bloqué ? {r['html_url']}"
+        )
+    return "absente", (
+        f"aucune passe refresh-data depuis la fin du bloc servi ({_heure(fin)}) : "
+        f"le cron GitHub n'a pas tiré, ou le workflow est désactivé. {PAGE_FILET}"
+    )
+
+
+def diagnostiquer(build_age: float | None, filet=_PAS_CONSULTE) -> str:
+    """Oriente vers le bon remède : ça ne rebâtit plus, ou ça rebâtit du vieux.
+
+    Les passes de refresh-data priment sur l'âge du build : elles sont le
+    premier maillon, et c'est leur panne que la garde prenait pour AWS.
+    """
     if build_age is None:
         return (
             "sonde de build muette — vérifier d'abord que le site répond "
             "(https://vitrinedemocratique.com/build-id.json)"
         )
+    if filet is not _PAS_CONSULTE and filet and filet[0] != "livree":
+        return filet[1]
     if build_age > SEUIL_H:
         return (
             "le site NE SE RECONSTRUIT PLUS (cf. vitrine#570) — Deploy Hooks "
@@ -114,11 +260,19 @@ def diagnostiquer(build_age: float | None) -> str:
             "Remède manuel : `gh workflow run refresh-data.yml --ref main` "
             "puis `gh workflow run deploy-prod.yml --ref prod`"
         )
-    return (
+    amont = (
         "le site SE RECONSTRUIT mais avec des données en retard — la panne "
         "est en amont, dans la cascade AWS. Diagnostic : skill "
         "diagnostic-donnees-perimees ; remède : skill rattrapage-radar-data-prep"
     )
+    if filet is _PAS_CONSULTE:
+        return amont
+    if filet is None:
+        return (
+            f"{amont} (passes refresh-data illisibles : lire d'abord "
+            "`gh run list -w refresh-data.yml`)"
+        )
+    return f"{amont} — {filet[1]}"
 
 
 def mesurer() -> tuple[bool, str, str]:
@@ -148,7 +302,7 @@ def mesurer() -> tuple[bool, str, str]:
             True,
             f"la prod sert le bloc {bloc}, terminé il y a {a:.1f} h "
             f"(seuil {SEUIL_H:.0f} h ; normal ≤ 5 h) — {mention_build}",
-            diagnostiquer(build_age),
+            diagnostiquer(build_age, etat_du_filet(fin)),
         )
     return (
         False,
