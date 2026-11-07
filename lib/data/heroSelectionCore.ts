@@ -159,6 +159,35 @@ export function sameStory(a: Set<string>, b: Set<string>): boolean {
   return inter / (a.size + b.size - inter) >= 0.4;
 }
 
+// Deuxième filet : deux storylines qui partagent AU MOINS 3 articles (URL) sont
+// la même histoire, scindée en amont par le suivi des storylines (doublon des
+// mi-mandats américains du 4 nov. 2026 : 7 articles communs, 2 mots de titre
+// seulement). Rejoué sur les 245 éditions de prod du 18 sept. au 4 nov. :
+// 11 fusions, aucune entre deux histoires différentes ; avec 1 seul article
+// commun, 18 fusions fautives (article égaré dans un regroupement, chronique
+// transversale). Les pages en direct ne comptent pas : une même page suit
+// plusieurs histoires à la fois.
+export const URL_COMMUNES_MIN = 3;
+const PAGE_EN_DIRECT = /(?:^|[\/\-_.])(?:en-direct|live|livestory|liveblog)(?=[\/\-_.]|$)/i;
+
+/** URL comparable : sans protocole, `www.`, paramètres, ancre ni barre finale. */
+export function normaliserUrl(u: string): string {
+  return u.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "")
+    .replace(/[?#].*$/, "").replace(/\/+$/, "");
+}
+
+/** Page en direct : un segment du CHEMIN (pas l'hôte) vaut en-direct, live… */
+export function estPageEnDirect(urlNormalisee: string): boolean {
+  return PAGE_EN_DIRECT.test(urlNormalisee.replace(/^[^/]*/, ""));
+}
+
+export function articlesCommuns(a: Set<string>, b: Set<string>): boolean {
+  if (a.size < URL_COMMUNES_MIN || b.size < URL_COMMUNES_MIN) return false;
+  let n = 0;
+  for (const u of a) if (b.has(u) && ++n >= URL_COMMUNES_MIN) return true;
+  return false;
+}
+
 // Construit tout l'état du module « Deux solitudes » (radar + jauge + édito).
 // `latest` = événements du bloc courant (pour l'indice de convergence) ;
 // `allEvents` = tous les blocs publiés (3 jours), pour agréger la part
@@ -183,6 +212,9 @@ export type Story = {
   canMedia: Set<string>;
   urlByMedia: Record<string, string>;
   tok: Set<string>;
+  /** URL normalisées des articles de la fenêtre, pages en direct exclues
+   *  (filet `articlesCommuns`). Cumule celles des storylines absorbées. */
+  urls: Set<string>;
   // Score QC BRUT (non pondéré) par bloc 4 h de la fenêtre — sert à la
   // trajectoire de saillance (#274). max par bloc, comme peakQc mais conservé
   // bloc par bloc. Rempli pendant l'agrégation, sérialisé en `series` à la fin.
@@ -251,7 +283,7 @@ export function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENC
     if (!cur) {
       cur = { rep: e, repKey: bk, label: e.title ?? "", sumQc: 0, sumRoc: 0, peakQc: 0, peakRoc: 0,
         qcMedia: new Set(), canMedia: new Set(), urlByMedia: {}, tok: titleTokens(e.title ?? ""),
-        byBlock: new Map(), series: [] };
+        byBlock: new Map(), series: [], urls: new Set() };
       byStory.set(key, cur);
     }
     cur.sumQc += qc * w; cur.sumRoc += roc * w;
@@ -264,6 +296,10 @@ export function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENC
         const parsed = JSON.parse((e[k] as string) ?? "[]");
         if (Array.isArray(parsed)) for (const a of parsed as RawArticle[]) {
           if (a.media_id && a.url && !cur.urlByMedia[a.media_id]) cur.urlByMedia[a.media_id] = a.url;
+          if (typeof a.url === "string" && a.url) {
+            const u = normaliserUrl(a.url);
+            if (!estPageEnDirect(u)) cur.urls.add(u);
+          }
         }
       } catch { /* champ absent ou malformé */ }
     }
@@ -276,10 +312,12 @@ export function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENC
   // SAILLANTE (host), délibérément NON réévalué à la fusion : basculer vers la
   // jumelle (souvent l'autre langue) ferait changer la langue du titre affiché.
   // À l'intérieur d'une storyline, rep = bloc le plus récent (boucle ci-dessus).
+  // Même fusion quand deux storylines partagent ≥ 3 articles (`articlesCommuns`).
   const merged: Story[] = [];
   for (const a of Array.from(byStory.values()).sort((x, y) => y.sumQc + y.sumRoc - (x.sumQc + x.sumRoc))) {
-    const host = merged.find((m) => sameStory(m.tok, a.tok));
+    const host = merged.find((m) => sameStory(m.tok, a.tok) || articlesCommuns(m.urls, a.urls));
     if (host) {
+      a.urls.forEach((u) => host.urls.add(u));
       host.sumQc += a.sumQc; host.sumRoc += a.sumRoc;
       host.peakQc = Math.max(host.peakQc, a.peakQc); host.peakRoc = Math.max(host.peakRoc, a.peakRoc);
       a.qcMedia.forEach((id) => host.qcMedia.add(id));
