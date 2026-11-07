@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1008,
+    "date": "2026-11-07T23:52:29Z",
+    "note": "Rien ne change sur le site. Cette mise à jour aligne la documentation interne de rédaction sur le vocabulaire officiel des niveaux de Radar+.",
+    "version": null
+  },
+  {
     "pr": 967,
     "date": "2026-11-07T23:51:53Z",
     "note": "Le lien « Notre infrastructure » du menu Méthodologie fonctionne maintenant depuis toutes les pages.",
