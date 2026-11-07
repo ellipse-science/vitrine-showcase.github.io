@@ -159,16 +159,28 @@ export function sameStory(a: Set<string>, b: Set<string>): boolean {
   return inter / (a.size + b.size - inter) >= 0.4;
 }
 
-// Deuxième filet : deux storylines qui partagent AU MOINS 3 articles (URL) sont
-// la même histoire, scindée en amont par le suivi des storylines (doublon des
-// mi-mandats américains du 4 nov. 2026 : 7 articles communs, 2 mots de titre
+// Deuxième filet : deux cycles de vie (`storyline_id`) qui partagent AU MOINS
+// 3 articles (URL) sont le même événement, scindé en amont par le suivi
+// (mi-mandats américains du 4 nov. 2026 : 7 articles communs, 2 mots de titre
 // seulement). Rejoué sur les 245 éditions de prod du 18 sept. au 4 nov. :
-// 11 fusions, aucune entre deux histoires différentes ; avec 1 seul article
+// 11 fusions, aucune entre deux événements différents ; avec 1 seul article
 // commun, 18 fusions fautives (article égaré dans un regroupement, chronique
 // transversale). Les pages en direct ne comptent pas : une même page suit
-// plusieurs histoires à la fois.
+// plusieurs événements à la fois.
 export const URL_COMMUNES_MIN = 3;
-const PAGE_EN_DIRECT = /(?:^|[\/\-_.])(?:en-direct|live|livestory|liveblog)(?=[\/\-_.]|$)/i;
+// Formes de chemin des pages en direct des médias du panel : segment dédié
+// (/en-direct/, /live-news/, /livestory/, /liveblog/, /live/), amorce de slug
+// (« en-direct--… », « …couverture-en-direct »), ou « live » accolé à updates,
+// results, news, blog, election, real-time, ou en fin de slug. Le mot « live »
+// seul ne suffit pas : « live-fire-drills » est un article ordinaire.
+const PAGE_EN_DIRECT = new RegExp([
+  "\\/(?:en-direct|live-news|livestory|liveblog|live)(?=\\/|\\.|$)",
+  "en-direct(?:--|\\.php|$)",
+  "couverture-en-direct",
+  "live-(?:updates|results|news|blog|election|real-time)",
+  "(?:election|results)-live(?=[\\/.\\-]|$)",
+  "-live(?=\\/|\\.|$)",
+].join("|"), "i");
 
 /** URL comparable : sans protocole, `www.`, paramètres, ancre ni barre finale. */
 export function normaliserUrl(u: string): string {
@@ -213,7 +225,7 @@ export type Story = {
   urlByMedia: Record<string, string>;
   tok: Set<string>;
   /** URL normalisées des articles de la fenêtre, pages en direct exclues
-   *  (filet `articlesCommuns`). Cumule celles des storylines absorbées. */
+   *  (filet `articlesCommuns`). Cumule celles des cycles de vie absorbés. */
   urls: Set<string>;
   // Score QC BRUT (non pondéré) par bloc 4 h de la fenêtre — sert à la
   // trajectoire de saillance (#274). max par bloc, comme peakQc mais conservé
@@ -312,20 +324,28 @@ export function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENC
   // SAILLANTE (host), délibérément NON réévalué à la fusion : basculer vers la
   // jumelle (souvent l'autre langue) ferait changer la langue du titre affiché.
   // À l'intérieur d'une storyline, rep = bloc le plus récent (boucle ci-dessus).
-  // Même fusion quand deux storylines partagent ≥ 3 articles (`articlesCommuns`).
+  // Même fusion quand deux cycles de vie partagent ≥ 3 articles (`articlesCommuns`).
+  // Un hôte enrichi est recomparé aux événements déjà retenus jusqu'à
+  // stabilité : un cycle de vie « pont » (C partage 3 articles avec A et 3 avec
+  // B) réunit A, B et C, sous le représentant le plus saillant.
+  const memeEvenement = (m: Story, a: Story) => sameStory(m.tok, a.tok) || articlesCommuns(m.urls, a.urls);
+  const absorber = (host: Story, a: Story) => {
+    a.urls.forEach((u) => host.urls.add(u));
+    host.sumQc += a.sumQc; host.sumRoc += a.sumRoc;
+    host.peakQc = Math.max(host.peakQc, a.peakQc); host.peakRoc = Math.max(host.peakRoc, a.peakRoc);
+    a.qcMedia.forEach((id) => host.qcMedia.add(id));
+    a.canMedia.forEach((id) => host.canMedia.add(id));
+    for (const [id, url] of Object.entries(a.urlByMedia)) if (!host.urlByMedia[id]) host.urlByMedia[id] = url;
+    for (const [b, v] of a.byBlock) host.byBlock.set(b, Math.max(host.byBlock.get(b) ?? 0, v));
+  };
   const merged: Story[] = [];
   for (const a of Array.from(byStory.values()).sort((x, y) => y.sumQc + y.sumRoc - (x.sumQc + x.sumRoc))) {
-    const host = merged.find((m) => sameStory(m.tok, a.tok) || articlesCommuns(m.urls, a.urls));
-    if (host) {
-      a.urls.forEach((u) => host.urls.add(u));
-      host.sumQc += a.sumQc; host.sumRoc += a.sumRoc;
-      host.peakQc = Math.max(host.peakQc, a.peakQc); host.peakRoc = Math.max(host.peakRoc, a.peakRoc);
-      a.qcMedia.forEach((id) => host.qcMedia.add(id));
-      a.canMedia.forEach((id) => host.canMedia.add(id));
-      for (const [id, url] of Object.entries(a.urlByMedia)) if (!host.urlByMedia[id]) host.urlByMedia[id] = url;
-      for (const [b, v] of a.byBlock) host.byBlock.set(b, Math.max(host.byBlock.get(b) ?? 0, v));
-    } else {
-      merged.push(a);
+    const host = merged.find((m) => memeEvenement(m, a));
+    if (!host) { merged.push(a); continue; }
+    absorber(host, a);
+    for (let i = merged.length - 1; i >= 0; i--) {
+      const autre = merged[i];
+      if (autre !== host && memeEvenement(host, autre)) { absorber(host, autre); merged.splice(i, 1); }
     }
   }
   // Série par bloc sur les 6 blocs de la fenêtre, du plus ANCIEN au plus récent
