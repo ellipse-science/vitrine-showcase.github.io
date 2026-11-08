@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1012,
+    "date": "2026-11-08T17:36:46Z",
+    "note": "Le haut de la page des pipelines redevient lisible : une ligne de présentation, et l'historique des changements se déplie à la demande.",
+    "version": null
+  },
+  {
     "pr": 973,
     "date": "2026-11-08T02:29:34Z",
     "note": "Le schéma des pipelines affiche à nouveau les vrais horaires de la chaîne Radar+.",
