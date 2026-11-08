@@ -189,8 +189,10 @@ const CAL_CONV: [number, number][] = [[0, 0], [6, 50], [37, 80], [69.1, 95], [10
 // disait « nettement plus que d'habitude » à des valeurs SOUS la médiane
 // annuelle. La formule de l'indice n'y est pour rien : l'ancien indice donne
 // la même médiane (52) sur la même année, la convergence est un rapport de
-// parts. Provisoire au même titre que les grilles du § 03 : rebasé quand la
-// référence datée (`ref-2025`) sera posée.
+// parts. Encore provisoire : les grilles du § 03 sont passées à la référence
+// datée `ref-A1` le 2026-11-08 (salienceCutover.ts), pas ce repère, qui reste
+// mesuré sur le rejeu du banc 235. Rebasé quand une référence datée (`ref-A1`
+// ou `ref-2025`) lui sera appliquée.
 const HABITUAL_EVENT_CONV = 52;
 // Bandes du score RELATIF (#258, demande Yannick « plus/moins que d'habitude,
 // et de combien ») : au-delà de p80 (ou sous p20) de la distribution d'année,
