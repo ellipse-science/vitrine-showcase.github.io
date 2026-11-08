@@ -54,18 +54,18 @@ on:
     # qui fonctionne livre à l'heure ; un build en double est absorbé par Pages
     # depuis #582.
     #
-    # ⚠️ C'est la grille d'ÉTÉ (UTC-4), et un cron GitHub ignore les fuseaux.
-    # À l'heure normale (UTC-5, dès le 1er novembre 2026), ce filet tirera une
-    # heure trop TÔT, avant la fin de la cascade, et ne livrera l'édition qu'à
-    # la passe suivante. Tant que le Worker ne livre pas, ce sera un retard de
-    # plusieurs heures : à régler AVANT le 1er novembre, soit en réparant le
-    # Worker (qui enregistre les DEUX jeux d'heures UTC et filtre dans le code,
-    # cf. isAthenaTargetHourInNY), soit en donnant la même garde à ce filet.
+    # DEUX GRILLES, UNE SEULE VIT À LA FOIS. Un cron GitHub ignore les fuseaux :
+    # on enregistre donc les heures UTC de l'été (UTC-4) ET de l'hiver (UTC-5),
+    # et le job `saison` laisse passer la seule qui tombe à :53 avant l'édition
+    # en ce moment, comme le Worker (isAthenaTargetHourInNY, #506). Avec la
+    # seule grille d'été, le 2026-11-01, chaque édition est arrivée ~3 h en
+    # retard : le filet tirait une heure AVANT la fin de la cascade.
     #
-    # 🔗 La première des six passes tombe à 03:53 UTC, et c'est de ça que dépend
-    # la garde du scrape des portraits de députés plus bas (heure UTC 03 ou 04).
-    # Toucher à cette ligne sans regarder celle-là éteindrait ce scrape en silence.
-    - cron: '53 3,7,11,15,19,23 * * *'
+    # Ces deux lignes sont recopiées telles quelles dans le job `saison` : les
+    # changer ensemble. Une grille inconnue de la garde passe quand même (un
+    # build en double plutôt qu'un site figé), avec un avertissement.
+    - cron: '53 3,7,11,15,19,23 * * *'   # été  : 23h53, 3h53, 7h53… Montréal
+    - cron: '53 0,4,8,12,16,20 * * *'    # hiver : 23h53, 3h53, 7h53… Montréal
 
 permissions:
   contents: read
@@ -76,13 +76,73 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Garde été/hiver : décide sur la grille qui a DÉCLENCHÉ le run
+  # (github.event.schedule) et le décalage de Montréal à l'heure PRÉVUE de
+  # cette passe, jamais à l'heure d'arrivée — le cron GitHub part souvent en
+  # retard, parfois de plus d'une heure, et un retard peut enjamber la bascule
+  # (1er novembre : la passe d'hiver de 04h53 UTC, prévue à 0h53 HAE, doit
+  # être sautée même si elle n'arrive qu'après 6h UTC).
+  # ubuntu-24.04 ÉPINGLÉ, pas ubuntu-latest (7 nov. 2026) : GitHub fait basculer
+  # ubuntu-latest vers Ubuntu 26.04 (actions/runner-images#14748). Sur 26.04,
+  # tube::ellipse_connect échoue en 1 s avec « clés d'accès non valides » alors que
+  # CloudTrail montre l'appel ListBuckets accepté : l'erreur est dans la pile R/paws
+  # de l'image, pas dans la clé. Trois passes perdues le 7 nov. (08:56, 12:57, 16:57 UTC),
+  # prod figée 16 h. radar-plus tourne déjà en 24.04 et n'a rien vu. Lever l'épingle
+  # seulement après un essai manuel réussi sur 26.04.
+
+  saison:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      run: ${{ steps.grille.outputs.run }}
+    steps:
+      - name: Garder la grille de la saison
+        id: grille
+        env:
+          GRILLE: ${{ github.event.schedule }}
+          ETE: '53 3,7,11,15,19,23 * * *'
+          HIVER: '53 0,4,8,12,16,20 * * *'
+        run: |
+          python3 - <<'PY'
+          import os
+          from datetime import datetime, timedelta, timezone
+          from zoneinfo import ZoneInfo
+
+          grille = os.environ["GRILLE"]
+          saisons = {os.environ["ETE"]: -4, os.environ["HIVER"]: -5}
+          if not grille:
+              run, motif = True, "workflow_dispatch : toujours"
+          elif grille not in saisons:
+              run, motif = True, "grille inconnue de la garde : run quand même"
+              print(f"::warning::Grille « {grille} » inconnue de la garde : run quand même.")
+          else:
+              heures = {int(h) for h in grille.split()[1].split(",")}
+              arrivee = datetime.now(timezone.utc)
+              # La passe PRÉVUE : le dernier :53 de cette grille avant l'arrivée.
+              prevue = arrivee.replace(minute=53, second=0, microsecond=0)
+              if prevue > arrivee:
+                  prevue -= timedelta(hours=1)
+              while prevue.hour not in heures:
+                  prevue -= timedelta(hours=1)
+              decalage = prevue.astimezone(ZoneInfo("America/Toronto")).utcoffset() / timedelta(hours=1)
+              run = decalage == saisons[grille]
+              motif = f"prévue à {prevue:%H:%M} UTC, Montréal alors en UTC{decalage:+.0f}"
+          print(f"Grille « {grille or 'manuel'} » : {motif} → run={str(run).lower()}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as sortie:
+              sortie.write(f"run={str(run).lower()}\n")
+          PY
+
   refresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    outputs:
+      photo_window: ${{ steps.photo_window.outputs.run }}
     # Filet anti-zombie : sans plafond, un step d'infra gelé (« Setup R » bloqué
     # ~1h30 le 2026-08-18) tourne jusqu'à la limite dure de 6h de GitHub. Couplé
     # à concurrency.cancel-in-progress: false, ce zombie met toutes les éditions
     # suivantes EN FILE derrière lui → le site fige. 25 min ≈ 3× un run normal.
     timeout-minutes: 25
+    needs: saison
+    if: needs.saison.outputs.run == 'true'
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -204,7 +264,7 @@ jobs:
       # requêtes (1 index + 125 fiches + 125 photos, à raison d'1 req/s par
       # politesse) six fois par jour vers le site de l'ANQ pour rien. On ne
       # tourne donc que sur le PREMIER des six déclenchements quotidiens
-      # (00h50 UTC — la première entrée du `schedule:` en tête de fichier ;
+      # (la passe de 23h53 Montréal, celle de l'édition de minuit ;
       # c'était cron-job.org avant le 19-08) plutôt que d'ajouter un cron natif
       # séparé — la fiabilité au ± minute près, qui a fait écarter le cron
       # natif pour les données électorales plus haut, ne compte pas ici.
@@ -215,78 +275,23 @@ jobs:
       # lire 01h passé minuit UTC un jour de run lent, et de sauter la
       # fenêtre entière — décalant la fraîcheur des portraits d'un jour de
       # plus sans qu'aucune alerte ne le signale.
-      # 03 OU 04, et non 03 seul (10-09) : la passe tombe désormais à 03:53 UTC,
-      # sept minutes avant 04h, et le cron GitHub part souvent en retard — la
-      # passe programmée à 00:50 UTC est partie à 01:10 le 10-09. Accepter aussi
+      # 23 OU 00, et non 23 seul (10-09) : la passe tombe à 23h53, sept minutes
+      # avant minuit, et le cron GitHub part souvent en retard — la passe
+      # programmée à 00:50 UTC est partie à 01:10 le 10-09. Accepter aussi
       # l'heure suivante absorbe jusqu'à 66 minutes de retard sans jamais lancer
-      # le scrape deux fois : la passe d'après ne tombe qu'à 07:53.
+      # le scrape deux fois : la passe d'après ne tombe qu'à 3h53.
+      # En heure de MONTRÉAL depuis le 2026-11-01 : en UTC, la passe change
+      # d'heure deux fois par an (03h53 l'été, 04h53 l'hiver).
       - name: Check daily deputy-photo window
         id: photo_window
         run: |
-          case "$(date -u +%H)" in
-            03|04) echo "run=true"  >> "$GITHUB_OUTPUT" ;;
+          case "$(TZ=America/Toronto date +%H)" in
+            23|00) echo "run=true"  >> "$GITHUB_OUTPUT" ;;
             *)     echo "run=false" >> "$GITHUB_OUTPUT" ;;
           esac
 
-      - name: Install Python deps for deputy portraits (numpy, Pillow already present)
-        if: steps.photo_window.outputs.run == 'true'
-        run: pip install numpy
-
-      - name: Refresh deputy portraits (best-effort, non-blocking)
-        id: deputy_photos
-        if: steps.photo_window.outputs.run == 'true'
-        continue-on-error: true
-        run: python scripts/scrape_deputy_photos.py
-
-      # --force : sans ça, build_deputy_cards.py saute toute circonscription
-      # dont la carte de sortie existe déjà — y compris après une partielle,
-      # où scrape_deputy_photos.py vient de réécrire la photo SOURCE sous le
-      # même nom de fichier (clé = siège, pas personne). Sans --force, la
-      # carte traitée que le site affiche resterait celle de l'ANCIEN
-      # titulaire alors que la source brute est déjà à jour. Le coût — tout
-      # regénérer plutôt que le nécessaire — est négligeable ici : 125
-      # images, une fois par jour.
-      - name: Rebuild deputy cards (best-effort, non-blocking)
-        id: deputy_cards
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
-        continue-on-error: true
-        run: python scripts/build_deputy_cards.py --force
-
-      # LES TRAMES DES CARTES DU VESTIAIRE (vitrine#917) suivent les photos :
-      # le script ne recalcule que les portraits dont la source a changé
-      # (manifeste d'empreintes), soit rien la plupart des jours, et quelques
-      # secondes par nouveau visage. Sans cette étape, un nouvel élu aurait sa
-      # carte à la fleur de lys à la place du portrait — et le test
-      # tests/cartesSite.test.ts bloquerait la prochaine PR.
-      - name: Set up Node for the card portraits
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Install Node deps for the card portraits
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
-        run: npm ci
-      - name: Refresh card portraits (trame WebP, best-effort, non-blocking)
-        id: deputy_trames
-        if: steps.photo_window.outputs.run == 'true' && steps.deputy_photos.outcome == 'success'
-        continue-on-error: true
-        run: npx tsx scripts/social/portraits-trames.ts
-
-      # Portrait erroné = mauvais visage sous un nom : plus proche d'une
-      # erreur éditoriale que d'un aléa cosmétique. Reste néanmoins routé au
-      # watchdog comme art/musique — même famille de défaillance (un
-      # supplément visuel, pas le contenu de fond que sert la Une) — et la
-      # fenêtre d'exposition réelle est bornée à un jour avant le prochain run.
-      - name: Warn Slack if deputy-photo refresh failed
-        if: steps.photo_window.outputs.run == 'true' && (steps.deputy_photos.outcome == 'failure' || steps.deputy_cards.outcome == 'failure' || steps.deputy_trames.outcome == 'failure')
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            curl -fsS -X POST -H 'Content-Type: application/json' \
-              -d "{\"text\":\"🟡 *Vitrine deputy-photo refresh failed* — data was refreshed normally; deputy portraits may be stale until tomorrow's run.\nRun: ${RUN_URL}\"}" \
-              "$SLACK_WEBHOOK_URL"
-          fi
+      # Les étapes des portraits tournent dans le job `portraits`, en fin de
+      # fichier, APRÈS l'édition : seule l'heure est lue ici.
 
       - name: Fetch data from Athena
         run: Rscript scripts/fetch_data.R
@@ -352,7 +357,7 @@ jobs:
             # Use SSH so pushes are authenticated with the dedicated deploy key.
             git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
             # Rebase first: defensive against any concurrent push to main.
-            git pull --rebase origin develop
+            git pull --rebase --autostash origin develop
             git push
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
@@ -477,3 +482,121 @@ jobs:
       # #658 et circuit vitrine-art cassé depuis aws-refiners#411 : le message
       # « music generation failed » tombait six fois par jour sans rien dire de
       # neuf. L'échec reste visible dans l'étape « Generate ambient music ».
+
+  # LES PORTRAITS DE DÉPUTÉ ONT LEUR PROPRE JOB, APRÈS L'ÉDITION.
+  # Ils tournaient dans `refresh`, AVANT le fetch Athena, sous son plafond de
+  # 25 min. Le 15-10-2026, la nouvelle législature a changé les 131 photos
+  # d'un coup : 126 trames à refaire (~14 min), le fetch partait vers la 21e
+  # minute et le plafond tuait le job avant le commit. Rien n'était donc
+  # enregistré, et la nuit suivante tout recommençait : l'édition de minuit
+  # (Montréal) a manqué CHAQUE nuit jusqu'au 28-10, et la garde de fraîcheur
+  # sonnait vers 2 h 30. Une étape « best-effort » ne doit pas pouvoir coûter
+  # une édition : ici, au pire, ce job échoue seul.
+  #
+  # Les portraits poussés sur `develop` atteignent `main` à la passe suivante
+  # (07:53 UTC) : « Sync fresh data to main branch » recopie
+  # public/images/deputes/.
+  portraits:
+    needs: refresh
+    # !cancelled() : un fetch Athena raté ne prive pas les cartes de leurs
+    # portraits du jour ; un run annulé, si.
+    if: ${{ !cancelled() && needs.refresh.outputs.photo_window == 'true' }}
+    runs-on: ubuntu-24.04
+    # Passe normale ~7 min (le scrape prend 5 min, par politesse envers
+    # l'ANQ) ; une législature entière à retramer, ~22 min.
+    timeout-minutes: 35
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # `develop` et non le SHA du déclenchement : `refresh` vient d'y
+          # pousser les données de l'édition.
+          ref: develop
+          ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install Python deps for deputy portraits
+        run: pip install pillow numpy
+
+      - name: Refresh deputy portraits (best-effort, non-blocking)
+        id: deputy_photos
+        continue-on-error: true
+        run: python scripts/scrape_deputy_photos.py
+
+      # --force : sans ça, build_deputy_cards.py saute toute circonscription
+      # dont la carte de sortie existe déjà — y compris après une partielle,
+      # où scrape_deputy_photos.py vient de réécrire la photo SOURCE sous le
+      # même nom de fichier (clé = siège, pas personne). Sans --force, la
+      # carte traitée que le site affiche resterait celle de l'ANCIEN
+      # titulaire alors que la source brute est déjà à jour. Le coût — tout
+      # regénérer plutôt que le nécessaire — est négligeable ici : 125
+      # images, une fois par jour.
+      - name: Rebuild deputy cards (best-effort, non-blocking)
+        id: deputy_cards
+        if: steps.deputy_photos.outcome == 'success'
+        continue-on-error: true
+        run: python scripts/build_deputy_cards.py --force
+
+      # LES TRAMES DES CARTES DU VESTIAIRE (vitrine#917) suivent les photos :
+      # le script ne recalcule que les portraits dont la source a changé
+      # (manifeste d'empreintes), soit rien la plupart des jours, et quelques
+      # secondes par nouveau visage. Sans cette étape, un nouvel élu aurait sa
+      # carte à la fleur de lys à la place du portrait — et le test
+      # tests/cartesSite.test.ts bloquerait la prochaine PR.
+      - name: Set up Node for the card portraits
+        if: steps.deputy_photos.outcome == 'success'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Node deps for the card portraits
+        if: steps.deputy_photos.outcome == 'success'
+        run: npm ci
+      - name: Refresh card portraits (trame WebP, best-effort, non-blocking)
+        id: deputy_trames
+        if: steps.deputy_photos.outcome == 'success'
+        continue-on-error: true
+        run: npx tsx scripts/social/portraits-trames.ts
+
+      # Portrait erroné = mauvais visage sous un nom : plus proche d'une
+      # erreur éditoriale que d'un aléa cosmétique. Reste néanmoins routé au
+      # watchdog comme art/musique — même famille de défaillance (un
+      # supplément visuel, pas le contenu de fond que sert la Une) — et la
+      # fenêtre d'exposition réelle est bornée à un jour avant le prochain run.
+      - name: Warn Slack if deputy-photo refresh failed
+        if: (steps.deputy_photos.outcome == 'failure' || steps.deputy_cards.outcome == 'failure' || steps.deputy_trames.outcome == 'failure')
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"🟡 *Vitrine deputy-photo refresh failed* — data was refreshed normally; deputy portraits may be stale until tomorrow's run.\nRun: ${RUN_URL}\"}" \
+              "$SLACK_WEBHOOK_URL"
+          fi
+
+      # Les étapes ci-dessus écrivent AUSSI hors de public/images/deputes/ :
+      # l'historique des titulaires (scripts/deputy_portrait_history.json) et
+      # les accessoires des cartes (public/images/cartes/). Non ajoutés, ils
+      # laissaient l'arbre sale et `git pull --rebase` refusait (« You have
+      # unstaged changes ») : run 41770046504 du 2026-11-04, rien poussé.
+      # --autostash : filet si une autre étape salit l'arbre un jour.
+      - name: Commit deputy portraits
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/images/deputes/ public/images/cartes/ scripts/deputy_portrait_history.json
+          if git diff --cached --quiet; then
+            echo "Portraits inchangés — rien à pousser."
+          else
+            git commit -m "data: portraits $(date -u +%Y-%m-%dT%H:%MZ)"
+            git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
+            git pull --rebase --autostash origin develop
+            git push origin HEAD:develop
+          fi

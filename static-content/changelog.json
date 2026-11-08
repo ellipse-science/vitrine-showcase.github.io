@@ -1,5 +1,53 @@
 [
   {
+    "pr": 1008,
+    "date": "2026-11-07T23:52:29Z",
+    "note": "Rien ne change sur le site. Cette mise à jour aligne la documentation interne de rédaction sur le vocabulaire officiel des niveaux de Radar+.",
+    "version": null
+  },
+  {
+    "pr": 967,
+    "date": "2026-11-07T23:51:53Z",
+    "note": "Le lien « Notre infrastructure » du menu Méthodologie fonctionne maintenant depuis toutes les pages.",
+    "version": "2.52.0-beta.14"
+  },
+  {
+    "pr": 870,
+    "date": "2026-11-07T22:33:35Z",
+    "note": "La page Méthodologie donne maintenant la bonne date de départ de la collecte Radar+, septembre 2019, et ne la présente plus comme ininterrompue.",
+    "version": "2.52.0-beta.13"
+  },
+  {
+    "pr": 996,
+    "date": "2026-11-07T22:33:30Z",
+    "note": "Quand un même événement était suivi sous deux noms différents, il pouvait occuper deux places de la Une. Il n'en occupe plus qu'une dès que les deux partagent au moins trois articles.",
+    "version": "2.52.0-beta.12"
+  },
+  {
+    "pr": 1007,
+    "date": "2026-11-07T21:33:39Z",
+    "note": "Le rafraîchissement automatique des données reprend après une interruption de quelques heures le 7 novembre.",
+    "version": null
+  },
+  {
+    "pr": 994,
+    "date": "2026-11-04T06:47:11Z",
+    "note": "Quand le site tarde à se mettre à jour, l'alerte interne de l'équipe en indique maintenant la cause plus précisément.",
+    "version": null
+  },
+  {
+    "pr": 971,
+    "date": "2026-11-04T06:25:14Z",
+    "note": "L'édition de minuit de la Une, qui manquait toutes les nuits depuis le 15 octobre, est rétablie.",
+    "version": "2.52.0-beta.11"
+  },
+  {
+    "pr": 982,
+    "date": "2026-11-04T06:22:11Z",
+    "note": "Les éditions de la Une paraissent de nouveau à l'heure depuis le passage à l'heure normale.",
+    "version": "2.52.0-beta.10"
+  },
+  {
     "pr": 951,
     "date": "2026-10-14T17:17:12Z",
     "note": "Le volet « promesses de la campagne » du Polimètre+ ne s'enrichit plus de nouvelles promesses depuis le jour du scrutin ; l'écho dans les médias des promesses retenues continue d'être mesuré chaque jour.",

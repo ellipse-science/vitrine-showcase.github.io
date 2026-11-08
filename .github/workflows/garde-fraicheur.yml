@@ -30,6 +30,9 @@ on:
 permissions:
   contents: read
   issues: write
+  # Lire les passes de refresh-data : le diagnostic les consulte avant
+  # d'accuser la cascade AWS (scripts/check_prod_freshness.py).
+  actions: read
 
 concurrency:
   group: garde-fraicheur

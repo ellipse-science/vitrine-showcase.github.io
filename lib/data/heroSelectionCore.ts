@@ -159,6 +159,47 @@ export function sameStory(a: Set<string>, b: Set<string>): boolean {
   return inter / (a.size + b.size - inter) >= 0.4;
 }
 
+// Deuxième filet : deux cycles de vie (`storyline_id`) qui partagent AU MOINS
+// 3 articles (URL) sont le même événement, scindé en amont par le suivi
+// (mi-mandats américains du 4 nov. 2026 : 7 articles communs, 2 mots de titre
+// seulement). Rejoué sur les 245 éditions de prod du 18 sept. au 4 nov. :
+// 11 fusions, aucune entre deux événements différents ; avec 1 seul article
+// commun, 18 fusions fautives (article égaré dans un regroupement, chronique
+// transversale). Les pages en direct ne comptent pas : une même page suit
+// plusieurs événements à la fois.
+export const URL_COMMUNES_MIN = 3;
+// Formes de chemin des pages en direct des médias du panel : segment dédié
+// (/en-direct/, /live-news/, /livestory/, /liveblog/, /live/), amorce de slug
+// (« en-direct--… », « …couverture-en-direct »), ou « live » accolé à updates,
+// results, news, blog, election, real-time, ou en fin de slug. Le mot « live »
+// seul ne suffit pas : « live-fire-drills » est un article ordinaire.
+const PAGE_EN_DIRECT = new RegExp([
+  "\\/(?:en-direct|live-news|livestory|liveblog|live)(?=\\/|\\.|$)",
+  "en-direct(?:--|\\.php|$)",
+  "couverture-en-direct",
+  "live-(?:updates|results|news|blog|election|real-time)",
+  "(?:election|results)-live(?=[\\/.\\-]|$)",
+  "-live(?=\\/|\\.|$)",
+].join("|"), "i");
+
+/** URL comparable : sans protocole, `www.`, paramètres, ancre ni barre finale. */
+export function normaliserUrl(u: string): string {
+  return u.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "")
+    .replace(/[?#].*$/, "").replace(/\/+$/, "");
+}
+
+/** Page en direct : un segment du CHEMIN (pas l'hôte) vaut en-direct, live… */
+export function estPageEnDirect(urlNormalisee: string): boolean {
+  return PAGE_EN_DIRECT.test(urlNormalisee.replace(/^[^/]*/, ""));
+}
+
+export function articlesCommuns(a: Set<string>, b: Set<string>): boolean {
+  if (a.size < URL_COMMUNES_MIN || b.size < URL_COMMUNES_MIN) return false;
+  let n = 0;
+  for (const u of a) if (b.has(u) && ++n >= URL_COMMUNES_MIN) return true;
+  return false;
+}
+
 // Construit tout l'état du module « Deux solitudes » (radar + jauge + édito).
 // `latest` = événements du bloc courant (pour l'indice de convergence) ;
 // `allEvents` = tous les blocs publiés (3 jours), pour agréger la part
@@ -183,6 +224,9 @@ export type Story = {
   canMedia: Set<string>;
   urlByMedia: Record<string, string>;
   tok: Set<string>;
+  /** URL normalisées des articles de la fenêtre, pages en direct exclues
+   *  (filet `articlesCommuns`). Cumule celles des cycles de vie absorbés. */
+  urls: Set<string>;
   // Score QC BRUT (non pondéré) par bloc 4 h de la fenêtre — sert à la
   // trajectoire de saillance (#274). max par bloc, comme peakQc mais conservé
   // bloc par bloc. Rempli pendant l'agrégation, sérialisé en `series` à la fin.
@@ -251,7 +295,7 @@ export function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENC
     if (!cur) {
       cur = { rep: e, repKey: bk, label: e.title ?? "", sumQc: 0, sumRoc: 0, peakQc: 0, peakRoc: 0,
         qcMedia: new Set(), canMedia: new Set(), urlByMedia: {}, tok: titleTokens(e.title ?? ""),
-        byBlock: new Map(), series: [] };
+        byBlock: new Map(), series: [], urls: new Set() };
       byStory.set(key, cur);
     }
     cur.sumQc += qc * w; cur.sumRoc += roc * w;
@@ -264,6 +308,10 @@ export function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENC
         const parsed = JSON.parse((e[k] as string) ?? "[]");
         if (Array.isArray(parsed)) for (const a of parsed as RawArticle[]) {
           if (a.media_id && a.url && !cur.urlByMedia[a.media_id]) cur.urlByMedia[a.media_id] = a.url;
+          if (typeof a.url === "string" && a.url) {
+            const u = normaliserUrl(a.url);
+            if (!estPageEnDirect(u)) cur.urls.add(u);
+          }
         }
       } catch { /* champ absent ou malformé */ }
     }
@@ -276,18 +324,28 @@ export function storiesFrom24h(allEvents: RawEvent[], cutover: boolean = SALIENC
   // SAILLANTE (host), délibérément NON réévalué à la fusion : basculer vers la
   // jumelle (souvent l'autre langue) ferait changer la langue du titre affiché.
   // À l'intérieur d'une storyline, rep = bloc le plus récent (boucle ci-dessus).
+  // Même fusion quand deux cycles de vie partagent ≥ 3 articles (`articlesCommuns`).
+  // Un hôte enrichi est recomparé aux événements déjà retenus jusqu'à
+  // stabilité : un cycle de vie « pont » (C partage 3 articles avec A et 3 avec
+  // B) réunit A, B et C, sous le représentant le plus saillant.
+  const memeEvenement = (m: Story, a: Story) => sameStory(m.tok, a.tok) || articlesCommuns(m.urls, a.urls);
+  const absorber = (host: Story, a: Story) => {
+    a.urls.forEach((u) => host.urls.add(u));
+    host.sumQc += a.sumQc; host.sumRoc += a.sumRoc;
+    host.peakQc = Math.max(host.peakQc, a.peakQc); host.peakRoc = Math.max(host.peakRoc, a.peakRoc);
+    a.qcMedia.forEach((id) => host.qcMedia.add(id));
+    a.canMedia.forEach((id) => host.canMedia.add(id));
+    for (const [id, url] of Object.entries(a.urlByMedia)) if (!host.urlByMedia[id]) host.urlByMedia[id] = url;
+    for (const [b, v] of a.byBlock) host.byBlock.set(b, Math.max(host.byBlock.get(b) ?? 0, v));
+  };
   const merged: Story[] = [];
   for (const a of Array.from(byStory.values()).sort((x, y) => y.sumQc + y.sumRoc - (x.sumQc + x.sumRoc))) {
-    const host = merged.find((m) => sameStory(m.tok, a.tok));
-    if (host) {
-      host.sumQc += a.sumQc; host.sumRoc += a.sumRoc;
-      host.peakQc = Math.max(host.peakQc, a.peakQc); host.peakRoc = Math.max(host.peakRoc, a.peakRoc);
-      a.qcMedia.forEach((id) => host.qcMedia.add(id));
-      a.canMedia.forEach((id) => host.canMedia.add(id));
-      for (const [id, url] of Object.entries(a.urlByMedia)) if (!host.urlByMedia[id]) host.urlByMedia[id] = url;
-      for (const [b, v] of a.byBlock) host.byBlock.set(b, Math.max(host.byBlock.get(b) ?? 0, v));
-    } else {
-      merged.push(a);
+    const host = merged.find((m) => memeEvenement(m, a));
+    if (!host) { merged.push(a); continue; }
+    absorber(host, a);
+    for (let i = merged.length - 1; i >= 0; i--) {
+      const autre = merged[i];
+      if (autre !== host && memeEvenement(host, autre)) { absorber(host, autre); merged.splice(i, 1); }
     }
   }
   // Série par bloc sur les 6 blocs de la fenêtre, du plus ANCIEN au plus récent

@@ -20,7 +20,9 @@ description: Règles de rédaction de TOUT texte public ou d'équipe de la Vitri
 >   **signale toute divergence** à Adrien, arbitre du contenu éditorial.
 > - Typographie : **OQLF par défaut**, sauf exception explicitement décidée par
 >   l'équipe (voir la PR #246).
-> - Dernière synchro Notion → skill : **2026-08-13**.
+> - Dernière synchro Notion → skill : **2026-11-07** (niveaux de Radar+ : nouvelle base
+>   « Radar+ et la mesure de la saillance » sur la page Notion, source de vérité des
+>   niveaux pour la thèse, radarplus.org, la Vitrine et `aws-refiners`).
 > - **2026-08-14** — arbitrage d'Adrien (vitrine#477/#484) : règles « deux
 >   moitiés », base de « que d'habitude » (année ancrée) et vocabulaire
 >   histoires/sujets mises à jour ici, à répercuter dans Notion (section
@@ -149,19 +151,23 @@ guide qu'il faut trancher, pas le code. Vérifié par la règle `projet-italique
 
 ## Lexique — spécifique à la Vitrine
 
-> ⚠️ Ce vocabulaire n'est pas encore dans la **section Vitrine** de Notion : à y
-> remonter quand l'équipe le voudra (voir Gouvernance). En attendant, il fait foi
-> ici.
+> Les **niveaux** (page d'accueil, Une, édition, événement, cycle de vie, saga,
+> objet, enjeu, attribut, tonalité, région) viennent de la base Notion « Radar+ et
+> la mesure de la saillance » (arbitrages d'Adrien des 6 et 7 nov. 2026) ; les
+> fiches Vitrine « bloc », « sujet », « événement » et « Deux solitudes » y ont
+> été corrigées le 7 nov. 2026. Le tableau ci-dessous en est le miroir.
 
 | Terme | Usage | Ne JAMAIS dire |
 |---|---|---|
-| **bloc** (de quatre heures) | l'unité temporelle du pipeline | tranche, fenêtre, période (sauf générique) |
+| **édition** (de quatre heures, six par jour) | l'unité temporelle de Radar+ ; « bloc » est le mot du code seulement | bloc (en public), tranche, fenêtre, période (sauf générique) |
 | **Une / les Unes** | ce qui est en tête des sites des médias | headline, manchette |
 | **La Une des Unes** | le nom du Module 1 (« Une » avec un U majuscule) | « Unes des Unes » |
-| **saillance / saillant** | l'importance mesurée d'un sujet | popularité, buzz, viralité |
-| **événement** | un groupe d'articles sur une même histoire (clustering) | nouvelle, story |
-| **sujet** | ce que mesure l'indice de convergence (personnes, lieux, organisations saillants) | thème (réservé aux enjeux CAP) |
-| **enjeu** | une des 12 catégories CAP | sujet, thème (hors CAP) |
+| **saillance / saillant** | l'importance mesurée d'un objet ou d'un événement | popularité, buzz, viralité |
+| **événement** | ce qui s'est passé et sa suite directe, tel que repéré dans une édition (regroupement automatique des Unes ; `event_id`) | nouvelle, story, histoire, dossier |
+| **cycle de vie** | la vie d'un événement d'une édition à l'autre, de sa naissance à sa mort en passant par son pic (`storyline_id`) | storyline (code seulement), trame, trajectoire |
+| **saga** | plusieurs événements qui se succèdent dans une même affaire, des semaines aux années ; survit aux silences | histoire, story, thème, dossier |
+| **objet** | ce que mesure l'indice de convergence (personnes, lieux, organisations, enjeux saillants ; mot de McCombs) | sujet, thème |
+| **enjeu** | une des 12 catégories CAP | sujet, thème, topic |
 | **agenda médiatique** | ce qu'un espace médiatique met de l'avant | couverture (acceptable), narratif |
 | **médias québécois / médias canadiens** | les deux panels comparés | **« ROC » est un terme INTERNE, jamais public** |
 
@@ -172,16 +178,16 @@ guide qu'il faut trancher, pas le code. Vérifié par la règle `projet-italique
 ## Honnêteté méthodologique (issue du red-team — non négociable)
 
 - Deux vocabulaires de convergence, à ne pas croiser : l'indice de
-  convergence **par objets** mesure les « mêmes sujets saillants » ; la
-  jauge du module Deux solitudes travaille **par histoires regroupées**,
-  et « les mêmes histoires » y est le mot juste (métho § 04). La vieille
-  interdiction absolue de « mêmes histoires » datait de la jauge par
-  objets (précision du 2026-08-14, vitrine#477).
+  convergence **par objets** mesure les « mêmes objets saillants » ; la
+  jauge du module Deux solitudes travaille **par événements regroupés**,
+  et « les mêmes événements » y est le mot juste (métho § 04 ; « histoires »
+  et « sujets » retirés le 2026-11-07, arbitrage d'Adrien, fiche Notion
+  « Deux solitudes : les deux moitiés » mise à jour).
 - **Les deux moitiés** (arbitrage d'Adrien, 2026-08-14, vitrine#477/#484) :
-  au niveau des histoires, environ la moitié de l'attention va aux mêmes
-  histoires, l'autre moitié reste d'un seul côté. Ne plus écrire « la
+  au niveau des événements, environ la moitié de l'attention va aux mêmes
+  événements, l'autre moitié reste d'un seul côté. Ne plus écrire « la
   divergence est la règle » ni « réelle et majoritaire » pour la jauge par
-  histoires — la mesure d'année (médiane 52 %) ne le soutient plus. Pour
+  événements — la mesure d'année (médiane 52 %) ne le soutient plus. Pour
   les limites du clustering par objets, dire « sur-quantifiée par le
   clustering », jamais « artefact ».
 - **Aucun chiffre inventé, arrondi trompeur ou superlatif non calibré** :
@@ -214,7 +220,7 @@ guide qu'il faut trancher, pas le code. Vérifié par la règle `projet-italique
 - [ ] Projets jamais en italique ; italique réservé aux termes techniques/anglais
 - [ ] Langage inclusif (formulation neutre courte, sinon `.es`)
 - [ ] Lexique respecté ; aucun « ROC » public ; « Une des Unes » (pas « Unes »)
-- [ ] Formulations honnêtes (« sujets », « sur-quantifiée », superlatifs calibrés)
+- [ ] Formulations honnêtes (« objets », « sur-quantifiée », superlatifs calibrés)
 - [ ] Phrases générées : toutes les variantes listées + condition + relecture
 - [ ] Cohérence avec la page Méthodologie (sinon → règle « Impact méthodologie »)
 - [ ] Divergence repérée avec la page Notion → signalée à Adrien
