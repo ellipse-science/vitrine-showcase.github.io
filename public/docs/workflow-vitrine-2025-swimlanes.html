@@ -41,6 +41,29 @@
             font-size: 14px;
         }
 
+        /* En-tête repliable : l'historique et les notes de lecture ne
+           s'affichent qu'à la demande, le haut de page reste lisible. */
+        .entete-details {
+            max-width: 900px;
+            margin: -14px auto 26px;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #555;
+            text-align: left;
+        }
+        .entete-details summary {
+            cursor: pointer;
+            text-align: center;
+            color: #4A90E2;
+            font-weight: 600;
+            list-style-position: inside;
+        }
+        .entete-details[open] summary { margin-bottom: 10px; }
+        .entete-notes { padding: 12px 16px; border-left: 3px solid #4A90E2; background: #f4f8fd; border-radius: 0 8px 8px 0; }
+        .entete-notes p { margin: 0 0 10px; }
+        .entete-notes ul { margin: 0; padding-left: 1.3em; }
+        .entete-notes li { margin: 5px 0; }
+
         .controls {
             display: flex;
             justify-content: center;
@@ -549,11 +572,30 @@
 <body>
     <div class="container">
         <h1>📊 Les pipelines de la Vitrine démocratique</h1>
-        <div style="margin:.8rem auto;max-width:900px;padding:.8rem 1.1rem;border:2px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08);text-align:left;font-size:.92em;line-height:1.5">
-          <strong>📌 Document vivant — copie canonique</strong>, hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>). Modifiez par PR → en ligne ~2 min après merge. Les copies sur adriencloutier.com sont dépréciées. État détaillé du plan de réforme&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur/suivi 24h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.
-        </div>
-        <p class="subtitle">Architecture complète • Dernière mise à jour le 8 novembre 2026 (horaires de la chaîne Radar+ recalés sur le code : radar-salient-objects :06, radar-object-extraction :26, radar-salient-index :39, radar-event-salience :45, en vigueur depuis le 10 septembre, aws-infra#572 ; la garde le signalait depuis le 11 septembre, aws-infra#578) • 1er novembre 2026 (le filet <code>refresh-data.yml</code> suit l'heure normale : deux grilles UTC et une garde de saison, vitrine#982) • 14 octobre 2026 (fin de la détection du mode « promesses de la campagne »&nbsp;: la liste est close aux communiqués publiés jusqu'au 5 octobre, détection et rattrapage débranchés, la saillance continue, aws-infra#655 ; le module « Les candidats sur les réseaux » entre au diagramme&nbsp;: collecte <code>a-social-accounts</code> (DEV), raffineur <code>agora-social</code> 6×/jour à :30 et ses huit tables <code>social_*</code>, lues en DEV par le filet de publication, aws-refiners#586 / #590, aws-infra#651 ; le mode « promesses de la campagne » réunit les promesses en double avant la saillance, par les embeddings de l'infer-api — <code>qwen3-embedding:0.6b</code> s'il est servi, sinon <code>bge-m3</code>, aws-refiners#592 ; il lit aussi <code>dict-political-parties-qc</code>&nbsp;: une reprise exige que le paragraphe nomme le parti, aws-refiners#580 ; fenêtre <code>campaign</code> du mode « promesses de la campagne », cumul depuis le bref, publiée seulement à couverture entière, aws-refiners#535 ; étage de rattrapage temporaire depuis le 27 août, 30 départs par jour hors des créneaux LLM des autres raffineurs, aws-infra#636 ; la Vitrine lit le datamart de production&nbsp;: les deux couloirs « Publication Vitrine » passent en PROD et leur décompte est remis à jour, 18 tables au filet, 16 au Worker, vitrine-showcase#827 ; le mode « promesses de la campagne » du Polimètre+ entre au diagramme&nbsp;: raffineur <code>polimetre-promesses-neuves</code>, ses trois tables dont la nouvelle <code>polimetre_promesses_neuves_hits</code>, saillance 6×/jour par bloc de 4&nbsp;h, aws-refiners#511 / aws-infra#580 ; quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4 h, produites mais pas encore lues par le site ; deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique; l'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>; identité stable des député.es et affiliations datées ajoutées au pipeline de l'Assemblée; identification de <code>polimetre-plus</code> désormais servie par l'IA; alertes du sonar des modules du site routées vers #02_vitrine_sonar; activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, sauf <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> remis en DEV-only ; exception LEVÉE le 3 septembre 2026, aws-infra#558 ; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code>, aws-infra#559) • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
-        <p class="subtitle" style="font-size:.85em;color:#666;margin-top:-8px">Les horaires portés par les nœuds «&nbsp;Refiner&nbsp;» <strong>AWS</strong> — ceux qui portent un <code>data-ecr</code> — sont vérifiés à chaque PR contre <code>aws-infra/lib/data-stacks/refiners/refiners.ts</code> (check <code>garde-swimlanes</code>) — attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>. Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), qui n'existent pas dans <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>PROD</strong> pour la lecture du site; depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a> les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> étaient DEV-only ; ils passent en PROD le 3 septembre 2026 (aws-infra#558).</p>
+        <p class="subtitle">D'où viennent les données de chaque module, et à quelle heure chaque étape tourne (heure de Montréal) • Mis à jour le 8 novembre 2026 • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+
+        <details class="entete-details">
+            <summary>Historique des mises à jour et notes de lecture</summary>
+            <div class="entete-notes">
+                <p><strong>Comment lire les horaires.</strong> Les horaires des raffineurs AWS (nœuds «&nbsp;Refiner&nbsp;» qui portent un <code>data-ecr</code>) sont vérifiés à chaque PR contre le code d'<code>aws-infra</code> (<code>lib/data-stacks/refiners/refiners.ts</code>, check <code>garde-swimlanes</code>, attributs <code>data-ecr</code> / <code>data-cron</code> / <code>data-active</code>). Les nœuds hors AWS (<code>fetch-data</code>, <code>enrichissements-vitrine</code>), absents de <code>refiners.ts</code>, en sont exclus. Environnement décrit&nbsp;: <strong>PROD</strong> pour la lecture du site. Les raffineurs <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code>, gardés en DEV depuis <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>, tournent en PROD depuis le 3 septembre 2026 (aws-infra#558).</p>
+                <p><strong>Pour modifier cette page.</strong> Document vivant, copie canonique hébergée sur la Vitrine (<code>vitrine-showcase.github.io/public/docs/</code>)&nbsp;: modifiez par PR, en ligne environ deux minutes après la fusion. Les copies sur adriencloutier.com sont dépréciées. Plan de réforme des horaires&nbsp;: <a href="horaire-refiners-2026.html">horaire-refiners-2026.html</a> · chantier fraîcheur et suivi 24&nbsp;h&nbsp;: <a href="https://github.com/ellipse-science/aws-refiners/issues/195">aws-refiners#195</a>.</p>
+                <p><strong>Historique</strong></p>
+                <ul>
+                    <li><strong>8 novembre 2026</strong> — Horaires de la chaîne Radar+ recalés sur le code&nbsp;: radar-salient-objects :06, radar-object-extraction :26, radar-salient-index :39, radar-event-salience :45, en vigueur depuis le 10 septembre (aws-infra#572&nbsp;; la garde le signalait depuis le 11 septembre, aws-infra#578).</li>
+                    <li><strong>1er novembre 2026</strong> — Le filet <code>refresh-data.yml</code> suit l'heure normale&nbsp;: deux grilles UTC et une garde de saison (vitrine#982).</li>
+                    <li><strong>14 octobre 2026</strong> — Fin de la détection du mode «&nbsp;promesses de la campagne&nbsp;»&nbsp;: la liste est close aux communiqués publiés jusqu'au 5 octobre&nbsp;; détection et rattrapage débranchés, la saillance continue (aws-infra#655).</li>
+                    <li><strong>30 septembre 2026</strong> — Le module «&nbsp;Les candidats sur les réseaux&nbsp;» entre au diagramme&nbsp;: collecte <code>a-social-accounts</code> (DEV), raffineur <code>agora-social</code> 6×/jour à :30 et ses huit tables <code>social_*</code>, lues en DEV par le filet de publication (aws-refiners#586 / #590, aws-infra#651).</li>
+                    <li><strong>Plus tôt en 2026</strong> — Mode «&nbsp;promesses de la campagne&nbsp;»&nbsp;: les promesses en double sont réunies avant la saillance par les embeddings de l'infer-api, <code>qwen3-embedding:0.6b</code> s'il est servi, sinon <code>bge-m3</code> (aws-refiners#592)&nbsp;; une reprise exige que le paragraphe nomme le parti, lu dans <code>dict-political-parties-qc</code> (aws-refiners#580)&nbsp;; fenêtre <code>campaign</code>, cumul depuis le bref, publiée seulement à couverture entière (aws-refiners#535)&nbsp;; étage de rattrapage temporaire depuis le 27 août, 30 départs par jour hors des créneaux LLM des autres raffineurs (aws-infra#636).</li>
+                    <li>La Vitrine lit le datamart de production&nbsp;: les deux couloirs «&nbsp;Publication Vitrine&nbsp;» passent en PROD, 18 tables au filet, 16 au Worker (vitrine-showcase#827).</li>
+                    <li>Le mode «&nbsp;promesses de la campagne&nbsp;» du Polimètre+ entre au diagramme&nbsp;: raffineur <code>polimetre-promesses-neuves</code>, ses trois tables dont <code>polimetre_promesses_neuves_hits</code>, saillance 6×/jour par bloc de 4&nbsp;h (aws-refiners#511 / aws-infra#580).</li>
+                    <li>Quatre tables de plus au raffineur des partis&nbsp;: le croisement parti × enjeu ventilé par média et les articles de chaque bloc de 4&nbsp;h, produites mais pas encore lues par le site.</li>
+                    <li>Deux lectures du même système&nbsp;: par module de la Vitrine et par pipeline technique.</li>
+                    <li>L'illustration de la Une quitte refresh-data pour le raffineur <code>vitrine-art</code>&nbsp;; sondage de la Une toutes les 10 min par <code>vitrine-art-sonde</code> (aws-infra#559).</li>
+                    <li>Identité stable des député·es et affiliations datées dans le pipeline de l'Assemblée&nbsp;; identification de <code>polimetre-plus</code> servie par l'IA&nbsp;; alertes du sonar des modules du site routées vers #02_vitrine_sonar.</li>
+                    <li>Activation en PROD des raffineurs vitrine listés dans <a href="https://github.com/ellipse-science/aws-infra/pull/514">aws-infra#514</a>&nbsp;; <code>agora-decideurs-qc-phrases</code> et <code>agora-decideurs-qc</code> d'abord gardés en DEV, exception levée le 3 septembre 2026 (aws-infra#558).</li>
+                </ul>
+            </div>
+        </details>
 
         <!-- ═══ SÉLECTEUR DE VUE ═══
              Deux lectures du même système. «&nbsp;Par module&nbsp;» répond à «&nbsp;d'où vient ce
