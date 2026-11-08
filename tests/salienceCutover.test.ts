@@ -113,11 +113,13 @@ describe("grilles de seuils du nouvel indice", () => {
   // par la forme de l'indice — visibilité nulle ramenée au plancher ε dans une
   // moyenne géométrique non compensatoire — donc sans aucune constante à
   // maintenir. Ce test le vérifie sur les deux grandeurs, avec les maxima
-  // mono-média mesurés sur la fenêtre régime-LLM.
-  // Mesuré en unités de cumul (44,7), exprimé en points sur 100 comme la
-  // grille exportée (vitrine#566) : même conversion des deux côtés.
-  const MONO_MAX_CUMUL = 44.7 / RECENCY_WEIGHT_TOTAL;   // grandeur du badge
-  const MONO_MAX_BLOC  = 27.2;   // valeur d'un bloc isolé (échelle du bloc, inchangée)
+  // mono-média mesurés sur l'année de la référence ref-A1 (2026-11-08 ;
+  // 44,7 et 27,2 sur la fenêtre régime-LLM du banc 235).
+  // Mesuré en unités de cumul (64,8 : 21 mono-média sur 1 140 Unes affichées),
+  // exprimé en points sur 100 comme la grille exportée (vitrine#566) : même
+  // conversion des deux côtés.
+  const MONO_MAX_CUMUL = 64.79 / RECENCY_WEIGHT_TOTAL;   // grandeur du badge
+  const MONO_MAX_BLOC  = 31.64;  // valeur d'une édition isolée (échelle du bloc, inchangée)
   it("invariant : un mono-média ne franchit pas la médiane des Unes, sans règle ajoutée", () => {
     // `eleve` = p50 = la médiane : la frontière de la moitié supérieure.
     expect(MONO_MAX_CUMUL).toBeLessThan(NEW_SUM_QC_THRESHOLDS.eleve);
@@ -129,9 +131,10 @@ describe("grilles de seuils du nouvel indice", () => {
   //
   // L'invariant porte sur une POPULATION précise : les Unes. Il ne se transpose
   // pas à la grille PAR BLOC, qui est calibrée sur TOUTES les valeurs de bloc
-  // non nulles (n = 332), y compris celles d'événements qui n'ont jamais été
-  // Une. Cette population-là a une médiane bien plus basse (21,2), et le
-  // maximum mono-média (27,2) la dépasse.
+  // non nulles (n = 7 101 sur ref-A1), y compris celles d'événements qui n'ont
+  // jamais été Une. Cette population-là a sa propre médiane (29,7), et le
+  // maximum mono-média par édition (31,6, sur 3 408 valeurs mono-média) la
+  // dépasse.
   //
   // Ce n'est pas une faille : la grille par bloc ne sert que de REPLI pour le
   // survol de la trajectoire, et seulement quand l'historique du badge manque —
@@ -147,16 +150,18 @@ describe("grilles de seuils du nouvel indice", () => {
   });
   it("la borne « Modérée » est bien le percentile brut, sans relèvement", () => {
     // Garde-fou anti-retour : si quelqu'un remet une béquille sans passer par
-    // #430, ce test le dit. 41,8 = p20 mesuré sur l'ANNÉE (n = 1 306) ; 45,0
-    // était l'ancien relèvement, retiré le 09-08.
+    // #430, ce test le dit. 49,3 = p20 de la référence ref-A1 (n = 1 140) ;
+    // 41,8 était le p20 de l'année du banc 235 (n = 1 306), 45,0 l'ancien
+    // relèvement, retiré le 09-08.
     //
     // ⚠️ Ce test est le seul endroit où une valeur de grille est écrite en dur
     // hors du module : à mettre à jour DÉLIBÉRÉMENT à chaque recalibration —
     // c'est précisément son rôle de faire lever la main. Il l'a fait le
     // 2026-08-12 au passage de la fenêtre courte (40,6) à l'année (41,8), et
     // c'est le SEUL des 290 tests qui a bougé : les autres dérivent de la
-    // grille, donc une recalibration ne les rend plus faussement rouges.
-    expect(SUM_QC_CUMUL_MESURE.moyenne).toBe(41.8);
+    // grille, donc une recalibration ne les rend plus faussement rouges. Puis
+    // le 2026-11-08 au passage à ref-A1 (49,3), avec les maxima mono-média.
+    expect(SUM_QC_CUMUL_MESURE.moyenne).toBe(49.3);
     // Ce que le garde protège vraiment, au-delà du chiffre : la borne reste le
     // p20 nu, donc strictement sous la médiane, jamais poussée au-dessus du
     // maximum mono-média.
@@ -175,7 +180,7 @@ describe("grilles de seuils du nouvel indice", () => {
   it("les grilles du badge sont les mesures de cumul divisées par la somme des poids, sans arrondi", () => {
     expect(NEW_SUM_QC_THRESHOLDS).toEqual(enPoints(SUM_QC_CUMUL_MESURE));
     expect(NEW_SUM_ROC_THRESHOLDS).toEqual(enPoints(SUM_ROC_CUMUL_MESURE));
-    expect(NEW_SUM_QC_THRESHOLDS.extreme).toBeCloseTo(157.1 / 3.3474, 2);
+    expect(NEW_SUM_QC_THRESHOLDS.extreme).toBeCloseTo(182.3 / 3.3474, 2);
     // Tout vit sous 100 : c'est l'objet de la décision — une seule échelle.
     expect(NEW_SUM_QC_THRESHOLDS.extreme).toBeLessThan(100);
     expect(NEW_SUM_ROC_THRESHOLDS.extreme).toBeLessThan(100);
@@ -248,7 +253,7 @@ describe("centile réel de l'infobulle", () => {
     centileFrom: (v: number, t: typeof NEW_SUM_QC_THRESHOLDS) => number;
     hintFromCentile: (v: number, t: typeof NEW_SUM_QC_THRESHOLDS, pop: string) => string;
   };
-  const T = NEW_SUM_QC_THRESHOLDS; // 32,9 / 40,6 / 60,6 / 87,8 / 147,7
+  const T = NEW_SUM_QC_THRESHOLDS; // ref-A1, en points : 11,0 / 14,7 / 21,7 / 34,5 / 54,5
 
   it("les percentiles publiés retombent sur eux-mêmes", () => {
     expect(centileFrom(T.faible, T)).toBe(5);
