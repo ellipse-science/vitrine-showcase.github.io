@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1013,
+    "date": "2026-11-08T21:38:55Z",
+    "note": "Les niveaux de saillance s'appuient désormais sur une année de référence nommée, du 16 octobre 2025 au 15 octobre 2026, recalculée au complet ; la page Méthodologie explique ce choix et son remplacement prévu.",
+    "version": "2.53.0-beta.0"
+  },
+  {
     "pr": 1012,
     "date": "2026-11-08T17:36:46Z",
     "note": "Le haut de la page des pipelines redevient lisible : une ligne de présentation, et l'historique des changements se déplie à la demande.",
