@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1014,
+    "date": "2026-11-10T20:52:01Z",
+    "note": "Le module sur les réseaux sociaux suit désormais les député·e·s élu·e·s plutôt que l’ensemble des candidatures.",
+    "version": null
+  },
+  {
     "pr": 1013,
     "date": "2026-11-08T21:38:55Z",
     "note": "Les niveaux de saillance s'appuient désormais sur une année de référence nommée, du 16 octobre 2025 au 15 octobre 2026, recalculée au complet ; la page Méthodologie explique ce choix et son remplacement prévu.",
