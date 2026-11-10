@@ -59,6 +59,7 @@ const neuve = (o: Partial<Neuve> = {}): Neuve => ({
   salienceIndex: 8.4,
   nMentions: 3,
   articles: [],
+  rang: 1,
   ...o,
 });
 
@@ -66,6 +67,7 @@ const neuves: PromessesNeuvesData = {
   windowEnd: "2026-09-03",
   lastUpdated: "Dernière mise à jour : jeudi 3 septembre 2026",
   ranges: { day: [neuve()], week: [neuve()], campaign: [neuve()] },
+  totaux: { day: { qs: 1 }, week: { qs: 1 }, campaign: { qs: 1 } },
 };
 
 const rendre = (n?: PromessesNeuvesData | null, onglet?: "pq" | "campagne" | "2022") =>
@@ -181,6 +183,40 @@ describe("Polimètre+ — kanban de la campagne", () => {
       expect(html).toContain("ppl-metho-kanban");
       expect(html).toContain("GuidePolimetre2026.pdf");
     }
+  });
+
+  it("le compteur d'une colonne montre le vrai total, pas les cartes chargées", () => {
+    // Le chargeur ne transmet que cinq promesses par parti : le compteur doit
+    // lire `totaux`, sinon « PLQ 2 » se lit comme deux promesses en tout.
+    const n = { ...neuves, totaux: { ...neuves.totaux, day: { qs: 53 } } };
+    const html = rendreCampagne(n);
+    const col = html.slice(html.indexOf("ppl-kanban__col--parti-qs"));
+    expect(col).toMatch(/ppl-kanban__compte">53</);
+    // Même règle dans l'onglet PQ 2026, sur la colonne « En suspens ».
+    const pq = {
+      ...neuves,
+      ranges: { ...neuves.ranges, campaign: [neuve({ parti: "pq" })] },
+      totaux: { ...neuves.totaux, campaign: { pq: 124 } },
+    };
+    const htmlPq = rendre(pq);
+    expect(htmlPq.slice(htmlPq.indexOf("ppl-kanban__col--en-suspens"))).toMatch(/ppl-kanban__compte">124</);
+  });
+
+  it("dit au survol que l'enjeu de la campagne est inféré", () => {
+    // L'enjeu de 2022 est codé à la main, celui de la campagne est déduit du
+    // texte par un modèle : le module ne doit pas laisser croire qu'ils ont la
+    // même provenance.
+    expect(rendreCampagne()).toContain('aria-label="Enjeu probable\u00a0: Santé et politiques sociales"');
+    expect(rendre(neuves, "2022")).not.toContain("Enjeu probable");
+  });
+
+  it("l'onglet PQ 2026 porte la date, l'infobulle, le partage et le bandeau de développement", () => {
+    const pq = { ...neuves, ranges: { ...neuves.ranges, campaign: [neuve({ parti: "pq" })] } };
+    const html = rendre(pq);
+    expect(html).toContain("module-last-updated");
+    expect(html).toContain('aria-label="À propos des promesses du PQ"');
+    expect(html).not.toContain("ppl-bandeau-fictif");
+    expect(rendre({ ...pq, fictif: true })).toContain("ppl-bandeau-fictif");
   });
 });
 

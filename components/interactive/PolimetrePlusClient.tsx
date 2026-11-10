@@ -278,10 +278,21 @@ type CarteKanban = {
   rang: number;
   titre: string;
   categorie: string | null;
+  /** Enjeu déduit du texte par un modèle (campagne), et non codé à la main
+   *  (CAQ 2022) : le symbole le dit au survol. */
+  enjeuInfere?: boolean;
   pied: ReactNode;
   url?: string;
 };
-type ColonneKanban = { cle: string; titre: string; detail?: string; cartes: CarteKanban[] };
+type ColonneKanban = {
+  cle: string;
+  titre: string;
+  detail?: string;
+  cartes: CarteKanban[];
+  /** Nombre réel de promesses de la colonne, quand `cartes` n'en porte qu'une
+   *  partie (campagne : cinq par parti au plus). */
+  total?: number;
+};
 
 // Sous chaque kanban : le guide du Polimètre, qui définit ce qu'est une
 // promesse et chaque verdict. L'ancien tableau le portait dans son rail.
@@ -298,8 +309,7 @@ function LienMetho() {
   );
 }
 
-// Colonnes de la campagne dans l'ordre des sièges obtenus le 5 octobre 2026
-// (résultats préliminaires : PQ 59, PLQ 40, PCQ 19, QS 9, CAQ 0).
+// Colonnes de la campagne dans l'ordre des sièges obtenus le 5 octobre 2026.
 const KANBAN_PARTIS: PartiKey[] = ["pq", "plq", "pcq", "qs", "caq"];
 
 // Trop de cartes d'un coup alourdit le tableau. On en montre 3 par colonne, et
@@ -328,7 +338,7 @@ function KanbanBoard({ colonnes, label }: { colonnes: ColonneKanban[]; label: st
         <section key={col.cle} className={`ppl-kanban__col ppl-kanban__col--${col.cle}`} role="listitem">
           <header className="ppl-kanban__tete">
             <span className="ppl-kanban__titre">{col.titre}</span>
-            <span className="ppl-kanban__compte">{col.cartes.length}</span>
+            <span className="ppl-kanban__compte">{col.total ?? col.cartes.length}</span>
             {col.detail && <span className="ppl-kanban__detail">{col.detail}</span>}
           </header>
           <ol className="ppl-kanban__cartes">
@@ -339,7 +349,19 @@ function KanbanBoard({ colonnes, label }: { colonnes: ColonneKanban[]; label: st
                 <li key={c.id} className="ppl-kanban__carte">
                   <span className="ppl-kanban__rang">#{c.rang}</span>
                   <span className="ppl-kanban__texte" title={c.titre}>
-                    {c.categorie && <SymboleEnjeu libelle={c.categorie} className="ppl-symbole" />}
+                    {c.categorie &&
+                      (c.enjeuInfere ? (
+                        <span
+                          className="ppl-kanban__enjeu"
+                          title={`Enjeu probable\u00a0: ${c.categorie}`}
+                          aria-label={`Enjeu probable\u00a0: ${c.categorie}`}
+                          role="img"
+                        >
+                          <SymboleEnjeu libelle={c.categorie} className="ppl-symbole" />
+                        </span>
+                      ) : (
+                        <SymboleEnjeu libelle={c.categorie} className="ppl-symbole" />
+                      ))}
                     {c.url ? (
                       <a href={c.url} target="_blank" rel="noopener">{c.titre}</a>
                     ) : (
@@ -771,10 +793,11 @@ function NeuvesView({
               Chaque communiqué de presse publié par un des cinq grands partis au Québec est lu
               automatiquement pour y repérer les promesses qu&apos;il formule, au sens du
               Polimètre&nbsp;: un engagement à une action ou à un but précis, formulé de façon
-              qu&apos;on puisse vérifier plus tard s&apos;il a été tenu. Le texte affiché est
-              celui du parti, repris mot pour mot; la pastille indique quel parti l&apos;a
-              formulée. Le classement suit la reprise de la promesse dans les Unes des médias
-              québécois.
+              qu&apos;on puisse vérifier plus tard s&apos;il a été tenu. Chaque carte
+              affiche un libellé court, rédigé automatiquement à partir de la promesse; le
+              lien mène au communiqué du parti. L&apos;enjeu indiqué par le symbole est
+              lui aussi déduit automatiquement du texte. Les promesses sont rangées par
+              parti et classées selon leur reprise dans les Unes des médias québécois.
             </InfoTip>
           </div>
         </div>
@@ -816,14 +839,15 @@ function NeuvesView({
             cle: `parti-${parti}`,
             titre: PARTI_LABELS[parti],
             detail: PARTI_FULL_LABELS[parti],
+            total: data.totaux[range][parti] ?? 0,
             cartes: promesses
-              .map((p, idx) => ({ p, rang: idx + 1 }))
-              .filter(({ p }) => p.parti === parti)
-              .map(({ p, rang }) => ({
+              .filter((p) => p.parti === parti)
+              .map((p) => ({
                 id: p.promesseId,
-                rang,
+                rang: p.rang,
                 titre: p.title,
                 categorie: p.enjeu,
+                enjeuInfere: true,
                 url: p.sourceUrl,
                 pied: (
                   <span className="ppl-kanban__reprises">
@@ -859,18 +883,48 @@ function NeuvesView({
    Les promesses du PQ repérées pendant la campagne partent toutes « en
    suspens » : aucune n'a encore de verdict. Elles changeront de colonne au fil
    du mandat, quand le Polimètre les évaluera. */
-function PqView({ data, bascule }: { data: PromessesNeuvesData; bascule: ReactNode }) {
+function PqView({
+  data,
+  editionKey,
+  bascule,
+}: {
+  data: PromessesNeuvesData;
+  editionKey?: string;
+  bascule: ReactNode;
+}) {
   const promessesPq = data.ranges.campaign.filter((p) => p.parti === "pq");
   return (
     <section
       className="polimeter-plus polimeter-plus--neuves polimeter-plus--unifie"
       aria-label="Polimètre+ : promesses du PQ, mandat 2026"
     >
+      {/* Même bandeau que la vue campagne : sur fixtures, rien ne doit passer
+          pour de vraies données. */}
+      {data.fictif && (
+        <p className="ppl-bandeau-fictif" role="status">
+          Données de développement. Ces promesses et leur écho médiatique ne
+          reflètent pas le site.
+        </p>
+      )}
       <div className="partis-title-row">
         <div className="title-block">
           <h2 className="partis-title">Polimètre+&nbsp;: promesses électorales à la Une</h2>
           <div className="period-subtitle">
             Promesses du Parti québécois pendant la campagne 2026, rangées selon leur avancement et classées selon leur écho médiatique
+            <InfoTip size="sm" label="À propos des promesses du PQ">
+              Ce sont les promesses repérées dans les communiqués du Parti québécois pendant
+              la campagne de 2026. Le repérage n&apos;est pas terminé&nbsp;: d&apos;autres
+              promesses, tirées des mêmes documents, peuvent encore s&apos;ajouter. Toutes sont en suspens tant que le Polimètre ne les a pas
+              évaluées. Chaque carte affiche un libellé court, rédigé automatiquement à
+              partir de la promesse, et l&apos;enjeu indiqué par le symbole est lui aussi
+              déduit automatiquement du texte. Le classement suit la reprise de la promesse
+              dans les Unes des médias québécois depuis le début de la campagne.
+            </InfoTip>
+          </div>
+        </div>
+        <div className="control-block">
+          <div className="control-row">
+            <ShareButton title="Polimètre+ : promesses du PQ" anchor="polimetre-plus" editionKey={editionKey} />
           </div>
         </div>
       </div>
@@ -880,6 +934,7 @@ function PqView({ data, bascule }: { data: PromessesNeuvesData; bascule: ReactNo
         colonnes={KANBAN_VERDICTS.map((v) => ({
           cle: v.slug,
           titre: v.titre,
+          ...(v.slug === "en-suspens" ? { total: data.totaux.campaign.pq ?? 0 } : {}),
           cartes:
             v.slug !== "en-suspens"
               ? []
@@ -888,6 +943,7 @@ function PqView({ data, bascule }: { data: PromessesNeuvesData; bascule: ReactNo
                   rang: idx + 1,
                   titre: p.title,
                   categorie: p.enjeu,
+                  enjeuInfere: true,
                   url: p.sourceUrl,
                   pied: (
                     <span className="ppl-kanban__reprises">
@@ -898,6 +954,7 @@ function PqView({ data, bascule }: { data: PromessesNeuvesData; bascule: ReactNo
         }))}
       />
       <LienMetho />
+      <div className="module-last-updated">{data.lastUpdated}</div>
     </section>
   );
 }
@@ -943,7 +1000,7 @@ export function PolimetrePlusClient({
     </div>
   );
 
-  if (mode === "pq") return <PqView data={neuves!} bascule={bascule} />;
+  if (mode === "pq") return <PqView data={neuves!} editionKey={editionKey} bascule={bascule} />;
   return mode === "campagne" ? (
     <NeuvesView data={neuves!} editionKey={editionKey} bascule={bascule} />
   ) : (
