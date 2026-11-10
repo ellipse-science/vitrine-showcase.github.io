@@ -584,6 +584,7 @@
                     <li><strong>8 novembre 2026</strong> — Horaires de la chaîne Radar+ recalés sur le code&nbsp;: radar-salient-objects :06, radar-object-extraction :26, radar-salient-index :39, radar-event-salience :45, en vigueur depuis le 10 septembre (aws-infra#572&nbsp;; la garde le signalait depuis le 11 septembre, aws-infra#578).</li>
                     <li><strong>1er novembre 2026</strong> — Le filet <code>refresh-data.yml</code> suit l'heure normale&nbsp;: deux grilles UTC et une garde de saison (vitrine#982).</li>
                     <li><strong>14 octobre 2026</strong> — Fin de la détection du mode «&nbsp;promesses de la campagne&nbsp;»&nbsp;: la liste est close aux communiqués publiés jusqu'au 5 octobre&nbsp;; détection et rattrapage débranchés, la saillance continue (aws-infra#655).</li>
+                    <li><strong>10 novembre 2026</strong> — <code>a-social-accounts</code> ne suit plus que les 127 élu·e·s et les cinq partis, un passage par compte et par jour (<a href="https://github.com/ellipse-science/aws-infra/pull/736">aws-infra#736</a>).</li>
                     <li><strong>30 septembre 2026</strong> — Le module «&nbsp;Les candidats sur les réseaux&nbsp;» entre au diagramme&nbsp;: collecte <code>a-social-accounts</code> (DEV), raffineur <code>agora-social</code> 6×/jour à :30 et ses huit tables <code>social_*</code>, lues en DEV par le filet de publication (aws-refiners#586 / #590, aws-infra#651).</li>
                     <li><strong>Plus tôt en 2026</strong> — Mode «&nbsp;promesses de la campagne&nbsp;»&nbsp;: les promesses en double sont réunies avant la saillance par les embeddings de l'infer-api, <code>qwen3-embedding:0.6b</code> s'il est servi, sinon <code>bge-m3</code> (aws-refiners#592)&nbsp;; une reprise exige que le paragraphe nomme le parti, lu dans <code>dict-political-parties-qc</code> (aws-refiners#580)&nbsp;; fenêtre <code>campaign</code>, cumul depuis le bref, publiée seulement à couverture entière (aws-refiners#535)&nbsp;; étage de rattrapage temporaire depuis le 27 août, 30 départs par jour hors des créneaux LLM des autres raffineurs (aws-infra#636).</li>
                     <li>La Vitrine lit le datamart de production&nbsp;: les deux couloirs «&nbsp;Publication Vitrine&nbsp;» passent en PROD, 18 tables au filet, 16 au Worker (vitrine-showcase#827).</li>
@@ -1175,12 +1176,12 @@
             <div class="pipeline-header">
                 <span class="toggle-icon">▼</span>
                 <span>📱 Les candidats sur les réseaux (Facebook, Instagram, TikTok) · DEV seulement</span>
-                <span class="frequency">Collecte horaire (UTC)&nbsp;: Instagram à :00 de 00h à 15h, Facebook à :20 et :40, TikTok à :00 de 16h à 20h • table convertie 6×/jour à :03 (heure du Québec) • agora-social 6×/jour à :30 (heure du Québec) • lu par le filet de publication à :53</span>
+                <span class="frequency">Collecte quotidienne (UTC)&nbsp;: Instagram à :00 de 00h à 09h, Facebook à :20 de 00h à 16h, TikTok à :00 de 16h à 18h • table convertie 6×/jour à :03 (heure du Québec) • agora-social 6×/jour à :30 (heure du Québec) • lu par le filet de publication à :53</span>
             </div>
             <div class="pipeline-content">
                 <div class="node node-source" data-type="source" data-source="a-social-accounts" data-env-source="DEV">
                     a-social-accounts
-                    <div class="node-detail">Comptes validés des candidatures 2026 et des cinq partis, relevés par l'extracteur social</div>
+                    <div class="node-detail">Comptes validés des 127 député·e·s élu·e·s (depuis le 10 novembre 2026, avant&nbsp;: toutes les candidatures) et des cinq partis, relevés par l'extracteur social</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
