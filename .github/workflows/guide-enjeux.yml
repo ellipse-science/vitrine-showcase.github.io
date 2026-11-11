@@ -1,0 +1,92 @@
+# Génère les PDF du guide des catégories d'enjeux.
+# Sur une PR : rendu seulement. Sur develop : les PDF vont dans public/data/guide-enjeux/,
+# et la synchro aux 4 heures de refresh-data.yml les copie vers la production.
+name: Guide des enjeux
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - docs/enjeux/*.qmd
+      - .github/workflows/guide-enjeux.yml
+  push:
+    branches:
+      - develop
+    paths:
+      - docs/enjeux/*.qmd
+      - .github/workflows/guide-enjeux.yml
+  workflow_dispatch:
+
+concurrency:
+  group: guide-enjeux-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  rendre:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: docs/enjeux
+
+      - name: Vérifier la parité entre le français et l'anglais
+        working-directory: docs/enjeux
+        run: |
+          for motif in '^- \*\*[0-9]+\.[0-9]+\.[0-9]+' '^\*\*R[0-9]+b?\*\*'; do
+            diff <(grep -oE "$motif" guide_categories_enjeux_fr.qmd) <(grep -oE "$motif" guide_categories_enjeux_en.qmd)
+          done
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          tinytex: true
+
+      - name: Générer les PDF
+        working-directory: docs/enjeux
+        run: |
+          quarto render guide_categories_enjeux_fr.qmd --to pdf
+          quarto render guide_categories_enjeux_en.qmd --to pdf
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guide-enjeux
+          path: docs/enjeux/*.pdf
+          if-no-files-found: error
+
+  publier:
+    needs: rendre
+    if: github.ref == 'refs/heads/develop' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: develop
+          ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
+          sparse-checkout: public/data/guide-enjeux
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: guide-enjeux
+          path: public/data/guide-enjeux
+
+      - name: Pousser les PDF sur develop
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/guide-enjeux
+          if git diff --cached --quiet; then
+            echo "Aucun changement à publier."
+            exit 0
+          fi
+          git commit -m "data: guide des enjeux"
+          git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
+          for essai in 1 2 3; do
+            git pull --rebase origin develop && git push && exit 0
+            sleep 20
+          done
+          exit 1
