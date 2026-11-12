@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Génère l'illustration pédagogique des niveaux de saillance (#35, recalibré #281,
-bascule spec v1 le 2026-08-12).
+bascule spec v1 le 2026-08-12, référence fixe ref-A1 le 2026-11-08).
 
 Histogramme de l'ATTENTION CUMULÉE sur 24 h (échelle log) avec les 6 bandes de
 percentiles (Très faible / Faible / Modérée / Élevée / Très élevée /
@@ -13,11 +13,15 @@ spec v1 ce cumul porte sur `salience_index_qc` — pas sur le pic, pas sur `scor
 La population est celle de la grille du badge : un point par storyline (son plus haut
 cumul), parmi les Unes RÉELLEMENT AFFICHÉES.
 
-Le CSV est produit par le script de calibration lui-même, pour que la figure et les
-seuils ne puissent pas diverger :
+Le CSV est produit par le script de la référence lui-même, pour que la figure et
+les seuils ne puissent pas diverger. Référence en vigueur : ref-A1, l'année du
+2025-10-16 au 2026-10-15 de la série recalculée (aws-refiners `docs/reference-niveaux/`,
+PR aws-refiners#636) :
 
-    cd _chantiers-vitrine/banc-235 && Rscript grilles_annee_specv1.R
-    # → out/cumul24h_qc.csv (et _roc.csv), déjà à l'échelle d'affichage ×100
+    cd _chantiers-vitrine/pilote-these-2026-11/reference-niveaux && Rscript 73_reference_niveaux_refA1.R
+    # → out/cumul24h_qc.csv (et _roc.csv), cumul brut ×100 (unités de CUMUL)
+
+(Jusqu'au 2026-11-08 : `_chantiers-vitrine/banc-235/grilles_annee_specv1.R`.)
 
 Usage :  python3 scripts/generate_saillance_levels.py [chemin_csv]
 """
@@ -33,18 +37,18 @@ from matplotlib.patches import Rectangle
 # Défaut valable depuis la RACINE du dépôt (le dépôt et `_chantiers-vitrine` sont
 # voisins). Depuis un worktree, passer le chemin en argument.
 CSV = (sys.argv[1] if len(sys.argv) > 1
-       else "../_chantiers-vitrine/banc-235/out/cumul24h_qc.csv")
+       else "../_chantiers-vitrine/pilote-these-2026-11/reference-niveaux/out/cumul24h_qc.csv")
 OUT = [
     "public/methodologie/saillance-niveaux.png",
     "docs/saillance-niveaux.png",
 ]
 
-# Seuils du jour de la bascule = NEW_SUM_QC_THRESHOLDS dans
-# lib/data/salienceCutover.ts. ⚠️ Les deux doivent bouger ENSEMBLE : une figure
+# Seuils de la référence ref-A1 (2026-11-08) = SUM_QC_CUMUL_MESURE dans
+# lib/data/salienceCutover.ts (banc 235 jusque-là : 33,8 / 41,8 / 59,2 / 96,5 / 157,1). ⚠️ Les deux doivent bouger ENSEMBLE : une figure
 # qui garde les anciennes bornes place les bandes au mauvais endroit sous un
 # histogramme juste. C'est `verifier_coherence_seuils()` plus bas qui le signale
 # maintenant — le commentaire seul ne suffisait pas.
-TH = [33.8, 41.8, 59.2, 96.5, 157.1]       # p5 / p20 / p50 / p80 / p95, en unités de CUMUL
+TH = [36.8, 49.3, 72.6, 115.4, 182.3]      # p5 / p20 / p50 / p80 / p95, en unités de CUMUL
 TS = "lib/data/salienceCutover.ts"         # la source de vérité des seuils
 
 # Depuis vitrine#566 le site affiche des POINTS SUR 100 : le cumul divisé par la
@@ -103,8 +107,8 @@ def charger_scores(chemin):
     if not os.path.exists(chemin):
         sys.exit(
             f"ERREUR — CSV introuvable : {chemin}\n"
-            f"Ce fichier n'est PAS versionné (il sort du banc de calibration). Le produire :\n"
-            f"    cd _chantiers-vitrine/banc-235 && Rscript grilles_annee_specv1.R\n"
+            f"Ce fichier n'est PAS versionné (il sort du script de la référence). Le produire :\n"
+            f"    cd _chantiers-vitrine/pilote-these-2026-11/reference-niveaux && Rscript 73_reference_niveaux_refA1.R\n"
             f"puis relancer, au besoin en passant le chemin en argument :\n"
             f"    python3 scripts/generate_saillance_levels.py <chemin_csv>"
         )
@@ -132,7 +136,7 @@ ax.set_facecolor(PAPER)
 lo, hi = sc.min(), sc.max()
 # La marge de droite n'est pas cosmétique : la bande « Exceptionnelle » est
 # ouverte (tout ce qui dépasse le p95) et doit rester assez large pour porter son
-# étiquette. Avec le p95 du cumul (157,1) très proche du maximum observé, une
+# étiquette. Avec le p95 du cumul du banc 235 (157,1) très proche du maximum observé, une
 # marge de 10 % la réduisait à un liseré et le mot débordait du cadre.
 bins = np.logspace(np.log10(lo * 0.85), np.log10(hi * 1.45), 34)
 counts, edges = np.histogram(sc, bins=bins)
@@ -179,16 +183,18 @@ ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 # une figure destinée au grand public, c'est un caractère de bruit — et il n'est
 # apparu qu'en élargissant la marge de droite ci-dessus.
 ax.get_xaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())
-# Ticks Y adaptatifs au volume (l'échantillon post-fusion est encore mince).
-_yt = [t for t in [0, 10, 20, 30, 40] if t <= band_top]
-ax.set_yticks(_yt if len(_yt) >= 2 else [0, max(1, int(round(ymax)))])
+# Ticks Y adaptatifs au volume : un pas « rond » qui donne au plus six
+# graduations jusqu'à la barre la plus haute. L'ancienne liste fixe (0 à 40)
+# laissait l'axe muet au-dessus de 40 dès que l'année dépassait mille Unes.
+_pas = next((p for p in (5, 10, 20, 25, 50, 100, 200) if ymax / p <= 6), 500)
+ax.set_yticks(list(range(0, int(ymax) + 1, _pas)))
 ax.tick_params(colors="#5B544A", labelsize=11)
 ax.tick_params(axis="x", pad=22)
 for s in ["top", "right"]:
     ax.spines[s].set_visible(False)
 for s in ["left", "bottom"]:
     ax.spines[s].set_color(RULE)
-ax.set_ylabel("Nombre d'histoires", color="#5B544A", fontsize=11)
+ax.set_ylabel("Nombre de nouvelles", color="#5B544A", fontsize=11)
 ax.set_xlabel("Points d'attention au Québec sur 24 h, sur 100  (échelle log)",
               color="#5B544A", fontsize=12, labelpad=30)
 
@@ -196,15 +202,18 @@ ax.set_xlabel("Points d'attention au Québec sur 24 h, sur 100  (échelle log)",
 fig.text(0.055, 0.95, "Comment on calcule les niveaux de saillance",
          fontsize=25, fontweight="bold", color=INK, ha="left", va="top")
 fig.text(0.055, 0.895,
-         "L'étiquette situe les POINTS D'ATTENTION de l'histoire sur 24 h (sur 100, les heures récentes comptant davantage) dans la distribution\n"
+         "L'étiquette situe les POINTS D'ATTENTION de la nouvelle sur 24 h (sur 100, les heures récentes comptant davantage) dans la distribution\n"
          # NE PAS réintroduire « cloche en échelle log » : c'était vrai de la
          # distribution des PICS, pas de celle des cumuls, qui s'étale. La
          # légende doit décrire la figure qu'on regarde, pas celle d'avant.
-         "de TOUTES les Unes d'une année : des bandes par percentiles, autant de « Très faible » que d'« Exceptionnelle », et 60 % des histoires au centre.",
+         "de TOUTES les Unes d'une année : des bandes par percentiles, autant de « Très faible » que d'« Exceptionnelle », et 60 % des nouvelles au centre.",
          fontsize=13, color="#5B544A", ha="left", va="top")
+_n_fr = f"{n:,}".replace(",", "\u00a0")   # « 1 140 », espace insécable (OQLF)
 fig.text(0.055, 0.028,
-         f"n = {n} histoires (plus hauts points 24 h par storyline QC, parmi les Unes affichées), 2025-05-17 au 2026-08-07.\n"
-         "Source : headline_events_4h rejoué localement, indice spec v1.  Seuils mesurés le 2026-08-12, en points sur 100 depuis le 2026-08-22.",
+         f"n = {_n_fr} nouvelles (le sommet de leurs points sur 24 h, parmi les Unes québécoises affichées), "
+         "du 16 octobre 2025 au 15 octobre 2026.\n"
+         "Source : référence ref-A1, l'année recalculée au complet avec la version actuelle du calcul. "
+         "Seuils fixés le 8 novembre 2026, en points sur 100.",
          fontsize=10.5, color="#8A8474", ha="left", va="bottom")
 
 plt.subplots_adjust(left=0.055, right=0.965, top=0.80, bottom=0.20)
