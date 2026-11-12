@@ -120,6 +120,15 @@ export type Sources = Awaited<ReturnType<typeof chargerSources>>;
  *  une expression distinctive jugée trompeuse ou hors de propos disparaît de la
  *  carte, à la main, avec le nom de l'élu et l'expression pour que le retrait
  *  tombe si le raffineur en produit une autre. */
+// Ses deux messages ne sortent qu'une fois par processus : la fonction tourne
+// à chaque page qui prépare des cartes (90 avertissements identiques par CI).
+const dejaSignales = new Set<string>();
+function signalerUneFois(message: string, niveau: "log" | "warn" = "log"): void {
+  if (dejaSignales.has(message)) return;
+  dejaSignales.add(message);
+  console[niveau](message);
+}
+
 export async function retirerExpressions(data: NonNullable<Awaited<ReturnType<typeof loadAssemblee>>>): Promise<void> {
   const fichier = path.resolve(process.cwd(), "scripts/social/donnees/expressions-retirees.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
@@ -135,9 +144,9 @@ export async function retirerExpressions(data: NonNullable<Awaited<ReturnType<ty
       faits.add(r.circonscription);
     }
   }
-  console.log(`  ${faits.size} expression(s) retirée(s) à la relecture (donnees/expressions-retirees.json)`);
+  signalerUneFois(`  ${faits.size} expression(s) retirée(s) à la relecture (donnees/expressions-retirees.json)`);
   const sansObjet = retraits.filter((r) => !faits.has(r.circonscription));
-  if (sansObjet.length) console.warn(`  ⚠️ retrait sans objet, l'expression a changé : ${sansObjet.map((r) => `${r.elu} « ${r.expression} »`).join(", ")}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
+  if (sansObjet.length) signalerUneFois(`  ⚠️ retrait sans objet, l'expression a changé : ${sansObjet.map((r) => `${r.elu} « ${r.expression} »`).join(", ")}`, "warn"); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
 }
 
 /** UN ÉLU, UNE LIGNE (relevé du 23-09). Les données agora ont une ligne par
