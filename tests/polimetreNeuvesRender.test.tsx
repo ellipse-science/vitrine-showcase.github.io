@@ -202,6 +202,36 @@ describe("Polimètre+ — kanban de la campagne", () => {
     expect(htmlPq.slice(htmlPq.indexOf("ppl-kanban__col--en-suspens"))).toMatch(/ppl-kanban__compte">124</);
   });
 
+  it("numérote les cartes dans leur colonne, pas tous partis confondus", () => {
+    // Le chargeur donne un rang global (PLQ en 14e, 27e…) : la carte doit
+    // afficher son rang dans la colonne, comme dans l'onglet PQ 2026.
+    const n = {
+      ...neuves,
+      ranges: {
+        ...neuves.ranges,
+        day: [
+          neuve({ promesseId: "pn-1", parti: "pq", rang: 1 }),
+          neuve({ promesseId: "pn-2", parti: "qs", rang: 14 }),
+          neuve({ promesseId: "pn-3", parti: "qs", rang: 27 }),
+        ],
+      },
+    };
+    const html = rendreCampagne(n);
+    const colQs = html.slice(html.indexOf("ppl-kanban__col--parti-qs"), html.indexOf("ppl-kanban__col--parti-caq"));
+    expect(colQs.match(/ppl-kanban__rang">#\d+/g)).toEqual(['ppl-kanban__rang">#1', 'ppl-kanban__rang">#2']);
+  });
+
+  it("marque les colonnes vides, que le téléphone réduit à leur en-tête", async () => {
+    const pq = { ...neuves, ranges: { ...neuves.ranges, campaign: [neuve({ parti: "pq" })] } };
+    const html = rendre(pq);
+    // PQ 2026 : seule « En suspens » a des cartes.
+    expect(html.match(/ppl-kanban__col--vide/g)).toHaveLength(4);
+    expect(html).not.toMatch(/ppl-kanban__col--en-suspens ppl-kanban__col--vide/);
+    const fs = await import("node:fs/promises");
+    const css = await fs.readFile("app/globals.css", "utf8");
+    expect(css).toContain(".ppl-kanban__col--vide .ppl-kanban__cartes { display: none; }");
+  });
+
   it("dit au survol que l'enjeu de la campagne est inféré", () => {
     // L'enjeu de 2022 est codé à la main, celui de la campagne est déduit du
     // texte par un modèle : le module ne doit pas laisser croire qu'ils ont la

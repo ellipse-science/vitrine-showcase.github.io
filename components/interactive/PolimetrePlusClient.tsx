@@ -271,11 +271,12 @@ function EnjeuDropdown({
  * Kanban du module unifié : le module en tableau de gestion de projet Agile.
  * Les promesses deviennent des cartes, rangées en colonnes : par
  * verdict pour les mandats (PQ 2026, CAQ 2022), par parti pour la campagne.
- * Dans une colonne, les cartes suivent le rang d'écho médiatique.
+ * Dans une colonne, les cartes suivent le rang d'écho médiatique, et leur
+ * numéro est leur rang DANS la colonne, pour les trois onglets : calculé ici
+ * seulement, pour qu'aucune vue ne compte tous partis confondus.
  * ========================================================================== */
 type CarteKanban = {
   id: string;
-  rang: number;
   titre: string;
   categorie: string | null;
   /** Enjeu déduit du texte par un modèle (campagne), et non codé à la main
@@ -335,7 +336,11 @@ function KanbanBoard({ colonnes, label }: { colonnes: ColonneKanban[]; label: st
       style={{ "--kanban-n": colonnes.length } as CSSProperties}
     >
       {colonnes.map((col) => (
-        <section key={col.cle} className={`ppl-kanban__col ppl-kanban__col--${col.cle}`} role="listitem">
+        <section
+          key={col.cle}
+          className={`ppl-kanban__col ppl-kanban__col--${col.cle}${col.cartes.length === 0 ? " ppl-kanban__col--vide" : ""}`}
+          role="listitem"
+        >
           <header className="ppl-kanban__tete">
             <span className="ppl-kanban__titre">{col.titre}</span>
             <span className="ppl-kanban__compte">{col.total ?? col.cartes.length}</span>
@@ -345,9 +350,9 @@ function KanbanBoard({ colonnes, label }: { colonnes: ColonneKanban[]; label: st
             {col.cartes.length === 0 ? (
               <li className="ppl-kanban__vide">Aucune promesse</li>
             ) : (
-              col.cartes.slice(0, ouvertes.has(col.cle) ? KANBAN_N_LONG : KANBAN_N_COURT).map((c) => (
+              col.cartes.slice(0, ouvertes.has(col.cle) ? KANBAN_N_LONG : KANBAN_N_COURT).map((c, idx) => (
                 <li key={c.id} className="ppl-kanban__carte">
-                  <span className="ppl-kanban__rang">#{c.rang}</span>
+                  <span className="ppl-kanban__rang">#{idx + 1}</span>
                   <span className="ppl-kanban__texte" title={c.titre}>
                     {c.categorie &&
                       (c.enjeuInfere ? (
@@ -530,11 +535,9 @@ function PolimetreView({
               cle: v.slug,
               titre: v.titre,
               cartes: promises
-                .map((p, idx) => ({ p, rang: idx + 1 }))
-                .filter(({ p }) => p.verdict === v.slug)
-                .map(({ p, rang }) => ({
+                .filter((p) => p.verdict === v.slug)
+                .map((p) => ({
                   id: p.pledgeNumber,
-                  rang,
                   titre: p.title,
                   categorie: p.category,
                   url: p.url,
@@ -709,16 +712,16 @@ function PolimetreView({
 }
 
 /* ========================================================================== *
- * Vue « promesses de la campagne »
+ * Onglet « Campagne 2026 »
  *
- * Même grille, même liste dépliable, même écho médiatique — mais la liste n'est
- * plus fermée : elle se remplit des promesses repérées dans les communiqués des
- * partis au fur et à mesure qu'ils les formulent. D'où les deux écarts visibles :
+ * Même kanban, même écho médiatique — mais la liste n'est pas celle, fermée,
+ * d'un mandat : ce sont les promesses repérées dans les communiqués et les
+ * plateformes des partis pendant la campagne. D'où les deux écarts visibles :
  *
- *  - la pastille porte le PARTI, pas le verdict. Une promesse formulée hier n'a
- *    pas d'état de réalisation ; le Polimètre ne se prononcera que des mois plus
- *    tard. Ce qu'on sait d'elle le jour même, c'est qui l'a formulée.
- *  - les onglets sont « Aujourd'hui », « Depuis une semaine » et « Campagne »,
+ *  - les colonnes sont les PARTIS, pas les verdicts. Une promesse de campagne
+ *    n'a pas d'état de réalisation ; le Polimètre ne se prononcera que des mois
+ *    plus tard. Ce qu'on sait d'elle, c'est qui l'a formulée.
+ *  - les onglets de période sont « Aujourd'hui », « Depuis une semaine » et « Campagne »,
  *    sans « mois » : une fenêtre d'un mois noierait la nouveauté sous
  *    l'accumulé. « Campagne » n'est pas un mois qui glisse mais le cumul depuis
  *    le jour du bref, la même période que les autres modules appellent ainsi.
@@ -844,7 +847,6 @@ function NeuvesView({
               .filter((p) => p.parti === parti)
               .map((p) => ({
                 id: p.promesseId,
-                rang: p.rang,
                 titre: p.title,
                 categorie: p.enjeu,
                 enjeuInfere: true,
@@ -938,9 +940,8 @@ function PqView({
           cartes:
             v.slug !== "en-suspens"
               ? []
-              : promessesPq.map((p, idx) => ({
+              : promessesPq.map((p) => ({
                   id: p.promesseId,
-                  rang: idx + 1,
                   titre: p.title,
                   categorie: p.enjeu,
                   enjeuInfere: true,
