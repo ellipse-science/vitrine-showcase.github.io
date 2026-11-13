@@ -59,6 +59,7 @@ const neuve = (o: Partial<Neuve> = {}): Neuve => ({
   salienceIndex: 8.4,
   nMentions: 3,
   articles: [],
+  rang: 1,
   ...o,
 });
 
@@ -66,20 +67,21 @@ const neuves: PromessesNeuvesData = {
   windowEnd: "2026-09-03",
   lastUpdated: "Dernière mise à jour : jeudi 3 septembre 2026",
   ranges: { day: [neuve()], week: [neuve()], campaign: [neuve()] },
+  totaux: { day: { qs: 1 }, week: { qs: 1 }, campaign: { qs: 1 } },
 };
 
-const rendre = (n?: PromessesNeuvesData | null) =>
-  renderToStaticMarkup(<PolimetrePlusClient data={polimetre} neuves={n} />);
+const rendre = (n?: PromessesNeuvesData | null, onglet?: "pq" | "campagne" | "2022") =>
+  renderToStaticMarkup(<PolimetrePlusClient data={polimetre} neuves={n} ongletInitial={onglet} />);
 
-// Le bloc « campagne » est dans le rendu statique dès qu'il y a des promesses
-// neuves : plus rien à forcer.
-const rendreCampagne = (n: PromessesNeuvesData = neuves) => rendre(n);
+// Le module s'ouvre sur l'onglet PQ 2026 : on demande l'onglet « campagne »
+// pour éprouver sa vue.
+const rendreCampagne = (n: PromessesNeuvesData = neuves) => rendre(n, "campagne");
 
 const H2_CAMPAGNE = "les promesses de la campagne</h2>";
 const H2_2022 = "promesses électorales à la Une</h2>";
 const SOUS_TITRE_2022 = "élections de 2022";
 
-describe("Polimètre+ — empilement des deux blocs", () => {
+describe("Polimètre+ — module unifié (campagne / 2022)", () => {
   it("n'affiche que le bloc « 2022 », avec son h2, tant qu'aucune promesse neuve n'existe", () => {
     const html = rendre(null);
     expect(html).not.toContain("les promesses de la campagne");
@@ -95,50 +97,63 @@ describe("Polimètre+ — empilement des deux blocs", () => {
     expect(html).toContain(H2_2022);
   });
 
-  it("empile campagne AU-DESSUS de 2022 dès qu'une seule fenêtre neuve a des promesses", () => {
+  it("passe au module unifié dès qu'une seule fenêtre neuve a des promesses", () => {
     // Un run manuel peut publier `campaign` un jour où `day` n'a rien à dire.
     const html = rendre({ ...neuves, ranges: { day: [], week: [], campaign: [neuve()] } });
-    expect(html).toContain(H2_CAMPAGNE);
+    expect(html).toContain("ppl-onglets");
+    expect(html).toContain("polimeter-plus--unifie");
   });
 
-  it("empile campagne AU-DESSUS de 2022 dès qu'il y a des promesses neuves", () => {
+  it("module unifié : un seul panneau, l'onglet PQ 2026 affiché par défaut", () => {
     const html = rendre(neuves);
-    expect(html).toContain(H2_CAMPAGNE);
-    expect(html.indexOf(H2_CAMPAGNE)).toBeLessThan(html.indexOf(SOUS_TITRE_2022));
-    // Les deux blocs gardent leurs onglets.
-    expect(html).toContain("Aujourd&#x27;hui");
-    expect(html).toContain("Depuis une semaine");
-    expect(html).toContain("Depuis un mois");
+    // Plus d'empilement : une seule vue rendue à la fois (les colonnes du
+    // kanban sont aussi des <section>, d'où le compte sur la classe du module).
+    expect(html.match(/<section class="polimeter-plus\b/g)).toHaveLength(1);
+    expect(html).not.toContain(SOUS_TITRE_2022);
+    // Les onglets du filtre : PQ en premier et sélectionné.
+    expect(html).toMatch(/aria-selected="true"[^>]*ppl-onglet--pq/);
+    // Ordre : PQ 2026, CAQ 2022, puis la campagne après la barre oblique.
+    expect(html.indexOf("ppl-onglet--pq")).toBeLessThan(html.indexOf("ppl-onglet--2022"));
+    expect(html.indexOf("ppl-onglet--2022")).toBeLessThan(html.indexOf("ppl-onglets__barre"));
+    expect(html.indexOf("ppl-onglets__barre")).toBeLessThan(html.indexOf("ppl-onglet--campagne"));
+    expect(html).toContain("ppl-kanban");
   });
 
-  it("ne donne qu'un h2 : le bloc « 2022 » n'a que son sous-titre et son infobulle", () => {
+  it("module unifié : l'onglet campagne garde sa vue", () => {
+    const html = rendreCampagne();
+    expect(html).toContain("polimeter-plus--neuves");
+    expect(html).toMatch(/aria-selected="true"[^>]*ppl-onglet--campagne/);
+    expect(html).toMatch(/aria-selected="false"[^>]*ppl-onglet--2022/);
+    // La vue campagne garde ses onglets de période.
+    expect(html).toContain("Aujourd&#x27;hui");
+  });
+
+  it("module unifié : un seul h2, le titre commun du module", () => {
     const html = rendre(neuves);
     expect(html.match(/<h2\b/g)).toHaveLength(1);
-    expect(html).not.toContain(H2_2022);
-    expect(html).toContain('<h3 class="period-subtitle ppl-sous-titre">');
-    expect(html).toContain(SOUS_TITRE_2022);
-    expect(html).toContain('aria-label="À propos du Polimètre+"');
+    expect(html).toContain(H2_2022);
+    expect(html).not.toContain(H2_CAMPAGNE);
+    expect(html).not.toContain("ppl-sous-titre");
   });
 
-  it("ne donne qu'un lien « Méthodologie du Polimètre », dans le bloc « 2022 »", () => {
-    const html = rendre(neuves);
-    expect(html.match(/ppl-metho-rail/g)).toHaveLength(1);
-    expect(html.indexOf("ppl-metho-rail")).toBeGreaterThan(html.indexOf("ppl-sous-titre"));
+  it("module unifié : chaque onglet du filtre a son style dans le CSS", async () => {
+    const fs = await import("node:fs/promises");
+    const css = await fs.readFile("app/globals.css", "utf8");
+    for (const cls of [".ppl-onglets", ".ppl-onglet--pq.active", ".ppl-onglet--campagne.active", ".ppl-onglet--2022.active", ".polimeter-plus--unifie"]) {
+      expect(css, `${cls} manquante`).toContain(cls);
+    }
   });
 });
 
-// Le bloc « campagne » se rend via NeuvesView. Ci-dessous : le contrat de
-// nommage entre le composant et globals.css.
-describe("Polimètre+ — contrat de nommage des pastilles de parti", () => {
-  it("chaque parti suivi a sa classe de rang, de libellé et de badge dans le CSS", async () => {
+// Le bloc « campagne » se rend via NeuvesView, en kanban. Ci-dessous : le
+// contrat de nommage entre le composant et globals.css.
+describe("Polimètre+ — contrat de nommage des colonnes de parti", () => {
+  it("chaque parti suivi a sa classe de colonne dans le CSS", async () => {
     const fs = await import("node:fs/promises");
     const css = await fs.readFile("app/globals.css", "utf8");
     const { PARTI_ORDER } = await import("@/lib/data/polimetre-meta");
     for (const k of PARTI_ORDER) {
-      // Les trois classes que PolimetrePlusClient émet pour un parti.
-      expect(css, `.ppl-promise--parti-${k} manquante`).toContain(`.ppl-promise--parti-${k}`);
-      expect(css, `.ppl-verdict--parti-${k} manquante`).toContain(`.ppl-verdict--parti-${k}`);
-      expect(css, `.ppl-parti-badge--${k} manquante`).toContain(`.ppl-parti-badge--${k}`);
+      expect(css, `.ppl-kanban__col--parti-${k} manquante`).toContain(`.ppl-kanban__col--parti-${k}`);
     }
   });
 
@@ -155,43 +170,53 @@ describe("Polimètre+ — contrat de nommage des pastilles de parti", () => {
   });
 });
 
-describe("Polimètre+ — enjeux du mode « campagne »", () => {
-  it("offre le filtre d'enjeu dans le rail, comme le mode « 2022 »", () => {
+describe("Polimètre+ — kanban de la campagne", () => {
+  it("range les promesses par parti, dans l'ordre des sièges du 5 octobre", () => {
     const html = rendreCampagne();
-    expect(html).toContain("Enjeu probable");
-    expect(html).toContain("ppl-cat-trigger");
-    expect(html).toContain("Tous les enjeux");
+    const ordre = ["pq", "plq", "pcq", "qs", "caq"].map((k) => html.indexOf(`ppl-kanban__col--parti-${k}`));
+    expect(ordre.every((i) => i > -1)).toBe(true);
+    expect([...ordre].sort((x, y) => x - y)).toEqual(ordre);
   });
 
-  it("offre l'infobulle qui dit d'où vient l'enjeu", () => {
-    // L'honnêteté méthodologique est le point : la catégorie de 2022 est codée
-    // à la main, celle-ci est inférée. Le module ne doit pas laisser croire
-    // qu'elles ont la même provenance.
-    //
-    // On vérifie la PRÉSENCE de l'infobulle, pas son texte : InfoTip ne rend que
-    // son bouton en balisage statique, le contenu n'arrive qu'à l'ouverture.
-    expect(rendreCampagne()).toContain('aria-label="Enjeu probable"');
+  it("porte le lien vers le guide du Polimètre sous chaque kanban", () => {
+    for (const html of [rendre(neuves), rendreCampagne(), rendre(neuves, "2022")]) {
+      expect(html).toContain("ppl-metho-kanban");
+      expect(html).toContain("GuidePolimetre2026.pdf");
+    }
   });
 
-  it("n'affiche pas le filtre d'enjeu quand aucune promesse n'en porte", () => {
-    const sans = {
+  it("le compteur d'une colonne montre le vrai total, pas les cartes chargées", () => {
+    // Le chargeur ne transmet que cinq promesses par parti : le compteur doit
+    // lire `totaux`, sinon « PLQ 2 » se lit comme deux promesses en tout.
+    const n = { ...neuves, totaux: { ...neuves.totaux, day: { qs: 53 } } };
+    const html = rendreCampagne(n);
+    const col = html.slice(html.indexOf("ppl-kanban__col--parti-qs"));
+    expect(col).toMatch(/ppl-kanban__compte">53</);
+    // Même règle dans l'onglet PQ 2026, sur la colonne « En suspens ».
+    const pq = {
       ...neuves,
-      ranges: {
-        day: [neuve({ enjeu: null })],
-        week: [neuve({ enjeu: null })],
-        campaign: [neuve({ enjeu: null })],
-      },
+      ranges: { ...neuves.ranges, campaign: [neuve({ parti: "pq" })] },
+      totaux: { ...neuves.totaux, campaign: { pq: 124 } },
     };
-    const html = rendreCampagne(sans);
-    // Le rail reste là, mais chaque option est grisée : aucune donnée à filtrer.
-    expect(html).toContain("Tous les enjeux");
-    expect(html).not.toContain("ppl-cat-option--empty active");
+    const htmlPq = rendre(pq);
+    expect(htmlPq.slice(htmlPq.indexOf("ppl-kanban__col--en-suspens"))).toMatch(/ppl-kanban__compte">124</);
   });
 
-  it("garde le filtre de parti à côté de celui d'enjeu", () => {
-    const html = rendreCampagne();
-    expect(html).toContain("Tous les partis");
-    expect(html).toContain("Tous les enjeux");
+  it("dit au survol que l'enjeu de la campagne est inféré", () => {
+    // L'enjeu de 2022 est codé à la main, celui de la campagne est déduit du
+    // texte par un modèle : le module ne doit pas laisser croire qu'ils ont la
+    // même provenance.
+    expect(rendreCampagne()).toContain('aria-label="Enjeu probable\u00a0: Santé et politiques sociales"');
+    expect(rendre(neuves, "2022")).not.toContain("Enjeu probable");
+  });
+
+  it("l'onglet PQ 2026 porte la date, l'infobulle, le partage et le bandeau de développement", () => {
+    const pq = { ...neuves, ranges: { ...neuves.ranges, campaign: [neuve({ parti: "pq" })] } };
+    const html = rendre(pq);
+    expect(html).toContain("module-last-updated");
+    expect(html).toContain('aria-label="À propos des promesses du PQ"');
+    expect(html).not.toContain("ppl-bandeau-fictif");
+    expect(rendre({ ...pq, fictif: true })).toContain("ppl-bandeau-fictif");
   });
 });
 

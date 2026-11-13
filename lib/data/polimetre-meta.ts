@@ -170,12 +170,18 @@ export type PromesseNeuveView = {
   salienceIndex: number;
   nMentions: number;
   articles: ArticleRef[];
+  /** Rang dans la fenêtre, tous partis confondus (1 = plus d'écho). */
+  rang: number;
 };
 
 export type PromessesNeuvesData = {
   windowEnd: string;
   lastUpdated: string;
+  /** Au plus cinq promesses par parti et par fenêtre (ce que le kanban ouvre). */
   ranges: Record<NeuveRangeKey, PromesseNeuveView[]>;
+  /** Nombre réel de promesses par parti et par fenêtre, avant la coupe : c'est
+   *  lui que montrent les compteurs des colonnes. */
+  totaux: Record<NeuveRangeKey, Partial<Record<PartiKey, number>>>;
   /** Vrai quand le module est alimenté par VITRINE_NEUVES_FIXTURES. Le module
    *  affiche alors un bandeau : aucune capture d'écran de développement ne doit
    *  pouvoir passer pour le site. */
