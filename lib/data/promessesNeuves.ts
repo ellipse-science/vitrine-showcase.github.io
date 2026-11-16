@@ -27,6 +27,7 @@ import {
   NEUVE_RANGE_ORDER,
   partiKeyFromId,
   type ArticleRef,
+  type PartiKey,
   type NeuveRangeKey,
   type PromesseNeuveView,
   type PromessesNeuvesData,
@@ -42,9 +43,11 @@ export type {
  *  servir ce jeu depuis l'API plutôt que du disque. */
 const NEUVES_DATASET = "public/data/refined/day/polimetre_promesses_neuves.json";
 
-// Nombre de promesses conservées par fenêtre. Le module en affiche cinq ; on en
-// garde davantage pour que les filtres de parti aient de quoi travailler.
-const KEEP_PER_RANGE = 40;
+// Nombre de promesses conservées par parti et par fenêtre : le kanban en ouvre
+// au plus cinq par colonne. La coupe se fait PAR PARTI, après le classement :
+// une coupe tous partis confondus laissait deux cartes au PLQ, qui se lisaient
+// comme deux promesses en tout. Le vrai total voyage à part (`totaux`).
+const KEEP_PER_PARTI = 5;
 
 type Row = {
   country_id: string;
@@ -140,7 +143,7 @@ function parseArticles(raw: string | null | undefined): ArticleRef[] {
   );
 }
 
-function toView(r: Row): PromesseNeuveView | null {
+function toView(r: Row): Omit<PromesseNeuveView, "rang"> | null {
   const title = realText(r.label);
   // Une promesse sans libellé court n'est pas affichable : un rang sans titre est
   // pire qu'un rang absent. Le raffineur les écarte déjà, ceci est la ceinture.
@@ -245,18 +248,26 @@ export async function loadPromessesNeuves(
   // par jour, `week` et `campaign` peuvent dater d'un run antérieur — les couper
   // au window_end de `day` les faisait disparaître dès le lendemain.
   const ranges: Record<NeuveRangeKey, PromesseNeuveView[]> = { day: [], week: [], campaign: [] };
+  const totaux: PromessesNeuvesData["totaux"] = { day: {}, week: {}, campaign: {} };
   let windowEnd = "";
   for (const key of NEUVE_RANGE_ORDER) {
     const snap = dernierInstantane(rows.filter((r) => r.window_key === key));
     if (snap.length > 0 && snap[0].window_end > windowEnd) windowEnd = snap[0].window_end;
-    ranges[key] = snap
+    const classees = snap
       // rank_current vient du raffineur, qui a déjà tranché les ex æquo (écho
       // médiatique, puis date d'annonce). On le respecte au lieu de reclasser :
       // deux classements concurrents finiraient par diverger en silence.
       .sort((a, b) => (Number(a.rank_current) || 0) - (Number(b.rank_current) || 0))
       .map(toView)
-      .filter((v): v is PromesseNeuveView => v !== null)
-      .slice(0, KEEP_PER_RANGE);
+      .filter((v): v is Omit<PromesseNeuveView, "rang"> => v !== null)
+      // Rang tous partis confondus, fixé AVANT la coupe par parti.
+      .map((v, idx) => ({ ...v, rang: idx + 1 }));
+    const parParti: Partial<Record<PartiKey, number>> = {};
+    ranges[key] = classees.filter((v) => {
+      parParti[v.parti] = (parParti[v.parti] ?? 0) + 1;
+      return parParti[v.parti]! <= KEEP_PER_PARTI;
+    });
+    totaux[key] = parParti;
   }
 
   if (NEUVE_RANGE_ORDER.every((key) => ranges[key].length === 0)) return null;
@@ -265,6 +276,7 @@ export async function loadPromessesNeuves(
     windowEnd,
     lastUpdated: lastUpdatedLabel(windowEnd),
     ranges,
+    totaux,
     fictif: SUR_FIXTURES || undefined,
   };
 }
