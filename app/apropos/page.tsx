@@ -151,6 +151,72 @@ export default function AproposPage() {
 
 
             <section>
+              <h2 className="apropos-section-title">Nos membres</h2>
+              <ul className="apropos-members-list">
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Yannick Dufresne</span>
+                  <span className="apropos-member-role">Directeur du CAPP, professeur titulaire</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Shannon Dinan</span>
+                  <span className="apropos-member-role">Co-directrice du CAPP, professeure agrégée</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Antoine Lemor</span>
+                  <span className="apropos-member-role">Chercheur postdoctoral</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Hugo Catellier</span>
+                  <span className="apropos-member-role">Programmeur</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Patrick Poncet</span>
+                  <span className="apropos-member-role">Développeur et ingénieur de données</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Marc-Antoine Martel</span>
+                  <span className="apropos-member-role">Chercheur postdoctoral</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Alexandre Fortier-Chouinard</span>
+                  <span className="apropos-member-role">Chercheur postdoctoral</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Adrien Cloutier</span>
+                  <span className="apropos-member-role">Doctorant</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Junior Sagne</span>
+                  <span className="apropos-member-role">Doctorant</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Laurence-Olivier M. Foisy</span>
+                  <span className="apropos-member-role">Doctorant</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Camille Pelletier</span>
+                  <span className="apropos-member-role">Étudiante à la maîtrise</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Benjamin Carignan</span>
+                  <span className="apropos-member-role">Étudiant à la maîtrise</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Étienne Proulx</span>
+                  <span className="apropos-member-role">Étudiant à la maîtrise</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Helena Massardier</span>
+                  <span className="apropos-member-role">Doctorante</span>
+                </li>
+                <li className="apropos-member">
+                  <span className="apropos-member-name">Jules Piral</span>
+                  <span className="apropos-member-role">Étudiant au baccalauréat</span>
+                </li>
+              </ul>
+            </section>
+
+            <section>
               <h2 className="apropos-section-title">Transparence et accès</h2>
               <p
                 className="apropos-text"
