@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1024,
+    "date": "2026-11-22T13:27:15Z",
+    "note": "Les promesses de la campagne affichées dans le Polimètre+ proviennent désormais du même environnement de production que le reste du site.",
+    "version": null
+  },
+  {
     "pr": 1005,
     "date": "2026-11-16T04:12:29Z",
     "note": "Le Polimètre+ présente maintenant les promesses en tableau de suivi : un onglet pour le mandat du Parti québécois, un pour le bilan de la CAQ et un pour la campagne de 2026.",
