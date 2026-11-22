@@ -3,10 +3,12 @@ import fs from "node:fs";
 import path from "node:path";
 
 // Exception d'environnement par table (scripts/tables.json, clé `env`) : une
-// table lue dans un datamart précis quel que soit DATAMART_ENV. Le cas :
-// polimetre-promesses-neuves n'est pas activé en PROD, ses tables n'existent
-// qu'en DEV, et le site les affiche déjà — sans l'exception, la bascule du site
-// sur PROD faisait disparaître le mode « campagne » le jour même.
+// table lue dans un datamart précis quel que soit DATAMART_ENV. Le cas restant :
+// les tables agora-social, dont la collecte n'existe qu'en DEV — sans
+// l'exception, la bascule du site sur PROD viderait le module social.
+// polimetre_promesses_neuves n'a PLUS d'exception depuis le 2026-11-22 : sa
+// saillance tourne en PROD (aws-infra#777) avec ses tables migrées, la table
+// suit donc DATAMART_ENV comme toutes les autres tables de production.
 
 const lire = (p: string) => fs.readFileSync(path.resolve(process.cwd(), p), "utf8");
 type Entry = { name: string; enabled: boolean; env?: string; api?: boolean };
@@ -20,10 +22,11 @@ describe("exception d'environnement par table", () => {
     }
   });
 
-  it("polimetre_promesses_neuves est lue en DEV tant que le raffineur n'est pas activé en PROD", () => {
+  it("polimetre_promesses_neuves suit DATAMART_ENV (saillance en PROD depuis le 2026-11-22)", () => {
     const t = tables.find((x) => x.name === "polimetre_promesses_neuves");
     expect(t?.enabled).toBe(true);
-    expect(t?.env).toBe("DEV");
+    // Plus d'exception `env` : la table est lue dans le datamart du build.
+    expect(t?.env).toBeUndefined();
     // Et pas par le Worker : lui n'a qu'un environnement.
     expect(t?.api).toBe(false);
   });
