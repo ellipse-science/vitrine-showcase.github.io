@@ -320,7 +320,18 @@ const KANBAN_PARTIS: PartiKey[] = ["pq", "plq", "pcq", "qs", "caq"];
 const KANBAN_N_COURT = 3;
 const KANBAN_N_LONG = 5;
 
-function KanbanBoard({ colonnes, label }: { colonnes: ColonneKanban[]; label: string }) {
+function KanbanBoard({
+  colonnes,
+  label,
+  pied,
+}: {
+  colonnes: ColonneKanban[];
+  label: string;
+  /** Liens posés DANS le cadre du tableau, sous les colonnes (méthodologie et
+   *  site du Polimètre, côte à côte). Hors de la liste : role="list" n'admet
+   *  que des listitem. */
+  pied?: ReactNode;
+}) {
   const [ouvertes, setOuvertes] = useState<Set<string>>(new Set());
   const basculer = (cle: string) =>
     setOuvertes((prev) => {
@@ -330,6 +341,7 @@ function KanbanBoard({ colonnes, label }: { colonnes: ColonneKanban[]; label: st
       return next;
     });
   return (
+    <div className="ppl-kanban-cadre">
     <div
       className="ppl-kanban"
       role="list"
@@ -393,6 +405,8 @@ function KanbanBoard({ colonnes, label }: { colonnes: ColonneKanban[]; label: st
         </section>
       ))}
     </div>
+    {pied && <div className="ppl-kanban-cadre__pied">{pied}</div>}
+    </div>
   );
 }
 
@@ -440,6 +454,27 @@ function LienPolimetre({ href, libelle }: { href: string; libelle: string }) {
         <PolimetreMark />
         {libelle}
       </a>
+    </div>
+  );
+}
+
+/* Pied du cadre kanban : méthodologie à gauche, site du Polimètre à droite. */
+function LiensKanban({ href, libelle }: { href: string; libelle: string }) {
+  return (
+    <>
+      <LienMetho />
+      <LienPolimetre href={href} libelle={libelle} />
+    </>
+  );
+}
+
+/* Onglets du module et filtre d'enjeu sur une même ligne, le filtre à droite ;
+   sur téléphone, le filtre passe au-dessus des onglets. */
+function LigneOnglets({ bascule, filtre }: { bascule: ReactNode; filtre: ReactNode }) {
+  return (
+    <div className="ppl-onglets-ligne">
+      {bascule}
+      {filtre}
     </div>
   );
 }
@@ -606,9 +641,11 @@ function PolimetreView({
       </p>
       )}
       {bascule && (
-        <FiltreEnjeuKanban value={category} onChange={setCategory} categories={promises.map((p) => p.category)} />
+        <LigneOnglets
+          bascule={bascule}
+          filtre={<FiltreEnjeuKanban value={category} onChange={setCategory} categories={promises.map((p) => p.category)} />}
+        />
       )}
-      {bascule}
       {bascule ? (
         <>
           <KanbanBoard
@@ -626,13 +663,14 @@ function PolimetreView({
                   pied: <TrendBadge trend={p.trend} />,
                 })),
             }))}
+            pied={
+              mandat === "pq" ? (
+                <LiensKanban href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />
+              ) : (
+                <LiensKanban href={POLIMETRE_URL_LEGAULT} libelle="Découvrir toutes les promesses sur le site Web du Polimètre" />
+              )
+            }
           />
-          <LienMetho />
-          {mandat === "pq" ? (
-            <LienPolimetre href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />
-          ) : (
-            <LienPolimetre href={POLIMETRE_URL_LEGAULT} libelle="Découvrir toutes les promesses sur le site Web du Polimètre" />
-          )}
         </>
       ) : (
       <div className="ppl-grid">
@@ -911,10 +949,17 @@ function NeuvesView({
         </div>
       </div>
 
-      <FiltreEnjeuKanban value={enjeu} onChange={setEnjeu} categories={promesses.map((p) => p.enjeu)} />
-      {bascule}
+      <LigneOnglets
+        bascule={bascule}
+        filtre={<FiltreEnjeuKanban value={enjeu} onChange={setEnjeu} categories={promesses.map((p) => p.enjeu)} />}
+      />
       {promesses.length === 0 ? (
-        <p className="ppl-kanban-vide">{messageEtatVide(range, data.ranges)}</p>
+        <>
+          <p className="ppl-kanban-vide">{messageEtatVide(range, data.ranges)}</p>
+          <div className="ppl-kanban-cadre__pied">
+            <LiensKanban href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />
+          </div>
+        </>
       ) : (
         <KanbanBoard
           label="Promesses de la campagne, rangées par parti"
@@ -938,10 +983,9 @@ function NeuvesView({
                 ),
               })),
           }))}
+          pied={<LiensKanban href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />}
         />
       )}
-      <LienMetho />
-      <LienPolimetre href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />
       <div className="module-last-updated">{data.lastUpdated}</div>
     </section>
   );
@@ -1013,8 +1057,10 @@ function PqView({
           </div>
         </div>
       </div>
-      <FiltreEnjeuKanban value={enjeu} onChange={setEnjeu} categories={promessesPqToutes.map((p) => p.enjeu)} />
-      {bascule}
+      <LigneOnglets
+        bascule={bascule}
+        filtre={<FiltreEnjeuKanban value={enjeu} onChange={setEnjeu} categories={promessesPqToutes.map((p) => p.enjeu)} />}
+      />
       <KanbanBoard
         label="Promesses du PQ de 2026, rangées par verdict"
         colonnes={KANBAN_VERDICTS.map((v) => ({
@@ -1037,9 +1083,8 @@ function PqView({
                   ),
                 })),
         }))}
+        pied={<LiensKanban href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />}
       />
-      <LienMetho />
-      <LienPolimetre href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />
       <div className="module-last-updated">{data.lastUpdated}</div>
     </section>
   );

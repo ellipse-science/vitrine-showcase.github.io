@@ -308,14 +308,23 @@ describe("Polimètre+ — filtre d'enjeu et lien vers le Polimètre sur les troi
     ["campagne", 'href="https://polimeter.org/fr"'],
   ];
   for (const [onglet, href] of onglets) {
-    it(`onglet ${onglet} : filtre « Catégorie d'enjeu » au-dessus des onglets, lien en bas`, () => {
+    it(`onglet ${onglet} : filtre sur la ligne des onglets, liens dans le cadre du kanban`, () => {
       const html = rendre(neuves, onglet);
-      expect(html).toContain("ppl-kanban-filtre");
       expect(html).toContain("Tous les enjeux");
-      expect(html.indexOf("ppl-kanban-filtre")).toBeLessThan(html.indexOf("ppl-onglets"));
+      // Même ligne que les onglets, à leur droite.
+      const ligne = html.indexOf("ppl-onglets-ligne");
+      expect(ligne).toBeGreaterThan(-1);
+      expect(html.indexOf('class="ppl-onglets"')).toBeGreaterThan(ligne);
+      expect(html.indexOf("ppl-kanban-filtre")).toBeGreaterThan(html.indexOf('class="ppl-onglets"'));
+      // Méthodologie et Polimètre côte à côte, dans le pied du cadre.
+      const cadre = html.indexOf("ppl-kanban-cadre");
+      const pied = html.indexOf("ppl-kanban-cadre__pied");
+      expect(cadre).toBeGreaterThan(-1);
+      expect(pied).toBeGreaterThan(cadre);
+      expect(html.indexOf("ppl-metho-kanban")).toBeGreaterThan(pied);
+      expect(html.indexOf("ppl-discover")).toBeGreaterThan(html.indexOf("ppl-metho-kanban"));
       expect(html).toContain(href);
       expect(html).toContain("ppl-discover__mark");
-      expect(html.indexOf("ppl-discover")).toBeGreaterThan(html.indexOf("ppl-kanban"));
     });
   }
 });
