@@ -163,3 +163,22 @@ def test_une_deputee_reprise_de_la_veille_entre_dans_l_historique():
     }]
     # Idempotent : la relancer n'ajoute pas de doublon.
     assert scraper.completer_historique(historique, plan) == historique
+
+
+def test_l_alerte_compte_le_resultat_et_non_le_deroulement():
+    """Le 15-10 : tout a « réussi », mais les entrées n'étaient plus les bonnes."""
+    index_final = [{"deputy_id": "20319"}, {"deputy_id": 15000}]
+    assert scraper.sans_portrait({"17000", "15000"}, index_final) == ["17000"]
+    assert scraper.sans_portrait({"15000"}, index_final) == []
+
+
+def test_l_alerte_est_transmise_au_workflow(tmp_path, monkeypatch, capsys):
+    sortie = tmp_path / "github_output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(sortie))
+    deputies = [{"deputy_id": "17000", "nom_index": "Députée Sortante"}]
+    scraper.signaler_sans_portrait(["17000", "99999"], deputies, {})
+    assert sortie.read_text(encoding="utf-8").splitlines() == [
+        "sans_portrait=2",
+        "sans_portrait_exemples=17000 Députée Sortante, 99999 (nom inconnu)",
+    ]
+    assert "2 député·es affiché·es sans portrait" in capsys.readouterr().out

@@ -20,7 +20,7 @@ les ridings sont uniques et stables, les graphies de noms ne le sont pas.
 
 Usage : python3 scripts/scrape_deputy_photos.py [--dry-run]
 """
-import json, re, sys, time, unicodedata, urllib.request
+import json, os, re, sys, time, unicodedata, urllib.request
 from dataclasses import dataclass, field
 from html import unescape
 from pathlib import Path
@@ -261,6 +261,35 @@ def main():
     print(f"\n{len(out)} portraits, {len(echecs)} échecs, dont {len(conserves)} gardés de la veille")
     for n, e in echecs:
         print("  échec:", n, "—", e)
+    signaler_sans_portrait(sans_portrait(affiches, out), deputies, veille)
+
+
+def sans_portrait(affiches, entrees):
+    """Les deputy_id affichés qui n'ont aucune entrée dans l'index final.
+
+    On vérifie le RÉSULTAT, pas le déroulement. Le 15-10-2026, rien n'a
+    échoué : le script a récupéré les 131 photos qu'on lui demandait, mais ce
+    n'étaient plus les bonnes, et 97 cartes ont perdu leur portrait sans
+    alerte. Un profil introuvable et un échec sans secours finissent tous deux
+    ici.
+    """
+    return sorted(affiches - {str(e["deputy_id"]) for e in entrees})
+
+
+def signaler_sans_portrait(manquants, deputies, veille):
+    """Journal, résumé du job et sortie `sans_portrait` lue par refresh-data.yml."""
+    noms = {d["deputy_id"]: d["nom_index"] for d in deputies}
+    noms.update({i: v.get("nom", "") for i, v in veille.items() if i not in noms})
+    lignes = [f"{i} {noms.get(i, '(nom inconnu)')}" for i in manquants]
+    print(f"{len(manquants)} député·es affiché·es sans portrait")
+    for ligne in lignes:
+        print("  sans portrait:", ligne)
+    out = os.environ.get("GITHUB_OUTPUT")
+    if out:
+        with open(out, "a", encoding="utf-8") as f:
+            f.write(f"sans_portrait={len(manquants)}\n")
+            # Dix noms suffisent pour l'alerte ; la liste complète est au journal.
+            f.write(f"sans_portrait_exemples={', '.join(lignes[:10])}\n")
 
 if __name__ == "__main__":
     main()

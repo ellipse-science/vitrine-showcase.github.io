@@ -581,6 +581,27 @@ jobs:
               "$SLACK_WEBHOOK_URL"
           fi
 
+      # L'alerte ci-dessus ne voit qu'une étape qui PLANTE. Le 15-10-2026, rien
+      # n'a planté : le scraper a récupéré les photos de la 44e législature
+      # pendant que le site affichait la 43e, et 97 cartes sur 129 ont perdu
+      # leur portrait pendant cinq semaines sans un message. Celle-ci compte le
+      # RÉSULTAT : les député·es affiché·es sans entrée dans l'index des
+      # portraits (issue #1028). Les noms passent par l'environnement et jq :
+      # une apostrophe dans un nom casserait un JSON écrit à la main.
+      - name: Warn Slack if displayed deputies have no portrait
+        if: steps.deputy_photos.outputs.sans_portrait != '' && steps.deputy_photos.outputs.sans_portrait != '0'
+        env:
+          SANS_PORTRAIT: ${{ steps.deputy_photos.outputs.sans_portrait }}
+          EXEMPLES: ${{ steps.deputy_photos.outputs.sans_portrait_exemples }}
+        run: |
+          echo "::warning::${SANS_PORTRAIT} député·es affiché·es sans portrait : ${EXEMPLES}"
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            jq -n --arg n "$SANS_PORTRAIT" --arg ex "$EXEMPLES" --arg run "$RUN_URL" \
+              '{text: "🟠 *Vitrine : \($n) carte(s) de député sans portrait* — le scraper a tourné, mais ces député·es affiché·es n'\''ont aucune photo.\nExemples : \($ex)\nRun : \($run)"}' \
+              | curl -fsS -X POST -H 'Content-Type: application/json' -d @- "$SLACK_WEBHOOK_URL"
+          fi
+
       # Les étapes ci-dessus écrivent AUSSI hors de public/images/deputes/ :
       # l'historique des titulaires (scripts/deputy_portrait_history.json) et
       # les accessoires des cartes (public/images/cartes/). Non ajoutés, ils
