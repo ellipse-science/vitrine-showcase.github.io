@@ -62,7 +62,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
 import { chromium } from "playwright";
-import { ISSUE_META, buildEnjeuStack, loadAssemblee, type DeputyRow, type IssueKey, type PeriodKey } from "@/lib/data/assemblee";
+import { DOSSIER_ARCHIVE_ASSEMBLEE_43E, ISSUE_META, buildEnjeuStack, loadArchiveAssemblee43e, loadAssemblee, type DeputyRow, type IssueKey, type PeriodKey } from "@/lib/data/assemblee";
 import { PARTY_COLORS, type PartyKey } from "@/lib/data/parties";
 import { COLORS, enjeuGlyph, fleur, loadLogos, parseArgs, txt, openInBrowser } from "./lib/reel";
 import { ajusterFonctions, ajusterLegende, ajusterNom, ajusterRubriques, ajusterVerso, mesurerCoupes, mesurerDebordement, mesurerRetours } from "@/lib/cartes/ajustements";
@@ -558,9 +558,11 @@ async function main() {
   // désormais la phrase entière ; à 95 signes, l'extrait du site en coupait
   // 83 sur 98. 150 signes tiennent sur deux lignes à 30 px.
   if (MODE_IMPRESSION) process.env.VITRINE_CITATION_BUDGET ??= "150";
-  const data = await loadAssemblee();
+  const courante = await loadAssemblee();
+  const dossier = courante?.legislatureCourante ? DOSSIER_ARCHIVE_ASSEMBLEE_43E : undefined;
+  const data = dossier ? await loadArchiveAssemblee43e() : courante;
   if (!data) throw new Error("Aucune donnée d'Assemblée : public/data/agora/ est vide ou illisible.");
-  await fusionnerLignesParParti(data);
+  await fusionnerLignesParParti(data, true, dossier);
   await retirerExpressions(data);
   // ENJEUX EN RÉVISION — retirés des cartes, leur part répartie entre les
   // autres. Les têtes INFER public_lands et defense, calibrées sur la presse,
@@ -581,7 +583,7 @@ async function main() {
 
   // LA SÉRIE COMPLÈTE D'ABORD, la sélection ensuite (voir lib/cartes/jeu.ts) :
   // numéros, raretés et fonctions n'ont de sens que sur l'ensemble.
-  const sources = await chargerSources();
+  const sources = await chargerSources(dossier);
   const { cartes: serieComplete, serie } = construireJeu(data, periode, sources, {
     annee: typeof args.annee === "string" ? Number(args.annee) : undefined,
   });
@@ -638,7 +640,7 @@ async function main() {
   // l'Assemblée n'est pas exposé par le loader.
   const fiches = new Map<string, Partial<Record<PeriodKey, DeputyRow>>>();
   const maxAbs = {} as Record<PeriodKey, number>;
-  const libelles = await etiquettesPeriodes();
+  const libelles = await etiquettesPeriodes(dossier);
   for (const cle of PERIODES) {
     const vueP = data.periods[cle];
     const tous = vueP ? [...vueP.rows.flatMap((r) => r.deputies ?? []), ...(vueP.independants ?? [])] : [];

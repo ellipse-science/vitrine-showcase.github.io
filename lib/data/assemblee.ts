@@ -245,9 +245,10 @@ export type AssembleeData = {
   periods: Record<PeriodKey, PeriodView>;
   /** La législature élue qui n'a pas encore siégé (vitrine#1035). Présente
    *  seulement tant qu'Agora n'a aucune journée postérieure à son élection :
-   *  à la première séance traitée, elle disparaît et le module redevient
-   *  celui des trois périodes. */
+   *  les premières données la remplacent par les trois périodes de la 44e. */
   prochaine?: LegislatureEnAttente;
+  legislatureCourante?: number;
+  archiveFigee?: true;
 };
 
 // ─── La législature suivante, en attente de sa première séance (#1035) ──────
@@ -1157,33 +1158,78 @@ async function loadPortraits(): Promise<DeputyPortrait[]> {
   }
 }
 
+export const DOSSIER_ARCHIVE_ASSEMBLEE_43E = "data/archive-assemblee-43e";
+
+function construireVuesAssemblee(
+  rows: AgoraRow[],
+  deputyRows: DeputyAgoraRow[],
+  portraitsBruts: DeputyPortrait[],
+  affiliationRows: AffiliationAgoraRow[],
+): AssembleeData {
+  const portraits = buildPortraitIndex(portraitsBruts);
+  const affiliations = buildAffiliationIndex(affiliationRows);
+  return {
+    periods: {
+      last_pdq: buildPeriodView(rows, "last_pdq", deputyRows, portraits, affiliations),
+      session: buildPeriodView(rows, "session", deputyRows, portraits, affiliations),
+      legislature: buildPeriodView(rows, "legislature", deputyRows, portraits, affiliations),
+    },
+  };
+}
+
+async function lireArchiveAssemblee43e(asOfIso?: string): Promise<AssembleeData | null> {
+  const lire = async <T>(nom: string): Promise<T> =>
+    JSON.parse(await fs.readFile(path.resolve(process.cwd(), DOSSIER_ARCHIVE_ASSEMBLEE_43E, nom), "utf8")) as T;
+  const [agora, deputes, affiliations, portraits] = await Promise.all([
+    lire<AgoraRow[]>("agora_decideurs_qc.json"),
+    lire<DeputyAgoraRow[]>("agora_decideurs_qc_deputes.json"),
+    lire<AffiliationAgoraRow[]>("agora_decideurs_qc_affiliations.json"),
+    lire<{ deputes: DeputyPortrait[] }>("portraits.json"),
+  ]);
+  const rows = asOfIso ? agora.filter((r) => r.period_end_date <= asOfIso) : agora;
+  if (!rows.length) return null;
+  return { ...construireVuesAssemblee(rows, deputes, portraits.deputes, affiliations), archiveFigee: true };
+}
+
+export async function loadArchiveAssemblee43e(): Promise<AssembleeData> {
+  const archive = await lireArchiveAssemblee43e();
+  if (!archive) throw new Error("L’archive de la 43e législature est vide");
+  return archive;
+}
+
 export async function loadAssemblee(
-  /** Édition passée (#434) : jour de publication de l'édition affichée. Les
-   *  discours sont publiés par JOUR DE DÉBAT — l'archive de ce module suit donc
-   *  la cadence de l'Assemblée, pas celle des éditions. */
+  /** Une édition passée suit la date des débats, pas la cadence des éditions. */
   asOfIso?: string,
 ): Promise<AssembleeData | null> {
   const raw = await readDatasetText("public/data/agora/agora_decideurs_qc.json");
   const parsed = JSON.parse(raw) as AgoraRow[];
-  if (!Array.isArray(parsed) || parsed.length === 0) return null;
-  const allRows = asOfIso
-    ? parsed.filter((r) => String(r.period_end_date ?? "") <= asOfIso)
-    : parsed;
-  if (allRows.length === 0) return null;
-  const deputyRows = await loadDeputyRows();
-  const portraitsBruts = await loadPortraits();
-  const portraits = buildPortraitIndex(portraitsBruts);
-  const affiliations = buildAffiliationIndex(await loadAffiliationRows());
-  // Sur une édition passée, l'index des portraits est celui d'aujourd'hui :
-  // on ne montre pas une législature en attente dans une archive.
-  const prochaine = asOfIso ? null : buildLegislatureEnAttente(portraitsBruts, parsed);
+  if (!Array.isArray(parsed)) return null;
+
+  const { election, numero } = LEGISLATURE_SUIVANTE;
+  const apresElection = (r: AgoraRow) => String(r.period_end_date ?? "") >= election;
+  const aDesDebats = parsed.some(apresElection);
+
+  // La 43e doit rester lisible quand le fichier courant ne contient que la 44e.
+  // Pendant l’interrègne, une édition peut encore dater d’avant les premiers débats.
+  const rowsAvantEdition = asOfIso ? parsed.filter((r) => r.period_end_date <= asOfIso) : parsed;
+  const edition43e = Boolean(asOfIso && !rowsAvantEdition.some(apresElection));
+  if (edition43e && (aDesDebats || rowsAvantEdition.length === 0)) {
+    const archive = await lireArchiveAssemblee43e(asOfIso);
+    if (archive) return archive;
+  }
+
+  const afficher44e = aDesDebats && !edition43e;
+  const rows = afficher44e
+    ? rowsAvantEdition.filter((r) => apresElection(r) && r.period_start_date >= election)
+    : rowsAvantEdition;
+  if (!rows.length) return null;
+  const [deputes, portraits, affiliations] = await Promise.all([loadDeputyRows(), loadPortraits(), loadAffiliationRows()]);
+  const prochaine = asOfIso ? null : buildLegislatureEnAttente(portraits, parsed);
+
   return {
+    ...construireVuesAssemblee(rows, deputes, portraits, affiliations),
+    ...(afficher44e ? { legislatureCourante: numero } : {}),
     ...(prochaine ? { prochaine } : {}),
-    periods: {
-      last_pdq: buildPeriodView(allRows, "last_pdq", deputyRows, portraits, affiliations),
-      session: buildPeriodView(allRows, "session", deputyRows, portraits, affiliations),
-      legislature: buildPeriodView(allRows, "legislature", deputyRows, portraits, affiliations),
-    },
   };
 }
 
