@@ -47,5 +47,20 @@ jobs:
       - name: Test
         run: npm test
 
+      # Les scripts Python (scraper des portraits, garde de fraîcheur) ont des
+      # tests dans tests/test_*.py, mais rien ne les lançait : le jour où l'un
+      # cassait, personne ne le voyait (test_generate_art.py est resté orphelin
+      # trois mois). Ces étapes restent DANS le job `check`, que le ruleset
+      # exige : un job séparé ne bloquerait pas la fusion. Issue #1028.
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Test (Python)
+        run: |
+          pip install pytest
+          python -m pytest tests/ -q
+
       - name: Build
         run: npm run build
