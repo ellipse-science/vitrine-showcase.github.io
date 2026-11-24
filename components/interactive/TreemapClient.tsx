@@ -370,7 +370,8 @@ function GrowthTile({
                 {growthSpan}
                 <span className="gt-expanded-label">
                   {depuis ? `Variation depuis ${depuis}` : "Variation depuis le traitement précédent"}
-                </span>              </div>
+                </span>
+              </div>
             </div>
 
               {/* Lecture en COLONNES : 1-2-3 à gauche, 4-5-6 à droite (demande
@@ -485,7 +486,8 @@ function GrowthTip({ tile, depuis }: { tile: LayoutNode; depuis: string | null }
           {tile.velocity === 1 && <span className="gt-up">▲</span>}
           {tile.velocity === -1 && <span className="gt-down">▼</span>}
           {tile.growth === null ? (tile.velocity === 1 ? "nouv." : "n.d.") : formatGrowth(tile.growth)}
-        </dd>      </dl>
+        </dd>
+      </dl>
       <div className="gt-tip-head">{article.title}</div>
       {mediaLabel && <div className="gt-tip-media">{mediaLabel}</div>}
       <div className="gt-tip-action">Cliquer pour tout voir</div>
@@ -1098,7 +1100,7 @@ export function TreemapClient({ data, editionKey }: { data: TreemapAllPeriods; e
                 Évolution
               </span>
             </div>
-            <ShareButton title="Les 12 enjeux de l'actualité"anchor="enjeux-saillants" editionKey={editionKey} />
+            <ShareButton title="Les 12 enjeux de l'actualité" anchor="enjeux-saillants" editionKey={editionKey} />
           </div>
         </div>
       </div>
