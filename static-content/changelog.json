@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1044,
+    "date": "2026-11-24T23:30:46Z",
+    "note": "Le module des 12 enjeux suit maintenant l'actualité courante plutôt que la campagne électorale : il s'ouvre sur les sept derniers jours et propose une vue des 30 derniers jours.",
+    "version": "2.55.0-beta.1"
+  },
+  {
     "pr": 1040,
     "date": "2026-11-24T23:06:31Z",
     "note": "Le module Partis et couverture permet maintenant de consulter les 30 derniers jours. La colonne centrale du vu-mètre s’aligne sur le cran « Tous les médias » et le curseur affiche le nom complet des médias.",
