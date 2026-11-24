@@ -61,6 +61,7 @@ const GROUPES: { titre: string; membres: Membre[] }[] = [
     titre: "Analystes de données",
     membres: [
       { nom: "Benjamin Carignan", titre: "Analyste de données", detail: "Maîtrise", universite: LAVAL, photo: "benjamin-carignan" },
+      { nom: "Dominic Gaudette", titre: "Analyste de données", detail: "Baccalauréat", universite: LAVAL, photo: "dominic-gaudette" },
       { nom: "Jules Piral", titre: "Analyste de données", detail: "Baccalauréat", universite: LAVAL, photo: "jules-piral" },
     ],
   },
