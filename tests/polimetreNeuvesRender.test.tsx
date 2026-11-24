@@ -298,3 +298,24 @@ describe("Polimètre+ — onglets de période du mode « campagne »", () => {
     );
   });
 });
+
+// Filtre d'enjeu et lien vers le Polimètre, réintégrés en bas de chaque onglet
+// du kanban (ils existaient dans la liste d'avant #1005).
+describe("Polimètre+ — filtre d'enjeu et lien vers le Polimètre sur les trois onglets", () => {
+  const onglets: ["pq" | "campagne" | "2022", string][] = [
+    ["pq", 'href="https://polimeter.org/fr"'],
+    ["2022", 'href="https://polimeter.org/fr/legault-frechette"'],
+    ["campagne", 'href="https://polimeter.org/fr"'],
+  ];
+  for (const [onglet, href] of onglets) {
+    it(`onglet ${onglet} : filtre « Catégorie d'enjeu » au-dessus des onglets, lien en bas`, () => {
+      const html = rendre(neuves, onglet);
+      expect(html).toContain("ppl-kanban-filtre");
+      expect(html).toContain("Tous les enjeux");
+      expect(html.indexOf("ppl-kanban-filtre")).toBeLessThan(html.indexOf("ppl-onglets"));
+      expect(html).toContain(href);
+      expect(html).toContain("ppl-discover__mark");
+      expect(html.indexOf("ppl-discover")).toBeGreaterThan(html.indexOf("ppl-kanban"));
+    });
+  }
+});

@@ -7855,6 +7855,32 @@
   .ppl-verdict-tag--en-suspens .ppl-verdict-dot { background: var(--ppl-en-suspens); }
   .ppl-verdict-tag--rompue     .ppl-verdict-dot { background: var(--ppl-rompue); }
 
+  /* Filtre d'enjeu du kanban, au-dessus des onglets (ils restent posés sur le
+     tableau). Même typographie que l'en-tête du rail de l'ancienne liste, sans
+     son filet ; sur téléphone, le titre passe au-dessus de la liste. */
+  .ppl-kanban-filtre {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 440px;
+    margin: 18px 0 0 22px;
+  }
+  .ppl-kanban-filtre > :last-child { flex: 1; min-width: 0; }
+  /* order : la liste déroulante porte order: -1 pour le rail de l'ancienne
+     liste ; le titre doit rester devant elle. */
+  .ppl-kanban-filtre__titre {
+    order: -2;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  @media (max-width: 767px) {
+    .ppl-kanban-filtre { flex-direction: column; align-items: stretch; gap: 6px; margin-left: 0; }
+  }
   .ppl-discover-wrap {
     display: flex;
     justify-content: center;

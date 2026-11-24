@@ -426,6 +426,53 @@ function dateSansJour(iso: string): string {
   return longue === iso ? iso : longue.replace(/^\S+\s/, "");
 }
 
+/* Lien vers le site Web du Polimètre, avec sa marque — repris de l'ancienne
+   liste (avant le kanban, #1005) et posé en bas des trois onglets. Le Polimètre
+   n'a pas encore de page St-Pierre Plamondon : PQ 2026 et Campagne 2026 mènent
+   à son accueil (remplacer l'adresse quand la page existera). */
+const POLIMETRE_URL_LEGAULT = "https://polimeter.org/fr/legault-frechette";
+const POLIMETRE_URL_ACCUEIL = "https://polimeter.org/fr";
+
+function LienPolimetre({ href, libelle }: { href: string; libelle: string }) {
+  return (
+    <div className="ppl-discover-wrap">
+      <a className="ppl-discover" href={href} target="_blank" rel="noopener">
+        <PolimetreMark />
+        {libelle}
+      </a>
+    </div>
+  );
+}
+
+/* Filtre d'enjeu du kanban — la « Catégorie d'enjeu » de l'ancienne liste. Il
+   ne garde, dans chaque colonne, que les promesses de l'enjeu choisi ; les
+   compteurs de colonne comptent alors les cartes filtrées. Les 12 enjeux sont
+   toujours listés, grisés quand la période n'en a aucune promesse. */
+function optionsEnjeu(categories: (string | null | undefined)[]) {
+  const present = new Set(categories.filter((c): c is string => !!c));
+  const extras = [...present].filter((c) => !CATEGORY_ORDER.includes(c));
+  return [...CATEGORY_ORDER, ...extras]
+    .sort((a, b) => a.localeCompare(b, "fr"))
+    .map((c) => ({ value: c, label: c, present: present.has(c) }));
+}
+
+function FiltreEnjeuKanban({
+  value,
+  onChange,
+  categories,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  categories: (string | null | undefined)[];
+}) {
+  return (
+    <div className="ppl-kanban-filtre">
+      <span className="ppl-kanban-filtre__titre">Catégorie d&apos;enjeu</span>
+      <EnjeuDropdown value={value} onChange={onChange} options={optionsEnjeu(categories)} />
+    </div>
+  );
+}
+
 function PolimetreView({
   data,
   editionKey,
@@ -542,6 +589,9 @@ function PolimetreView({
         {data.weekEndDate === ELECTION_DATE ? ", jour des élections générales" : ""}&nbsp;: il
         présente les promesses de la CAQ et leur écho médiatique en date de cette journée-là.
       </p>
+      {bascule && (
+        <FiltreEnjeuKanban value={category} onChange={setCategory} categories={promises.map((p) => p.category)} />
+      )}
       {bascule}
       {bascule ? (
         <>
@@ -551,7 +601,7 @@ function PolimetreView({
               cle: v.slug,
               titre: v.titre,
               cartes: promises
-                .filter((p) => p.verdict === v.slug)
+                .filter((p) => p.verdict === v.slug && (category === "all" || p.category === category))
                 .map((p) => ({
                   id: p.pledgeNumber,
                   titre: p.title,
@@ -562,6 +612,7 @@ function PolimetreView({
             }))}
           />
           <LienMetho />
+          <LienPolimetre href={POLIMETRE_URL_LEGAULT} libelle="Découvrir toutes les promesses sur le site Web du Polimètre" />
         </>
       ) : (
       <div className="ppl-grid">
@@ -708,17 +759,7 @@ function PolimetreView({
               })}
             </ol>
           )}
-          <div className="ppl-discover-wrap">
-            <a
-              className="ppl-discover"
-              href="https://polimeter.org/fr/legault-frechette"
-              target="_blank"
-              rel="noopener"
-            >
-              <PolimetreMark />
-              Découvrir toutes les promesses sur le site Web du Polimètre
-            </a>
-          </div>
+          <LienPolimetre href={POLIMETRE_URL_LEGAULT} libelle="Découvrir toutes les promesses sur le site Web du Polimètre" />
         </div>
       </div>
       )}
@@ -788,7 +829,9 @@ function NeuvesView({
   bascule?: ReactNode;
 }) {
   const [range, setRange] = useState<NeuveRangeKey>("day");
+  const [enjeu, setEnjeu] = useState<string>("all");
   const promesses = data.ranges[range];
+  const promessesFiltrees = promesses.filter((p) => enjeu === "all" || p.enjeu === enjeu);
 
   return (
     <section className={bascule ? "polimeter-plus polimeter-plus--neuves polimeter-plus--unifie" : "polimeter-plus polimeter-plus--neuves"} aria-label="Polimètre+ : promesses de la campagne">
@@ -848,6 +891,7 @@ function NeuvesView({
         </div>
       </div>
 
+      <FiltreEnjeuKanban value={enjeu} onChange={setEnjeu} categories={promesses.map((p) => p.enjeu)} />
       {bascule}
       {promesses.length === 0 ? (
         <p className="ppl-kanban-vide">{messageEtatVide(range, data.ranges)}</p>
@@ -858,8 +902,8 @@ function NeuvesView({
             cle: `parti-${parti}`,
             titre: PARTI_LABELS[parti],
             detail: PARTI_FULL_LABELS[parti],
-            total: data.totaux[range][parti] ?? 0,
-            cartes: promesses
+            ...(enjeu === "all" ? { total: data.totaux[range][parti] ?? 0 } : {}),
+            cartes: promessesFiltrees
               .filter((p) => p.parti === parti)
               .map((p) => ({
                 id: p.promesseId,
@@ -877,6 +921,7 @@ function NeuvesView({
         />
       )}
       <LienMetho />
+      <LienPolimetre href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />
       <div className="module-last-updated">{data.lastUpdated}</div>
     </section>
   );
@@ -910,7 +955,9 @@ function PqView({
   editionKey?: string;
   bascule: ReactNode;
 }) {
-  const promessesPq = data.ranges.campaign.filter((p) => p.parti === "pq");
+  const [enjeu, setEnjeu] = useState<string>("all");
+  const promessesPqToutes = data.ranges.campaign.filter((p) => p.parti === "pq");
+  const promessesPq = promessesPqToutes.filter((p) => enjeu === "all" || p.enjeu === enjeu);
   return (
     <section
       className="polimeter-plus polimeter-plus--neuves polimeter-plus--unifie"
@@ -946,13 +993,14 @@ function PqView({
           </div>
         </div>
       </div>
+      <FiltreEnjeuKanban value={enjeu} onChange={setEnjeu} categories={promessesPqToutes.map((p) => p.enjeu)} />
       {bascule}
       <KanbanBoard
         label="Promesses du PQ de 2026, rangées par verdict"
         colonnes={KANBAN_VERDICTS.map((v) => ({
           cle: v.slug,
           titre: v.titre,
-          ...(v.slug === "en-suspens" ? { total: data.totaux.campaign.pq ?? 0 } : {}),
+          ...(v.slug === "en-suspens" && enjeu === "all" ? { total: data.totaux.campaign.pq ?? 0 } : {}),
           cartes:
             v.slug !== "en-suspens"
               ? []
@@ -971,6 +1019,7 @@ function PqView({
         }))}
       />
       <LienMetho />
+      <LienPolimetre href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />
       <div className="module-last-updated">{data.lastUpdated}</div>
     </section>
   );
