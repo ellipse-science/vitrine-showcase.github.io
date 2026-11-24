@@ -12,6 +12,7 @@
     "test": "vitest run",
     "garde-redaction": "node scripts/garde_redaction.mjs",
     "reel:une-des-unes": "tsx scripts/social/une-des-unes.ts",
+    "image:une-des-unes": "tsx scripts/social/une-des-unes-image.ts",
     "reel:deux-solitudes": "tsx scripts/social/deux-solitudes.ts",
     "reel:enjeux-semaine": "tsx scripts/social/enjeux-semaine.ts",
     "reel:partis": "tsx scripts/social/partis.ts",
