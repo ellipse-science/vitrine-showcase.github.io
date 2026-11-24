@@ -13290,9 +13290,12 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
    tournent ensemble : les sillons sont symétriques, seuls ces deux repères
    rendent la rotation visible. Le fader écrit les noms complets.
    ───────────────────────────────────────────────────────────────────────── */
-.regie { grid-template-columns: minmax(0, 144px) minmax(0, 1fr) minmax(0, 144px); }
+.regie {
+  --diametre-vinyle: 132px;
+  grid-template-columns: minmax(0, 144px) minmax(0, 1fr) minmax(0, 144px);
+}
 .regie-flanc { margin-bottom: 0; justify-content: space-around; align-self: stretch; }
-.deck-carre { max-width: 132px; }
+.deck-carre { max-width: var(--diametre-vinyle); }
 .deck-carre--lecture .deck-jog-cap,
 .deck-carre--lecture .deck-jog::after {
   animation: deck-lecture var(--tour, 1.8s) linear infinite;
@@ -13320,6 +13323,7 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 @media (max-width: 1184px) {
   .regie { grid-template-columns: minmax(0, 1fr); }
   .regie-flanc { flex-direction: row; justify-content: center; gap: 24px; }
+  .regie-flanc .deck { flex: 0 1 var(--diametre-vinyle); }
 }
 @media (max-width: 768px) {
   .regie { display: block; }
