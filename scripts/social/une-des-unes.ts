@@ -26,8 +26,8 @@ import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { MODULES } from "@/lib/modules";
 import { dateLongue } from "./lib/commun";
 import { TRAIT, oqlf } from "./lib/identite";
+import { ART_CREDIT, resolveArt } from "./lib/illustration";
 import { RESPONSABLE, formats, type Matiere, type Reseau } from "./reseaux";
-import { matchesCurrentUneArt } from "@/lib/shareUneArt";
 import {
   COLORS, FIN_CSS, INTRO_CSS, SALIENCE_COLORS, SITE_URL, buildPage, celestial, enjeuGlyph, esc, fleur, frNum,
   parseArgs, produce, RESERVE_BAS, publicationHour, chargerPartenaires, sceneFin, sceneIntro, loadLogos, txt, type Scene,
@@ -35,9 +35,6 @@ import {
 
 /** Identité du module : couleur, nom et lignes d'accroche (lib/modules.ts). */
 const MODULE = MODULES["une-des-unes"];
-
-/** Crédit de l'illustration de la Une. */
-const ART_CREDIT = "Image générée sous la direction de Mathieu Fortin";
 
 /** Logo de la Vitrine (même fichier que les cartes de partage,
  *  `lib/globalShareCard.tsx`) : une seule version de la marque. */
@@ -47,41 +44,6 @@ async function loadLogo(): Promise<string | null> {
     return `data:image/png;base64,${png.toString("base64")}`;
   } catch {
     console.warn("  logo introuvable : scènes d'ouverture et de fin sans logo.");
-    return null;
-  }
-}
-
-// ── Illustration ────────────────────────────────────────────────────────────
-// Même garde que le module (UneDesUnesSection) : `latest.png` est écrasée à
-// chaque cycle, elle n'illustre donc que l'édition COURANTE, et seulement si
-// elle appartient bien à la Une n°1. Dans le doute, pas d'image : une Une
-// sans illustration vaut mieux qu'une illustration de la mauvaise Une.
-async function resolveArt(edition: EditionRef, current: EditionRef, top: UneEvent): Promise<string | null> {
-  if (edition.key !== current.key) return null;
-
-  // 1. Illustration rapatriée localement par scripts/fetch_art.mjs (clé d'API).
-  const dir = path.resolve(process.cwd(), "public", "data", "generated-art");
-  try {
-    const meta = JSON.parse(await fs.readFile(path.join(dir, "latest.json"), "utf8"));
-    if (matchesCurrentUneArt(meta, top)) {
-      const png = await fs.readFile(path.join(dir, "latest.png"));
-      return `data:image/png;base64,${png.toString("base64")}`;
-    }
-  } catch { /* pas de copie locale : on tente le site */ }
-
-  // 2. Illustration publiée. Le site la sert à côté de hero-selection.json,
-  //    qui nomme la Une de CE déploiement : les deux viennent du même build.
-  try {
-    const hero = (await (await fetch(`${SITE_URL}/data/hero-selection.json`)).json()) as { storyline_id?: string; event_id?: string };
-    if (!matchesCurrentUneArt(hero, top)) {
-      console.warn("  illustration ignorée : le site publié illustre une autre Une de l’actualité que le dépôt local.");
-      return null;
-    }
-    const res = await fetch(`${SITE_URL}/data/generated-art/latest.png`);
-    if (!res.ok) return null;
-    return `data:image/png;base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
-  } catch {
-    console.warn("  illustration indisponible (site injoignable) : mise en page sans image.");
     return null;
   }
 }

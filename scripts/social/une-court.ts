@@ -5,6 +5,7 @@
 //   npm run reel:une-court -- --analyse bond      # une seule
 //   npm run reel:une-court -- --analyse bond --mp4
 //   npm run reel:une-court -- --liste             # les analyses et si elles s'appliquent aujourd'hui
+//   npm run reel:une-court -- --sans-illustration # sans l'image de la Une (analyse « saillance »)
 //
 // Une analyse qui ne s'applique pas aux données du jour (pas de bond, pas de
 // nouvelle qui s'installe…) est simplement sautée.
@@ -18,6 +19,7 @@ import { loadHeadlineEvents } from "@/lib/data/headlineEvents";
 import { MODULES } from "@/lib/modules";
 
 import { dateLongue, pubHourLabel, resolveEdition } from "./lib/commun";
+import { resolveArt } from "./lib/illustration";
 import {
   FIN_CSS, SLOW, buildPage, chargerPartenaires, loadLogos, openInBrowser, parseArgs, produce, sceneFin, type Scene,
 } from "./lib/reel";
@@ -29,11 +31,14 @@ const IDENTITE = MODULES["une-des-unes"];
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const { edition } = await resolveEdition(args);
+  const { edition, current } = await resolveEdition(args);
   const data = await loadHeadlineEvents(edition.key, { classement: 5 });
   const classement = data?.classement ?? data?.top3 ?? [];
   if (!classement.length) throw new Error(`Aucune Une de l’actualité pour l'édition ${edition.key}.`);
-  const ctx: Contexte = { classement, top: classement[0], edition };
+  // L'illustration est un aller simple vers le site : on ne la cherche pas pour
+  // `--liste`, qui ne fait que dire quelles analyses s'appliquent.
+  const art = args.liste || args["sans-illustration"] ? null : await resolveArt(edition, current, classement[0]);
+  const ctx: Contexte = { classement, top: classement[0], edition, art };
   console.log(`${MODULE} · reels courts · ${edition.key} (édition de ${pubHourLabel(edition)}, ${edition.dateLabel})`);
   console.log(`  n°1 : ${ctx.top.title}`);
 

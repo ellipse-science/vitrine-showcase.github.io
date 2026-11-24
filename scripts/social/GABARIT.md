@@ -267,6 +267,49 @@ Thème : **ce qui domine l'actualité du Québec en ce moment.** Ordre des scèn
 « 6/6 des médias québécois en parlent : … », niveau de saillance, autres Unes, lien.
 Mots-clics `#polqc #QC2026 #VitrineDémocratique` : À VALIDER.
 
+**Versions courtes** (`npm run reel:une-court`). À VALIDER. Le moteur est CELUI DES
+PARTIS : `une-court/plan.ts` réexporte `partis-court/plan.ts` — la boîte caméra, le
+passage des phrases et la fenêtre de 8 à 12 s n'ont rien de propre à un module.
+Mêmes règles : un seul plan, deux informations au plus, une statistique inédite,
+et une analyse sans objet est sautée (`-- --liste`).
+
+| id | L'histoire | Le visuel |
+|---|---|---|
+| `saillance` | l'image du jour, le titre en entier, et le degré de saillance de la Une n°1 | l'illustration, puis l'échelle des six niveaux qui se remplit jusqu'au cran du jour |
+| `bond` | de combien l'attention a bougé en quatre heures | deux barres, une flèche, un éclair |
+| `part` | la part de la n°1 dans l'attention des cinq plus saillantes | une barre découpée en cinq segments |
+| `tenue` | à combien des sept dernières éditions elle est restée en Une | sept cases, celles qu'elle a tenues |
+
+Décisions propres à `saillance` (Jules Piral, 2026-09-19) :
+
+- **ARRÊTÉ · LE TITRE RESTE À L'ÉCRAN, du premier au dernier instant** (« le titre de
+  la nouvelle doit être présent en entier pour que ce soit clair de quoi on parle »).
+  C'est la seule analyse à UNE SEULE phrase : les autres en font passer deux, et la
+  seconde effacerait le titre au moment précis où le chiffre arrive. Corollaire : la
+  deuxième information — le degré — vit DANS la boîte caméra, sous l'image. Rien ne
+  s'empile, parce que rien ne partage la même place.
+- **ARRÊTÉ · Les phrases montent de 16 px ici, pas de 50** (`monteeTitre`) : un titre
+  de trois lignes s'arrête à 22 px de la boîte, et les 50 px du moteur le faisaient
+  passer SUR l'illustration pendant sa demi-seconde de fondu.
+- **ARRÊTÉ · L'échelle des six niveaux est à l'écran dès le début, vide**, puis se
+  remplit cran par cran. Un bloc qui n'arrive qu'à la moitié du plan laisse le bas du
+  cadre vide deux secondes — pile au centre de la vignette du profil. Les crans
+  portent les couleurs des paliers du site (`SALIENCE_COLORS`) : on lit le degré sans
+  lire un chiffre. La valeur, elle, se compte à l'écran.
+- **ARRÊTÉ · Caméra en poussée de 1 à 1,04**, jamais sous 1 : le travelling du moteur
+  part à 0,94, ce qui ferait apparaître du papier autour d'une image pleine boîte.
+- **ARRÊTÉ · L'illustration passe par la garde d'appariement du site**
+  (`lib/illustration.ts`, désormais partagé avec le reel long : une seule copie de la
+  garde, sinon elle finit par diverger et l'image illustre la mauvaise Une). Absente
+  ou périmée : aplat de la couleur de l'enjeu et fleur de lys, et le reel se produit
+  quand même. `-- --sans-illustration` force ce repli.
+- Le crédit de l'image suit la règle commune (§1) : italique, gris pâle, filet fin,
+  sous l'image là où elle se fond dans le papier — jamais en capitales mono par‑dessus.
+- Libellés propres à ce reel : « Ce matin / Ce midi / Cet après-midi / Ce soir /
+  Cette nuit / Tôt ce matin, à la Une de l'actualité… » (les six moments, dans les
+  mots du site), « Degré de saillance », « Niveau N sur 6 », « N,N points »,
+  « Saillance cumulée sur 24 heures ».
+
 ### Rejeté (ne pas réintroduire)
 
 - ~~Ligne reliant le sommet des barres de la trajectoire.~~ **Renversé par Adrien le

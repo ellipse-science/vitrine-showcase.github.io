@@ -480,11 +480,11 @@ export function sceneFin(opts: { pubHour: number; logo: string | null; accent?: 
       ${opts.logo
         ? `<div class="logo" style="animation:pop .7s .1s both">${logoAnime(opts.logo, { classe: "", taille: 640, passe: .9 })}</div>`
         : `<div style="animation:pop .7s .1s both">${fleur(COLORS.blue, 220)}</div>`}
-      <div class="metho mono" style="animation:fadeIn .5s .7s both">Pour la méthodologie :</div>
+      <div class="metho mono" style="animation:fadeIn .5s .7s both">Pour en voir plus :</div>
       <div class="url disp" style="animation:fadeUp .7s .8s both">vitrinedemocratique.com</div>
       <div class="six" style="animation:fadeIn .6s 1.1s both">Six éditions par jour</div>
       <div class="hours">${hours}</div>
-      ${logos ? `<div class="foot" style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s 1.5s both"><div class="part mono" style="animation:fadeIn .5s 1.9s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
+      ${logos ? `<div class="foot" data-deco style="${opts.accent ? `background:${opts.accent};` : ""}animation:growY .8s 1.5s both"><div class="part mono" style="animation:fadeIn .5s 1.9s both">Nos partenaires</div><div class="logos">${logos}</div></div>` : ""}`,
   };
 }
 

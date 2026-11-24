@@ -142,6 +142,7 @@ export function domine(periode: Periode): Analyse {
           </div>`,
         css: `
 #plan::before{content:"${cssString(amorce)}";position:absolute;left:180px;right:180px;top:328px;font-family:"Playfair Display",serif;font-weight:700;font-size:46px;line-height:1.12;animation:fadeUp .45s .15s both, sortie .35s 3.15s forwards}
+#plan .methode{animation:fadeIn .5s 1.2s both, sortie .35s 3.15s forwards!important}
 #plan .classement{position:absolute;inset:0}
 #plan .classement{animation:sortie .35s 3.15s forwards}
 #plan .classement .rang{position:absolute;left:0;right:0;height:${HAUTEUR}px;display:flex;align-items:center;gap:20px;padding-right:12px;border-bottom:2px solid var(--rule)}

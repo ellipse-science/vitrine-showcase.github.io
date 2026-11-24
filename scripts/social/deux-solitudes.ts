@@ -70,6 +70,18 @@ async function loadLogo(): Promise<string | null> {
 const CSS = `
 .kick{font-size:30px;color:var(--softer)}
 
+/* Version courte : un sujet complet par écran, puis la fissure éventuelle. */
+#solitude-canada .kicker,#solitude-quebec .kicker{position:absolute;left:180px;right:180px;top:318px;display:flex;align-items:center;gap:18px;font-size:30px;color:var(--soft)}
+#solitude-canada .kicker i,#solitude-quebec .kicker i{display:block;width:70px;height:8px;transform-origin:left}
+#solitude-canada .intro,#solitude-quebec .intro{position:absolute;left:180px;right:180px;top:470px;font-size:48px;line-height:1.05;font-weight:700}
+#solitude-canada .titre,#solitude-quebec .titre{position:absolute;left:150px;right:210px;top:585px;min-height:700px;padding:48px 42px;border-top:8px solid;border-bottom:8px solid;background:color-mix(in srgb,var(--paper),#fff 14%);display:flex;align-items:center;line-height:1.04;overflow-wrap:anywhere;box-sizing:border-box}
+#solitude-canada .pct,#solitude-quebec .pct{position:absolute;left:180px;right:180px;bottom:480px;font-family:"IBM Plex Mono",monospace;font-size:30px;color:var(--soft)}
+#fissure .kicker{position:absolute;left:180px;right:180px;top:318px;display:flex;align-items:center;gap:18px;font-size:30px;color:var(--soft)}
+#fissure .kicker i{display:block;width:70px;height:8px;transform-origin:left}
+#fissure .message{position:absolute;left:150px;right:150px;top:500px;text-align:center;font-size:56px;line-height:1.08}
+#fissure .message b{display:block;margin-top:28px;font-family:"Playfair Display",serif;font-size:150px;line-height:.9}
+#fissure .fente{position:absolute;left:50%;top:365px;width:10px;height:1100px;transform:translateX(-50%) rotate(8deg);transform-origin:center;animation:growY .7s .45s both}
+
 /* Le sonar : un seul plan, du début à la fin */
 #sonar .head{position:absolute;top:282px;left:180px;right:180px}
 #sonar .kick{display:flex;align-items:center;gap:18px}
@@ -99,9 +111,57 @@ const CSS = `
 @keyframes estompe{to{opacity:.32}}
 @keyframes veille{to{opacity:.5}}
 @keyframes eteint{to{opacity:0}}
+@keyframes growY{from{transform:translateX(-50%) rotate(8deg) scaleY(0);opacity:0}to{transform:translateX(-50%) rotate(8deg) scaleY(1);opacity:1}}
 `;
 
 const anim = (name: string, dur: number, delay: number) => `style="animation:${name} ${dur}s ${delay}s both"`;
+
+function divergence(sol: SolitudeData): string {
+  if (sol.relLabel.includes("plus divergent")) return `${sol.relDiffPct} % plus divergente que d’habitude`;
+  if (sol.relLabel.includes("plus convergent")) return `${sol.relDiffPct} % plus convergente que d’habitude`;
+  return `${sol.relDiffPct} % ${sol.relLabel}`;
+}
+
+function sujetPrincipal(sol: SolitudeData, cote: "can" | "qc"): SolitudeAxis {
+  const key = cote === "can" ? "canShare" : "qcShare";
+  return [...sol.axes].sort((a, b) => b[key] - a[key])[0];
+}
+
+function tailleTitre(label: string): number {
+  // Le titre reste toujours complet. On réduit seulement la taille pour les
+  // titres exceptionnellement longs, afin qu'ils tiennent dans le cœur du reel.
+  if (label.length <= 64) return 74;
+  if (label.length <= 96) return 64;
+  if (label.length <= 132) return 54;
+  if (label.length <= 176) return 46;
+  return 38;
+}
+
+function sceneTitre(id: string, qui: string, a: SolitudeAxis, edition: EditionRef, col: string): Scene {
+  const titreSize = tailleTitre(a.label);
+  return {
+    id,
+    duration: 3.8,
+    noFadeIn: true,
+    html: `
+      <div class="kicker mono" ${anim("fadeIn", .5, .1)}><i style="background:${col};animation:grow .5s .1s both"></i>Deux solitudes · édition de ${edition.pubHour % 24}h</div>
+      <div class="intro pf" ${anim("fadeUp", .5, .25)}>${qui}, on parle principalement de :</div>
+      <div class="titre pf" data-cle style="font-size:${titreSize}px" ${anim("fadeUp", .7, .65)}>${txt(a.label)}</div>
+      <div class="pct" ${anim("fadeIn", .5, 1.45)}>${a[qui === "Au Canada" ? "canShare" : "qcShare"]}&nbsp;% de l’attention</div>`,
+  };
+}
+
+function sceneFissure(sol: SolitudeData, edition: EditionRef): Scene {
+  return {
+    id: "fissure",
+    duration: 2.7,
+    noFadeIn: true,
+    html: `
+      <div class="kicker mono" ${anim("fadeIn", .5, .1)}><i style="background:${MODULE.accent};animation:grow .5s .1s both"></i>Deux solitudes · édition de ${edition.pubHour % 24}h</div>
+      <div class="fente" data-deco style="background:${MODULE.accent}"></div>
+      <div class="message pf" data-cle ${anim("fadeUp", .55, .55)}>L’actualité est<br><b style="color:${MODULE.accent}">${sol.relDiffPct}&nbsp;%</b><br>plus divergente que d’habitude</div>`,
+  };
+}
 
 function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
   const axes = sol.axes;
@@ -222,14 +282,16 @@ function sceneSonar(sol: SolitudeData, edition: EditionRef): Scene {
 }
 
 function caption(edition: EditionRef, sol: SolitudeData): string {
+  const canTop = sujetPrincipal(sol, "can");
+  const qcTop = sujetPrincipal(sol, "qc");
   const can = sol.axes.filter((a) => a.side === "can").slice(0, 3);
   const qc = sol.axes.filter((a) => a.side === "qc").slice(0, 3);
   const ligne = (a: SolitudeAxis) => `· ${a.label} — Canada ${a.canShare} %, Québec ${a.qcShare} %`;
   const lines = [
     `Le Québec et le Canada anglais regardent-ils la même journée ? · Édition de ${edition.pubHour % 24}h, ${edition.dateLabel.toLowerCase()}`,
     "",
-    `Aujourd’hui : ${sol.convPct} % de convergence, ${sol.relDiffPct} % ${sol.relLabel}.`,
-    sol.edito,
+    `Aujourd’hui, l’actualité est ${divergence(sol)}.`,
+    `Au Canada, on parle principalement de « ${canTop.label} » (${canTop.canShare} % de l’attention). Au Québec, on parle principalement de « ${qcTop.label} » (${qcTop.qcShare} %).`,
     ...(qc.length ? ["", "Ce que le Québec avait en Une de l’actualité :", ...qc.map(ligne)] : []),
     ...(can.length ? ["", "Ce que le Canada anglais avait en Une de l’actualité :", ...can.map(ligne)] : []),
     "",
@@ -260,24 +322,14 @@ async function main() {
   console.log(`Deux solitudes · ${edition.key} (édition de ${edition.pubHour % 24}h, ${edition.dateLabel})`);
   console.log(`  convergence : ${sol.convPct} % — ${sol.relDiffPct} % ${sol.relLabel}`);
 
-  // Visuel d'accroche du module 2 : le radar en ombre, dans le bandeau d'encre.
-  const visuel = (() => {
-    const cercles = [.34, .67, 1].map((f) =>
-      `<circle cx="240" cy="250" r="${150 * f}" fill="none" stroke="${COLORS.paper}" stroke-width="2" opacity=".35"/>`).join("");
-    const forme = (pick: (a: SolitudeAxis) => number, col: string, delay: number) =>
-      `<polygon points="${sol.axes.map((a, i) => {
-        const ang = -Math.PI / 2 + (i * 2 * Math.PI) / sol.axes.length;
-        const r = 150 * Math.min(100, pick(a)) / 100;
-        return `${240 + r * Math.cos(ang)},${250 + r * Math.sin(ang)}`;
-      }).join(" ")}" fill="${col}" fill-opacity=".45" stroke="${col}" stroke-width="4" style="animation:fadeIn .8s ${delay}s both"/>`;
-    return `<svg class="mini" viewBox="0 0 480 500">${cercles}${forme((a) => a.canRadial, COLORS.red, 1.5)}${forme((a) => a.qcRadial, COLORS.blue, 1.9)}</svg>`;
-  })();
-
+  const can = sujetPrincipal(sol, "can");
+  const qc = sujetPrincipal(sol, "qc");
+  const rel = sol.relLabel.toLowerCase();
+  const diverge = rel.includes("diverg") && !rel.includes("converg");
   const scenes = [
-    sceneIntro({
-      logo, module: MODULE.nom, accent: MODULE.accent, lignes: MODULE.lignes, visuel,
-    }),
-    sceneSonar(sol, edition),
+    sceneTitre("solitude-canada", "Au Canada", can, edition, COLORS.red),
+    ...(diverge ? [sceneFissure(sol, edition)] : []),
+    sceneTitre("solitude-quebec", "Au Québec", qc, edition, COLORS.blue),
     sceneFin({ pubHour: edition.pubHour, logo, accent: MODULE.accent, partenaires: await chargerPartenaires() }),
   ];
 

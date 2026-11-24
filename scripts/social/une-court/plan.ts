@@ -25,8 +25,11 @@ export const MODULE = "La Une des Unes";
 export const HASHTAGS = ["#LaUnedesUnes", "#CAPP", "#CLESSN", "#Élections2026", "#polqc"];
 
 /** Ce que reçoit une analyse. `top` : la Une n°1 ; `classement` : les cinq
- *  nouvelles les plus saillantes des 24 dernières heures, dans l'ordre. */
-export type Contexte = { classement: UneEvent[]; top: UneEvent; edition: EditionRef };
+ *  nouvelles les plus saillantes des 24 dernières heures, dans l'ordre ;
+ *  `art` : l'illustration de la Une n°1 (`lib/illustration.ts`), déjà passée par
+ *  la garde d'appariement — `null` quand elle manque ou qu'elle illustre une
+ *  autre Une, et l'analyse se replie alors sur un aplat. */
+export type Contexte = { classement: UneEvent[]; top: UneEvent; edition: EditionRef; art: string | null };
 
 export type Analyse = {
   id: string;

@@ -6,6 +6,7 @@ import type { Analyse } from "../plan";
 
 import { bond } from "./bond";
 import { part } from "./part";
+import { saillance } from "./saillance";
 import { tenue } from "./tenue";
 
-export const ANALYSES: Analyse[] = [bond, part, tenue];
+export const ANALYSES: Analyse[] = [saillance, bond, part, tenue];
