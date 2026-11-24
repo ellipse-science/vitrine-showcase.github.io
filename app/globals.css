@@ -5559,10 +5559,8 @@
     position: relative;
   }
 
-  /* La console et ses graduations, côte à côte.
-     Le vumètre prend toute la largeur du châssis (2026-11-24) : les cinq
-     tranches se partagent l'espace disponible, et les graduations restent à
-     droite. */
+  /* La réserve à gauche équilibre les graduations à droite pour aligner
+     le milieu des tranches sur l’axe du fader. */
   .console-corps {
     /* La graduation du HAUT chevauche le sommet de la piste : elle est posée en
        `bottom` puis ramenée de la moitié de sa hauteur par `translateY(50%)`,
@@ -5574,7 +5572,7 @@
     gap: var(--gradu-gap);
     width: 100%;
     margin: 0;
-    padding-left: 0;
+    padding-inline-start: calc(var(--gradu) + var(--gradu-gap));
   }
 
   .console-tranches {
@@ -6157,9 +6155,6 @@
       white-space: normal;
       min-width: 0;
     }
-    /* La compensation qui recentre les vumètres passe à la moitié : à cette
-       largeur, la tenue dans l'écran prime sur le centrage parfait. */
-    .console-corps { padding-left: 0; }
     /* Filet de sécurité, pas mécanisme de mise en page : si les constantes
        dérivent un jour, la console défile en elle-même au lieu de faire
        déborder la page entière. */
@@ -13295,9 +13290,9 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
    tournent ensemble : les sillons sont symétriques, seuls ces deux repères
    rendent la rotation visible. Le fader écrit les noms complets.
    ───────────────────────────────────────────────────────────────────────── */
-.regie { grid-template-columns: minmax(0, 132px) minmax(0, 1fr) minmax(0, 132px); }
+.regie { grid-template-columns: minmax(0, 144px) minmax(0, 1fr) minmax(0, 144px); }
 .regie-flanc { margin-bottom: 0; justify-content: space-around; align-self: stretch; }
-.deck-carre { max-width: 120px; }
+.deck-carre { max-width: 132px; }
 .deck-carre--lecture .deck-jog-cap,
 .deck-carre--lecture .deck-jog::after {
   animation: deck-lecture var(--tour, 1.8s) linear infinite;
