@@ -994,7 +994,9 @@ export function PolimetrePlusClient({
 
   if (!hasNeuves) return <PolimetreView data={data} editionKey={editionKey} />;
 
-  const onglet = (cle: "pq" | "2022" | "campagne", libelle: string) => (
+  // `etat` : où en est le mandat, accolé à son onglet. Dans un span à part pour
+  // qu'il passe sous l'année sur téléphone (cf. .ppl-onglet__etat).
+  const onglet = (cle: "pq" | "2022" | "campagne", libelle: string, etat?: string) => (
     <button
       key={cle}
       type="button"
@@ -1004,14 +1006,15 @@ export function PolimetrePlusClient({
       onClick={() => setMode(cle)}
     >
       {libelle}
+      {etat && <span className="ppl-onglet__etat"> ({etat})</span>}
     </button>
   );
   // Deux familles, séparées par une barre oblique : les bilans de mandat
   // (PQ 2026, CAQ 2022), puis la campagne, d'une autre nature.
   const bascule = (
     <div className="ppl-onglets" role="tablist" aria-label="Promesses affichées">
-      {onglet("pq", "PQ 2026")}
-      {onglet("2022", "CAQ 2022")}
+      {onglet("pq", "PQ 2026", "En cours")}
+      {onglet("2022", "CAQ 2022", "Terminé")}
       <span className="ppl-onglets__barre" aria-hidden="true" />
       {onglet("campagne", "Campagne 2026")}
     </div>

@@ -117,6 +117,9 @@ describe("Polimètre+ — module unifié (campagne / 2022)", () => {
     expect(html.indexOf("ppl-onglet--2022")).toBeLessThan(html.indexOf("ppl-onglets__barre"));
     expect(html.indexOf("ppl-onglets__barre")).toBeLessThan(html.indexOf("ppl-onglet--campagne"));
     expect(html).toContain("ppl-kanban");
+    // L'état de chaque mandat est accolé à son onglet.
+    expect(html).toMatch(/ppl-onglet--pq[^>]*>PQ 2026<span class="ppl-onglet__etat"> \(En cours\)<\/span>/);
+    expect(html).toMatch(/ppl-onglet--2022[^>]*>CAQ 2022<span class="ppl-onglet__etat"> \(Terminé\)<\/span>/);
   });
 
   it("module unifié : l'onglet campagne garde sa vue", () => {

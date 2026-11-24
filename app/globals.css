@@ -8327,6 +8327,16 @@
     transform: rotate(25deg);
   }
   .ppl-onglet:hover { color: var(--ink); background: var(--paper-deep); }
+  /* État du mandat accolé à l'onglet : en casse normale et moins espacé que
+     l'année, pour rester lisible sans allonger l'onglet ; sur téléphone, il passe
+     à la ligne, sans quoi les trois onglets débordent de l'écran. */
+  .ppl-onglet__etat {
+    text-transform: none;
+    letter-spacing: 0.04em;
+  }
+  @media (max-width: 767px) {
+    .ppl-onglet__etat { display: block; margin-top: 2px; }
+  }
   .ppl-onglet:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .ppl-onglet.active { color: var(--paper); border-color: transparent; }
   /* Couleurs : encre pour la campagne (tous partis), bleu de la CAQ pour ses
