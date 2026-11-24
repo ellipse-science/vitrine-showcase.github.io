@@ -572,7 +572,7 @@
 <body>
     <div class="container">
         <h1>📊 Les pipelines de la Vitrine démocratique</h1>
-        <p class="subtitle">D'où viennent les données de chaque module, et à quelle heure chaque étape tourne (heure de Montréal) • Mis à jour le 22 novembre 2026 • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">D'où viennent les données de chaque module, et à quelle heure chaque étape tourne (heure de Montréal) • Mis à jour le 24 novembre 2026 • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
 
         <details class="entete-details">
             <summary>Historique des mises à jour et notes de lecture</summary>
@@ -1322,10 +1322,10 @@
                     <div class="info-badge">🌐 Cliquer pour ouvrir site</div>
                 </div>
                 <div class="arrow">→</div>
-                <div class="node node-refiner" data-type="refiner" data-refiner="vitrine-art" data-ecr="vitrine-art" data-active="true" data-cron="00:12,04:12,08:12,12:12,16:12,20:12,00:45,04:45,08:45,12:45,16:45,20:45">
+                <div class="node node-refiner" data-type="refiner" data-refiner="vitrine-art" data-ecr="vitrine-art" data-active="true" data-cron="00:12,04:12,08:12,12:12,16:12,20:12">
                     vitrine-art.R
                     <div class="node-detail">Illustration de la Une (gpt-image-1) → <code>PUT /v1/art</code> (R2) → Deploy Hooks si la Une a changé</div>
-                    <div class="node-schedule">⏰ Une&nbsp;: 00:12, 04:12, 08:12, 12:12, 16:12, 20:12 • Pochettes&nbsp;: 00:45, 04:45, 08:45, 12:45, 16:45, 20:45 • sonde 5/10 (vitrine-art-sonde) éteinte depuis le 2026-11-21</div>
+                    <div class="node-schedule">⏰ Une&nbsp;: 00:12, 04:12, 08:12, 12:12, 16:12, 20:12 • sonde 5/10 (vitrine-art-sonde) éteinte depuis le 2026-11-21</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
                 <div class="arrow">→</div>
@@ -2703,7 +2703,6 @@
                     details: [
                         '⏰ Tirs uniques à 00:12, 04:12, 08:12, 12:12, 16:12, 20:12 (heure de Montréal, aws-infra#550), ~7 min après la mise en ligne du build qui suit la synchro du Worker (:56)',
                         '🔁 Sondage toutes les 10 min à partir de :05 (fonction <code>vitrine-art-sonde</code>, même image, compte DEV seulement, aws-infra#559) : le build qui publie la nouvelle Une attend souvent de 30 à 60 min dans la file de Cloudflare Pages (un seul build à la fois pour tout le compte) et peut y être sauté au profit d\'un build plus récent ; un tir unique lit alors l\'ancienne Une et la nouvelle reste sans image jusqu\'à l\'édition suivante (mesuré le 3 septembre 2026 : 2 h 33 sans illustration). Le sondage sort aussitôt si la Une est déjà illustrée : ni OpenAI ni build.',
-                        '🎨 Mode « partis » (pochettes du module Partis et couverture) : 00:45, 04:45, 08:45, 12:45, 16:45, 20:45, un album par jour au bloc de 20h (aws-infra#526)',
                         '',
                         '1. Lit <code>vitrinedemocratique.com/data/hero-selection.json</code> (la Une n°1, désignée par le MÊME code que le rendu, issue #259)',
                         '2. Si la storyline n\'a pas changé depuis <code>GET /v1/art/latest.json</code> : rien (ni OpenAI ni build), publication idempotente',
