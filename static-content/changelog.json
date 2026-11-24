@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1032,
+    "date": "2026-11-24T20:52:49Z",
+    "note": "La page Équipe accueille Dominic Gaudette, analyste de données.",
+    "version": "2.54.0-beta.3"
+  },
+  {
     "pr": 1029,
     "date": "2026-11-24T20:50:48Z",
     "note": "Les cartes des député·es de la dernière législature qui n'ont pas été réélu·es retrouvent leur portrait.",
