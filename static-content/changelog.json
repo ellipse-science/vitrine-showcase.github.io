@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1030,
+    "date": "2026-11-24T20:10:46Z",
+    "note": "La mascotte Datagotchi, en bas à droite de la Une, ne parle plus de l'élection : elle invite maintenant à découvrir le projet Datagotchi.",
+    "version": "2.54.0-beta.1"
+  },
+  {
     "pr": 1024,
     "date": "2026-11-22T13:27:15Z",
     "note": "Les promesses de la campagne affichées dans le Polimètre+ proviennent désormais du même environnement de production que le reste du site.",
