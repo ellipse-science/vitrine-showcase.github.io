@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1040,
+    "date": "2026-11-24T23:06:31Z",
+    "note": "Le module Partis et couverture permet maintenant de consulter les 30 derniers jours. La colonne centrale du vu-mètre s’aligne sur le cran « Tous les médias » et le curseur affiche le nom complet des médias.",
+    "version": "2.55.0-beta.0"
+  },
+  {
     "pr": 1032,
     "date": "2026-11-24T20:52:49Z",
     "note": "La page Équipe accueille Dominic Gaudette, analyste de données.",
