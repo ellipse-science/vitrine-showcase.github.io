@@ -5949,6 +5949,7 @@
   /* Pas de filet au-dessus : le fader appartient au même appareil que la
      console, et un trait les séparait en deux blocs. L'écart suffit. */
   .fader {
+    --pouce: 15px;
     max-width: 620px;
     margin: 38px auto 0;
   }
@@ -5966,7 +5967,7 @@
     font-weight: 500;
   }
 
-  .fader-piste { position: relative; height: 40px; --pouce: 15px; }
+  .fader-piste { position: relative; height: 40px; }
 
   /* La POIGNÉE NATIVE est la tirette. Elle est visible et stylée, pas cachée
      derrière un faux curseur dessiné : c'est elle qui suit le doigt ou la
@@ -13309,11 +13310,15 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
   .deck-carre--lecture .deck-jog::after { animation: none; }
 }
 
-.fader.fader--noms { max-width: 760px; }
+.fader.fader--noms {
+  --largeur-libelle: 84px;
+  width: calc(100% - var(--largeur-libelle) + var(--pouce));
+  max-width: 760px;
+}
 .fader--noms .fader-piste { height: 58px; }
 .fader--noms .fader-cran b {
   white-space: normal;
-  width: 84px;
+  width: var(--largeur-libelle);
   text-align: center;
   line-height: 1.25;
   letter-spacing: 0.04em;
@@ -13321,7 +13326,7 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 .fader--noms .fader-cran.tous b { letter-spacing: 0.04em; }
 
 @media (max-width: 1184px) {
-  .regie { grid-template-columns: minmax(0, 1fr); }
+  .regie { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .regie-flanc { flex-direction: row; justify-content: center; gap: 24px; }
   .regie-flanc .deck { flex: 0 1 var(--diametre-vinyle); }
 }
@@ -13331,5 +13336,6 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 }
 @media (max-width: 640px) {
   .deck-carre { max-width: 84px; }
-  .fader--noms .fader-cran b { width: 48px; font-size: 7px; }
+  .fader.fader--noms { --largeur-libelle: 48px; }
+  .fader--noms .fader-cran b { font-size: 7px; }
 }
