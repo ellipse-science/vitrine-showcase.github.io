@@ -23,6 +23,7 @@ import { fraicheurArticlesRadar } from "./fraicheur";
 import { ELECTION_CALL_DATE, ELECTION_DATE } from "@/lib/election";
 import { MEDIA_LABELS, MEDIA_PANEL_QC } from "@/lib/medias";
 import { samediDeLaSemaine } from "@/lib/semaine";
+import { manchetteRetenue } from "@/lib/manchettes";
 
 export const PARTY_KEYS = ["plq", "caq", "qs", "pq", "pcq"] as const;
 export type PartyKey = (typeof PARTY_KEYS)[number];
@@ -166,6 +167,11 @@ type ShadowRow = {
    *  média. `null`/absent quand aucun article du groupe n'en a — jamais une
    *  chaîne vide, qui se lirait comme un lien valide. */
   representative_url?: string | null;
+  /** Présent uniquement dans `*_salient_shadow_intraday` (aws-refiners#487) :
+   *  le titre de l'article dont `representative_url` est l'adresse, sur la
+   *  journée accumulée depuis minuit. Les deux colonnes sont remplies
+   *  indépendamment : l'une peut manquer quand l'autre est là. */
+  representative_title?: string | null;
 };
 
 /** Une ligne de `*_salient_shadow_intraday` : la part de voix à un bloc de 4 h. */
@@ -554,6 +560,9 @@ export type BlocCourant = {
   label: string | null;
 };
 
+/** Une manchette retenue pour un parti — voir `PartiesData.manchettes`. */
+export type Manchette = { titre: string; url: string | null };
+
 export type PartiesData = {
   ranges: Record<RangeKey, RangeView>;
   /** Non nul quand le module ne peut rien affirmer — voir `Indisponibilite`.
@@ -590,6 +599,12 @@ export type PartiesData = {
   lastUpdated: string;
   /** URL d'article → titre, lu dans l'index d'articles publié au build. */
   titresArticles?: Record<string, string>;
+  /** LA MANCHETTE DU JOUR de chaque parti : le titre de l'article qui pèse le
+   *  plus dans son temps en Une depuis minuit, au dernier bloc publié, et
+   *  SEULEMENT s'il nomme le parti (`lib/manchettes.ts`). Agrégat tous médias :
+   *  la table intra-journée n'est pas ventilée par média. Absente pour un parti
+   *  sans titre retenu. Lue par le contrat des pochettes et par les decks. */
+  manchettes?: Partial<Record<PartyKey, Manchette>>;
 };
 
 const TONE_THRESHOLD = 0.002;
@@ -1181,6 +1196,33 @@ function dernierBloc(rows: IntradayRow[] | null): BlocCourant | null {
   const hour = Math.max(...heures);
   const label = duJour.find((r) => Number(r.block_hour) === hour)?.block_label ?? null;
   return { date, hour, label: label ? String(label) : null };
+}
+
+/** LA MANCHETTE de chaque parti au dernier bloc publié (voir `Manchette`).
+ *
+ *  Même bloc que `dernierBloc` : la journée la plus récente, à son heure la plus
+ *  tardive. Pour chaque parti, le relevé le plus récent de ce bloc
+ *  (`computed_at`), la table pouvant en publier plusieurs. Un titre qui ne nomme
+ *  pas le parti est écarté ICI, une seule fois : le contrat des pochettes et les
+ *  decks lisent ainsi la même décision. */
+function manchettesDuBloc(rows: IntradayRow[] | null): Partial<Record<PartyKey, Manchette>> {
+  const bloc = dernierBloc(rows);
+  if (!rows || !bloc) return {};
+  const retenus = new Map<string, IntradayRow>();
+  for (const r of rows) {
+    if (dateMontreal(r) !== bloc.date || Number(r.block_hour) !== bloc.hour) continue;
+    const cle = String(r.party).toLowerCase();
+    const vu = retenus.get(cle);
+    if (!vu || String(r.computed_at ?? "") > String(vu.computed_at ?? "")) retenus.set(cle, r);
+  }
+  const sortie: Partial<Record<PartyKey, Manchette>> = {};
+  for (const [cle, r] of retenus) {
+    if (!(PARTY_KEYS as readonly string[]).includes(cle)) continue;
+    const parti = cle as PartyKey;
+    const titre = manchetteRetenue(parti, r.representative_title);
+    if (titre) sortie[parti] = { titre, url: r.representative_url ?? null };
+  }
+  return sortie;
 }
 
 /** Le pas des graduations de la journée : un repère toutes les quatre heures,
@@ -2316,6 +2358,7 @@ export const __test__ = {
   axisTop,
   detecterIndisponibilite,
   samediDOuverture,
+  manchettesDuBloc,
 };
 
 // Par défaut : la donnée réelle publiée par fetch_data.R. En développement
@@ -2586,6 +2629,7 @@ export async function loadParties(
       lastDate,
       lastUpdated: edition ? lastUpdatedLabel(edition.date, edition.heure) : lastUpdatedLabel(lastDate),
       titresArticles,
+      manchettes: manchettesDuBloc(intradayRows),
       // La suspension éditoriale prime sur la détection par la donnée : celle-ci
       // ne voit que les symptômes (série gelée, fenêtre à zéro), et une édition
       // archivée n'en présente aucun tout en portant la même donnée invalide.

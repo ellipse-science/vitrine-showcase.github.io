@@ -552,7 +552,9 @@
         "weighted_tone",
         "date_utc",
         "date_montreal_tz",
-        "computed_at"
+        "computed_at",
+        "representative_url",
+        "representative_title"
       ],
       "enabled": true,
       "used_by": "components/interactive/PartisCouvertureClient.tsx"

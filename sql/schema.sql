@@ -413,8 +413,16 @@ CREATE TABLE IF NOT EXISTS vitrine."provincial_parties_salient_shadow_intraday" 
   "weighted_tone" double precision,
   "date_utc" text,
   "date_montreal_tz" text,
-  "computed_at" text
+  "computed_at" text,
+  "representative_url" text,
+  "representative_title" text
 );
+-- `representative_url` et `representative_title` ajoutées le 2026-09-11
+-- (aws-refiners#487) : l'article qui pèse le plus dans le temps en Une du parti
+-- depuis minuit. Même règle que les tables par média (vitrine#796) : ALTER
+-- idempotent, à appliquer à Neon AVANT de redéployer le Worker.
+ALTER TABLE vitrine."provincial_parties_salient_shadow_intraday" ADD COLUMN IF NOT EXISTS "representative_url" text;
+ALTER TABLE vitrine."provincial_parties_salient_shadow_intraday" ADD COLUMN IF NOT EXISTS "representative_title" text;
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_intraday_party_idx" ON vitrine."provincial_parties_salient_shadow_intraday" ("party");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_intraday_date_utc_idx" ON vitrine."provincial_parties_salient_shadow_intraday" ("date_utc");
 CREATE INDEX IF NOT EXISTS "provincial_parties_salient_shadow_intraday_date_montreal_tz_idx" ON vitrine."provincial_parties_salient_shadow_intraday" ("date_montreal_tz");

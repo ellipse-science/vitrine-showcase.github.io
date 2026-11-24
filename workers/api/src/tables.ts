@@ -202,7 +202,9 @@ export const TABLES: TableSpec[] = [
       "weighted_tone",
       "date_utc",
       "date_montreal_tz",
-      "computed_at"
+      "computed_at",
+      "representative_url",
+      "representative_title"
     ],
     "filter": null
   },

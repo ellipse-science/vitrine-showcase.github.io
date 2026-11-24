@@ -360,6 +360,17 @@ const PROFIL_JOURNEE = {
   PCQ: [1.0, 0.9, 1.1, 1.0, 0.9, 1.1], // rien de saillant
 };
 
+// DES MANCHETTES FICTIVES, une par parti, comme `representative_title`. Celle du
+// PCQ ne nomme PAS le parti : elle doit être écartée par la garde de
+// lib/manchettes.ts, et c'est ce qu'on veut voir en local.
+const TITRES_FICTIFS = {
+  CAQ: "[FICTIF] La CAQ promet un plan pour les régions",
+  PQ: "[FICTIF] Le Parti québécois précise son calendrier référendaire",
+  QS: "[FICTIF] Ruba Ghazal présente le plan de QS sur le logement",
+  PLQ: "[FICTIF] Charles Milliard défend son cadre financier",
+  PCQ: "[FICTIF] Un festival de jazz attire les foules au centre-ville",
+};
+
 const intraday = [];
 const randIntra = rng(97);
 
@@ -464,6 +475,8 @@ for (const date of D.slice(-8)) {
         date_montreal_tz: date,
         computed_at: `${date}T${String(h).padStart(2, "0")}:31:00Z`,
         threshold: 0.02,
+        representative_url: `https://exemple.invalid/${party}/${date}/${h}`,
+        representative_title: TITRES_FICTIFS[party],
       });
     });
 

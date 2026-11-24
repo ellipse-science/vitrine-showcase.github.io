@@ -99,6 +99,17 @@ export async function GET() {
          *  Elle ne sert PAS à décider de régénérer : c'est `cloture` qui commande
          *  ça, un album par jour au bloc de 20h. */
         signature: signaturePochette(row.key, enjeu?.label, row.toneDirection),
+        /** LA MANCHETTE À ILLUSTRER (aws-refiners#487/#488), ou `null`.
+         *
+         *  Le raffineur lit ce champ depuis #488 et retombait sur l'enjeu seul,
+         *  faute de le trouver : le site ne le publiait pas. C'est le titre du
+         *  dernier bloc, déjà passé par la garde de `lib/manchettes.ts` — un
+         *  titre qui ne nomme pas le parti n'est ni illustré ni affiché.
+         *
+         *  Hors de la signature, comme le temps en Une : le titre change d'un
+         *  bloc à l'autre, et une signature qui le contiendrait ne
+         *  correspondrait plus à la pochette engendrée au cycle précédent. */
+        titre_saillant: data.manchettes?.[row.key]?.titre ?? null,
       };
     });
 
