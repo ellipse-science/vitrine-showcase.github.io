@@ -35,6 +35,7 @@ function donnees({ pcqNul = false }: { pcqNul?: boolean } = {}): PartiesData {
     ranges: {
       today: __test__.buildRangeView(stats, "today", dates, null),
       week: __test__.buildRangeView(stats, "week", dates, null),
+      month: __test__.buildRangeView(stats, "month", dates, null),
       overall: __test__.buildRangeView(stats, "overall", dates, null),
     },
     indisponible: null,
