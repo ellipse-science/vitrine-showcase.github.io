@@ -59,7 +59,7 @@ describe("buildLegislatureEnAttente", () => {
   it("porte la date de la première séance et le portrait de carte de chaque élu", () => {
     const vue = buildLegislatureEnAttente(PORTRAITS, AGORA_43E)!;
     expect(vue.numero).toBe(LEGISLATURE_SUIVANTE.numero);
-    expect(vue.premiereSeanceLibelle).toBe("mardi 1er décembre 2026, 14 h");
+    expect(vue.premiereSeanceLibelle).toBe("mardi 1er décembre 2026, 14h");
     expect(vue.rows[0].deputes[0].portrait).toMatch(/^\/images\/deputes\/cartes\/web\/.+\.jpg$/);
   });
 });
@@ -79,7 +79,7 @@ describe("AssembleeClient et la 44e en attente", () => {
   it("ouvre sur la 44e, avec le bandeau d'attente et les portraits", () => {
     const html = renderToStaticMarkup(<AssembleeClient data={donnees(true)} />);
     expect(html).toContain("En attente de la première séance");
-    expect(html).toContain("mardi 1er décembre 2026, 14 h");
+    expect(html).toContain("mardi 1er décembre 2026, 14h");
     expect(html).toMatch(/aria-selected="true"[^>]*>(<[^>]+>)*44e législature/);
     expect(html).toContain("Paul St-Pierre Plamondon");
     // Aucune statistique de débat : ni mots, ni onglets de période.

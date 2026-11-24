@@ -243,7 +243,89 @@ export type PeriodView = {
 
 export type AssembleeData = {
   periods: Record<PeriodKey, PeriodView>;
+  /** La législature élue qui n'a pas encore siégé (vitrine#1035). Présente
+   *  seulement tant qu'Agora n'a aucune journée postérieure à son élection :
+   *  à la première séance traitée, elle disparaît et le module redevient
+   *  celui des trois périodes. */
+  prochaine?: LegislatureEnAttente;
 };
+
+// ─── La législature suivante, en attente de sa première séance (#1035) ──────
+// Entre l'élection et la première séance, le site a les élus et leurs
+// portraits (scripts/scrape_deputy_photos.py relève l'index de l'ANQ chaque
+// nuit) mais aucun débat. La date de la première séance n'est dans aucune
+// table : la dimension des député·es n'aura la session qu'une fois ouverte.
+// Elle vient donc de l'ANQ, écrite une fois ici avec sa source. À la
+// législature suivante, c'est cette constante qu'on met à jour.
+export const LEGISLATURE_SUIVANTE = {
+  numero: 44,
+  /** Jour de l'élection générale : une journée d'Agora à partir de ce jour
+   *  appartient à cette législature. */
+  election: "2026-10-05",
+  /** « La première séance de cette Assemblée a été convoquée pour le mardi
+   *  1er décembre 2026 à 14 h. » — assnat.qc.ca, Travaux de l'Assemblée,
+   *  relevé le 2026-11-24. */
+  premiereSeance: "2026-12-01",
+  premiereSeanceLibelle: "mardi 1er décembre 2026, 14h",
+} as const;
+
+export type DeputeEnAttente = { id: string; name: string; circonscription: string; portrait?: string };
+
+export type LegislatureEnAttente = {
+  numero: number;
+  election: string;
+  /** « 5 octobre 2026 » */
+  electionLibelle: string;
+  premiereSeanceLibelle: string;
+  total: number;
+  rows: { key: PartyKey; label: string; color: string; deputes: DeputeEnAttente[] }[];
+  /** Élus dont le parti n'a pas de casier (indépendant, parti inconnu) : dits,
+   *  jamais perdus en silence. */
+  horsCasier: string[];
+};
+
+const PARTI_VERS_CLE: Record<string, PartyKey> = {
+  "parti liberal du quebec": "plq",
+  "coalition avenir quebec": "caq",
+  "quebec solidaire": "qs",
+  "parti quebecois": "pq",
+  "parti conservateur du quebec": "pcq",
+};
+
+/** La vue en attente, ou null dès qu'Agora a une journée de la législature. */
+export function buildLegislatureEnAttente(
+  portraits: DeputyPortrait[],
+  agoraRows: { period_end_date?: string | null }[],
+  suivante: typeof LEGISLATURE_SUIVANTE = LEGISLATURE_SUIVANTE,
+): LegislatureEnAttente | null {
+  const aSiege = agoraRows.some((r) => String(r.period_end_date ?? "") >= suivante.election);
+  if (aSiege) return null;
+  const parCle = new Map<PartyKey, DeputeEnAttente[]>(PARTY_KEYS.map((k) => [k, []]));
+  const horsCasier: string[] = [];
+  let total = 0;
+  for (const p of portraits) {
+    // Les anciens élus vivent sous historique/ : ils ont une carte de la
+    // législature passée, pas un siège dans la nouvelle.
+    if ((p.asset_slug ?? "").startsWith("historique/")) continue;
+    total += 1;
+    const cle = PARTI_VERS_CLE[sansDiacritiques(p.parti ?? "").toLowerCase().trim()];
+    if (!cle) { horsCasier.push(p.nom); continue; }
+    parCle.get(cle)!.push({
+      id: String(p.deputy_id ?? p.circonscription_slug),
+      name: p.nom,
+      circonscription: p.circonscription,
+      portrait: `/images/deputes/cartes/web/${p.asset_slug ?? p.circonscription_slug}.jpg`,
+    });
+  }
+  const rows = PARTY_KEYS.map((key) => ({
+    key, label: PARTY_LABELS[key], color: PARTY_COLORS[key],
+    deputes: parCle.get(key)!.sort((a, b) => a.name.localeCompare(b.name, "fr")),
+  })).sort((a, b) => b.deputes.length - a.deputes.length);
+  return {
+    numero: suivante.numero, election: suivante.election, electionLibelle: fmtDateFr(suivante.election),
+    premiereSeanceLibelle: suivante.premiereSeanceLibelle, total, rows, horsCasier,
+  };
+}
 
 function fmtDateFr(dateStr: string): string {
   const parts = String(dateStr || "").split("-");
@@ -1089,9 +1171,14 @@ export async function loadAssemblee(
     : parsed;
   if (allRows.length === 0) return null;
   const deputyRows = await loadDeputyRows();
-  const portraits = buildPortraitIndex(await loadPortraits());
+  const portraitsBruts = await loadPortraits();
+  const portraits = buildPortraitIndex(portraitsBruts);
   const affiliations = buildAffiliationIndex(await loadAffiliationRows());
+  // Sur une édition passée, l'index des portraits est celui d'aujourd'hui :
+  // on ne montre pas une législature en attente dans une archive.
+  const prochaine = asOfIso ? null : buildLegislatureEnAttente(portraitsBruts, parsed);
   return {
+    ...(prochaine ? { prochaine } : {}),
     periods: {
       last_pdq: buildPeriodView(allRows, "last_pdq", deputyRows, portraits, affiliations),
       session: buildPeriodView(allRows, "session", deputyRows, portraits, affiliations),
