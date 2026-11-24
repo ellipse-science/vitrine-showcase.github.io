@@ -132,3 +132,34 @@ def test_les_ids_affiches_viennent_des_donnees_agora(tmp_path):
         {"period_type": "legislature", "deputy_id": None},
     ]), encoding="utf-8")
     assert scraper.ids_affiches(agora) == {"17000", "15000"}
+
+
+def test_un_echec_ne_ressort_pas_la_photo_du_successeur():
+    """Une fiche de sortante qui échoue ne doit pas garder `abitibi-est.jpg`.
+
+    Ce fichier vient d'être réécrit avec la photo du successeur. Garder
+    l'entrée de la veille afficherait le mauvais visage sur la carte.
+    """
+    sortante = _par_id(_plan([NOUVEAU], veille=[SORTANTE], affiches=["17000"]))["17000"]
+    existe = lambda _fichier: True
+    assert scraper.entree_de_secours(sortante, SORTANTE, existe) is None
+
+    # Pour un membre actuel, la photo de la veille reste un bon secours.
+    reelu = _par_id(_plan([REELU], veille=[REELU_VEILLE], affiches=["15000"]))["15000"]
+    assert scraper.entree_de_secours(reelu, REELU_VEILLE, existe) == REELU_VEILLE
+    assert scraper.entree_de_secours(reelu, REELU_VEILLE, lambda _f: False) is None
+
+
+def test_une_deputee_reprise_de_la_veille_entre_dans_l_historique():
+    """Sinon elle serait oubliée dès le lendemain, avec l'index de la veille."""
+    plan = _plan([NOUVEAU], veille=[SORTANTE], affiches=["17000"])
+    historique = scraper.completer_historique([], plan)
+    assert historique == [{
+        "deputy_id": "17000",
+        "profil": SORTANTE["profil"],
+        "nom_index": "Députée Sortante",
+        "circonscription": "Abitibi-Est",
+        "parti": "Coalition avenir Québec",
+    }]
+    # Idempotent : la relancer n'ajoute pas de doublon.
+    assert scraper.completer_historique(historique, plan) == historique
