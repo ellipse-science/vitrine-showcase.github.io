@@ -1,7 +1,7 @@
 // La mascotte Datagotchi du coin inférieur droit : un seul personnage à la
-// fois (deux auraient encombré la page), tiré au sort à chaque chargement
-// pour que les deux projets soient vus. Logique pure ici (testable sans
-// navigateur), affichage dans components/interactive/PromoDatagotchi.tsx.
+// fois (deux auraient encombré la page), tiré au sort à chaque chargement.
+// Logique pure ici (testable sans navigateur), affichage dans
+// components/interactive/PromoDatagotchi.tsx.
 
 export type Perso = "chien" | "prof";
 
@@ -18,14 +18,20 @@ export type FichePerso = {
   hauteur: number;
 };
 
-// Le paramètre utm_source permet aux deux projets de reconnaître les visites
-// venues de la Vitrine ; il ne change rien à ce que la page affiche.
+// L'élection est passée : les deux personnages mènent maintenant au site
+// principal du projet. Le paramètre utm_source permet à Datagotchi de
+// reconnaître les visites venues de la Vitrine ; il ne change rien à ce que la
+// page affiche.
+const DATAGOTCHI = {
+  nom: "Datagotchi",
+  texte: "Salut! Viens découvrir notre projet Datagotchi!",
+  action: "Visiter le site",
+  href: "https://www.datagotchi.com/?utm_source=vitrinedemocratique",
+};
+
 export const PERSOS: Record<Perso, FichePerso> = {
   chien: {
-    nom: "Défi Datagotchi",
-    texte: "Es-tu prévisible? Viens le découvrir!",
-    action: "Relever le défi",
-    href: "https://quebec.datagotchi.com/?utm_source=vitrinedemocratique",
+    ...DATAGOTCHI,
     image: "/datagotchi/chien.gif",
     imageFixe: "/datagotchi/chien.png",
     // 14 × 15 pixels d'origine, agrandis ×6 sans lissage.
@@ -33,11 +39,7 @@ export const PERSOS: Record<Perso, FichePerso> = {
     hauteur: 90,
   },
   prof: {
-    nom: "Prof. Datagotchi",
-    texte:
-      "As-tu des questions sur la campagne électorale? Viens discuter de l’élection avec moi!",
-    action: "Discuter avec le prof",
-    href: "https://prof-datagotchi.com/?utm_source=vitrinedemocratique",
+    ...DATAGOTCHI,
     image: "/datagotchi/prof.png",
     largeur: 78,
     hauteur: 102,

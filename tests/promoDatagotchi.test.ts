@@ -13,12 +13,17 @@ describe("choisirPerso", () => {
 });
 
 describe("PERSOS", () => {
-  it("chaque personnage mène à son projet, en https, et son image existe", () => {
-    expect(new URL(PERSOS.chien.href).hostname).toBe("quebec.datagotchi.com");
-    expect(new URL(PERSOS.prof.href).hostname).toBe("prof-datagotchi.com");
+  it("chaque personnage mène au site de Datagotchi, en https, et son image existe", () => {
     for (const fiche of Object.values(PERSOS)) {
+      expect(new URL(fiche.href).hostname).toBe("www.datagotchi.com");
       expect(fiche.href.startsWith("https://")).toBe(true);
       expect(existsSync(path.join(process.cwd(), "public", fiche.image))).toBe(true);
+    }
+  });
+
+  it("ne parle plus de l'élection", () => {
+    for (const fiche of Object.values(PERSOS)) {
+      expect(`${fiche.nom} ${fiche.texte} ${fiche.action}`).not.toMatch(/électora|élection|campagne/i);
     }
   });
 
