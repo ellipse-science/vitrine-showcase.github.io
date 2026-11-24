@@ -572,7 +572,7 @@
 <body>
     <div class="container">
         <h1>📊 Les pipelines de la Vitrine démocratique</h1>
-        <p class="subtitle">D'où viennent les données de chaque module, et à quelle heure chaque étape tourne (heure de Montréal) • Mis à jour le 22 novembre 2026 • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">D'où viennent les données de chaque module, et à quelle heure chaque étape tourne (heure de Montréal) • Mis à jour le 24 novembre 2026 • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
 
         <details class="entete-details">
             <summary>Historique des mises à jour et notes de lecture</summary>
@@ -1168,6 +1168,20 @@
                     agora_decideurs_qc<br>agora_decideurs_qc_deputes<br>agora_decideurs_qc_personnes
                     <div class="node-detail">Les deux premières consommées par le module Assemblée ; _personnes produite, pas encore lue</div>
                     <div class="info-badge">📋 Cliquer pour voir colonnes</div>
+                </div>
+            </div>
+            <div class="chaine-libelle">Référentiel parlementaire</div>
+            <div class="pipeline-content">
+                <div class="node node-source">dim-qc-parliament
+                    <div class="node-detail">CSV versionnés des personnes, sièges, mandats, fonctions, élections, périodes et comptes sociaux</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-etl">Stack dimqcparliament-stack
+                    <div class="node-detail">Chaque partition relève ses dépôts toutes les 30 minutes</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="node node-table">dim-qc-parliament-{persons,seats,mandates,functions,election-results,periods,social-accounts}
+                    <div class="node-detail">Une table Glue par partition dans datawarehouse. Conversion à 03h03, 07h03, 11h03, 15h03, 19h03 et 23h03, heure de Montréal.</div>
                 </div>
             </div>
         </div>
