@@ -8235,6 +8235,18 @@
     border-radius: 3px;
   }
 
+  /* Série figée (CAQ 2022, arrêtée le jour des élections) : un avis sobre mais
+     impossible à manquer, au-dessus des onglets — le lecteur doit savoir que
+     ce classement ne bouge plus avant de le lire. */
+  .ppl-fige {
+    margin: 0 0 14px;
+    padding: 6px 12px;
+    border-left: 3px solid var(--cordovan);
+    background: color-mix(in srgb, var(--cordovan) 6%, transparent);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
   /* Sous-titres du Polimètre+ : plus gros et en gras que le .period-subtitle
      des autres modules (10px, 400), parce que celui du bloc « 2022 » est le
      seul titre de son bloc. Les deux blocs suivent, pour rester jumeaux.

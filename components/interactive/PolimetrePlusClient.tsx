@@ -20,6 +20,8 @@ import {
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { couleurEnjeu } from "@/lib/enjeux";
+import { formatDateFr } from "@/lib/dates";
+import { ELECTION_DATE } from "@/lib/election";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
 
 // Number of promises shown at once — the maquette has five spots.
@@ -417,6 +419,13 @@ const KANBAN_VERDICTS_MANDAT_TERMINE = KANBAN_VERDICTS.filter(
    promus en h3. Avec `bascule` (module unifié, cf. PolimetrePlusClient), elle
    porte le titre commun et les onglets du filtre. Sans second bloc, la vue est
    le module entier et porte son h2 comme avant. */
+/** « Lundi 5 octobre 2026 » → « 5 octobre 2026 ». Une date invalide est rendue
+ *  telle quelle, comme le fait formatDateFr. */
+function dateSansJour(iso: string): string {
+  const longue = formatDateFr(iso);
+  return longue === iso ? iso : longue.replace(/^\S+\s/, "");
+}
+
 function PolimetreView({
   data,
   editionKey,
@@ -526,6 +535,13 @@ function PolimetreView({
         </div>
       </div>
 
+      {/* Série CAQ figée (freeze_at dans scripts/tables.json) : la date affichée
+          est celle du dernier instantané reçu, jamais une date codée en dur. */}
+      <p className="ppl-fige" role="note">
+        Ce classement n&apos;est plus mis à jour depuis le {dateSansJour(data.weekEndDate)}
+        {data.weekEndDate === ELECTION_DATE ? ", jour des élections générales" : ""}&nbsp;: il
+        présente les promesses de la CAQ et leur écho médiatique en date de cette journée-là.
+      </p>
       {bascule}
       {bascule ? (
         <>

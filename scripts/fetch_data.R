@@ -128,6 +128,22 @@ ISSUES_THEME_TO_CATEGORY <- list(
 
 # Per-table optional filtering, keyed by entry$filter.
 # Add a new branch here when a new table needs row-level trimming.
+# Gel d'une série à une date (clé `freeze_at` de tables.json) : écarte les
+# instantanés postérieurs AVANT apply_filter(), pour que la fenêtre de
+# rétention s'ancre sur la date de gel et non sur le dernier instantané
+# publié. Aucune ligne à cette date ou avant = erreur : un module vide se
+# lirait comme une panne. Même logique que rowsUpTo() dans le Worker.
+apply_freeze <- function(df, freeze_at, name = "") {
+  if (is.null(freeze_at) || !nzchar(freeze_at)) return(df)
+  if (!"week_end_date" %in% names(df)) {
+    stop(name, " : freeze_at exige la colonne week_end_date", call. = FALSE)
+  }
+  wed <- as.Date(substr(as.character(df$week_end_date), 1, 10))
+  df  <- df[!is.na(wed) & wed <= as.Date(freeze_at), , drop = FALSE]
+  if (nrow(df) == 0) stop(name, " : aucune ligne au ", freeze_at, " ou avant", call. = FALSE)
+  df
+}
+
 apply_filter <- function(df, filter_id) {
   if (is.null(filter_id) || !nzchar(filter_id)) return(df)
 
@@ -290,6 +306,7 @@ fetch_table <- function(conn, entry) {
   # octets, donc n'a aucun effet sur une colonne déjà correcte.
   df[] <- lapply(df, function(col) if (is.character(col)) enc2utf8(col) else col)
   df       <- df[, intersect(cols, names(df)), drop = FALSE]
+  df       <- apply_freeze(df, entry$freeze_at, entry$name)
   df       <- apply_filter(df, entry$filter)
   df       <- sort_rows_deterministically(df)
   df
