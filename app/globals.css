@@ -5559,7 +5559,10 @@
     position: relative;
   }
 
-  /* La console et ses graduations, côte à côte. */
+  /* La console et ses graduations, côte à côte.
+     Le vumètre prend toute la largeur du châssis (2026-11-24) : les cinq
+     tranches se partagent l'espace disponible, et les graduations restent à
+     droite. */
   .console-corps {
     /* La graduation du HAUT chevauche le sommet de la piste : elle est posée en
        `bottom` puis ramenée de la moitié de sa hauteur par `translateY(50%)`,
@@ -5568,13 +5571,10 @@
     padding-top: 7px;
     display: flex;
     align-items: flex-start;
-    justify-content: center;
     gap: var(--gradu-gap);
-    max-width: none;
-    margin: 0 auto;
-    /* Compense la colonne de graduations, à droite : sans ce décalage, centrer
-       le bloc entier décentre les VUMÈTRES, qui sont ce que l'œil lit. */
-    padding-left: calc(var(--gradu) + var(--gradu-gap));
+    width: 100%;
+    margin: 0;
+    padding-left: 0;
   }
 
   .console-tranches {
@@ -5583,11 +5583,10 @@
     padding: 0;
     display: flex;
     align-items: flex-end;
-    justify-content: center;
     gap: 16px;
-    /* Largeur au CONTENU : réserver une largeur fixe laisserait les
-       graduations flotter loin des vumètres qu'elles annoncent. */
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
   }
 
   /* Marque de chargement : la lettre de la platine, posée au-dessus du canal. */
@@ -5612,16 +5611,15 @@
        « Trop peu présent ». La largeur de la tranche ne doit jamais dépendre de
        la longueur d'un mot. */
     white-space: normal;
+    text-align: center;
+    width: 100%;
   }
 
-  /* Largeur FIXE, et non `flex: 1 1 0`. Dans un conteneur dimensionné par son
-     contenu, une base de 0 sans espace libre à répartir fait retomber chaque
-     tranche sur la largeur de son TEXTE : « PCQ » sortait à 70 px quand « QS »
-     en faisait 45. Mesuré. */
+  /* Les tranches se partagent équitablement toute la largeur du châssis. */
   .console-tranche {
     order: var(--ordre);
-    flex: none;
-    width: var(--tranche);
+    flex: 1 1 0;
+    width: 100%;
     min-width: 0;
     display: grid;
     /* QUATRE rangées, toutes RÉSERVÉES dans TOUTES les colonnes — sans quoi la
@@ -5632,7 +5630,7 @@
              colonne en sourdine, vide pour les autres. */
     grid-template-rows: var(--piste) auto 26px 14px;
     align-items: end;
-    justify-items: center;
+    justify-items: stretch;
     row-gap: 6px;
   }
 
@@ -5754,6 +5752,7 @@
     width: 100%;
     max-width: 62px;
     height: 24px;
+    justify-self: center;
   }
   /* Cadran IVOIRE, comme un vrai vumètre — plus de verre fumé quasi noir qui
      avalait l'aiguille et les couleurs. Un liseré sombre le détache du fond
@@ -6160,7 +6159,7 @@
     }
     /* La compensation qui recentre les vumètres passe à la moitié : à cette
        largeur, la tenue dans l'écran prime sur le centrage parfait. */
-    .console-corps { padding-left: calc(var(--gradu) / 2); }
+    .console-corps { padding-left: 0; }
     /* Filet de sécurité, pas mécanisme de mise en page : si les constantes
        dérivent un jour, la console défile en elle-même au lieu de faire
        déborder la page entière. */
@@ -13287,3 +13286,51 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 .social-tiroir-remettre { background: transparent; border: 0.5px solid var(--ink); color: var(--ink); }
 .social-tiroir-remettre:disabled { opacity: 0.4; cursor: default; }
 .social-tiroir-voir { flex-grow: 1.6; background: var(--ink); border: 1px solid var(--ink); color: var(--paper); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PARTIS — LA CONSOLE SEULE (2026-11-24).
+   Les decks rapetissent et ne montrent plus que leur VITESSE DE LECTURE,
+   réglée sur la part du parti (`--tour`, secondes par tour, calculée par
+   `dureeDuTour` dans PartisCouvertureClient). Le capuchon et l'aiguille
+   tournent ensemble : les sillons sont symétriques, seuls ces deux repères
+   rendent la rotation visible. Le fader écrit les noms complets.
+   ───────────────────────────────────────────────────────────────────────── */
+.regie { grid-template-columns: minmax(0, 132px) minmax(0, 1fr) minmax(0, 132px); }
+.regie-flanc { margin-bottom: 0; justify-content: space-around; align-self: stretch; }
+.deck-carre { max-width: 120px; }
+.deck-carre--lecture .deck-jog-cap,
+.deck-carre--lecture .deck-jog::after {
+  animation: deck-lecture var(--tour, 1.8s) linear infinite;
+}
+.deck-carre--lecture .deck-jog-cap { transform-origin: 50% 50%; }
+.deck-carre--arret .deck-jog-cap,
+.deck-carre--arret .deck-jog::after { animation: none; }
+@keyframes deck-lecture { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .deck-carre--lecture .deck-jog-cap,
+  .deck-carre--lecture .deck-jog::after { animation: none; }
+}
+
+.fader.fader--noms { max-width: 760px; }
+.fader--noms .fader-piste { height: 58px; }
+.fader--noms .fader-cran b {
+  white-space: normal;
+  width: 84px;
+  text-align: center;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+}
+.fader--noms .fader-cran.tous b { letter-spacing: 0.04em; }
+
+@media (max-width: 1184px) {
+  .regie { grid-template-columns: minmax(0, 1fr); }
+  .regie-flanc { flex-direction: row; justify-content: center; gap: 24px; }
+}
+@media (max-width: 768px) {
+  .regie { display: block; }
+  .regie-flanc { display: none !important; }
+}
+@media (max-width: 640px) {
+  .deck-carre { max-width: 84px; }
+  .fader--noms .fader-cran b { width: 48px; font-size: 7px; }
+}
