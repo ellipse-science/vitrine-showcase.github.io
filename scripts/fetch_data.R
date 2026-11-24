@@ -1031,11 +1031,20 @@ run <- function() {
       write_json_file(df, entry$out)
       message("  -> ", nrow(df), " rows -> ", entry$out)
       list(name = entry$name, status = "ok", rowCount = nrow(df),
-           generatedAt = NOW_UTC, path = entry$out)
+           generatedAt = NOW_UTC, path = entry$out,
+           optional = isTRUE(entry$optional))
     }, error = function(e) {
+      # Table `optional` (tables.json) pas encore créée dans Athena : c'est une
+      # ABSENCE attendue, pas une panne — ex. la série PQ 2026 avant le premier
+      # run de son raffineur. Elle ne pilote pas le heartbeat (cf. core_results).
+      if (isTRUE(entry$optional) && grepl("TABLE_NOT_FOUND", conditionMessage(e))) {
+        message("  -- absente (table optionnelle pas encore publiée)")
+        return(list(name = entry$name, status = "absent", generatedAt = NOW_UTC, optional = TRUE))
+      }
       message("  !! FAILED: ", conditionMessage(e))
       list(name = entry$name, status = "error",
-           error = conditionMessage(e), generatedAt = NOW_UTC)
+           error = conditionMessage(e), generatedAt = NOW_UTC,
+           optional = isTRUE(entry$optional))
     })
 
     results[[length(results) + 1]] <- res

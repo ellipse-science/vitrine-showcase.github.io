@@ -510,6 +510,34 @@
       "used_by": "lib/data/polimetre.ts"
     },
     {
+      "name": "polimetre_plus_stpierreplamondon",
+      "athena": "vitrine_datamart-polimetre_plus_stpierreplamondon",
+      "out": "public/data/refined/week/polimetre_plus_stpierreplamondon.json",
+      "cols": [
+        "country_id",
+        "week_end_date",
+        "pledge_number",
+        "pledge_text_fr",
+        "verdict",
+        "category",
+        "salience_index",
+        "previous_salience_index",
+        "delta_index",
+        "titles",
+        "urls",
+        "articles",
+        "pledge_short_fr",
+        "coverage_summary_week",
+        "coverage_summary_month"
+      ],
+      "_note": "Série PQ 2026 du Polimètre+ : les 535 promesses du gouvernement St-Pierre Plamondon, même raffineur (polimetre-plus, mandat stpierreplamondon) et même schéma que polimetre_plus. OPTIONNELLE tant que le raffineur ne l'a pas publiée : une table absente d'Athena est notée « absent » dans meta.json et ne pilote pas le heartbeat ; l'onglet « PQ 2026 » reprend alors les promesses de la campagne. Pas dans la whitelist du Worker (une table absente y bloquerait les Deploy Hooks) : à y ajouter une fois la table publiée.",
+      "filter": "polimetre_plus_recent",
+      "optional": true,
+      "api": false,
+      "enabled": true,
+      "used_by": "lib/data/polimetre.ts"
+    },
+    {
       "name": "polimetre_promesses_neuves",
       "athena": "vitrine_datamart-polimetre_promesses_neuves",
       "out": "public/data/refined/day/polimetre_promesses_neuves.json",

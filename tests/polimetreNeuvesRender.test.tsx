@@ -319,3 +319,43 @@ describe("Polimètre+ — filtre d'enjeu et lien vers le Polimètre sur les troi
     });
   }
 });
+
+// Onglet PQ 2026 : la série des 535 promesses (polimetre_plus_stpierreplamondon)
+// dès qu'elle est publiée ; d'ici là, repli sur les promesses de la campagne.
+describe("Polimètre+ — onglet PQ 2026 sur la série des 535 promesses", () => {
+  const pq: PolimetreData = {
+    weekEndDate: "2026-12-01",
+    lastUpdated: "Dernière mise à jour : mardi 1er décembre 2026",
+    ranges: {
+      week: [{
+        pledgeNumber: "1.10.104", title: "Créer 10 000 places en CPE", fullTitle: "Un gouvernement du Parti Québécois…",
+        summary: null, verdict: "en-suspens", verdictLabel: "En suspens", category: "Santé et politiques sociales",
+        salienceIndex: 9, trend: { dir: "flat", delta: 0 }, articles: [],
+      }],
+      month: [],
+    },
+  };
+  const rendrePq = (n: PromessesNeuvesData | null, onglet?: "pq" | "campagne" | "2022") =>
+    renderToStaticMarkup(<PolimetrePlusClient data={polimetre} neuves={n} pq={pq} ongletInitial={onglet} />);
+
+  it("série publiée : l'onglet PQ montre les promesses officielles, sans avis de gel", () => {
+    const html = rendrePq(neuves);
+    expect(html).toContain("Promesses électorales du Parti québécois (élections de 2026)");
+    expect(html).toContain("Créer 10 000 places en CPE");
+    expect(html).not.toContain("ppl-fige");
+    expect(html).toContain('href="https://polimeter.org/fr"');
+  });
+
+  it("série publiée sans promesses de campagne : onglets PQ et CAQ seulement", () => {
+    const html = rendrePq(null);
+    expect(html).toContain("ppl-onglet--pq");
+    expect(html).toContain("ppl-onglet--2022");
+    expect(html).not.toContain("ppl-onglet--campagne");
+  });
+
+  it("série absente : repli sur les promesses de la campagne", () => {
+    const html = rendre(neuves);
+    expect(html).not.toContain("Promesses électorales du Parti québécois (élections de 2026)");
+    expect(html).toContain("ppl-onglet--pq");
+  });
+});

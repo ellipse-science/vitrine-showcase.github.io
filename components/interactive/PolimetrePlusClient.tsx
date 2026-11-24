@@ -478,10 +478,14 @@ function PolimetreView({
   editionKey,
   sousModule = false,
   bascule,
+  mandat = "caq",
 }: {
   data: PolimetreData;
   editionKey?: string;
   sousModule?: boolean;
+  /** Série affichée : CAQ 2022 (figée) ou PQ 2026 (les 535 promesses du
+   *  gouvernement St-Pierre Plamondon). Même calcul, textes et colonnes propres. */
+  mandat?: "caq" | "pq";
   /** Onglets du module unifié (campagne / CAQ 2022 / PQ 2026), posés sur le panneau. */
   bascule?: ReactNode;
 }) {
@@ -526,7 +530,17 @@ function PolimetreView({
     .filter((p) => category === "all" || p.category === category)
     .slice(0, TOP_N);
 
-  const sousTitre = (
+  const sousTitre = mandat === "pq" ? (
+    <>
+      Promesses électorales du Parti québécois (élections de 2026), classées selon leur écho médiatique
+      <InfoTip size="sm" label="À propos du Polimètre+">
+        Le Polimètre (Université Laval) suit la réalisation des promesses électorales en continu. Le
+        Polimètre+ croise les 535 promesses du Parti québécois, faites lors de la campagne de 2026,
+        avec leur couverture en une dans les médias québécois pour faire ressortir celles qui
+        retiennent l&apos;attention. Toutes sont en suspens tant que le Polimètre ne les a pas évaluées.
+      </InfoTip>
+    </>
+  ) : (
     <>
       Promesses électorales de la CAQ (élections de 2022), classées selon leur écho médiatique
       <InfoTip size="sm" label="À propos du Polimètre+">
@@ -541,7 +555,7 @@ function PolimetreView({
   return (
     <section
       className={bascule ? "polimeter-plus polimeter-plus--unifie" : sousModule ? "polimeter-plus polimeter-plus--second" : "polimeter-plus"}
-      aria-label={sousModule ? "Polimètre+ : promesses de 2022" : "Polimètre+"}
+      aria-label={mandat === "pq" ? "Polimètre+ : promesses du PQ, mandat 2026" : sousModule ? "Polimètre+ : promesses de 2022" : "Polimètre+"}
     >
       <div className="partis-title-row">
         <div className="title-block">
@@ -584,11 +598,13 @@ function PolimetreView({
 
       {/* Série CAQ figée (freeze_at dans scripts/tables.json) : la date affichée
           est celle du dernier instantané reçu, jamais une date codée en dur. */}
+      {mandat === "caq" && (
       <p className="ppl-fige" role="note">
         Ce classement n&apos;est plus mis à jour depuis le {dateSansJour(data.weekEndDate)}
         {data.weekEndDate === ELECTION_DATE ? ", jour des élections générales" : ""}&nbsp;: il
         présente les promesses de la CAQ et leur écho médiatique en date de cette journée-là.
       </p>
+      )}
       {bascule && (
         <FiltreEnjeuKanban value={category} onChange={setCategory} categories={promises.map((p) => p.category)} />
       )}
@@ -596,8 +612,8 @@ function PolimetreView({
       {bascule ? (
         <>
           <KanbanBoard
-            label="Promesses de la CAQ de 2022, rangées par verdict"
-            colonnes={KANBAN_VERDICTS_MANDAT_TERMINE.map((v) => ({
+            label={mandat === "pq" ? "Promesses du PQ de 2026, rangées par verdict" : "Promesses de la CAQ de 2022, rangées par verdict"}
+            colonnes={(mandat === "pq" ? KANBAN_VERDICTS : KANBAN_VERDICTS_MANDAT_TERMINE).map((v) => ({
               cle: v.slug,
               titre: v.titre,
               cartes: promises
@@ -612,7 +628,11 @@ function PolimetreView({
             }))}
           />
           <LienMetho />
-          <LienPolimetre href={POLIMETRE_URL_LEGAULT} libelle="Découvrir toutes les promesses sur le site Web du Polimètre" />
+          {mandat === "pq" ? (
+            <LienPolimetre href={POLIMETRE_URL_ACCUEIL} libelle="Découvrir le site Web du Polimètre" />
+          ) : (
+            <LienPolimetre href={POLIMETRE_URL_LEGAULT} libelle="Découvrir toutes les promesses sur le site Web du Polimètre" />
+          )}
         </>
       ) : (
       <div className="ppl-grid">
@@ -1028,20 +1048,26 @@ function PqView({
 export function PolimetrePlusClient({
   data,
   neuves,
+  pq,
   editionKey,
   ongletInitial = "pq",
 }: {
   data: PolimetreData;
   neuves?: PromessesNeuvesData | null;
+  /** Série des 535 promesses du gouvernement St-Pierre Plamondon ; null tant que
+   *  le raffineur ne l'a pas publiée — l'onglet « PQ 2026 » reprend alors les
+   *  promesses du PQ repérées pendant la campagne. */
+  pq?: PolimetreData | null;
   editionKey?: string;
   /** Onglet ouvert au premier rendu : le mandat du PQ, en premier. */
   ongletInitial?: "pq" | "campagne" | "2022";
 }) {
   const hasNeuves = !!neuves && NEUVE_RANGE_ORDER.some((r) => neuves.ranges[r].length > 0);
+  const hasPq = !!pq && (pq.ranges.week.length > 0 || pq.ranges.month.length > 0);
 
   const [mode, setMode] = useState<"campagne" | "2022" | "pq">(ongletInitial);
 
-  if (!hasNeuves) return <PolimetreView data={data} editionKey={editionKey} />;
+  if (!hasNeuves && !hasPq) return <PolimetreView data={data} editionKey={editionKey} />;
 
   // `etat` : où en est le mandat, accolé à son onglet. Dans un span à part pour
   // qu'il passe sous l'année sur téléphone (cf. .ppl-onglet__etat).
@@ -1064,13 +1090,21 @@ export function PolimetrePlusClient({
     <div className="ppl-onglets" role="tablist" aria-label="Promesses affichées">
       {onglet("pq", "PQ 2026", "En cours")}
       {onglet("2022", "CAQ 2022", "Terminé")}
-      <span className="ppl-onglets__barre" aria-hidden="true" />
-      {onglet("campagne", "Campagne 2026")}
+      {hasNeuves && <span className="ppl-onglets__barre" aria-hidden="true" />}
+      {hasNeuves && onglet("campagne", "Campagne 2026")}
     </div>
   );
 
-  if (mode === "pq") return <PqView data={neuves!} editionKey={editionKey} bascule={bascule} />;
-  return mode === "campagne" ? (
+  // PQ 2026 : la série des 535 promesses dès qu'elle est publiée ; d'ici là, les
+  // promesses du PQ repérées pendant la campagne.
+  if (mode === "pq") {
+    return hasPq ? (
+      <PolimetreView data={pq!} editionKey={editionKey} sousModule bascule={bascule} mandat="pq" />
+    ) : (
+      <PqView data={neuves!} editionKey={editionKey} bascule={bascule} />
+    );
+  }
+  return mode === "campagne" && hasNeuves ? (
     <NeuvesView data={neuves!} editionKey={editionKey} bascule={bascule} />
   ) : (
     <PolimetreView data={data} editionKey={editionKey} sousModule bascule={bascule} />
