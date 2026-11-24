@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1029,
+    "date": "2026-11-24T20:50:48Z",
+    "note": "Les cartes des député·es de la dernière législature qui n'ont pas été réélu·es retrouvent leur portrait.",
+    "version": "2.54.0-beta.2"
+  },
+  {
     "pr": 1030,
     "date": "2026-11-24T20:10:46Z",
     "note": "La mascotte Datagotchi, en bas à droite de la Une, ne parle plus de l'élection : elle invite maintenant à découvrir le projet Datagotchi.",
