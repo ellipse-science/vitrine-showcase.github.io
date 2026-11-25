@@ -468,9 +468,47 @@ const DeputyCardMemo = memo(DeputyCard);
 /** Partis dont l'écusson est préparé (public/images/cartes/ecusson-<clé>.png). */
 const ECUSSONS = new Set<string>(["caq", "plq", "qs", "pq", "pcq"]);
 
-function LockerDoor({ row, open, onToggle, onApproche, maxAbsTone }: {
+/** La carte d'un élu de la nouvelle Assemblée : le recto seul (bandeau,
+ *  portrait, nom, circonscription, parti). Pas de verso, il n'y a encore
+ *  rien à y mesurer. */
+function CarteEnAttente({ deputy, party, color }: { deputy: DeputyRow; party: PartyKey; color: string }) {
+  return (
+    <span className="carte carte--attente" style={{ ["--pc" as string]: color }}
+      role="group" aria-label={`${deputy.name}, ${party.toUpperCase()}${deputy.circonscription ? `, ${deputy.circonscription}` : ""}`}>
+      <span className="carte-pivot">
+        <span className="carte-recto">
+          <span className="carte-cadre">
+            <span className="carte-bandeau">
+              <span>Assemblée nationale</span>
+              <span aria-hidden="true">◆</span>
+            </span>
+            <span className="carte-photo">
+              {deputy.portrait ? (
+                <img src={`${BASE_PATH}${deputy.portrait}`} alt="" loading="eager" decoding="async" />
+              ) : (
+                <span className="carte-photo-absente" aria-hidden="true">Portrait à venir</span>
+              )}
+            </span>
+            <span className="carte-plaque">
+              <span className="carte-nom">{deputy.name}</span>
+              {deputy.circonscription && <span className="carte-circo">{deputy.circonscription}</span>}
+            </span>
+            <span className="carte-macaron">{party.toUpperCase()}</span>
+          </span>
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/** La nouvelle Assemblée avant sa première séance : sièges et cartes des
+ *  élus, aucune mesure de débat (lib/data/assembleeAttente.ts). */
+export type VestiaireEnAttente = { electionLibelle: string };
+
+function LockerDoor({ row, open, onToggle, onApproche, maxAbsTone, attente }: {
   row: AssembleeRow;
   open: boolean;
+  attente?: VestiaireEnAttente;
   onToggle: () => void;
   /** Survol ou focus : le clic est probable, on précharge ses portraits. */
   onApproche: () => void;
@@ -478,13 +516,16 @@ function LockerDoor({ row, open, onToggle, onApproche, maxAbsTone }: {
 }) {
   const deputies = row.deputies ?? [];
   const nb = deputies.length;
+  const sieges = `${nb}\u00a0${nb > 1 ? "sièges" : "siège"}`;
   // deputies arrive déjà trié par mots décroissants (buildDeputyList).
-  const plusLoquace = deputies[0];
+  const plusLoquace = attente ? undefined : deputies[0];
   // CASIER VIDE (Jules, 3 oct.) : les cinq partis gardent leur casier, même
   // sans parole dans la vue ; l'intérieur dit pourquoi il est vide.
   const vide = row.inShadow;
   // Sans article (« du CAQ », « du QS ») : le sigle mène la phrase.
-  const raison = row.aSiege === false
+  const raison = attente
+    ? `${row.label}\u00a0: aucune personne élue le ${attente.electionLibelle}.`
+    : row.aSiege === false
     ? `${row.label}\u00a0: aucune personne élue ne siégeait pendant cette période.`
     : `${row.label}\u00a0: aucune prise de parole pendant cette période.`;
   // Lecteur d'écran (relecture d'Adrien, #924) : le nom du bouton dit l'action,
@@ -495,6 +536,8 @@ function LockerDoor({ row, open, onToggle, onApproche, maxAbsTone }: {
   const enjeuxNommes = (row.enjeuStack ?? []).filter((s) => !s.isReste && s.cle).slice(0, 3);
   const bilan = vide
     ? raison
+    : attente
+    ? `${row.label}\u00a0: ${sieges}, en attente de la première séance.`
     : [
         `${nb} ${nb > 1 ? "député·es" : "député·e"}, ${row.wordsFormatted ?? "0"} mots, ${(row.interventions ?? 0).toLocaleString("fr-CA")} interventions, ${toneWording(row.toneScore ?? 0, maxAbsTone)}.`,
         enjeuxNommes.length
@@ -521,7 +564,14 @@ function LockerDoor({ row, open, onToggle, onApproche, maxAbsTone }: {
           député·es, ton), la part des interventions, qui a le plus parlé. */}
       <span className="casier-fond" aria-hidden="true">
         <span className="casier-dedans">
-          <span className="dedans-bloc">
+          {attente && !vide && (
+            <span className="dedans-bloc">
+              <span className="dedans-titre">Sièges</span>
+              <span className="dedans-nom">{nb}</span>
+              <span className="dedans-sous">En attente de la première séance</span>
+            </span>
+          )}
+          {!attente && <span className="dedans-bloc">
             <span className="dedans-titre">Fiche à l'Assemblée</span>
             <span className="dedans-stats">
               <i>Mots</i><i>Interv.</i><i>Député·es</i>
@@ -533,11 +583,11 @@ function LockerDoor({ row, open, onToggle, onApproche, maxAbsTone }: {
                 <ToneScale score={row.toneScore ?? 0} maxAbs={maxAbsTone} compact />
               </span>
             )}
-          </span>
+          </span>}
 
           {vide && <span className="dedans-bloc dedans-raison">{raison}</span>}
 
-          {!vide && row.enjeuStack && row.enjeuStack.length > 0 && (() => {
+          {!vide && !attente && row.enjeuStack && row.enjeuStack.length > 0 && (() => {
             const nommes = row.enjeuStack.filter((s) => !s.isReste && s.cle).slice(0, 3);
             const autres = Math.max(0, 100 - nommes.reduce((t, x) => t + x.widthPct, 0));
             const TRAMES = [100, 68, 42];
@@ -604,9 +654,10 @@ function LockerDoor({ row, open, onToggle, onApproche, maxAbsTone }: {
   );
 }
 
-export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = null }: {
+export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = null, attente }: {
   rows: AssembleeRow[];
   shadowRows: AssembleeRow[];
+  attente?: VestiaireEnAttente;
   /** Les fiches de carte de la période (lib/cartes/site.ts), préparées au build. */
   cartes?: CarteSite[];
   contexte?: ContexteCartes | null;
@@ -730,6 +781,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
             onToggle={() => toggle(row.key)}
             onApproche={() => prechargerPortraits(row.deputies ?? [], 8)}
             maxAbsTone={maxAbsTone}
+            attente={attente}
           />
         ))}
       </div>
@@ -748,15 +800,17 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
           <div className="tiroir-tete">
             <span className="tiroir-parti">{openRow.label}</span>
             <span className="tiroir-compte">
-              {deputies.length} député·es qui ont pris la parole
+              {attente
+                ? `${deputies.length} député·es élu·es le ${attente.electionLibelle}`
+                : `${deputies.length} député·es qui ont pris la parole`}
             </span>
-            <span className="tiroir-faces" role="group" aria-label="Face des cartes">
+            {!attente && <span className="tiroir-faces" role="group" aria-label="Face des cartes">
               {(["recto", "verso"] as const).map((f) => (
                 <button key={f} type="button" aria-pressed={face === f} onClick={() => { setFace(f); setFlipped(null); }}>
                   {f === "verso" ? "Verso" : "Recto"}
                 </button>
               ))}
-            </span>
+            </span>}
           </div>
 
           {deputies.length > 0 ? (
@@ -769,7 +823,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
                   key={dep.id}
                   style={{ ["--pc" as string]: openRow.color }}
                 >
-                  <DeputyCardMemo
+                  {attente ? <CarteEnAttente deputy={dep} party={openRow.key} color={openRow.color} /> : <DeputyCardMemo
                     deputy={dep}
                     party={openRow.key}
                     color={openRow.color}
@@ -778,7 +832,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
                     onFlip={basculer}
                     cartes={cartes}
                     contexte={contexte}
-                  />
+                  />}
                   {dep.affiliationHistory && (
                     <ParliamentaryHistory segments={dep.affiliationHistory} />
                   )}
@@ -787,7 +841,9 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
             </div>
           ) : (
             <p className="tiroir-vide">
-              {openRow.aSiege === false
+              {attente
+                ? `${openRow.label}\u00a0: aucune personne élue le ${attente.electionLibelle}, donc pas de carte.`
+                : openRow.aSiege === false
                 ? `${openRow.label}\u00a0: aucune personne élue ne siégeait pendant cette période, donc pas de carte.`
                 : `${openRow.label}\u00a0: aucune prise de parole pendant cette période, donc pas de carte.`}
             </p>

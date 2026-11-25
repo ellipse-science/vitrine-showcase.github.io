@@ -12,6 +12,7 @@ import { readDatasetText } from "@/lib/data/source";
 import { PARTY_KEYS, PARTY_LABELS, PARTY_COLORS, type PartyKey } from "@/lib/data/parties";
 import { lastUpdatedLabel } from "@/lib/dates";
 import { ISSUE_COLORS } from "@/lib/enjeux";
+import { RACINE_PORTRAITS, RACINE_PORTRAITS_ARCHIVE_43E } from "@/lib/cartes/portraits";
 
 // Le ton mesuré est resserré autour de zéro : sur la table réelle, les partis
 // s'étalent de -0,30 à +0,18. Avec un facteur 10, tout ce qui dépasse ±0,1
@@ -244,9 +245,10 @@ export type AssembleeData = {
   periods: Record<PeriodKey, PeriodView>;
   /** La législature élue qui n'a pas encore siégé (vitrine#1035). Présente
    *  seulement tant qu'Agora n'a aucune journée postérieure à son élection :
-   *  à la première séance traitée, elle disparaît et le module redevient
-   *  celui des trois périodes. */
+   *  les premières données la remplacent par les trois périodes de la 44e. */
   prochaine?: LegislatureEnAttente;
+  legislatureCourante?: number;
+  archiveFigee?: true;
 };
 
 // ─── La législature suivante, en attente de sa première séance (#1035) ──────
@@ -704,13 +706,15 @@ type PortraitIndex = {
   byId: Map<string, DeputyPortrait>;
   byName: Map<string, DeputyPortrait[]>;
   ridingNames: Map<string, string>;
+  /** Où vivent les images (lib/cartes/portraits.ts) ; à défaut, la racine courante. */
+  racine?: string;
 };
 
 function portraitBaseName(name: string): string {
   return name.replace(RIDING_HINT, "").trim();
 }
 
-function buildPortraitIndex(portraits: DeputyPortrait[]): PortraitIndex {
+function buildPortraitIndex(portraits: DeputyPortrait[], racine: string = RACINE_PORTRAITS): PortraitIndex {
   const byId = new Map<string, DeputyPortrait>();
   const byKey = new Map<string, DeputyPortrait[]>();
   const ridingNames = new Map<string, string>();
@@ -726,7 +730,7 @@ function buildPortraitIndex(portraits: DeputyPortrait[]): PortraitIndex {
     if (list) list.push(p);
     else byKey.set(key, [p]);
   }
-  return { byId, byName: byKey, ridingNames };
+  return { byId, byName: byKey, ridingNames, racine };
 }
 
 // « Éric Girard (Groulx) » -> nom nu + indice de circonscription.
@@ -928,7 +932,9 @@ function buildDeputyList(
       circonscription: portrait?.circonscription ?? portraits.ridingNames.get(tightKey(r.district_id ?? "")),
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
-      portrait: portrait ? `/images/deputes/cartes/web/${portrait.asset_slug ?? portrait.circonscription_slug}.jpg` : undefined,
+      portrait: portrait
+        ? `${portraits.racine ?? RACINE_PORTRAITS}/web/${portrait.asset_slug ?? portrait.circonscription_slug}.jpg`
+        : undefined,
       interventions: Number(r.n_interventions || 0),
       toneScore: Number(r.tone_score || 0),
       topIssueLabel: top?.label,
@@ -1161,33 +1167,105 @@ async function loadPortraits(): Promise<DeputyPortrait[]> {
   }
 }
 
+export const DOSSIER_ARCHIVE_ASSEMBLEE_43E = "data/archive-assemblee-43e";
+
+function construireVuesAssemblee(
+  rows: AgoraRow[],
+  deputyRows: DeputyAgoraRow[],
+  portraitsBruts: DeputyPortrait[],
+  affiliationRows: AffiliationAgoraRow[],
+  racinePortraits: string = RACINE_PORTRAITS,
+): AssembleeData {
+  const portraits = buildPortraitIndex(portraitsBruts, racinePortraits);
+  const affiliations = buildAffiliationIndex(affiliationRows);
+  return {
+    periods: {
+      last_pdq: buildPeriodView(rows, "last_pdq", deputyRows, portraits, affiliations),
+      session: buildPeriodView(rows, "session", deputyRows, portraits, affiliations),
+      legislature: buildPeriodView(rows, "legislature", deputyRows, portraits, affiliations),
+    },
+  };
+}
+
+async function lirePortraitsArchive43e(): Promise<DeputyPortrait[]> {
+  // Même repli que loadPortraits : sans index, des cartes sans portrait plutôt
+  // qu'un build en échec.
+  try {
+    const raw = await fs.readFile(path.resolve(process.cwd(), DOSSIER_ARCHIVE_ASSEMBLEE_43E, "portraits.json"), "utf8");
+    const parsed = JSON.parse(raw) as { deputes?: DeputyPortrait[] };
+    return Array.isArray(parsed?.deputes) ? parsed.deputes : [];
+  } catch {
+    return [];
+  }
+}
+
+async function lireArchiveAssemblee43e(asOfIso?: string): Promise<AssembleeData | null> {
+  const lire = async <T>(nom: string): Promise<T> =>
+    JSON.parse(await fs.readFile(path.resolve(process.cwd(), DOSSIER_ARCHIVE_ASSEMBLEE_43E, nom), "utf8")) as T;
+  const [agora, deputes, affiliations, portraits] = await Promise.all([
+    lire<AgoraRow[]>("agora_decideurs_qc.json"),
+    lire<DeputyAgoraRow[]>("agora_decideurs_qc_deputes.json"),
+    lire<AffiliationAgoraRow[]>("agora_decideurs_qc_affiliations.json"),
+    lire<{ deputes: DeputyPortrait[] }>("portraits.json"),
+  ]);
+  const rows = asOfIso ? agora.filter((r) => r.period_end_date <= asOfIso) : agora;
+  if (!rows.length) return null;
+  // Index et images figés au 3 octobre 2026, avant l'élection de la 44e : les
+  // images courantes portent déjà le visage du nouvel élu de la circonscription.
+  return {
+    ...construireVuesAssemblee(rows, deputes, portraits.deputes, affiliations, RACINE_PORTRAITS_ARCHIVE_43E),
+    archiveFigee: true,
+  };
+}
+
+export async function loadArchiveAssemblee43e(): Promise<AssembleeData> {
+  const archive = await lireArchiveAssemblee43e();
+  if (!archive) throw new Error("L’archive de la 43e législature est vide");
+  return archive;
+}
+
+export { periodeParDefaut } from "./assembleePeriode";
+
 export async function loadAssemblee(
-  /** Édition passée (#434) : jour de publication de l'édition affichée. Les
-   *  discours sont publiés par JOUR DE DÉBAT — l'archive de ce module suit donc
-   *  la cadence de l'Assemblée, pas celle des éditions. */
+  /** Une édition passée suit la date des débats, pas la cadence des éditions. */
   asOfIso?: string,
 ): Promise<AssembleeData | null> {
   const raw = await readDatasetText("public/data/agora/agora_decideurs_qc.json");
   const parsed = JSON.parse(raw) as AgoraRow[];
-  if (!Array.isArray(parsed) || parsed.length === 0) return null;
-  const allRows = asOfIso
-    ? parsed.filter((r) => String(r.period_end_date ?? "") <= asOfIso)
-    : parsed;
-  if (allRows.length === 0) return null;
-  const deputyRows = await loadDeputyRows();
-  const portraitsBruts = await loadPortraits();
-  const portraits = buildPortraitIndex(portraitsBruts);
-  const affiliations = buildAffiliationIndex(await loadAffiliationRows());
-  // Sur une édition passée, l'index des portraits est celui d'aujourd'hui :
-  // on ne montre pas une législature en attente dans une archive.
-  const prochaine = asOfIso ? null : buildLegislatureEnAttente(portraitsBruts, parsed);
+  if (!Array.isArray(parsed)) return null;
+
+  const { election, numero } = LEGISLATURE_SUIVANTE;
+  const apresElection = (r: AgoraRow) => String(r.period_end_date ?? "") >= election;
+  const aDesDebats = parsed.some(apresElection);
+
+  // La 43e doit rester lisible quand le fichier courant ne contient que la 44e.
+  // Pendant l’interrègne, une édition peut encore dater d’avant les premiers débats.
+  const rowsAvantEdition = asOfIso ? parsed.filter((r) => r.period_end_date <= asOfIso) : parsed;
+  const edition43e = Boolean(asOfIso && !rowsAvantEdition.some(apresElection));
+  if (edition43e && (aDesDebats || rowsAvantEdition.length === 0)) {
+    const archive = await lireArchiveAssemblee43e(asOfIso);
+    if (archive) return archive;
+  }
+
+  const afficher44e = aDesDebats && !edition43e;
+  const rows = afficher44e
+    ? rowsAvantEdition.filter((r) => apresElection(r) && r.period_start_date >= election)
+    : rowsAvantEdition;
+  if (!rows.length) return null;
+  const [deputes, portraits, affiliations, portraits43e] = await Promise.all([
+    loadDeputyRows(), loadPortraits(), loadAffiliationRows(), lirePortraitsArchive43e(),
+  ]);
+  const prochaine = asOfIso ? null : buildLegislatureEnAttente(portraits, parsed);
+  // L'index courant est celui de la 44e depuis le 5 novembre : la 43e, même
+  // lue dans le fichier courant, prend les portraits figés de son archive.
+  const vues = afficher44e
+    ? construireVuesAssemblee(rows, deputes, portraits, affiliations)
+    : construireVuesAssemblee(rows, deputes, portraits43e, affiliations, RACINE_PORTRAITS_ARCHIVE_43E);
+
   return {
+    ...vues,
+    ...(afficher44e ? { legislatureCourante: numero } : {}),
     ...(prochaine ? { prochaine } : {}),
-    periods: {
-      last_pdq: buildPeriodView(allRows, "last_pdq", deputyRows, portraits, affiliations),
-      session: buildPeriodView(allRows, "session", deputyRows, portraits, affiliations),
-      legislature: buildPeriodView(allRows, "legislature", deputyRows, portraits, affiliations),
-    },
   };
 }
 

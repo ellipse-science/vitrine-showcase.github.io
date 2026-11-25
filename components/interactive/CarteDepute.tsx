@@ -10,6 +10,7 @@ import { H, PLANCHER_IMPRESSION, W } from "@/lib/cartes/gabarit";
 import type { CarteSite } from "@/lib/cartes/site";
 import type { Carte, Etiquette } from "@/lib/cartes/types";
 import { symboleEnjeuSVG } from "@/lib/enjeux-glyphes";
+import { trameDuPortrait } from "@/lib/cartes/portraits";
 
 // LA CARTE DU VESTIAIRE EST LA CARTE IMPRIMÉE — même balisage, même CSS, par
 // lib/cartes/faces.ts. La face est dessinée dans un repère fixe de
@@ -37,10 +38,8 @@ const ASSETS = {
   vitrine: "/images/cartes/vitrine.png",
   monogramme: "/images/cartes/monogramme.png",
   ecusson: (cle: Carte["cle"]) => (cle === "ind" ? null : `/images/cartes/ecusson-${cle}.png`),
-  portrait: (deputy: DeputyRow) => {
-    const asset = deputy.portrait?.match(/\/images\/deputes\/cartes\/web\/(.+)\.jpg$/)?.[1];
-    return asset ? `/images/deputes/cartes/trame/${asset}.webp` : null;
-  },
+  // Même dérivation pour l'archive figée de la 43e (lib/cartes/portraits.ts).
+  portrait: (deputy: DeputyRow) => trameDuPortrait(deputy.portrait),
   signature: (slug: string) => `/images/cartes/signature-${slug}.png`,
 };
 
