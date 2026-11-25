@@ -1187,6 +1187,18 @@ function construireVuesAssemblee(
   };
 }
 
+async function lirePortraitsArchive43e(): Promise<DeputyPortrait[]> {
+  // Même repli que loadPortraits : sans index, des cartes sans portrait plutôt
+  // qu'un build en échec.
+  try {
+    const raw = await fs.readFile(path.resolve(process.cwd(), DOSSIER_ARCHIVE_ASSEMBLEE_43E, "portraits.json"), "utf8");
+    const parsed = JSON.parse(raw) as { deputes?: DeputyPortrait[] };
+    return Array.isArray(parsed?.deputes) ? parsed.deputes : [];
+  } catch {
+    return [];
+  }
+}
+
 async function lireArchiveAssemblee43e(asOfIso?: string): Promise<AssembleeData | null> {
   const lire = async <T>(nom: string): Promise<T> =>
     JSON.parse(await fs.readFile(path.resolve(process.cwd(), DOSSIER_ARCHIVE_ASSEMBLEE_43E, nom), "utf8")) as T;
@@ -1240,11 +1252,18 @@ export async function loadAssemblee(
     ? rowsAvantEdition.filter((r) => apresElection(r) && r.period_start_date >= election)
     : rowsAvantEdition;
   if (!rows.length) return null;
-  const [deputes, portraits, affiliations] = await Promise.all([loadDeputyRows(), loadPortraits(), loadAffiliationRows()]);
+  const [deputes, portraits, affiliations, portraits43e] = await Promise.all([
+    loadDeputyRows(), loadPortraits(), loadAffiliationRows(), lirePortraitsArchive43e(),
+  ]);
   const prochaine = asOfIso ? null : buildLegislatureEnAttente(portraits, parsed);
+  // L'index courant est celui de la 44e depuis le 5 novembre : la 43e, même
+  // lue dans le fichier courant, prend les portraits figés de son archive.
+  const vues = afficher44e
+    ? construireVuesAssemblee(rows, deputes, portraits, affiliations)
+    : construireVuesAssemblee(rows, deputes, portraits43e, affiliations, RACINE_PORTRAITS_ARCHIVE_43E);
 
   return {
-    ...construireVuesAssemblee(rows, deputes, portraits, affiliations),
+    ...vues,
     ...(afficher44e ? { legislatureCourante: numero } : {}),
     ...(prochaine ? { prochaine } : {}),
   };
