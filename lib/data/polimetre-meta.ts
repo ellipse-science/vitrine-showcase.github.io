@@ -54,7 +54,9 @@ export type PromiseView = {
   verdictLabel: string;
   category: string | null; // full French category name
   salienceIndex: number;
-  url: string;
+  /** Page de la promesse sur le site du Polimètre ; absente tant que le
+   *  Polimètre n'a pas de page pour le mandat (PQ 2026). */
+  url?: string;
   trend: Trend;
   // One article per outlet that covered the promise — the most recent piece
   // from each (recency is reliable within an outlet). Ordered by canonical outlet

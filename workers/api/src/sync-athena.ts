@@ -34,6 +34,7 @@ import {
   keepHeadlineRow,
   normalizeValue,
   polimetreCutoff,
+  rowsUpTo,
 } from './transforms'
 
 // Fenêtres de rétention et normalisation : voir ./transforms. Réexportées ici
@@ -127,18 +128,29 @@ async function fetchTableRows(
     rows.push(row.map(normalizeValue))
   }
 
+  // Série figée (freeze_at) : on écarte les instantanés postérieurs AVANT le
+  // filtre, pour que sa fenêtre s'ancre sur la date de gel. Aucune ligne à
+  // cette date ou avant = erreur : un module vide se lirait comme une panne.
+  let gardees = rows
+  if (spec.freeze_at) {
+    const idx = spec.cols.indexOf('week_end_date')
+    if (idx === -1) throw new Error(`${spec.name} : freeze_at exige la colonne week_end_date`)
+    gardees = rowsUpTo(rows, idx, spec.freeze_at)
+    if (gardees.length === 0) throw new Error(`${spec.name} : aucune ligne au ${spec.freeze_at} ou avant`)
+  }
+
   if (spec.filter === 'polimetre_plus_recent') {
     const idx = spec.cols.indexOf('week_end_date')
     if (idx !== -1) {
-      const cutoff = polimetreCutoff(rows.map((r) => r[idx]))
+      const cutoff = polimetreCutoff(gardees.map((r) => r[idx]))
       if (cutoff !== null) {
-        return rows.filter((r) => r[idx] !== null && (r[idx] as string) >= cutoff)
+        return gardees.filter((r) => r[idx] !== null && (r[idx] as string) >= cutoff)
       }
     }
   } else if (spec.filter) {
     console.warn(`filtre inconnu « ${spec.filter} » : passage tel quel`)
   }
-  return rows
+  return gardees
 }
 
 /** Une requête Postgres, bornée par PG_REQUETE_MS : le client Neon parle par

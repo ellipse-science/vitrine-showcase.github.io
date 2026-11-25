@@ -41,6 +41,14 @@ export function keepHeadlineRow(dateUtc: string | null, cutoff: string): boolean
   return dateUtc !== null && dateUtc.slice(0, 10) >= cutoff
 }
 
+/** Gel d'une série à une date (clé `freeze_at`) : garde les lignes dont la date
+ *  (AAAA-MM-JJ, éventuellement suivie d'une heure) est au plus `freezeAt`.
+ *  Appliqué AVANT le filtre de la table, pour que la fenêtre de rétention
+ *  s'ancre sur la date de gel et non sur le dernier instantané publié. */
+export function rowsUpTo<T extends (string | null)[]>(rows: T[], idx: number, freezeAt: string): T[] {
+  return rows.filter((r) => r[idx] !== null && (r[idx] as string).slice(0, 10) <= freezeAt)
+}
+
 /** Fenêtre polimetre : ancrée sur la DONNÉE (dernier snapshot), pas sur
  *  l'horloge — si le raffineur amont cessait de publier, une fenêtre horloge
  *  viderait la table ligne à ligne et le module disparaîtrait sans bruit. */
