@@ -815,9 +815,10 @@ function jourEnLettres(iso: string): string {
     : d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", timeZone: "UTC" });
 }
 
-/** Les 20 prises de la bague, comme sur le jog d'un contrôleur : de petits
- *  pavés arrondis tout autour du plateau, un tous les 18°. */
-const PRISES = Array.from({ length: 20 }, (_, k) => (k * 360) / 20);
+/** Les 12 prises de la bague, comme sur le jog d'un contrôleur : de petits
+ *  pavés arrondis, un tous les 30°. Douze et non vingt : assez pour dire
+ *  « jog », pas assez pour faire une texture qui tire l'œil. */
+const PRISES = Array.from({ length: 12 }, (_, k) => (k * 360) / 12);
 
 /** Un arc de cercle centré sur le plateau, de midi dans le sens horaire, sur
  *  `part` (0 à 1) du tour. Sert à la jauge de l'écran. */
@@ -905,7 +906,8 @@ function Deck({
 }
 
 /** Le dessin du jog, de l'extérieur vers le centre : la bague à prises (qui
- *  tourne), la gorge, le plateau et son liseré, puis l'écran de l'enjeu. Les
+ *  tourne), la gorge, le plateau et son liseré, puis l'écran de l'enjeu. Pas de sillons :
+ *  ils ajoutaient de la texture sans rien dire. Les
  *  couleurs viennent de `--enjeu`, posée sur `.deck` (voir `globals.css`). */
 function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
   return (
@@ -916,30 +918,27 @@ function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
           <rect
             key={angle}
             className="deck-prise"
-            x="47.2"
-            y="2.6"
-            width="5.6"
-            height="4.6"
-            rx="1.6"
+            x="46.6"
+            y="2.8"
+            width="6.8"
+            height="4.2"
+            rx="2.1"
             transform={`rotate(${angle} 50 50)`}
           />
         ))}
       </g>
       <circle className="deck-gorge" cx="50" cy="50" r="41.8" />
       <circle className="deck-disque" cx="50" cy="50" r="40.4" />
-      {[36.5, 31].map((r) => (
-        <circle key={r} className="deck-sillon" cx="50" cy="50" r={r} />
-      ))}
       <circle className="deck-ecran" cx="50" cy="50" r="24.5" />
       {enjeu && (
         <>
           <circle className="deck-jauge-fond" cx="50" cy="50" r="22" />
           <path className="deck-jauge" d={arc(22, enjeu.pct / 100)} />
           <SymboleEnjeu libelle={enjeu.label} className="deck-symbole" svg={{ x: 44, y: 32, taille: 12 }} />
-          <text className="deck-enjeu-nom" x="50" y="54.2" textAnchor="middle">
+          <text className="deck-enjeu-nom" x="50" y="55" textAnchor="middle">
             {libelleEnjeuCourt(enjeu.label)}
           </text>
-          <text className="deck-enjeu-part" x="50" y="62.6" textAnchor="middle">
+          <text className="deck-enjeu-part" x="50" y="63" textAnchor="middle">
             {`${enjeu.pct}\u00a0%`}
           </text>
         </>
