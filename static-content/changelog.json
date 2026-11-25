@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1037,
+    "date": "2026-11-25T02:37:47Z",
+    "note": "Le module de l'Assemblée nationale présente la nouvelle Assemblée élue le 5 octobre : ses 127 député·es, en attendant la première séance du 1er décembre. La législature précédente reste accessible d'un clic.",
+    "version": "2.57.0-beta.0"
+  },
+  {
     "pr": 1045,
     "date": "2026-11-25T02:34:40Z",
     "note": "Les cartes de député distinguent les élus qui portent le même nom, même quand leur portrait manque.",
