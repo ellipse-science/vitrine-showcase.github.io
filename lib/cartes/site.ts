@@ -11,11 +11,13 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { buildEnjeuStack, type DeputyRow, type PeriodKey } from "@/lib/data/assemblee";
+import { buildEnjeuStack, type DeputyRow, type LegislatureEnAttente, type PeriodKey, type PeriodView } from "@/lib/data/assemblee";
+import { rangeesEnAttente } from "@/lib/data/assembleeAttente";
 import { chargerSources, etiquettesPeriodes, fusionnerLignesParParti, retirerExpressions, type DonneesAssemblee } from "./donnees";
-import { slugCirco } from "./fonctions";
+import { cleDistrict, slugCirco } from "./fonctions";
+import { PROFIL_44E, type ProfilLegislature } from "./legislatures";
 import { construireJeu } from "./jeu";
-import { PERIODES, type Carte, type Etiquette, type Serie } from "./types";
+import { PERIODES, type Carte, type Etiquette, type Mandats, type Serie } from "./types";
 
 /** Une carte sans son DeputyRow : `elu` = slugCirco(deputy). */
 export type CarteSite = Omit<Carte, "deputy"> & { elu: string };
@@ -116,4 +118,39 @@ async function construireCartesSite(data: DonneesAssemblee, dossier?: string): P
   const signatures = (await fs.readdir(path.resolve(process.cwd(), "public/images/cartes")).catch(() => [] as string[]))
     .map((f) => f.match(/^signature-(.+)\.png$/)?.[1]).filter((x): x is string => !!x);
   return { parPeriode, libelles: await etiquettesPeriodes(dossier), signatures, personnes, maxAbs };
+}
+
+/** LES CARTES D'UNE LÉGISLATURE EN ATTENTE DE SA PREMIÈRE SÉANCE (Jules,
+ *  25 nov.) : la même fabrique, avec les sources et le profil de la nouvelle
+ *  législature. Pas de parole, donc pas de verso ni de classement (toutes
+ *  communes, sauf la première ministre et la présidence : construireJeu).
+ *  Le mandat (« Élu le 5 octobre 2026 ») vient des fiches tirées de la
+ *  dimension, faute d'affiliations publiées par Agora. */
+export async function preparerCartesAttente(vue: LegislatureEnAttente, profil: ProfilLegislature = PROFIL_44E): Promise<CartesSite> {
+  const rows = rangeesEnAttente(vue);
+  const v = (period: PeriodKey): PeriodView => ({ period, tabLabel: "", subtitle: "", lastUpdated: "", rows });
+  const data = { periods: { legislature: v("legislature"), session: v("session"), last_pdq: v("last_pdq") } } as DonneesAssemblee;
+  const sources = await chargerSources(undefined, profil);
+  const mandats: Mandats = { parNomEtDistrict: new Map(), parDistrict: new Map(), parNom: new Map() };
+  for (const f of sources.fonctions) {
+    if (!f.debut_mandat) continue;
+    const m = { debut: f.debut_mandat, motif: f.debut_mandat === profil.axe.debut ? "election" : "byelection" };
+    mandats.parNom.set(cleDistrict(f.nom), m);
+    if (f.circonscription) {
+      mandats.parDistrict.set(cleDistrict(f.circonscription), m);
+      mandats.parNomEtDistrict.set(`${cleDistrict(f.nom)}@${cleDistrict(f.circonscription)}`, m);
+    }
+  }
+  const { cartes, serie } = construireJeu(data, "legislature", { ...sources, mandats }, { profil });
+  return {
+    parPeriode: { legislature: { serie, cartes: cartes.map(({ deputy, ...reste }) => ({ ...reste, elu: slugCirco(deputy) })) } },
+    libelles: {
+      legislature: { type: "Législature", date: profil.annees },
+      session: { type: "Session", date: "" },
+      last_pdq: { type: "Dernière séance", date: "" },
+    },
+    signatures: [],
+    personnes: {},
+    maxAbs: { legislature: 0, session: 0, last_pdq: 0 },
+  };
 }

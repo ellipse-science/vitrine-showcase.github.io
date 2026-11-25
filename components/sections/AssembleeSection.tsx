@@ -1,5 +1,5 @@
 import { DOSSIER_ARCHIVE_ASSEMBLEE_43E, loadArchiveAssemblee43e, loadAssemblee, type AssembleeData } from "@/lib/data/assemblee";
-import { preparerCartesSite } from "@/lib/cartes/site";
+import { preparerCartesAttente, preparerCartesSite } from "@/lib/cartes/site";
 import { AssembleeClient } from "@/components/interactive/AssembleeClient";
 
 /** Ce que la page envoie au navigateur. `issueShares` (parts brutes des
@@ -34,5 +34,11 @@ export async function AssembleeSection({ asOfIso, editionKey }: { asOfIso?: stri
     cartes: await preparerCartesSite(archive, DOSSIER_ARCHIVE_ASSEMBLEE_43E),
     data: pourLeNavigateur(archive),
   } : undefined;
-  return <AssembleeClient data={pourLeNavigateur(data)} cartes={cartes} editionKey={editionKey} archive43e={archive43e} />;
+  // La nouvelle Assemblée en attente de sa première séance : ses cartes, par
+  // la même fabrique, avec les sources de sa législature.
+  const cartesProchaine = data.prochaine ? await preparerCartesAttente(data.prochaine) : undefined;
+  return (
+    <AssembleeClient data={pourLeNavigateur(data)} cartes={cartes} editionKey={editionKey} archive43e={archive43e}
+      cartesProchaine={cartesProchaine} />
+  );
 }
