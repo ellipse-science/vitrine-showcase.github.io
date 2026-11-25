@@ -10988,6 +10988,27 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
   fill: rgba(243, 236, 221, 0.75);
 }
 .deck-carre--sans-enjeu .deck-enjeu-nom { fill: rgba(243, 236, 221, 0.6); }
+/* LE CHÂSSIS (2026-11-25, retour de Jules) : un filet de 1 px ne disait pas
+   « console de DJ ». Le cadre prend le graphite des decks, en bord épais à
+   coins vifs (arrondis, il rappelait trop le module des réseaux sociaux), avec un liseré clair à
+   l'intérieur, le même que celui des plateaux. Le dedans reste papier : le
+   châssis encadre, il n'assombrit pas le module. Ombre courte et basse, pour
+   poser l'appareil sur la page sans le faire flotter. Pas de vis aux coins :
+   essayées, elles faisaient décor et tombaient sur la marque d'aide.
+
+   Sur téléphone, bord + rembourrage latéral restent à 9 px, comme avant
+   (1 + 8) : un bord plus épais rognait la graduation « 100 % ». */
+.pupitre {
+  border: 7px solid #2A2622;
+  box-shadow:
+    inset 0 0 0 1px rgba(243, 236, 221, 0.9),
+    inset 0 0 0 2px rgba(28, 25, 23, 0.14),
+    0 14px 22px -18px rgba(28, 25, 23, 0.55);
+}
+@media (max-width: 640px) {
+  .pupitre { border-width: 3px; padding-left: 6px; padding-right: 6px; }
+}
+
 /* Le sigle du parti, sous le plateau : la même pastille que le ruban sous
    chaque colonne du vumètre, pour qu'un parti se reconnaisse d'un coup d'œil
    des deux côtés. */
