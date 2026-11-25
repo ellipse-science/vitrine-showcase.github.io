@@ -10932,11 +10932,12 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 
 /* ─────────────────────────────────────────────────────────────────────────
    PARTIS — LA CONSOLE SEULE (2026-11-24).
-   Les decks rapetissent et ne montrent plus que leur VITESSE DE LECTURE,
-   réglée sur la part du parti (`--tour`, secondes par tour, calculée par
-   `dureeDuTour` dans PartisCouvertureClient). Le capuchon et l'aiguille
-   tournent ensemble : les sillons sont symétriques, seuls ces deux repères
-   rendent la rotation visible. Le fader écrit les noms complets.
+   Les decks tournent tous à la même vitesse, un tour en 1,8 s : ils sont « en
+   lecture », la rotation ne mesure rien (elle redisait la part jusqu'au
+   2026-11-25). Ce qu'ils apprennent est écrit dessous : l'enjeu qui joue pour
+   le parti (`.deck-enjeu`). Le capuchon et l'aiguille tournent ensemble : les
+   sillons sont symétriques, seuls ces deux repères rendent la rotation
+   visible. Le fader écrit les noms complets.
    ───────────────────────────────────────────────────────────────────────── */
 .regie {
   --diametre-vinyle: 132px;
@@ -10946,11 +10947,26 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 .deck-carre { max-width: var(--diametre-vinyle); }
 .deck-carre--lecture .deck-jog-cap,
 .deck-carre--lecture .deck-jog::after {
-  animation: deck-lecture var(--tour, 1.8s) linear infinite;
+  animation: deck-lecture 1.8s linear infinite;
 }
 .deck-carre--lecture .deck-jog-cap { transform-origin: 50% 50%; }
-.deck-carre--arret .deck-jog-cap,
-.deck-carre--arret .deck-jog::after { animation: none; }
+/* Le titre du morceau : l'enjeu, sous le disque. Même famille que les noms du
+   fader (Plex Mono), mais en casse normale : c'est un libellé à lire, pas une
+   étiquette d'appareil. Deux lignes au plus, pour que « Souveraineté et
+   constitution » tienne sans pousser le deck voisin. */
+.deck-enjeu {
+  margin: 0;
+  max-width: var(--diametre-vinyle);
+  min-height: calc(2 * 1.3em);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: var(--ink);
+}
+.deck-enjeu svg { width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; }
+.deck-enjeu--aucun { color: var(--ink-softer); }
 @keyframes deck-lecture { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
   .deck-carre--lecture .deck-jog-cap,

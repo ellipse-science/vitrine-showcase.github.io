@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef } from "react";
-import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, Indisponibilite } from "@/lib/data/parties";
+import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, Indisponibilite, EnjeuView } from "@/lib/data/parties";
 import { TOUS_MEDIAS, MEDIA_PANEL_QC, MEDIA_DE, MEDIA_DANS, MEDIA_LABELS, MEDIA_ORDER } from "@/lib/medias";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
+import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
+import { couleurEnjeu, libelleEnjeuCourt } from "@/lib/enjeux";
 
 /* LE MODULE RÉDUIT À SA CONSOLE (2026-11-24, demande de Jules).
  *
@@ -14,6 +16,12 @@ import { DoomGame } from "@/components/interactive/DoomGame";
  * la console, le vumètre, les quatre decks et le sélecteur de source, pilotés
  * par un filtre Jour / Semaine / Mois posé à droite du titre, comme sur les
  * autres modules. La vue de départ est Semaine.
+ *
+ * LES DECKS MONTRENT L'ENJEU QUI JOUE (2026-11-25, retour de Jules). Leur
+ * vitesse suivait la part du parti, que la hauteur de sa colonne donne déjà.
+ * Chaque disque porte maintenant l'enjeu le plus associé au parti dans la
+ * dernière journée publiée, tous médias confondus, et tourne à vitesse fixe :
+ * la rotation dit « en lecture », elle ne mesure rien.
  *
  * `overall` existe toujours dans `PartiesData` : les scripts sociaux
  * (`scripts/social/partis*.ts`) le lisent. Le module ne l'affiche plus. */
@@ -171,6 +179,12 @@ export function PartisCouvertureClient({
   // reste vide — la lecture juste.
   const decks: (RowView | null)[] = [0, 1, 2, 3].map((i) => visibleRows[i] ?? null);
 
+  // L'enjeu d'un deck vient TOUJOURS de l'agrégat : le raffineur ne croise pas
+  // parti × enjeu × média, donc les vues par média n'en portent aucun. Il est
+  // le même pour Jour, Semaine et Mois (dernière journée publiée).
+  const enjeuQuiJoue = (row: RowView | null): EnjeuView | null =>
+    row ? (data.ranges[range].rows.find((r) => r.key === row.key)?.enjeux.find((e) => !e.reste && e.pct > 0) ?? null) : null;
+
   /** Une URL représentative est publiée par média, pas par article. Le verso
    * ne prétend donc pas montrer tous les articles : il liste exactement les
    * sources traçables dans l'instantané affiché. */
@@ -258,27 +272,7 @@ export function PartisCouvertureClient({
       <div className="pupitre">
         <div className="pupitre-aide">
           <InfoTip size="lg" label="Comment lire cette visualisation">
-            <b>Comment lire cette visualisation&nbsp;:</b>
-            <br />
-            <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la part du temps que
-            les médias lui consacrent <i>quand ils parlent d&apos;un parti</i>, et non sur
-            l&apos;ensemble de l&apos;actualité, où les partis occupent une place bien plus
-            petite. Les cinq colonnes se partagent 100&nbsp;%.
-            <br />
-            <br />• Les quatre <b>disques</b> sont les quatre partis les plus présents. Leur
-            vitesse de lecture suit leur part&nbsp;: plus on parle d&apos;un parti, plus son
-            disque tourne vite.
-            <br />
-            <br />• Le curseur <b>Source</b> change de média&nbsp;: les hauteurs et les vitesses
-            se recalculent sur les Unes de ce média seul.
-            <br />
-            <br />• <b>Sourdine</b>&nbsp;: le parti dont on parle le moins sur la période, quelle
-            que soit sa part. Sa colonne reste affichée en gris. À égalité au plus bas, les
-            deux y passent.
-            <br />
-            <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
-              En savoir plus sur la méthodologie →
-            </a>
+            <ModeEmploi />
           </InfoTip>
         </div>
 
@@ -286,8 +280,8 @@ export function PartisCouvertureClient({
             gauche porte les rangs 1 et 3, celle de droite les rangs 2 et 4. */}
         <div className={`regie${partiSources ? " regie--sources-ouvertes" : ""}`}>
           <div className="regie-flanc regie-flanc--gauche">
-            <Deck row={decks[0]} rang={1} indisponible={data.indisponible} selection={partiSources} />
-            <Deck row={decks[2]} rang={3} indisponible={data.indisponible} selection={partiSources} />
+            <Deck row={decks[0]} rang={1} enjeu={enjeuQuiJoue(decks[0])} indisponible={data.indisponible} selection={partiSources} />
+            <Deck row={decks[2]} rang={3} enjeu={enjeuQuiJoue(decks[2])} indisponible={data.indisponible} selection={partiSources} />
           </div>
 
           <div className="regie-centre">
@@ -306,8 +300,8 @@ export function PartisCouvertureClient({
           </div>
 
           <div className="regie-flanc regie-flanc--droite">
-            <Deck row={decks[1]} rang={2} indisponible={data.indisponible} selection={partiSources} />
-            <Deck row={decks[3]} rang={4} indisponible={data.indisponible} selection={partiSources} />
+            <Deck row={decks[1]} rang={2} enjeu={enjeuQuiJoue(decks[1])} indisponible={data.indisponible} selection={partiSources} />
+            <Deck row={decks[3]} rang={4} enjeu={enjeuQuiJoue(decks[3])} indisponible={data.indisponible} selection={partiSources} />
           </div>
         </div>
 
@@ -326,6 +320,41 @@ export function PartisCouvertureClient({
       </div>
 
       <div className="module-last-updated">{data.lastUpdated}</div>
+    </>
+  );
+}
+
+/** Le mode d'emploi de la console, dans l'infobulle « Comment lire ». Une
+ *  rubrique par élément affiché, chacun avec ce qu'il apprend de plus que les
+ *  autres. Exporté pour le test, qui ne peut pas ouvrir l'infobulle. */
+export function ModeEmploi() {
+  return (
+    <>
+      <b>Comment lire cette visualisation&nbsp;:</b>
+      <br />
+      <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la part du temps que
+      les médias lui consacrent <i>quand ils parlent d&apos;un parti</i>, et non sur
+      l&apos;ensemble de l&apos;actualité, où les partis occupent une place bien plus
+      petite. Les cinq colonnes se partagent 100&nbsp;%.
+      <br />
+      <br />• Le petit <b>cadran</b> sous chaque colonne donne le ton des phrases qui
+      nomment le parti&nbsp;: aiguille à gauche (rouge), défavorable&nbsp;; à droite
+      (vert), favorable&nbsp;; au centre, neutre.
+      <br />
+      <br />• Les quatre <b>disques</b> sont les quatre partis les plus présents. Sous
+      chacun, l&apos;enjeu dont on parle le plus à son sujet dans la dernière journée
+      publiée, tous médias confondus.
+      <br />
+      <br />• Le curseur <b>Source</b> change de média&nbsp;: les colonnes et les cadrans
+      se recalculent sur les Unes de ce média seul.
+      <br />
+      <br />• <b>Sourdine</b>&nbsp;: le parti dont on parle le moins sur la période, quelle
+      que soit sa part. Sa colonne reste affichée en gris. À égalité au plus bas, les
+      deux y passent.
+      <br />
+      <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
+        En savoir plus sur la méthodologie →
+      </a>
     </>
   );
 }
@@ -776,30 +805,28 @@ function Tranche({
 }
 
 
-/**
- * LA VITESSE DE LECTURE D'UN DISQUE, en secondes par tour.
- *
- * Proportionnelle à la part du parti : à part égale entre cinq partis (20 %),
- * un tour en 1,8 s, soit le 33 tours d'une platine. Deux fois plus de place,
- * deux fois plus vite. Bornée pour rester lisible : jamais plus vite qu'un
- * tour en 0,45 s (un parti seul en Une), jamais plus lent qu'un tour en 20 s.
- * Une part nulle ne tourne pas : `null`.
- */
-const TOUR_A_PART_EGALE_S = 1.8;
-export function dureeDuTour(sovPct: number): number | null {
-  if (!(sovPct > 0)) return null;
-  return Math.min(20, Math.max(0.45, (TOUR_A_PART_EGALE_S * 20) / sovPct));
+/** « 2026-11-23 » → « 23 novembre », pour dire de quel jour vient un enjeu. */
+function jourEnLettres(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", timeZone: "UTC" });
 }
 
 /**
- * Un deck — un vinyle qui ne montre QU'UNE chose : la vitesse à laquelle il
- * tourne, réglée sur la part du parti (`dureeDuTour`). Le capuchon porte la
- * couleur et le sigle du parti, rien d'autre : plus de pochette, plus de
- * verso, plus de rang (2026-11-24).
+ * Un deck — un vinyle qui « joue » l'enjeu dont on parle le plus à propos du
+ * parti : le titre du morceau en cours, écrit sous le disque. C'est la seule
+ * place du module où l'on lit DE QUOI on parle ; le vumètre dit COMBIEN.
+ *
+ * Le disque tourne à vitesse fixe, la même pour tous : il est en lecture,
+ * rien de plus. Sa vitesse suivait la part du parti, ce que la colonne disait
+ * déjà (retiré le 2026-11-25). Sans enjeu identifié ce jour-là (seulement
+ * « Autres enjeux », ou rien de publié), le titre est un tiret.
  */
 function Deck({
   row,
   rang,
+  enjeu,
   indisponible,
   selection,
 }: {
@@ -807,18 +834,17 @@ function Deck({
   /** La position du deck, de 1 à 4. Ne s'affiche plus : elle ne sert qu'à
    *  l'infobulle du deck vide. */
   rang: number;
+  enjeu: EnjeuView | null;
   indisponible: Indisponibilite | null;
   selection?: PartyKey | null;
 }) {
-  const tour = row && !indisponible ? dureeDuTour(row.sovPct) : null;
-
   if (indisponible || !row) {
     return (
       <div
         className={`deck deck--vide${indisponible ? " deck--suspendu" : ""}`}
         title={
           indisponible
-            ? "La mesure est suspendue : voir l'avis en tête du module."
+            ? "La mesure est suspendue : voir l'avis en tête du module."
             : `Aucun parti au ${rang}${rang === 1 ? "er" : "e"} rang sur cette période.`
         }
       >
@@ -831,22 +857,17 @@ function Deck({
     );
   }
 
-  const annonce = `${row.fullLabel} : ${row.sovPct} % du temps consacré aux partis${
-    tour ? `, un tour en ${tour.toFixed(1).replace(".", ",")} s` : ", disque à l'arrêt"
-  }.`;
+  const quand = enjeu?.dateSource ? `le ${jourEnLettres(enjeu.dateSource)}` : "dans la dernière journée publiée";
+  const annonce = enjeu
+    ? `${row.fullLabel} : on en parle surtout sous l'angle « ${enjeu.label} » (${enjeu.pct} % de sa couverture ${quand}, tous médias confondus).`
+    : `${row.fullLabel} : aucun enjeu dominant identifié ${quand}.`;
 
   return (
     <div
       className={`deck${selection && selection !== row.key ? " deck--attenue" : ""}`}
       style={{ ["--party" as string]: row.color }}
     >
-      <div
-        className={`deck-carre deck-carre--inerte deck-carre--lecture${tour ? "" : " deck-carre--arret"}`}
-        role="img"
-        aria-label={annonce}
-        title={annonce}
-        style={tour ? { ["--tour" as string]: `${tour.toFixed(2)}s` } : undefined}
-      >
+      <div className="deck-carre deck-carre--inerte deck-carre--lecture" role="img" aria-label={annonce} title={annonce}>
         <span className="deck-jog" aria-hidden="true">
           <svg className="deck-jog-cap" viewBox="0 0 100 100" aria-hidden="true">
             <clipPath id={`cap-${row.key}`}>
@@ -863,6 +884,20 @@ function Deck({
           </svg>
         </span>
       </div>
+      <p className={`deck-enjeu${enjeu ? "" : " deck-enjeu--aucun"}`} aria-hidden="true" title={annonce}>
+        {/* Le symbole et la couleur de l'enjeu sont ceux du reste du site
+            (fond neutre → le glyphe prend la couleur de l'enjeu), et le
+            libellé est la forme courte : « Santé », pas « Santé et
+            politiques sociales ». Le titre complet reste dans l'infobulle. */}
+        {enjeu ? (
+          <>
+            <SymboleEnjeu libelle={enjeu.label} style={{ color: couleurEnjeu(enjeu.label) }} />
+            {libelleEnjeuCourt(enjeu.label)}
+          </>
+        ) : (
+          "—"
+        )}
+      </p>
     </div>
   );
 }
