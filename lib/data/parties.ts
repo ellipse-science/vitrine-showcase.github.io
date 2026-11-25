@@ -492,13 +492,7 @@ export type Indisponibilite = {
   joursDeRetard: number;
 };
 
-/** Le dernier bloc de 4 h publié pour la journée la plus récente.
- *
- *  Sert au CONTRAT D'ILLUSTRATION (`data/partis-selection.json`) : le raffineur
- *  des pochettes a besoin de savoir quelle édition il illustre, pour ranger
- *  l'image sous le bon jour et pour savoir quand la journée est close. `null`
- *  quand la table intra-journée n'est pas publiée — le contrat le dit alors,
- *  plutôt que d'inventer un bloc. */
+/** Dernier bloc de 4 h publié pour la journée la plus récente. */
 export type BlocCourant = {
   /** Jour de Montréal du bloc, « 2026-08-30 ». */
   date: string;
