@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1055,
+    "date": "2026-11-25T15:25:38Z",
+    "note": "Le module sur la couverture médiatique des partis affiche maintenant leur rang près du sigle et garde les platines à la même place. Sélectionner une platine ou une colonne donne accès aux mêmes articles sources.",
+    "version": "2.59.0-beta.1"
+  },
+  {
     "pr": 1053,
     "date": "2026-11-25T15:12:37Z",
     "note": "Avant sa première séance, chaque élu·e de la nouvelle Assemblée a sa carte de collection : sa fonction, sa circonscription et son numéro. Les statistiques arriveront avec les premiers débats.",
