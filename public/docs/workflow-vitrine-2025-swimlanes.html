@@ -572,7 +572,7 @@
 <body>
     <div class="container">
         <h1>📊 Les pipelines de la Vitrine démocratique</h1>
-        <p class="subtitle">D'où viennent les données de chaque module, et à quelle heure chaque étape tourne (heure de Montréal) • Mis à jour le 22 novembre 2026 • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
+        <p class="subtitle">D'où viennent les données de chaque module, et à quelle heure chaque étape tourne (heure de Montréal) • Mis à jour le 24 novembre 2026 • <a href="https://ellipse.science/vitrine-showcase.github.io/" target="_blank" rel="noopener noreferrer" style="color: #4A90E2; text-decoration: none; font-weight: bold;">🌐 Voir le site vitrine</a></p>
 
         <details class="entete-details">
             <summary>Historique des mises à jour et notes de lecture</summary>
@@ -1111,7 +1111,7 @@
                 <div class="arrow">→</div>
                 <div class="node node-refiner" data-type="refiner" data-refiner="sonar-pipeline" data-ecr="sonar-pipeline" data-active="true" data-cron="08:15,TUE 08:00">
                     sonar-pipeline.R
-                    <div class="node-detail">Fraîcheur, retard sur la source, décalage de chaîne, couverture du manifest. Une seconde fonction tourne sur la même image, choisie par le payload&nbsp;: le rapport hebdomadaire (<code>mode: report</code>), qui publie même sans problème détecté. C'est la preuve de vie du sonar.</div>
+                    <div class="node-detail">Fraîcheur, retard sur la source, décalage de chaîne, couverture du manifest, composition de la dimension des député·es contre l'index de l'ANQ (à partir du déploiement d'aws-refiners#646). Une seconde fonction tourne sur la même image, choisie par le payload&nbsp;: le rapport hebdomadaire (<code>mode: report</code>), qui publie même sans problème détecté. C'est la preuve de vie du sonar.</div>
                     <div class="node-schedule">⏰ 08:15 (quotidien) • rapport hebdo mardi 08:00</div>
                     <div class="info-badge">ℹ️ Cliquer pour détails</div>
                 </div>
@@ -2034,7 +2034,7 @@
                     title: 'Refiner: sonar-pipeline.R',
                     description: 'Le méta-sonar : il observe les datamarts et en déduit la santé des AUTRES raffineurs. Remplace agora-sonar, qui n\'a jamais été planifié.',
                     details: [
-                        '📥 SOURCES: les tables des datamarts (DEV) + les sources de référence déclarées au manifest (ex. a-qc-parliament-debates en PROD)',
+                        '📥 SOURCES: les tables des datamarts (DEV) + les sources de référence déclarées au manifest (ex. a-qc-parliament-debates en PROD) + l\'index des député·es de l\'ANQ (assnat.qc.ca, une page par passe) + les mandats de la dimension des député·es (datawarehouse dim-qc-parliament-mandates si elle existe, sinon <span class="badge-dev">DEV</span>/datamarts dim_qc_parliament-mandates)',
                         '📤 OUTPUT: <span class="badge-dev">DEV</span>/datamarts (sonar) - Table pipeline_health',
                         '⏰ Quotidien 08:15 — après le cycle de 07:xx, pour lire un état stabilisé',
                         '',
@@ -2043,9 +2043,10 @@
                         '• Retard sur la SOURCE — pour les corpus intermittents : hors séance parlementaire, sortie et source gèlent ensemble, donc aucune alerte. À l\'horloge, ces raffineurs paraîtraient morts 3 mois par année.',
                         '• Décalage de chaîne — un étage radar qui reste derrière son amont',
                         '• Couverture du manifest — table publiée que personne n\'a déclarée',
+                        '• Composition de la dimension des député·es (à partir du déploiement d\'aws-refiners#646) — l\'index de l\'ANQ contre les mandats ouverts ce jour-là, siège par siège : même personne, même parti. 🔴 la législature en cours manque à la dimension ; 🟠 un siège diverge (défection, partielle ou démission non saisie). Il ne corrige rien : il dit à un humain quand mettre la dimension à jour.',
                         '',
                         '🔕 ANTI-BRUIT: alerte à l\'APPARITION d\'un problème et à sa résolution, jamais à chaque passe.',
-                        '📢 Slack routé vers qui répare: corpus médias → #02_radar-plus_sonar, décideurs → #02__agora-plus_sonar, modules du site (scores d\'enjeux, partis, Hot 20, Polimètre+) → #02_vitrine_sonar',
+                        '📢 Slack routé vers qui répare: corpus médias → #02_radar-plus_sonar, décideurs → #77_agora-plus_sonar (même canal que l\'ancien #02__agora-plus_sonar, renommé), modules du site (scores d\'enjeux, partis, Hot 20, Polimètre+) → #02_vitrine_sonar',
                         '🔎 En-tête de chaque passe: N tables surveillées · M déclarées au manifest mais non vérifiées — la dette de surveillance est dite, pas maquillée.'
                     ]
                 },

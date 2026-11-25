@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1031,
+    "date": "2026-11-25T02:45:43Z",
+    "note": "Le diagramme des pipelines décrit une nouvelle vérification : chaque jour, la liste des député·es qu'utilise le site est comparée à celle de l'Assemblée nationale, pour savoir quand la mettre à jour.",
+    "version": null
+  },
+  {
     "pr": 1037,
     "date": "2026-11-25T02:37:47Z",
     "note": "Le module de l'Assemblée nationale présente la nouvelle Assemblée élue le 5 octobre : ses 127 député·es, en attendant la première séance du 1er décembre. La législature précédente reste accessible d'un clic.",
