@@ -471,7 +471,24 @@ const ECUSSONS = new Set<string>(["caq", "plq", "qs", "pq", "pcq"]);
 /** La carte d'un élu de la nouvelle Assemblée : le recto seul (bandeau,
  *  portrait, nom, circonscription, parti). Pas de verso, il n'y a encore
  *  rien à y mesurer. */
-function CarteEnAttente({ deputy, party, color }: { deputy: DeputyRow; party: PartyKey; color: string }) {
+function CarteEnAttente({ deputy, party, color, cartes, contexte }: {
+  deputy: DeputyRow; party: PartyKey; color: string; cartes: CarteSite[]; contexte: ContexteCartes | null;
+}) {
+  // La carte de la fabrique quand le build l'a préparée (preparerCartesAttente) :
+  // le recto seul, qui ne dit rien des débats. Sinon, le recto simple.
+  const slug = slugCirco(deputy);
+  const fiche = cartes.find((c) => c.elu === slug && c.cle === party) ?? cartes.find((c) => c.elu === slug);
+  const carte = useMemo(() => (fiche && contexte ? carteComplete(fiche, deputy, contexte) : null), [fiche, deputy, contexte]);
+  if (carte && contexte) {
+    return (
+      <span className="carte carte--fabrique carte--attente" style={{ ["--pc" as string]: color }}
+        role="group" aria-label={`${deputy.name}, ${party.toUpperCase()}${deputy.circonscription ? `, ${deputy.circonscription}` : ""}`}>
+        <span className="carte-pivot">
+          <span className="carte-recto"><CarteDepute carte={carte} face="recto" contexte={contexte} /></span>
+        </span>
+      </span>
+    );
+  }
   return (
     <span className="carte carte--attente" style={{ ["--pc" as string]: color }}
       role="group" aria-label={`${deputy.name}, ${party.toUpperCase()}${deputy.circonscription ? `, ${deputy.circonscription}` : ""}`}>
@@ -823,7 +840,7 @@ export function AssembleeVestiaire({ rows, shadowRows, cartes = [], contexte = n
                   key={dep.id}
                   style={{ ["--pc" as string]: openRow.color }}
                 >
-                  {attente ? <CarteEnAttente deputy={dep} party={openRow.key} color={openRow.color} /> : <DeputyCardMemo
+                  {attente ? <CarteEnAttente deputy={dep} party={openRow.key} color={openRow.color} cartes={cartes} contexte={contexte} /> : <DeputyCardMemo
                     deputy={dep}
                     party={openRow.key}
                     color={openRow.color}
