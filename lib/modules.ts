@@ -98,7 +98,7 @@ export const MODULES = {
     // Mauve. Les douze couleurs d'enjeu restent celles des enjeux.
     accent: "#6A4872",
     papier: "#E6D6B8",
-    lignes: [{ t: "Les 12 enjeux", accent: true }, { t: "de la campagne" }, { t: "jour après jour" }],
+    lignes: [{ t: "Les 12 enjeux", accent: true }, { t: "de l'actualité" }, { t: "jour après jour" }],
   },
   "partis-et-couverture": {
     nom: "Partis et couverture",

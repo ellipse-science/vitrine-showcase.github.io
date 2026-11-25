@@ -8,7 +8,7 @@ import { PolimetrePlusSection } from "@/components/sections/PolimetrePlusSection
 import { SocialSection } from "@/components/sections/SocialSection";
 import { EditionNav } from "@/components/interactive/EditionNav";
 import { IssueReporter } from "@/components/interactive/IssueReporter";
-import { PromoDatagotchi } from "@/components/interactive/PromoDatagotchi";
+import { GuideDatagotchi } from "@/components/interactive/GuideDatagotchi";
 import { listEditions } from "@/lib/data/headlineEvents";
 import PaletteScrollLab from "@/components/lab/PaletteScrollLab";
 
@@ -73,7 +73,7 @@ export default async function Home() {
 
       <EditionNav editions={editions} />
       <IssueReporter />
-      <PromoDatagotchi surLabo={!isProd} />
+      <GuideDatagotchi surLabo={!isProd} />
     </div>
   );
 }

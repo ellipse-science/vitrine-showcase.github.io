@@ -41,10 +41,11 @@ describe("part de l'attention (module « Les 12 enjeux de la campagne »)", () =
   // `.day.tiles[0]` compare deux périodes différentes, pas deux calculs du
   // même nombre — ce que ce test veut prouver.
   it("annonce sur la carte de partage la part de la tuile de tête", async () => {
-    const top = (await loadTreemap())!.month.tiles[0];
+    // Vue Semaine par défaut depuis la fin de la campagne (prototype 2026-11).
+    const top = (await loadTreemap())!.week.tiles[0];
     const carte = await getShareModuleContent("enjeux-saillants");
 
-    expect(carte.title).toBe("Les 12 enjeux de la campagne");
+    expect(carte.title).toBe("Les 12 enjeux de l'actualité");
     // La carte affiche une décimale (« 19,6 % ») : parseInt la tronquait à 19
     // pendant que Math.round donnait 20 — le test cassait dès que la part
     // finissait par ,5 ou plus (#666). On compare la valeur affichée, à une

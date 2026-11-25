@@ -128,6 +128,22 @@ ISSUES_THEME_TO_CATEGORY <- list(
 
 # Per-table optional filtering, keyed by entry$filter.
 # Add a new branch here when a new table needs row-level trimming.
+# Gel d'une série à une date (clé `freeze_at` de tables.json) : écarte les
+# instantanés postérieurs AVANT apply_filter(), pour que la fenêtre de
+# rétention s'ancre sur la date de gel et non sur le dernier instantané
+# publié. Aucune ligne à cette date ou avant = erreur : un module vide se
+# lirait comme une panne. Même logique que rowsUpTo() dans le Worker.
+apply_freeze <- function(df, freeze_at, name = "") {
+  if (is.null(freeze_at) || !nzchar(freeze_at)) return(df)
+  if (!"week_end_date" %in% names(df)) {
+    stop(name, " : freeze_at exige la colonne week_end_date", call. = FALSE)
+  }
+  wed <- as.Date(substr(as.character(df$week_end_date), 1, 10))
+  df  <- df[!is.na(wed) & wed <= as.Date(freeze_at), , drop = FALSE]
+  if (nrow(df) == 0) stop(name, " : aucune ligne au ", freeze_at, " ou avant", call. = FALSE)
+  df
+}
+
 apply_filter <- function(df, filter_id) {
   if (is.null(filter_id) || !nzchar(filter_id)) return(df)
 
@@ -290,6 +306,7 @@ fetch_table <- function(conn, entry) {
   # octets, donc n'a aucun effet sur une colonne déjà correcte.
   df[] <- lapply(df, function(col) if (is.character(col)) enc2utf8(col) else col)
   df       <- df[, intersect(cols, names(df)), drop = FALSE]
+  df       <- apply_freeze(df, entry$freeze_at, entry$name)
   df       <- apply_filter(df, entry$filter)
   df       <- sort_rows_deterministically(df)
   df
@@ -1014,11 +1031,20 @@ run <- function() {
       write_json_file(df, entry$out)
       message("  -> ", nrow(df), " rows -> ", entry$out)
       list(name = entry$name, status = "ok", rowCount = nrow(df),
-           generatedAt = NOW_UTC, path = entry$out)
+           generatedAt = NOW_UTC, path = entry$out,
+           optional = isTRUE(entry$optional))
     }, error = function(e) {
+      # Table `optional` (tables.json) pas encore créée dans Athena : c'est une
+      # ABSENCE attendue, pas une panne — ex. la série PQ 2026 avant le premier
+      # run de son raffineur. Elle ne pilote pas le heartbeat (cf. core_results).
+      if (isTRUE(entry$optional) && grepl("TABLE_NOT_FOUND", conditionMessage(e))) {
+        message("  -- absente (table optionnelle pas encore publiée)")
+        return(list(name = entry$name, status = "absent", generatedAt = NOW_UTC, optional = TRUE))
+      }
       message("  !! FAILED: ", conditionMessage(e))
       list(name = entry$name, status = "error",
-           error = conditionMessage(e), generatedAt = NOW_UTC)
+           error = conditionMessage(e), generatedAt = NOW_UTC,
+           optional = isTRUE(entry$optional))
     })
 
     results[[length(results) + 1]] <- res
