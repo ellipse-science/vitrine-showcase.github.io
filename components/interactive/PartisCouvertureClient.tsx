@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef } from "react";
-import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, Indisponibilite } from "@/lib/data/parties";
-import { TOUS_MEDIAS, MEDIA_PANEL_QC, MEDIA_DE, MEDIA_DANS, MEDIA_LABELS, MEDIA_ORDER } from "@/lib/medias";
+import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, Indisponibilite, EnjeuView } from "@/lib/data/parties";
+import { TOUS_MEDIAS, MEDIA_PANEL_QC, MEDIA_DE, MEDIA_DANS, MEDIA_LABELS } from "@/lib/medias";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
+import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
+import { couleurEnjeu, libelleEnjeuCourt, COULEUR_ENJEU_DEFAUT } from "@/lib/enjeux";
 
 /* LE MODULE RÉDUIT À SA CONSOLE (2026-11-24, demande de Jules).
  *
@@ -14,6 +16,13 @@ import { DoomGame } from "@/components/interactive/DoomGame";
  * la console, le vumètre, les quatre decks et le sélecteur de source, pilotés
  * par un filtre Jour / Semaine / Mois posé à droite du titre, comme sur les
  * autres modules. La vue de départ est Semaine.
+ *
+ * LES DECKS MONTRENT L'ENJEU QUI JOUE (2026-11-25, retour de Jules). Leur
+ * vitesse suivait la part du parti, que la hauteur de sa colonne donne déjà.
+ * Chaque deck est maintenant peint de la couleur de l'enjeu le plus associé
+ * au parti dans la dernière journée publiée, tous médias confondus, porte son
+ * nom sur le plateau et le sigle du parti dessous. Les decks ne tournent plus :
+ * la rotation distrayait sans rien dire.
  *
  * `overall` existe toujours dans `PartiesData` : les scripts sociaux
  * (`scripts/social/partis*.ts`) le lisent. Le module ne l'affiche plus. */
@@ -171,6 +180,12 @@ export function PartisCouvertureClient({
   // reste vide — la lecture juste.
   const decks: (RowView | null)[] = [0, 1, 2, 3].map((i) => visibleRows[i] ?? null);
 
+  // L'enjeu d'un deck vient TOUJOURS de l'agrégat : le raffineur ne croise pas
+  // parti × enjeu × média, donc les vues par média n'en portent aucun. Il est
+  // le même pour Jour, Semaine et Mois (dernière journée publiée).
+  const enjeuQuiJoue = (row: RowView | null): EnjeuView | null =>
+    row ? (data.ranges[range].rows.find((r) => r.key === row.key)?.enjeux.find((e) => !e.reste && e.pct > 0) ?? null) : null;
+
   /** Une URL représentative est publiée par média, pas par article. Le verso
    * ne prétend donc pas montrer tous les articles : il liste exactement les
    * sources traçables dans l'instantané affiché. */
@@ -258,27 +273,7 @@ export function PartisCouvertureClient({
       <div className="pupitre">
         <div className="pupitre-aide">
           <InfoTip size="lg" label="Comment lire cette visualisation">
-            <b>Comment lire cette visualisation&nbsp;:</b>
-            <br />
-            <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la part du temps que
-            les médias lui consacrent <i>quand ils parlent d&apos;un parti</i>, et non sur
-            l&apos;ensemble de l&apos;actualité, où les partis occupent une place bien plus
-            petite. Les cinq colonnes se partagent 100&nbsp;%.
-            <br />
-            <br />• Les quatre <b>disques</b> sont les quatre partis les plus présents. Leur
-            vitesse de lecture suit leur part&nbsp;: plus on parle d&apos;un parti, plus son
-            disque tourne vite.
-            <br />
-            <br />• Le curseur <b>Source</b> change de média&nbsp;: les hauteurs et les vitesses
-            se recalculent sur les Unes de ce média seul.
-            <br />
-            <br />• <b>Sourdine</b>&nbsp;: le parti dont on parle le moins sur la période, quelle
-            que soit sa part. Sa colonne reste affichée en gris. À égalité au plus bas, les
-            deux y passent.
-            <br />
-            <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
-              En savoir plus sur la méthodologie →
-            </a>
+            <ModeEmploi />
           </InfoTip>
         </div>
 
@@ -286,8 +281,8 @@ export function PartisCouvertureClient({
             gauche porte les rangs 1 et 3, celle de droite les rangs 2 et 4. */}
         <div className={`regie${partiSources ? " regie--sources-ouvertes" : ""}`}>
           <div className="regie-flanc regie-flanc--gauche">
-            <Deck row={decks[0]} rang={1} indisponible={data.indisponible} selection={partiSources} />
-            <Deck row={decks[2]} rang={3} indisponible={data.indisponible} selection={partiSources} />
+            <Deck row={decks[0]} rang={1} enjeu={enjeuQuiJoue(decks[0])} indisponible={data.indisponible} selection={partiSources} />
+            <Deck row={decks[2]} rang={3} enjeu={enjeuQuiJoue(decks[2])} indisponible={data.indisponible} selection={partiSources} />
           </div>
 
           <div className="regie-centre">
@@ -306,8 +301,8 @@ export function PartisCouvertureClient({
           </div>
 
           <div className="regie-flanc regie-flanc--droite">
-            <Deck row={decks[1]} rang={2} indisponible={data.indisponible} selection={partiSources} />
-            <Deck row={decks[3]} rang={4} indisponible={data.indisponible} selection={partiSources} />
+            <Deck row={decks[1]} rang={2} enjeu={enjeuQuiJoue(decks[1])} indisponible={data.indisponible} selection={partiSources} />
+            <Deck row={decks[3]} rang={4} enjeu={enjeuQuiJoue(decks[3])} indisponible={data.indisponible} selection={partiSources} />
           </div>
         </div>
 
@@ -326,6 +321,42 @@ export function PartisCouvertureClient({
       </div>
 
       <div className="module-last-updated">{data.lastUpdated}</div>
+    </>
+  );
+}
+
+/** Le mode d'emploi de la console, dans l'infobulle « Comment lire ». Une
+ *  rubrique par élément affiché, chacun avec ce qu'il apprend de plus que les
+ *  autres. Exporté pour le test, qui ne peut pas ouvrir l'infobulle. */
+export function ModeEmploi() {
+  return (
+    <>
+      <b>Comment lire cette visualisation&nbsp;:</b>
+      <br />
+      <br />• Chaque parti a sa <b>colonne</b>. Sa hauteur indique la part du temps que
+      les médias lui consacrent <i>quand ils parlent d&apos;un parti</i>, et non sur
+      l&apos;ensemble de l&apos;actualité, où les partis occupent une place bien plus
+      petite. Les cinq colonnes se partagent 100&nbsp;%.
+      <br />
+      <br />• Le petit <b>cadran</b> sous chaque colonne donne le ton des phrases qui
+      nomment le parti&nbsp;: aiguille à gauche (rouge), défavorable&nbsp;; à droite
+      (vert), favorable&nbsp;; au centre, neutre.
+      <br />
+      <br />• Les quatre <b>decks</b> sont les quatre partis les plus présents, dont le
+      sigle est écrit dessous. L&apos;écran au centre affiche l&apos;enjeu dont on parle
+      le plus à propos de ce parti dans la dernière journée publiée, tous médias
+      confondus, et son arc la part de la couverture du parti qu&apos;il occupe.
+      <br />
+      <br />• Le curseur <b>Source</b> change de média&nbsp;: les colonnes et les cadrans
+      se recalculent sur les Unes de ce média seul.
+      <br />
+      <br />• <b>Sourdine</b>&nbsp;: le parti dont on parle le moins sur la période, quelle
+      que soit sa part. Sa colonne reste affichée en gris. À égalité au plus bas, les
+      deux y passent.
+      <br />
+      <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/methodologie/#partis-et-couverture`}>
+        En savoir plus sur la méthodologie →
+      </a>
     </>
   );
 }
@@ -776,94 +807,148 @@ function Tranche({
 }
 
 
-/**
- * LA VITESSE DE LECTURE D'UN DISQUE, en secondes par tour.
- *
- * Proportionnelle à la part du parti : à part égale entre cinq partis (20 %),
- * un tour en 1,8 s, soit le 33 tours d'une platine. Deux fois plus de place,
- * deux fois plus vite. Bornée pour rester lisible : jamais plus vite qu'un
- * tour en 0,45 s (un parti seul en Une), jamais plus lent qu'un tour en 20 s.
- * Une part nulle ne tourne pas : `null`.
- */
-const TOUR_A_PART_EGALE_S = 1.8;
-export function dureeDuTour(sovPct: number): number | null {
-  if (!(sovPct > 0)) return null;
-  return Math.min(20, Math.max(0.45, (TOUR_A_PART_EGALE_S * 20) / sovPct));
+/** « 2026-11-23 » → « 23 novembre », pour dire de quel jour vient un enjeu. */
+function jourEnLettres(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", timeZone: "UTC" });
+}
+
+/** Les 12 prises de la bague, comme sur le jog d'un contrôleur : de petits
+ *  pavés arrondis, un tous les 30°. Douze et non vingt : assez pour dire
+ *  « jog », pas assez pour faire une texture qui tire l'œil. */
+const PRISES = Array.from({ length: 12 }, (_, k) => (k * 360) / 12);
+
+/** Un arc de cercle centré sur le plateau, de midi dans le sens horaire, sur
+ *  `part` (0 à 1) du tour. Sert à la jauge de l'écran. */
+function arc(r: number, part: number): string {
+  const p = Math.min(0.9999, Math.max(0, part));
+  const a = p * 2 * Math.PI;
+  const x = 50 + r * Math.sin(a);
+  const y = 50 - r * Math.cos(a);
+  return `M 50 ${50 - r} A ${r} ${r} 0 ${p > 0.5 ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}`;
 }
 
 /**
- * Un deck — un vinyle qui ne montre QU'UNE chose : la vitesse à laquelle il
- * tourne, réglée sur la part du parti (`dureeDuTour`). Le capuchon porte la
- * couleur et le sigle du parti, rien d'autre : plus de pochette, plus de
- * verso, plus de rang (2026-11-24).
+ * Un deck — le jog d'un contrôleur de DJ : bague à prises, plateau graphite
+ * au liseré clair, et au centre l'ÉCRAN, seul élément en couleur. L'écran
+ * prend la couleur de l'enjeu qui « joue » pour le parti, en affiche le
+ * symbole et le nom, et sa jauge en arc donne la part de la couverture du
+ * parti consacrée à cet enjeu. Le sigle du parti est dessous. C'est la seule
+ * place du module où l'on lit DE QUOI on parle ; le vumètre dit COMBIEN.
+ *
+ * Retours de Jules du 2026-11-25 : la rotation du disque entier distrayait,
+ * et un plateau entièrement peint était trop intense. Seule la bague tourne,
+ * lentement ; la couleur se limite à l'écran, comme sur un vrai contrôleur.
+ *
+ * Sans enjeu identifié ce jour-là (seulement « Autres enjeux », ou rien de
+ * publié), le plateau reste gris et porte un tiret.
  */
 function Deck({
   row,
   rang,
+  enjeu,
   indisponible,
   selection,
 }: {
   row: RowView | null;
-  /** La position du deck, de 1 à 4. Ne s'affiche plus : elle ne sert qu'à
+  /** La position du deck, de 1 à 4. Ne s'affiche pas : elle ne sert qu'à
    *  l'infobulle du deck vide. */
   rang: number;
+  enjeu: EnjeuView | null;
   indisponible: Indisponibilite | null;
   selection?: PartyKey | null;
 }) {
-  const tour = row && !indisponible ? dureeDuTour(row.sovPct) : null;
-
   if (indisponible || !row) {
     return (
       <div
         className={`deck deck--vide${indisponible ? " deck--suspendu" : ""}`}
         title={
           indisponible
-            ? "La mesure est suspendue : voir l'avis en tête du module."
+            ? "La mesure est suspendue : voir l'avis en tête du module."
             : `Aucun parti au ${rang}${rang === 1 ? "er" : "e"} rang sur cette période.`
         }
       >
         <div className="deck-carre deck-carre--inerte">
-          <span className="deck-jog deck-jog--vide" aria-hidden="true">
-            <span className="deck-jog-cap deck-jog-cap--vide" />
-          </span>
+          <Plateau />
         </div>
       </div>
     );
   }
 
-  const annonce = `${row.fullLabel} : ${row.sovPct} % du temps consacré aux partis${
-    tour ? `, un tour en ${tour.toFixed(1).replace(".", ",")} s` : ", disque à l'arrêt"
-  }.`;
+  const quand = enjeu?.dateSource ? `le ${jourEnLettres(enjeu.dateSource)}` : "dans la dernière journée publiée";
+  const annonce = enjeu
+    ? `${row.fullLabel} : on en parle surtout sous l'angle « ${enjeu.label} » (${enjeu.pct} % de sa couverture ${quand}, tous médias confondus).`
+    : `${row.fullLabel} : aucun enjeu dominant identifié ${quand}.`;
 
   return (
     <div
       className={`deck${selection && selection !== row.key ? " deck--attenue" : ""}`}
-      style={{ ["--party" as string]: row.color }}
+      style={{
+        ["--party" as string]: row.color,
+        ["--enjeu" as string]: enjeu ? couleurEnjeu(enjeu.label) : COULEUR_ENJEU_DEFAUT,
+      }}
     >
       <div
-        className={`deck-carre deck-carre--inerte deck-carre--lecture${tour ? "" : " deck-carre--arret"}`}
+        className={`deck-carre deck-carre--inerte${enjeu ? "" : " deck-carre--sans-enjeu"}`}
         role="img"
         aria-label={annonce}
         title={annonce}
-        style={tour ? { ["--tour" as string]: `${tour.toFixed(2)}s` } : undefined}
       >
-        <span className="deck-jog" aria-hidden="true">
-          <svg className="deck-jog-cap" viewBox="0 0 100 100" aria-hidden="true">
-            <clipPath id={`cap-${row.key}`}>
-              <circle cx="50" cy="50" r="50" />
-            </clipPath>
-            <g clipPath={`url(#cap-${row.key})`}>
-              <rect className="forme-parti" x="0" y="0" width="100" height="100" />
-            </g>
-            <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
-            <circle className="cap-trou" cx="50" cy="50" r="6.5" />
-            <text className="cap-sigle" x="50" y="42" textAnchor="middle">
-              {row.label}
-            </text>
-          </svg>
-        </span>
+        <Plateau enjeu={enjeu} />
       </div>
+      <span className="deck-parti" aria-hidden="true">
+        {row.label}
+      </span>
     </div>
+  );
+}
+
+/** Le dessin du jog, de l'extérieur vers le centre : la bague à prises (qui
+ *  tourne), la gorge, le plateau et son liseré, puis l'écran de l'enjeu. Pas de sillons :
+ *  ils ajoutaient de la texture sans rien dire. Les
+ *  couleurs viennent de `--enjeu`, posée sur `.deck` (voir `globals.css`). */
+function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
+  return (
+    <svg className="deck-plateau" viewBox="0 0 100 100" aria-hidden="true">
+      <g className="deck-bague-tournante">
+        <circle className="deck-bague" cx="50" cy="50" r="49.4" />
+        {PRISES.map((angle) => (
+          <rect
+            key={angle}
+            className="deck-prise"
+            x="46.6"
+            y="2.8"
+            width="6.8"
+            height="4.2"
+            rx="2.1"
+            transform={`rotate(${angle} 50 50)`}
+          />
+        ))}
+      </g>
+      <circle className="deck-gorge" cx="50" cy="50" r="41.8" />
+      <circle className="deck-disque" cx="50" cy="50" r="40.4" />
+      <circle className="deck-ecran" cx="50" cy="50" r="24.5" />
+      {enjeu && (
+        <>
+          <circle className="deck-jauge-fond" cx="50" cy="50" r="22" />
+          <path className="deck-jauge" d={arc(22, enjeu.pct / 100)} />
+          <SymboleEnjeu libelle={enjeu.label} className="deck-symbole" svg={{ x: 44, y: 32, taille: 12 }} />
+          <text className="deck-enjeu-nom" x="50" y="55" textAnchor="middle">
+            {libelleEnjeuCourt(enjeu.label)}
+          </text>
+          <text className="deck-enjeu-part" x="50" y="63" textAnchor="middle">
+            {`${enjeu.pct}\u00a0%`}
+          </text>
+        </>
+      )}
+      {enjeu === null && (
+        <text className="deck-enjeu-nom" x="50" y="52" textAnchor="middle">
+          —
+        </text>
+      )}
+    </svg>
   );
 }
 
@@ -875,8 +960,11 @@ function Deck({
  * Le clavier fonctionne (flèches), et le lecteur d'écran annonce la valeur via
  * `aria-valuetext`.
  *
- * ORDRE DU CROSSFADER, NOMS COMPLETS : « Tous les médias » au centre (index 3),
- * les médias de part et d'autre selon MEDIA_ORDER, affichés sous leur nom complet.
+ * ORDRE DU CROSSFADER, NOMS COMPLETS : les médias en ordre alphabétique de
+ * leur nom complet, tel qu'il s'écrit (« La Presse » avant « Le Devoir »),
+ * coupés en deux autour de « Tous les médias », qui reste au centre
+ * (2026-11-25, demande de Jules). Un ordre que le lecteur devine sans légende ;
+ * l'ancien (MEDIA_ORDER) suivait une logique interne invisible à l'écran.
  */
 function Fader({
   medias,
@@ -891,16 +979,16 @@ function Fader({
    *  n'y a aucune donnée à filtrer. */
   inerte?: boolean;
 }) {
-  const parId = new Map(medias.map((m) => [m.id, m]));
-  const connus = MEDIA_ORDER.flatMap((id) =>
-    id === TOUS_MEDIAS
-      ? [{ id: TOUS_MEDIAS, label: "Tous les médias" }]
-      : parId.has(id)
-        ? [{ id, label: MEDIA_LABELS[id] ?? parId.get(id)!.label }]
-        : [],
-  );
-  const restants = medias.filter((m) => !MEDIA_ORDER.includes(m.id));
-  const positions = [...connus, ...restants];
+  const tries = medias
+    .filter((m) => m.id !== TOUS_MEDIAS)
+    .map((m) => ({ id: m.id, label: MEDIA_LABELS[m.id] ?? m.label }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr", { sensitivity: "base" }));
+  const milieu = Math.ceil(tries.length / 2);
+  const positions = [
+    ...tries.slice(0, milieu),
+    { id: TOUS_MEDIAS, label: "Tous les médias" },
+    ...tries.slice(milieu),
+  ];
   const idx = Math.max(0, positions.findIndex((p) => p.id === valeur));
   const courante = positions[idx];
 
