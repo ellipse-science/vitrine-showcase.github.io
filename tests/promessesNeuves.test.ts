@@ -229,6 +229,38 @@ describe("chargeur des promesses neuves", () => {
     expect(await loadPromessesNeuves()).toBeNull();
   });
 
+  it("coupe à cinq promesses PAR PARTI et garde le vrai total de chaque parti", async () => {
+    // Une coupe tous partis confondus laissait deux cartes au PLQ sur 53 : le
+    // compteur de sa colonne se lisait comme deux promesses en tout. Ici, le PQ
+    // occupe les huit premiers rangs, le PLQ les trois suivants.
+    const rows = [
+      ...Array.from({ length: 8 }, (_, i) =>
+        ligne({ promesse_id: `pn-pq-${i}`, party_id: "PQ", rank_current: i + 1 }),
+      ),
+      ...Array.from({ length: 3 }, (_, i) =>
+        ligne({ promesse_id: `pn-plq-${i}`, party_id: "PLQ", rank_current: 9 + i }),
+      ),
+    ];
+    const d = await charger(rows);
+    const day = d!.ranges.day;
+    expect(day.filter((p) => p.parti === "pq")).toHaveLength(5);
+    expect(day.filter((p) => p.parti === "plq")).toHaveLength(3);
+    expect(d!.totaux.day).toEqual({ pq: 8, plq: 3 });
+  });
+
+  it("garde le rang tous partis confondus, fixé avant la coupe par parti", async () => {
+    const rows = [
+      ...Array.from({ length: 6 }, (_, i) =>
+        ligne({ promesse_id: `pn-pq-${i}`, party_id: "PQ", rank_current: i + 1 }),
+      ),
+      ligne({ promesse_id: "pn-plq-0", party_id: "PLQ", rank_current: 7 }),
+    ];
+    const d = await charger(rows);
+    // La sixième promesse du PQ est coupée, mais le PLQ reste septième.
+    expect(d!.ranges.day.find((p) => p.parti === "plq")!.rang).toBe(7);
+    expect(d!.ranges.day.filter((p) => p.parti === "pq").map((p) => p.rang)).toEqual([1, 2, 3, 4, 5]);
+  });
+
   it("survit à une colonne articles illisible sans perdre la promesse", async () => {
     const d = await charger([ligne({ articles: "{pas du json" })]);
     expect(d!.ranges.day).toHaveLength(1);
