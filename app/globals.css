@@ -10932,11 +10932,12 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 
 /* ─────────────────────────────────────────────────────────────────────────
    PARTIS — LA CONSOLE SEULE (2026-11-24).
-   Les decks sont des PLATEAUX DE PLATINE IMMOBILES (2026-11-25) : peints de
-   la couleur de l'enjeu qui joue pour le parti (`--enjeu`, posée sur `.deck`),
-   son nom sur le plateau, le sigle du parti dessous, à la manière du ruban
-   sous chaque colonne. Ils ne tournent plus : la rotation distrayait sans
-   rien dire. Le fader écrit les noms complets.
+   Les decks sont des JOGS DE CONTRÔLEUR (2026-11-25, retours de Jules) :
+   plateau graphite, liseré clair, bague à prises qui tourne LENTEMENT, et un
+   écran central, seul élément en couleur, à la couleur de l'enjeu qui joue
+   (`--enjeu`, posée sur `.deck`), adoucie. Le disque entier ne tourne plus
+   (distrayant) et n'est plus peint en entier (trop intense). Le fader écrit
+   les noms complets.
    ───────────────────────────────────────────────────────────────────────── */
 .regie {
   --diametre-vinyle: 164px;
@@ -10944,29 +10945,49 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 }
 .regie-flanc { margin-bottom: 0; justify-content: space-around; align-self: stretch; }
 .deck-carre { max-width: var(--diametre-vinyle); }
-.deck-plateau { display: block; width: 100%; height: 100%; }
-/* La bague : l'enjeu assombri, comme le métal autour d'un jog. */
-.deck-bague { fill: color-mix(in srgb, var(--enjeu, #8B8378) 55%, #1C1917); }
-.deck-cran { stroke: rgba(243, 236, 221, 0.38); stroke-width: 0.7; }
-/* Le plateau : l'enjeu plein. Les sillons, un ton plus clair, disent « disque »
-   sans faire de bruit. */
-.deck-disque { fill: var(--enjeu, #B9B0A2); }
-.deck-sillon { fill: none; stroke: rgba(243, 236, 221, 0.16); stroke-width: 0.6; }
-.deck-moyeu {
-  fill: color-mix(in srgb, var(--enjeu, #8B8378) 70%, #F3ECDD);
-  stroke: rgba(28, 25, 23, 0.25);
-  stroke-width: 0.6;
+.deck-plateau { display: block; width: 100%; height: 100%; overflow: visible; }
+.deck-bague { fill: #34302B; }
+.deck-prise { fill: #403B35; stroke: rgba(0, 0, 0, 0.28); stroke-width: 0.5; }
+/* Un tour en 40 s : assez lent pour se lire comme « en marche » sans tirer
+   l'œil hors du vumètre. */
+.deck-bague-tournante {
+  transform-box: view-box;
+  transform-origin: 50px 50px;
+  animation: deck-bague 40s linear infinite;
 }
+@keyframes deck-bague { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .deck-bague-tournante { animation: none; }
+}
+.deck-gorge { fill: #1C1917; }
+.deck-disque { fill: #2A2622; stroke: rgba(243, 236, 221, 0.62); stroke-width: 0.7; }
+.deck-sillon { fill: none; stroke: rgba(243, 236, 221, 0.05); stroke-width: 0.6; }
+/* L'écran : la couleur de l'enjeu, adoucie vers le graphite du plateau pour
+   ne pas crier. Les couleurs d'enjeu sont toutes foncées, d'où le texte crème. */
+.deck-ecran {
+  fill: color-mix(in srgb, var(--enjeu, #4A443E) 72%, #2A2622);
+  stroke: #141210;
+  stroke-width: 1.2;
+}
+.deck-carre--sans-enjeu .deck-ecran,
+.deck--vide .deck-ecran { fill: #3A3631; }
+.deck-jauge-fond { fill: none; stroke: rgba(243, 236, 221, 0.18); stroke-width: 1.4; }
+.deck-jauge { fill: none; stroke: #F3ECDD; stroke-width: 1.4; stroke-linecap: round; }
 .deck-symbole { color: #F3ECDD; }
 .deck-enjeu-nom {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.4px;
+  font-size: 5.6px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   fill: #F3ECDD;
 }
-.deck-carre--sans-enjeu .deck-enjeu-nom { fill: rgba(243, 236, 221, 0.7); }
+.deck-enjeu-part {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 4.8px;
+  fill: rgba(243, 236, 221, 0.75);
+}
+.deck-carre--sans-enjeu .deck-enjeu-nom { fill: rgba(243, 236, 221, 0.6); }
 /* Le sigle du parti, sous le plateau : la même pastille que le ruban sous
    chaque colonne du vumètre, pour qu'un parti se reconnaisse d'un coup d'œil
    des deux côtés. */

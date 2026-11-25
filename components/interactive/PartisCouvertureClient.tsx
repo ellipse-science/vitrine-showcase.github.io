@@ -343,9 +343,9 @@ export function ModeEmploi() {
       (vert), favorable&nbsp;; au centre, neutre.
       <br />
       <br />• Les quatre <b>decks</b> sont les quatre partis les plus présents, dont le
-      sigle est écrit dessous. Chaque deck prend la couleur et le nom de l&apos;enjeu
-      dont on parle le plus à propos de ce parti dans la dernière journée publiée,
-      tous médias confondus.
+      sigle est écrit dessous. L&apos;écran au centre affiche l&apos;enjeu dont on parle
+      le plus à propos de ce parti dans la dernière journée publiée, tous médias
+      confondus, et son arc la part de la couverture du parti qu&apos;il occupe.
       <br />
       <br />• Le curseur <b>Source</b> change de média&nbsp;: les colonnes et les cadrans
       se recalculent sur les Unes de ce média seul.
@@ -815,30 +815,31 @@ function jourEnLettres(iso: string): string {
     : d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", timeZone: "UTC" });
 }
 
-/** Les crans de la bague d'un jog de platine : 60 traits, un plus long tous
- *  les 5. Calculés une fois, ils ne dépendent d'aucune donnée. */
-const CRANS = Array.from({ length: 60 }, (_, k) => {
-  const a = (k / 60) * 2 * Math.PI;
-  const r1 = k % 5 === 0 ? 43.2 : 44.6;
-  const r2 = 47.4;
-  return {
-    x1: (50 + r1 * Math.sin(a)).toFixed(2),
-    y1: (50 - r1 * Math.cos(a)).toFixed(2),
-    x2: (50 + r2 * Math.sin(a)).toFixed(2),
-    y2: (50 - r2 * Math.cos(a)).toFixed(2),
-  };
-});
+/** Les 20 prises de la bague, comme sur le jog d'un contrôleur : de petits
+ *  pavés arrondis tout autour du plateau, un tous les 18°. */
+const PRISES = Array.from({ length: 20 }, (_, k) => (k * 360) / 20);
+
+/** Un arc de cercle centré sur le plateau, de midi dans le sens horaire, sur
+ *  `part` (0 à 1) du tour. Sert à la jauge de l'écran. */
+function arc(r: number, part: number): string {
+  const p = Math.min(0.9999, Math.max(0, part));
+  const a = p * 2 * Math.PI;
+  const x = 50 + r * Math.sin(a);
+  const y = 50 - r * Math.cos(a);
+  return `M 50 ${50 - r} A ${r} ${r} 0 ${p > 0.5 ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}`;
+}
 
 /**
- * Un deck — le plateau d'une platine électronique, peint de la couleur de
- * l'enjeu qui « joue » pour le parti, avec son symbole et son nom sur le
- * plateau, et le sigle du parti dessous. C'est la seule place du module où
- * l'on lit DE QUOI on parle ; le vumètre dit COMBIEN.
+ * Un deck — le jog d'un contrôleur de DJ : bague à prises, plateau graphite
+ * au liseré clair, et au centre l'ÉCRAN, seul élément en couleur. L'écran
+ * prend la couleur de l'enjeu qui « joue » pour le parti, en affiche le
+ * symbole et le nom, et sa jauge en arc donne la part de la couverture du
+ * parti consacrée à cet enjeu. Le sigle du parti est dessous. C'est la seule
+ * place du module où l'on lit DE QUOI on parle ; le vumètre dit COMBIEN.
  *
- * IMMOBILE. Le disque tournait, d'abord à la vitesse de la part (ce que la
- * colonne disait déjà), puis à vitesse fixe : dans les deux cas il attirait
- * l'œil sans rien apprendre (retour de Jules, 2026-11-25). Ce qui fait
- * « platine », ce sont la bague crantée, les sillons et le moyeu.
+ * Retours de Jules du 2026-11-25 : la rotation du disque entier distrayait,
+ * et un plateau entièrement peint était trop intense. Seule la bague tourne,
+ * lentement ; la couleur se limite à l'écran, comme sur un vrai contrôleur.
  *
  * Sans enjeu identifié ce jour-là (seulement « Autres enjeux », ou rien de
  * publié), le plateau reste gris et porte un tiret.
@@ -903,28 +904,49 @@ function Deck({
   );
 }
 
-/** Le dessin du plateau, de l'extérieur vers le centre : la bague crantée,
- *  le plateau aux sillons concentriques, le moyeu qui porte le symbole, et le
- *  nom de l'enjeu sous le moyeu. Les couleurs viennent de `--enjeu`, posée
- *  sur `.deck` (voir `globals.css`). */
+/** Le dessin du jog, de l'extérieur vers le centre : la bague à prises (qui
+ *  tourne), la gorge, le plateau et son liseré, puis l'écran de l'enjeu. Les
+ *  couleurs viennent de `--enjeu`, posée sur `.deck` (voir `globals.css`). */
 function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
   return (
     <svg className="deck-plateau" viewBox="0 0 100 100" aria-hidden="true">
-      <circle className="deck-bague" cx="50" cy="50" r="49.2" />
-      {CRANS.map((c, k) => (
-        <line key={k} className="deck-cran" x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} />
-      ))}
-      <circle className="deck-disque" cx="50" cy="50" r="41.6" />
-      {[37, 32.5, 28].map((r) => (
+      <g className="deck-bague-tournante">
+        <circle className="deck-bague" cx="50" cy="50" r="49.4" />
+        {PRISES.map((angle) => (
+          <rect
+            key={angle}
+            className="deck-prise"
+            x="47.2"
+            y="2.6"
+            width="5.6"
+            height="4.6"
+            rx="1.6"
+            transform={`rotate(${angle} 50 50)`}
+          />
+        ))}
+      </g>
+      <circle className="deck-gorge" cx="50" cy="50" r="41.8" />
+      <circle className="deck-disque" cx="50" cy="50" r="40.4" />
+      {[36.5, 31].map((r) => (
         <circle key={r} className="deck-sillon" cx="50" cy="50" r={r} />
       ))}
-      <circle className="deck-moyeu" cx="50" cy="50" r="14" />
+      <circle className="deck-ecran" cx="50" cy="50" r="24.5" />
       {enjeu && (
-        <SymboleEnjeu libelle={enjeu.label} className="deck-symbole" svg={{ x: 41, y: 41, taille: 18 }} />
+        <>
+          <circle className="deck-jauge-fond" cx="50" cy="50" r="22" />
+          <path className="deck-jauge" d={arc(22, enjeu.pct / 100)} />
+          <SymboleEnjeu libelle={enjeu.label} className="deck-symbole" svg={{ x: 44, y: 32, taille: 12 }} />
+          <text className="deck-enjeu-nom" x="50" y="54.2" textAnchor="middle">
+            {libelleEnjeuCourt(enjeu.label)}
+          </text>
+          <text className="deck-enjeu-part" x="50" y="62.6" textAnchor="middle">
+            {`${enjeu.pct}\u00a0%`}
+          </text>
+        </>
       )}
-      {enjeu !== undefined && (
-        <text className="deck-enjeu-nom" x="50" y="75.5" textAnchor="middle">
-          {enjeu ? libelleEnjeuCourt(enjeu.label) : "—"}
+      {enjeu === null && (
+        <text className="deck-enjeu-nom" x="50" y="52" textAnchor="middle">
+          —
         </text>
       )}
     </svg>

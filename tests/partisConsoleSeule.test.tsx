@@ -117,10 +117,15 @@ describe("les decks", () => {
     expect(enjeux).not.toContain("Autres enjeux");
   });
 
-  it("les decks ne tournent pas", () => {
+  it("l'écran affiche la part de l'enjeu dans la couverture du parti", () => {
+    const sante = decks.find((d) => d.includes(">Santé<"))!;
+    expect(sante).toMatch(/class="deck-enjeu-part"[^>]*>41\s%</);
+  });
+
+  it("seule la bague tourne : le plateau et l'écran restent immobiles", () => {
     expect(html).not.toContain("--tour");
-    expect(html).not.toContain("deck-carre--lecture");
     expect(html).not.toContain("deck-jog");
+    expect(decks.every((d) => (d.match(/class="deck-bague-tournante"/g) ?? []).length === 1)).toBe(true);
   });
 
   it("le mode d'emploi dit ce que montrent les decks, et plus leur vitesse", () => {
