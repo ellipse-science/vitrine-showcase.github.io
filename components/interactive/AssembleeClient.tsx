@@ -72,9 +72,11 @@ function Onglet({ actif, onChoisir, children, label }: { actif: boolean; onChois
   );
 }
 
-export function AssembleeClient({ data, cartes, editionKey, archive43e }: {
+export function AssembleeClient({ data, cartes, editionKey, archive43e, cartesProchaine }: {
   data: AssembleeData;
   cartes?: CartesSite;
+  /** Les cartes de la nouvelle Assemblée en attente (preparerCartesAttente). */
+  cartesProchaine?: CartesSite;
   editionKey?: string;
   archive43e?: { data: AssembleeData; cartes?: CartesSite };
 }) {
@@ -145,7 +147,7 @@ export function AssembleeClient({ data, cartes, editionKey, archive43e }: {
       </div>
 
       <section className="assemblee">
-        {enAttente ? <AssembleeEnAttente vue={prochaine!} /> : (
+        {enAttente ? <AssembleeEnAttente vue={prochaine!} cartes={cartesProchaine} /> : (
           /* Les cinq casiers en tout temps (Jules, 3 oct.) : un parti sans parole
              dans la vue garde le sien, vide, au bout du banc. */
           <AssembleeVestiaire key={`${voirArchive}-${period}`} rows={[...visibleRows, ...shadowRows]} shadowRows={[]} cartes={cartesActives?.parPeriode[period]?.cartes} contexte={contexte} />
