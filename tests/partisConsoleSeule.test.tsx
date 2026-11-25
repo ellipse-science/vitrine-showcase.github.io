@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PartisCouvertureClient, dureeDuTour } from "@/components/interactive/PartisCouvertureClient";
+import { PartisCouvertureClient, ModeEmploi } from "@/components/interactive/PartisCouvertureClient";
 import { __test__, PARTY_KEYS } from "@/lib/data/parties";
-import type { PartiesData } from "@/lib/data/parties";
+import type { PartiesData, PartyKey, EnjeuView } from "@/lib/data/parties";
 
 // LE MODULE RÉDUIT À SA CONSOLE (2026-11-24) : filtre Jour / Semaine / Mois à
 // droite du titre, Semaine par défaut, plus de palmarès ni de discothèque,
@@ -28,7 +28,16 @@ function donnees(): PartiesData {
   const calcule = __test__.computeStats(lignes);
   if (!calcule) throw new Error("computeStats a rendu null");
   const { stats, dates } = calcule;
-  const vue = (r: "today" | "week" | "month" | "overall") => __test__.buildRangeView(stats, r, dates, null);
+  // Les enjeux du dernier jour publié, comme `buildEnjeux` les livre : le plus
+  // présent en tête, « Autres enjeux » en queue. Le QS n'en a aucun.
+  const enjeu = (label: string, pct: number): EnjeuView => ({ label, pct, toneLabel: "Neutre", toneDirection: "neutral" });
+  const enjeux = new Map<PartyKey, EnjeuView[]>([
+    ["caq", [enjeu("Santé et politiques sociales", 41), enjeu("Économie et travail", 22), { ...enjeu("Autres enjeux", 37), reste: true }]],
+    ["pq", [enjeu("Culture et nationalisme", 55)]],
+    ["plq", [enjeu("Économie et travail", 30)]],
+    ["pcq", [{ ...enjeu("Autres enjeux", 100), reste: true }]],
+  ]);
+  const vue = (r: "today" | "week" | "month" | "overall") => __test__.buildRangeView(stats, r, dates, null, enjeux);
   return {
     blocCourant: null,
     ranges: { today: vue("today"), week: vue("week"), month: vue("month"), overall: vue("overall") },
@@ -83,33 +92,61 @@ describe("ce qui a quitté le module", () => {
 });
 
 describe("les decks", () => {
-  it("quatre disques qui tournent, plus vite pour le parti le plus présent", () => {
-    const tours = [...html.matchAll(/deck-carre--lecture[^"]*"[^>]*style="--tour:\s*([\d.]+)s"/g)].map((m) => +m[1]);
-    expect(tours).toHaveLength(4);
-    // Decks dans l'ordre 1, 3, 2, 4 dans le HTML : le 1er tourne le plus vite.
-    expect(tours[0]).toBe(Math.min(...tours));
+  // Leur vitesse redisait la part, déjà lue sur la hauteur de la colonne
+  // (retour de Jules, 2026-11-25). Ils montrent désormais l'enjeu qui « joue »
+  // pour le parti : ce que le vumètre ne dit nulle part. Immobiles, peints de
+  // la couleur de l'enjeu, son nom écrit sur le plateau, le parti dessous.
+  const decks = [...html.matchAll(/<div class="deck( [^"]*)?"[\s\S]*?class="deck-parti"[^>]*>([^<]*)</g)].map((m) => m[0]);
+  const enjeux = [...html.matchAll(/class="deck-enjeu-nom"[^>]*>([^<]*)</g)].map((m) => m[1].trim());
+  const partis = [...html.matchAll(/class="deck-parti"[^>]*>([^<]*)</g)].map((m) => m[1].trim());
+
+  it("quatre decks, l'enjeu écrit sur le plateau, le parti dessous", () => {
+    expect(decks).toHaveLength(4);
+    // Le libellé court du site (« Santé », pas « Santé et politiques
+    // sociales ») : le plateau n'a la place que pour un mot ou deux.
+    expect(enjeux).toEqual(expect.arrayContaining(["Santé", "Culture", "Économie", "—"]));
+    expect(partis).toEqual(["PLQ", "QS", "CAQ", "PQ"]);
   });
 
-  it("la vitesse est proportionnelle à la part, bornée, à l'arrêt à zéro", () => {
-    expect(dureeDuTour(20)).toBeCloseTo(1.8);
-    expect(dureeDuTour(40)).toBeCloseTo(0.9);
-    expect(dureeDuTour(100)).toBe(0.45);
-    expect(dureeDuTour(1)).toBe(20);
-    expect(dureeDuTour(0)).toBeNull();
+  it("le plateau prend la couleur de l'enjeu", () => {
+    const sante = decks.find((d) => d.includes(">Santé<"))!;
+    expect(sante).toMatch(/--enjeu:\s*#852244/);
+  });
+
+  it("jamais « Autres enjeux » sur un plateau : sans enjeu identifié, un tiret", () => {
+    expect(enjeux).not.toContain("Autres enjeux");
+  });
+
+  it("l'écran affiche la part de l'enjeu dans la couverture du parti", () => {
+    const sante = decks.find((d) => d.includes(">Santé<"))!;
+    expect(sante).toMatch(/class="deck-enjeu-part"[^>]*>41\s%</);
+  });
+
+  it("seule la bague tourne : le plateau et l'écran restent immobiles", () => {
+    expect(html).not.toContain("--tour");
+    expect(html).not.toContain("deck-jog");
+    expect(decks.every((d) => (d.match(/class="deck-bague-tournante"/g) ?? []).length === 1)).toBe(true);
+  });
+
+  it("le mode d'emploi dit ce que montrent les decks, et plus leur vitesse", () => {
+    const aide = renderToStaticMarkup(<ModeEmploi />);
+    expect(aide).toContain("<b>decks</b>");
+    expect(aide).toMatch(/enjeu/);
+    expect(aide).not.toMatch(/vitesse|tourne/);
   });
 });
 
 describe("le fader", () => {
-  it("Tous les médias au centre, en noms complets", () => {
+  it("Tous les médias au centre, les médias en ordre alphabétique de part et d'autre", () => {
     const noms = [...html.matchAll(/class="fader-cran[^"]*"[^>]*><i><\/i><b>([^<]+)<\/b>/g)].map((m) => m[1]);
     expect(noms).toEqual([
-      "Le Devoir",
-      "Radio-Canada",
       "La Presse",
+      "Le Devoir",
+      "Le Journal de Montréal",
       "Tous les médias",
       "Montreal Gazette",
+      "Radio-Canada",
       "TVA Nouvelles",
-      "Le Journal de Montréal",
     ]);
   });
 });

@@ -70,14 +70,8 @@ async function substituteVersion() {
 // latest.png, latest.mp3, latest.webp, latest.avif — donc ajouter un format
 // d'image plus tard ne demande aucune retouche ici.
 //
-// DEUX exceptions nommées, sur le même principe : les verdicts que les
-// raffineurs d'illustration lisent sur le site déployé pour savoir QUOI
-// illustrer, plutôt que de les recalculer chacun de leur côté.
-//   - hero-selection.json  → la Une (app/data/hero-selection.json/route.ts)
-//   - partis-selection.json → les cinq pochettes du bac du jour
-// Ni l'un ni l'autre n'est une donnée vendue : les deux ne portent que ce qui
-// est déjà affiché à l'écran.
-const PRUNE_KEEP = new Set(["hero-selection.json", "partis-selection.json"]);
+// Le verdict de la Une reste exporté pour le raffineur d’illustration.
+const PRUNE_KEEP = new Set(["hero-selection.json"]);
 
 async function pruneDataJson() {
   const dataDir = path.join(OUT_DIR, "data");
@@ -307,6 +301,8 @@ async function main() {
   await substituteVersion();
 
   // EN DERNIER : après la substitution de version, qui balaie tout out/.
+  // Un ancien build peut avoir laissé des pochettes dans public/data.
+  await rm(path.join(OUT_DIR, "data", "generated-art", "partis"), { recursive: true, force: true });
   await pruneDataJson();
   await pruneShareBackgrounds();
   await pruneAudio();
