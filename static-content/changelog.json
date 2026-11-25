@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1047,
+    "date": "2026-11-25T19:19:41Z",
+    "note": "Le module des réseaux sociaux suit maintenant les 30 derniers jours et marque la campagne électorale, du 27 août au 5 octobre, sur sa frise.",
+    "version": "2.59.0-beta.3"
+  },
+  {
     "pr": 1056,
     "date": "2026-11-25T15:34:09Z",
     "note": "Le bandeau de la 44e législature présente la date de la première séance sans icône.",
