@@ -98,6 +98,7 @@ describe("les decks", () => {
   // la couleur de l'enjeu, son nom écrit sur le plateau, le parti dessous.
   const decks = [...html.matchAll(/<div class="deck( [^"]*)?"[\s\S]*?class="deck-parti"[^>]*>([^<]*)</g)].map((m) => m[0]);
   const enjeux = [...html.matchAll(/class="deck-enjeu-nom"[^>]*>([^<]*)</g)].map((m) => m[1].trim());
+  const rangs = [...html.matchAll(/class="deck-rang"[^>]*>([^<]*)</g)].map((m) => m[1]);
   const partis = [...html.matchAll(/class="deck-parti"[^>]*>([^<]*)</g)].map((m) => m[1].trim());
 
   it("quatre decks, l'enjeu écrit sur le plateau, le parti dessous", () => {
@@ -105,7 +106,8 @@ describe("les decks", () => {
     // Le libellé court du site (« Santé », pas « Santé et politiques
     // sociales ») : le plateau n'a la place que pour un mot ou deux.
     expect(enjeux).toEqual(expect.arrayContaining(["Santé", "Culture", "Économie", "—"]));
-    expect(partis).toEqual(["PLQ", "QS", "CAQ", "PQ"]);
+    expect(rangs).toEqual(["1", "2", "3", "4"]);
+    expect(partis).toEqual(["PLQ", "CAQ", "QS", "PQ"]);
   });
 
   it("le plateau prend la couleur de l'enjeu", () => {
@@ -122,10 +124,12 @@ describe("les decks", () => {
     expect(sante).toMatch(/class="deck-enjeu-part"[^>]*>41\s%</);
   });
 
-  it("seule la bague tourne : le plateau et l'écran restent immobiles", () => {
+  it("les decks restent immobiles et les quatre partis ouvrent les sources", () => {
     expect(html).not.toContain("--tour");
     expect(html).not.toContain("deck-jog");
-    expect(decks.every((d) => (d.match(/class="deck-bague-tournante"/g) ?? []).length === 1)).toBe(true);
+    expect(html).not.toContain("deck-bague-tournante");
+    expect([...html.matchAll(/<button class="deck-carre[^"]*"[^>]*data-parti="([^"]+)"/g)].map((m) => m[1]))
+      .toEqual(["plq", "caq", "qs", "pq"]);
   });
 
   it("le mode d'emploi dit ce que montrent les decks, et plus leur vitesse", () => {
