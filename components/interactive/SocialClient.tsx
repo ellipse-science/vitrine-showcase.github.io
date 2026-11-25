@@ -45,6 +45,7 @@ import {
   valeursComptes,
 } from "@/lib/data/social-calc";
 import { MONTHS_FR } from "@/lib/dates";
+import { ELECTION_DATE } from "@/lib/election";
 import { InfoTip } from "@/components/interactive/InfoTip";
 
 type Vue = "partis" | "candidats" | "palmares" | "carte";
@@ -54,7 +55,7 @@ type Forme = "barres" | "temps";
 /** Les vues : « compté par quoi ? ». `court` sert à la barre du téléphone. */
 const VUES: { cle: Vue; libelle: string; court: string }[] = [
   { cle: "partis", libelle: "Par parti", court: "Partis" },
-  { cle: "candidats", libelle: "Par candidat", court: "Candidats" },
+  { cle: "candidats", libelle: "Par personne", court: "Personnes" },
   { cle: "palmares", libelle: "Par publication", court: "Palmarès" },
   { cle: "carte", libelle: "Par circonscription", court: "Carte" },
 ];
@@ -402,8 +403,8 @@ function Audience({
   const recherche = data.candidatures?.length ? (
     <Combobox
       id="social-recherche-candidat"
-      libelle="Rechercher un·e candidat·e"
-      placeholder="Rechercher un·e candidat·e"
+      libelle="Rechercher une personne"
+      placeholder="Rechercher un nom"
       chercher={chercher}
       onChoisir={choisirCandidat}
     />
@@ -548,6 +549,7 @@ function Frise({
   d0,
   d1,
   campagne,
+  election,
   onChange,
 }: {
   jours: string[];
@@ -557,6 +559,8 @@ function Frise({
   d0: number;
   d1: number;
   campagne: number;
+  /** Index du jour du scrutin (fin de la campagne) ; -1 s'il n'est pas dans l'axe. */
+  election: number;
   onChange: (d0: number, d1: number) => void;
 }) {
   const n = jours.length;
@@ -653,11 +657,22 @@ function Frise({
             });
           })}
         </svg>
-        {campagne > 0 && (
+        {/* La campagne est une BANDE bornée des deux côtés : du déclenchement
+            (27 août) au scrutin (5 octobre). Avant, la frise ne marquait que le
+            début, comme si la campagne durait encore. */}
+        {campagne > 0 && election > campagne ? (
+          <span
+            className="social-frise-campagne"
+            style={{ left: `${pct(campagne)}%`, width: `${pct(election + 1) - pct(campagne)}%` }}
+            title="Campagne électorale : du 27 août au 5 octobre 2026"
+          >
+            <span className="social-frise-campagne-libelle">Campagne</span>
+          </span>
+        ) : campagne > 0 ? (
           <span className="social-frise-repere" style={{ left: `${pct(campagne)}%` }}>
             <span className="social-frise-repere-libelle">Lancement de la campagne électorale</span>
           </span>
-        )}
+        ) : null}
         <div
           className="social-frise-fenetre"
           data-poignee="fenetre"
@@ -1536,7 +1551,7 @@ export function Infobulle({
       ref={boite}
       className={`social-infobulle${epinglee ? " epinglee social-feuille circo" : ""}${etroit && !epinglee ? " etroite" : ""}`}
       {...(epinglee
-        ? { role: "dialog", "aria-modal": true, "aria-label": `${circo.nom}\u00a0: candidats et dernières publications` }
+        ? { role: "dialog", "aria-modal": true, "aria-label": `${circo.nom}\u00a0: comptes et dernières publications` }
         : { "aria-hidden": true })}
       style={
         epinglee
@@ -1586,11 +1601,11 @@ export function Infobulle({
           )}
         </div>
       ) : lignes.length === 0 ? (
-        <div className="social-meta">Aucun compte de candidat suivi</div>
+        <div className="social-meta">Aucun compte suivi</div>
       ) : (
         <>
         <span className="social-infobulle-entete">
-          <span className="social-meta">Candidats</span>
+          <span className="social-meta">Personnes</span>
           <span className="social-meta">{unite.charAt(0).toUpperCase() + unite.slice(1)}</span>
         </span>
         <ul>
@@ -1829,8 +1844,8 @@ function Recherche({ data, onChoisir }: { data: SocialData; onChoisir: (code: nu
   return (
     <Combobox
       id="social-recherche"
-      libelle="Chercher une circonscription ou un candidat"
-      placeholder="Circonscription ou candidat·e"
+      libelle="Chercher une circonscription ou une personne"
+      placeholder="Circonscription ou nom"
       chercher={chercher}
       onChoisir={(sg) => onChoisir(sg.code)}
     />
@@ -2113,7 +2128,7 @@ export function Carte({
           viewBox={carte.sud.join(" ")}
           style={{ aspectRatio: `${sw} / ${sh}` }}
           role="img"
-          aria-label="Carte des circonscriptions, colorées selon le parti dont les candidats y reçoivent le plus de j’aime. La molette, le glisser ou le pincement zooment. Les flèches passent d’une circonscription à l’autre, par région, et Entrée épingle son infobulle."
+          aria-label="Carte des circonscriptions, colorées selon le parti dont les comptes y reçoivent le plus de j’aime. La molette, le glisser ou le pincement zooment. Les flèches passent d’une circonscription à l’autre, par région, et Entrée épingle son infobulle."
           onPointerDown={surDown}
           onPointerMove={surMove}
           onPointerUp={surUp}
@@ -2436,8 +2451,11 @@ function GroupeFiltres({
 
 export function SocialClient({ data }: { data: SocialData }) {
   const n = data.jours.length;
-  // À l'arrivée : toute la campagne, du déclenchement au dernier jour complet.
-  const [d0, setD0] = useState(data.campagne);
+  // À l'arrivée : les 30 derniers jours (depuis 2026-11, hors campagne). La
+  // campagne reste accessible par son raccourci, comme archive.
+  const [d0, setD0] = useState(Math.max(0, n - 30));
+  // Le jour du scrutin, qui FERME la campagne : -1 s'il n'est pas dans l'axe.
+  const election = data.jours.indexOf(ELECTION_DATE);
   const [d1, setD1] = useState(n - 1);
   const [plateformes, setPlateformes] = useState<Plateforme[]>([...PLATEFORMES]);
   const [partis, setPartis] = useState<PartyKey[]>([...data.partis]);
@@ -2530,11 +2548,13 @@ export function SocialClient({ data }: { data: SocialData }) {
   // Le total de l'indicateur, pour le sous-titre de l'onglet Partis.
   const totalM = m === "abonnes" ? abonnes : m === "publications" ? t.publications : m === "jaime" ? t.jaime : t.commentaires;
 
-  const raccourcis: { libelle: string; a: number }[] = [
-    { libelle: "7 j", a: Math.max(0, n - 7) },
-    { libelle: "30 j", a: Math.max(0, n - 30) },
-    { libelle: "Campagne", a: data.campagne },
-    { libelle: "Tout", a: 0 },
+  const raccourcis: { libelle: string; a: number; b: number }[] = [
+    { libelle: "7 j", a: Math.max(0, n - 7), b: n - 1 },
+    { libelle: "30 j", a: Math.max(0, n - 30), b: n - 1 },
+    { libelle: "Tout", a: 0, b: n - 1 },
+    // Hors campagne (2026-11) : la campagne passe en dernier, comme archive,
+    // et s'ARRÊTE au scrutin au lieu de courir jusqu'à aujourd'hui.
+    { libelle: "Campagne", a: data.campagne, b: election > data.campagne ? election : n - 1 },
   ];
 
   // Par publication : les 10 en tête, par j'aime ou par commentaires selon la
@@ -2542,19 +2562,29 @@ export function SocialClient({ data }: { data: SocialData }) {
   const mP = mesurePalmares(m);
   const tops = vue === "palmares" ? palmares(data, f, mP) : [];
 
+  // Le STATUT des personnes suivies dépend de la période : candidates jusqu'au
+  // scrutin du 5 octobre, élues ensuite. L'onglet reste neutre (« Par
+  // personne ») ; c'est le sous-titre qui dit qui l'on regarde.
+  const statut =
+    election < 0 || d0 > election
+      ? "élu·e·s"
+      : d1 <= election
+        ? "candidat·e·s"
+        : "candidat·e·s, puis élu·e·s,";
+  const deStatut = statut.startsWith("é") ? `d’${statut}` : `de ${statut}`;
   const sousTitre =
     vue === "candidats"
         ? m === "abonnes"
-          ? `Les ${AUDIENCE_MAX} comptes de candidats les plus suivis, en abonnés. Dernier relevé : la période ne s’applique pas.`
-          : `Les ${AUDIENCE_MAX} comptes de candidats en tête sur la période, en ${MESURE[m].unite}.`
+          ? `Les ${AUDIENCE_MAX} comptes d’élu·e·s les plus suivis, en abonnés. Dernier relevé : la période ne s’applique pas.`
+          : `Les ${AUDIENCE_MAX} comptes ${deStatut} en tête sur la période, en ${MESURE[m].unite}.`
         : vue === "palmares"
           ? `Les 10 publications les plus ${mP === "commentaires" ? "commentées" : "aimées"} de la période.`
           : vue === "carte"
             ? m === "abonnes"
-              ? "Chaque circonscription prend la couleur du parti dont les candidats comptent le plus d’abonnés, au dernier relevé."
+              ? "Chaque circonscription prend la couleur du parti dont les élu·e·s comptent le plus d’abonnés, au dernier relevé."
               : m === "publications"
-                ? "Chaque circonscription prend la couleur du parti dont les candidats y publient le plus sur la période."
-                : `Chaque circonscription prend la couleur du parti dont les candidats y reçoivent le plus de ${MESURE[m].unite} sur la période.`
+                ? `Chaque circonscription prend la couleur du parti dont les ${statut} y publient le plus sur la période.`
+                : `Chaque circonscription prend la couleur du parti dont les ${statut} y reçoivent le plus de ${MESURE[m].unite} sur la période.`
             : m === "abonnes"
               ? `${nombreFr(totalM)} abonnés au dernier relevé (la période ne s’applique pas).`
               : `${nombreFr(totalM)} ${MESURE[m].unite} sur la période.`;
@@ -2658,9 +2688,9 @@ export function SocialClient({ data }: { data: SocialData }) {
                   <button
                     type="button"
                     key={r.libelle}
-                    aria-pressed={d0 === r.a && d1 === n - 1}
-                    className={d0 === r.a && d1 === n - 1 ? "actif" : undefined}
-                    onClick={() => periode(r.a, n - 1)}
+                    aria-pressed={d0 === r.a && d1 === r.b}
+                    className={d0 === r.a && d1 === r.b ? "actif" : undefined}
+                    onClick={() => periode(r.a, r.b)}
                   >
                     {r.libelle}
                   </button>
@@ -2673,6 +2703,7 @@ export function SocialClient({ data }: { data: SocialData }) {
                 d0={d0}
                 d1={d1}
                 campagne={data.campagne}
+                election={election}
                 onChange={periode}
               />
             </div>
