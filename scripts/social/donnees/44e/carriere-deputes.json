@@ -1,0 +1,642 @@
+{
+  "_note": "Ancienneté des élu·es de la 44e législature : année de la première élection et nombre de mandats (générales et partielles distinctes).",
+  "source": "ellipse-science/dim-qc-parliament@96bc151",
+  "deputes": {
+    "991": {
+      "nom": "Pascal Bérubé",
+      "premiere_election": "2007",
+      "mandats": 7
+    },
+    "1171": {
+      "nom": "Filomena Rotiroti",
+      "premiere_election": "2008",
+      "mandats": 6
+    },
+    "1253": {
+      "nom": "Nicolas Girard",
+      "premiere_election": "2007",
+      "mandats": 3
+    },
+    "5845": {
+      "nom": "Elsie Lefebvre",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "7289": {
+      "nom": "Nicolas Marceau",
+      "premiere_election": "2012",
+      "mandats": 3
+    },
+    "11789": {
+      "nom": "Marc Tanguay",
+      "premiere_election": "2012",
+      "mandats": 5
+    },
+    "12189": {
+      "nom": "Alain Therrien",
+      "premiere_election": "2012",
+      "mandats": 3
+    },
+    "15367": {
+      "nom": "Caroline Simard",
+      "premiere_election": "2014",
+      "mandats": 2
+    },
+    "15383": {
+      "nom": "André Fortin",
+      "premiere_election": "2014",
+      "mandats": 4
+    },
+    "17909": {
+      "nom": "Frantz Benjamin",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "17911": {
+      "nom": "Jennifer Maccarone",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "17923": {
+      "nom": "Monsef Derraji",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "17933": {
+      "nom": "Ruba Ghazal",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "17935": {
+      "nom": "Alexandre Leduc",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "17943": {
+      "nom": "Enrico Ciccone",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "17947": {
+      "nom": "Joël Arseneau",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "17951": {
+      "nom": "Gregory Kelley",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "17953": {
+      "nom": "Andrés Fontecilla",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "17955": {
+      "nom": "Sol Zanetti",
+      "premiere_election": "2018",
+      "mandats": 3
+    },
+    "18217": {
+      "nom": "Méganne Perry Mélançon",
+      "premiere_election": "2018",
+      "mandats": 2
+    },
+    "19253": {
+      "nom": "André Albert Morin",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19261": {
+      "nom": "Madwa-Nika Cadet",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19267": {
+      "nom": "Etienne Grandmont",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19271": {
+      "nom": "Brigitte B. Garceau",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19275": {
+      "nom": "Maïté Blanchette Vézina",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19283": {
+      "nom": "Désirée McGraw",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19285": {
+      "nom": "Michelle Setlakwe",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19287": {
+      "nom": "Virginie Dufour",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19289": {
+      "nom": "Paul St-Pierre Plamondon",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19301": {
+      "nom": "Elisabeth Prass",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19307": {
+      "nom": "Frédéric Beauchemin",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "19313": {
+      "nom": "Linda Caron",
+      "premiere_election": "2022",
+      "mandats": 2
+    },
+    "20131": {
+      "nom": "Catherine Gentilcore",
+      "premiere_election": "2025",
+      "mandats": 2
+    },
+    "20193": {
+      "nom": "Marie-Karlynn Laflamme",
+      "premiere_election": "2026",
+      "mandats": 2
+    },
+    "20319": {
+      "nom": "Stéphane Tremblay",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20321": {
+      "nom": "Louis Ialenti",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20323": {
+      "nom": "Antoine Dionne Charest",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20325": {
+      "nom": "Nicolas Plourde",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20327": {
+      "nom": "Pierre Nantel",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20329": {
+      "nom": "Guy Jr Lapointe",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20331": {
+      "nom": "Tarek Henoud",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20333": {
+      "nom": "James Hughes",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20335": {
+      "nom": "Patricia Drouin",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20337": {
+      "nom": "Sonia Caron",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20339": {
+      "nom": "Jonathan Poulin",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20341": {
+      "nom": "Alexandre Daneau",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20343": {
+      "nom": "Jean Pellerin",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20345": {
+      "nom": "Éric Duhaime",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20347": {
+      "nom": "Sandra Hernández",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20349": {
+      "nom": "Audrey Bujold",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20351": {
+      "nom": "Sylvie Tanguay",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20353": {
+      "nom": "Alexandre Girard-Duchaine",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20355": {
+      "nom": "Simon-Pierre Savard-Tremblay",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20357": {
+      "nom": "Nadine Le Gal",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20359": {
+      "nom": "Gaétan Bédard",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20361": {
+      "nom": "Cédric Gagnon-Ducharme",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20363": {
+      "nom": "Pier-Luc Bujold",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20365": {
+      "nom": "Sandrine Michon",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20367": {
+      "nom": "Julie Guyot",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20369": {
+      "nom": "Michel Langevin",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20371": {
+      "nom": "Éloïse Coulombe",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20373": {
+      "nom": "Valérie Assouline",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20375": {
+      "nom": "Félix Rhéaume",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20377": {
+      "nom": "Olivier Bertin-Mahieux",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20379": {
+      "nom": "Karim Elayoubi",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20381": {
+      "nom": "Cécile Tremblay",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20383": {
+      "nom": "Madeleine Féquière",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20385": {
+      "nom": "Roxane Milot",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20387": {
+      "nom": "Dominique Dumas",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20389": {
+      "nom": "Frédéric Poulin",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20391": {
+      "nom": "Gisèle Pouhe Njall",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20393": {
+      "nom": "Nathalie Boisclair",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20395": {
+      "nom": "Mathieu Lebrun",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20397": {
+      "nom": "Linda Vaillant",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20399": {
+      "nom": "Diane Dallaire",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20401": {
+      "nom": "Émile Simard",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20403": {
+      "nom": "Meggie Richard",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20405": {
+      "nom": "Marie Claude Fournier",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20407": {
+      "nom": "Isabelle Thibeault",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20409": {
+      "nom": "Ariane Boyer",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20411": {
+      "nom": "David Logue",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20413": {
+      "nom": "Alexandre Boulerice",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20415": {
+      "nom": "Yohann St-Pierre",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20417": {
+      "nom": "Jean-François Arsenault",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20419": {
+      "nom": "Marie-Claude Sarrazin",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20421": {
+      "nom": "Sacha Cannon",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20423": {
+      "nom": "Jocelyn Desjardins",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20425": {
+      "nom": "Frédéric Laplante",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20427": {
+      "nom": "Odette Lavigne",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20429": {
+      "nom": "Camille Pellerin-Forget",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20431": {
+      "nom": "Anne Nguyen",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20433": {
+      "nom": "Julie White",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20435": {
+      "nom": "Véronique Venne",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20437": {
+      "nom": "Marcel Bouchard",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20439": {
+      "nom": "Jimmy Bouchard",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20441": {
+      "nom": "Stéphane Paquet",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20443": {
+      "nom": "David Bowles",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20445": {
+      "nom": "Maxime Laporte",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20447": {
+      "nom": "Sonia Ziadé",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20449": {
+      "nom": "Charles Milliard",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20451": {
+      "nom": "Catherine Drouin",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20453": {
+      "nom": "William Fradette",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20455": {
+      "nom": "Caroline De Guire",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20457": {
+      "nom": "Isabelle Millette",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20459": {
+      "nom": "Élodie Murphy-Gauthier",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20461": {
+      "nom": "Dieudonné Ella Oyono",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20463": {
+      "nom": "Guillaume Langlois",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20465": {
+      "nom": "Karine Laflamme",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20467": {
+      "nom": "Renaud Labrecque",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20469": {
+      "nom": "Marie-Josée Hélie",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20471": {
+      "nom": "Marcos Archambault",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20473": {
+      "nom": "Michel Leblanc",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20475": {
+      "nom": "Jimmy Gagnon",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20477": {
+      "nom": "Natalie Bisaillon",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20479": {
+      "nom": "Isabelle Blais",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20481": {
+      "nom": "Geneviève Couture",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20483": {
+      "nom": "Stéphane Handfield",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20497": {
+      "nom": "Sébastien D'Astous",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20513": {
+      "nom": "Adriana Szalontai",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20515": {
+      "nom": "Nada Boumeftah",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20517": {
+      "nom": "Mathieu Lavoie",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20519": {
+      "nom": "Stéphanie Vachon",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20521": {
+      "nom": "Benoit Clermont",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20523": {
+      "nom": "Charles Page",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20527": {
+      "nom": "Patrick Paquet",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20529": {
+      "nom": "Bernard Sévigny",
+      "premiere_election": "2026",
+      "mandats": 1
+    },
+    "20599": {
+      "nom": "Stephan Fogaing",
+      "premiere_election": "2026",
+      "mandats": 1
+    }
+  },
+  "extrait_le": "2026-11-25"
+}
