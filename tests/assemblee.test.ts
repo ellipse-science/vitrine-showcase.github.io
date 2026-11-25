@@ -364,17 +364,27 @@ describe("buildPeriodView", () => {
       { ...base, deputy: "Eric Girard", deputy_id: "17929", district_id: "groulx", n_interventions: 702, word_count: 1000, tone_score: 0, economy_and_labour: 0.6 },
     ];
 
-    const view = buildPeriodView(partyRows as never, "legislature", deputyRows as never);
+    // Les portraits courants sont ceux des successeurs, à la 44e législature.
+    const portraits = buildPortraitIndex([
+      { deputy_id: "20419", nom: "Marie-Claude Sarrazin", circonscription: "Groulx", circonscription_slug: "groulx" },
+      { deputy_id: "20453", nom: "William Fradette", circonscription: "Lac-Saint-Jean", circonscription_slug: "lac-saint-jean" },
+    ]);
+    const view = buildPeriodView(partyRows as never, "legislature", deputyRows as never, portraits);
     const caq = view.rows.find((row) => row.key === "caq")?.deputies ?? [];
 
     expect(caq).toHaveLength(2);
     expect(new Set(caq.map((d) => d.id)).size).toBe(2);
     const lsj = caq.find((d) => d.id === "17957");
+    expect(lsj?.circonscription).toBe("Lac-Saint-Jean");
+    expect(lsj?.portrait).toBeUndefined();
     expect(lsj?.wordsRaw).toBe(400);
     expect(lsj?.interventions).toBe(35);
     // Pondération par les mots : (0,4 × 300 + 0,8 × 100) / 400.
     expect(lsj?.toneScore).toBeCloseTo(0.5, 6);
-    expect(caq.find((d) => d.id === "17929")?.wordsRaw).toBe(1000);
+    const groulx = caq.find((d) => d.id === "17929");
+    expect(groulx?.circonscription).toBe("Groulx");
+    expect(groulx?.portrait).toBeUndefined();
+    expect(groulx?.wordsRaw).toBe(1000);
   });
 
   it("situe la diversité lexicale des élus sur toute l’Assemblée, pas dans chaque parti", () => {
