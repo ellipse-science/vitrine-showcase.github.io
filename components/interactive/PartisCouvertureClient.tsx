@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, Indisponibilite, EnjeuView } from "@/lib/data/parties";
-import { TOUS_MEDIAS, MEDIA_PANEL_QC, MEDIA_DE, MEDIA_DANS, MEDIA_LABELS, MEDIA_ORDER } from "@/lib/medias";
+import { TOUS_MEDIAS, MEDIA_PANEL_QC, MEDIA_DE, MEDIA_DANS, MEDIA_LABELS } from "@/lib/medias";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
@@ -960,8 +960,11 @@ function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
  * Le clavier fonctionne (flèches), et le lecteur d'écran annonce la valeur via
  * `aria-valuetext`.
  *
- * ORDRE DU CROSSFADER, NOMS COMPLETS : « Tous les médias » au centre (index 3),
- * les médias de part et d'autre selon MEDIA_ORDER, affichés sous leur nom complet.
+ * ORDRE DU CROSSFADER, NOMS COMPLETS : les médias en ordre alphabétique de
+ * leur nom complet, tel qu'il s'écrit (« La Presse » avant « Le Devoir »),
+ * coupés en deux autour de « Tous les médias », qui reste au centre
+ * (2026-11-25, demande de Jules). Un ordre que le lecteur devine sans légende ;
+ * l'ancien (MEDIA_ORDER) suivait une logique interne invisible à l'écran.
  */
 function Fader({
   medias,
@@ -976,16 +979,16 @@ function Fader({
    *  n'y a aucune donnée à filtrer. */
   inerte?: boolean;
 }) {
-  const parId = new Map(medias.map((m) => [m.id, m]));
-  const connus = MEDIA_ORDER.flatMap((id) =>
-    id === TOUS_MEDIAS
-      ? [{ id: TOUS_MEDIAS, label: "Tous les médias" }]
-      : parId.has(id)
-        ? [{ id, label: MEDIA_LABELS[id] ?? parId.get(id)!.label }]
-        : [],
-  );
-  const restants = medias.filter((m) => !MEDIA_ORDER.includes(m.id));
-  const positions = [...connus, ...restants];
+  const tries = medias
+    .filter((m) => m.id !== TOUS_MEDIAS)
+    .map((m) => ({ id: m.id, label: MEDIA_LABELS[m.id] ?? m.label }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr", { sensitivity: "base" }));
+  const milieu = Math.ceil(tries.length / 2);
+  const positions = [
+    ...tries.slice(0, milieu),
+    { id: TOUS_MEDIAS, label: "Tous les médias" },
+    ...tries.slice(milieu),
+  ];
   const idx = Math.max(0, positions.findIndex((p) => p.id === valeur));
   const courante = positions[idx];
 

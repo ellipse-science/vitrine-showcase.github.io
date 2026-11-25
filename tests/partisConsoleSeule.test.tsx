@@ -137,16 +137,16 @@ describe("les decks", () => {
 });
 
 describe("le fader", () => {
-  it("Tous les médias au centre, en noms complets", () => {
+  it("Tous les médias au centre, les médias en ordre alphabétique de part et d'autre", () => {
     const noms = [...html.matchAll(/class="fader-cran[^"]*"[^>]*><i><\/i><b>([^<]+)<\/b>/g)].map((m) => m[1]);
     expect(noms).toEqual([
-      "Le Devoir",
-      "Radio-Canada",
       "La Presse",
+      "Le Devoir",
+      "Le Journal de Montréal",
       "Tous les médias",
       "Montreal Gazette",
+      "Radio-Canada",
       "TVA Nouvelles",
-      "Le Journal de Montréal",
     ]);
   });
 });
