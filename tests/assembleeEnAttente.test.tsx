@@ -79,6 +79,7 @@ describe("AssembleeClient et la 44e en attente", () => {
   it("ouvre sur la 44e, avec le bandeau d'attente et les portraits", () => {
     const html = renderToStaticMarkup(<AssembleeClient data={donnees(true)} />);
     expect(html).toContain("En attente de la première séance");
+    expect(html).not.toContain("⏳");
     expect(html).toContain("mardi 1er décembre 2026, 14h");
     expect(html).toMatch(/aria-selected="true"[^>]*>(<[^>]+>)*44e législature/);
     expect(html).toContain("Paul St-Pierre Plamondon");

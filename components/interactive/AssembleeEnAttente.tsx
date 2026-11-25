@@ -27,12 +27,9 @@ export function AssembleeEnAttente({ vue, cartes }: { vue: LegislatureEnAttente;
   return (
     <div className="assemblee-attente">
       <p className="assemblee-attente-bandeau" role="status">
-        <span className="assemblee-attente-icone" aria-hidden="true">⏳</span>
-        <span>
-          <strong>En attente de la première séance</strong> : {vue.premiereSeanceLibelle}.{" "}
-          Les {vue.total} député·es ont été élu·es le {vue.electionLibelle}. Leurs interventions s&apos;afficheront
-          ici dès que le Journal des débats de la première séance sera publié.
-        </span>
+        <strong>En attente de la première séance</strong> : {vue.premiereSeanceLibelle}.{" "}
+        Les {vue.total} député·es ont été élu·es le {vue.electionLibelle}. Leurs interventions s&apos;afficheront
+        ici dès que le Journal des débats de la première séance sera publié.
       </p>
       <AssembleeVestiaire rows={rows} shadowRows={[]} attente={{ electionLibelle: vue.electionLibelle }}
         cartes={cartes?.parPeriode.legislature?.cartes} contexte={contexte} />
