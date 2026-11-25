@@ -10144,6 +10144,17 @@
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-softer); white-space: nowrap;
 }
 .social-frise-mois span.fin { transform: translateX(-100%); padding-right: 2px; }
+/* La campagne, bornée des deux côtés (27 août → 5 octobre). */
+.social-frise-campagne {
+  position: absolute; top: 0; bottom: 0; pointer-events: none;
+  background: color-mix(in srgb, var(--brass) 12%, transparent);
+  border-left: 1px dashed var(--brass); border-right: 1px dashed var(--brass);
+}
+.social-frise-campagne-libelle {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+  font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--amber-encre); white-space: nowrap;
+}
 .social-frise-repere-libelle {
   position: absolute; top: 0; right: 4px; font-family: "IBM Plex Mono", monospace; font-size: 9px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber-encre); white-space: nowrap;

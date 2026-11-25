@@ -32,8 +32,8 @@ describe("rendu du module « La guerre des clics »", () => {
   const enfonces = (tranche: string) =>
     [...tranche.matchAll(/aria-pressed="true"[^>]*>(?:<span[^>]*>)?(?:<svg[\s\S]*?<\/svg>)?([^<]+)</g)].map((m) => m[1].trim());
 
-  it("s'ouvre sur toute la campagne, jusqu'au dernier jour complet", () => {
-    const nb = data.jours.length - data.campagne;
+  it("s'ouvre sur les 30 derniers jours, jusqu'au dernier jour complet (hors campagne)", () => {
+    const nb = data.jours.length - Math.max(0, data.jours.length - 30);
     expect(texte).toContain(`au 28 septembre · ${nb} jours`);
   });
 
@@ -72,7 +72,7 @@ describe("rendu du module « La guerre des clics »", () => {
     const groupes = [...reglages.matchAll(/role="group" aria-label="([^"]+)"/g)].map((x) => x[1]);
     expect(groupes).toEqual(["Vue", "Indicateur affiché", "Type de graphique"]);
     const vues = reglages.slice(reglages.indexOf('aria-label="Vue"'), reglages.indexOf('aria-label="Indicateur affiché"'));
-    expect([...vues.matchAll(/<\/svg>([^<]+)<\/button>/g)].map((m) => m[1])).toEqual(["Par parti", "Par candidat", "Par publication"]);
+    expect([...vues.matchAll(/<\/svg>([^<]+)<\/button>/g)].map((m) => m[1])).toEqual(["Par parti", "Par personne", "Par publication"]);
     expect(enfonces(vues)).toEqual(["Par parti"]);
     const forme = reglages.slice(reglages.indexOf('aria-label="Type de graphique"'));
     expect(enfonces(forme)).toEqual(["Total"]);
