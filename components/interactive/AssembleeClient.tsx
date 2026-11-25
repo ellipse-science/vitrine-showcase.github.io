@@ -7,6 +7,7 @@ import type { CartesSite } from "@/lib/cartes/site";
 import { PERIODES } from "@/lib/cartes/types";
 import { ShareButton } from "@/components/interactive/ShareButton";
 import { AssembleeVestiaire } from "@/components/interactive/AssembleeVestiaire";
+import { AssembleeEnAttente } from "@/components/interactive/AssembleeEnAttente";
 import type { ContexteCartes } from "@/components/interactive/CarteDepute";
 
 /** Ce que le verso d'une carte doit savoir des TROIS périodes : la fiche du
@@ -58,7 +59,25 @@ function SourceTip() {
 const PERIODS: PeriodKey[] = ["last_pdq", "session", "legislature"];
 const LIBELLES_COURTS: Record<PeriodKey, string> = { last_pdq: "Journée", session: "Session", legislature: "Législature" };
 
+/** Un onglet au clavier et à la souris, comme ceux des périodes. */
+function Onglet({ actif, onChoisir, children, label }: { actif: boolean; onChoisir: () => void; children: React.ReactNode; label: string }) {
+  return (
+    <span role="tab" tabIndex={0} aria-selected={actif} aria-label={label}
+      className={actif ? "active" : undefined} style={{ cursor: "pointer" }}
+      onClick={onChoisir}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onChoisir(); } }}>
+      {children}
+    </span>
+  );
+}
+
 export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeData; cartes?: CartesSite; editionKey?: string }) {
+  // La nouvelle législature, tant qu'elle n'a pas siégé (#1035) : le module
+  // s'ouvre sur elle, et la législature passée reste à un clic. Sans elle, le
+  // module est celui des trois périodes.
+  const prochaine = data.prochaine;
+  const [voirProchaine, setVoirProchaine] = useState<boolean>(!!prochaine);
+  const enAttente = !!prochaine && voirProchaine;
   const [period, setPeriod] = useState<PeriodKey>("legislature");
   const view: PeriodView = data.periods[period];
   const contexte = useMemo(() => (cartes ? contexteCartes(data, cartes, period) : null), [data, cartes, period]);
@@ -72,13 +91,25 @@ export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeD
         <div className="title-block">
           <h2 className="partis-title">L&apos;alignement de l&apos;Assemblée</h2>
           <div className="period-subtitle">
-            {view.subtitle}
-            <SourceTip />
+            {enAttente ? `La nouvelle Assemblée, élue le ${prochaine!.electionLibelle}` : view.subtitle}
+            {!enAttente && <SourceTip />}
           </div>
         </div>
         <div className="control-block">
+          {prochaine && (
+            <div className="control-row">
+              <div className="legend-toggle inline assemblee-legislatures" role="tablist" aria-label="Législature">
+                <Onglet actif={!enAttente} onChoisir={() => setVoirProchaine(false)} label={`${prochaine.numero - 1}e législature`}>
+                  {prochaine.numero - 1}e législature
+                </Onglet>
+                <Onglet actif={enAttente} onChoisir={() => setVoirProchaine(true)} label={`${prochaine.numero}e législature`}>
+                  {prochaine.numero}e législature
+                </Onglet>
+              </div>
+            </div>
+          )}
           <div className="control-row">
-            <div className="legend-toggle inline assemblee-periodes" role="tablist" aria-label="Période">
+            {!enAttente && <div className="legend-toggle inline assemblee-periodes" role="tablist" aria-label="Période">
               {PERIODS.map((p) => (
                 <span
                   key={p}
@@ -98,18 +129,20 @@ export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeD
                   <span className="periode-court" aria-hidden="true">{LIBELLES_COURTS[p]}</span>
                 </span>
               ))}
-            </div>
+            </div>}
             <ShareButton title="L'alignement de l'Assemblée nationale" anchor="assemblee-nationale" editionKey={editionKey} />
           </div>
         </div>
       </div>
 
       <section className="assemblee">
-        {/* Les cinq casiers en tout temps (Jules, 3 oct.) : un parti sans parole
-            dans la vue garde le sien, vide, au bout du banc. */}
-        <AssembleeVestiaire key={period} rows={[...visibleRows, ...shadowRows]} shadowRows={[]} cartes={cartes?.parPeriode[period]?.cartes} contexte={contexte} />
+        {enAttente ? <AssembleeEnAttente vue={prochaine!} /> : (
+          /* Les cinq casiers en tout temps (Jules, 3 oct.) : un parti sans parole
+             dans la vue garde le sien, vide, au bout du banc. */
+          <AssembleeVestiaire key={period} rows={[...visibleRows, ...shadowRows]} shadowRows={[]} cartes={cartes?.parPeriode[period]?.cartes} contexte={contexte} />
+        )}
       </section>
-      <div className="module-last-updated">{view.lastUpdated}</div>
+      {!enAttente && <div className="module-last-updated">{view.lastUpdated}</div>}
     </>
   );
 }
