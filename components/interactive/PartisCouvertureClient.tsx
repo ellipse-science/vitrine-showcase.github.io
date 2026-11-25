@@ -7,7 +7,7 @@ import { ShareButton } from "@/components/interactive/ShareButton";
 import { InfoTip } from "@/components/interactive/InfoTip";
 import { DoomGame } from "@/components/interactive/DoomGame";
 import { SymboleEnjeu } from "@/components/interactive/SymboleEnjeu";
-import { couleurEnjeu, libelleEnjeuCourt } from "@/lib/enjeux";
+import { couleurEnjeu, libelleEnjeuCourt, COULEUR_ENJEU_DEFAUT } from "@/lib/enjeux";
 
 /* LE MODULE RÉDUIT À SA CONSOLE (2026-11-24, demande de Jules).
  *
@@ -19,9 +19,10 @@ import { couleurEnjeu, libelleEnjeuCourt } from "@/lib/enjeux";
  *
  * LES DECKS MONTRENT L'ENJEU QUI JOUE (2026-11-25, retour de Jules). Leur
  * vitesse suivait la part du parti, que la hauteur de sa colonne donne déjà.
- * Chaque disque porte maintenant l'enjeu le plus associé au parti dans la
- * dernière journée publiée, tous médias confondus, et tourne à vitesse fixe :
- * la rotation dit « en lecture », elle ne mesure rien.
+ * Chaque deck est maintenant peint de la couleur de l'enjeu le plus associé
+ * au parti dans la dernière journée publiée, tous médias confondus, porte son
+ * nom sur le plateau et le sigle du parti dessous. Les decks ne tournent plus :
+ * la rotation distrayait sans rien dire.
  *
  * `overall` existe toujours dans `PartiesData` : les scripts sociaux
  * (`scripts/social/partis*.ts`) le lisent. Le module ne l'affiche plus. */
@@ -341,9 +342,10 @@ export function ModeEmploi() {
       nomment le parti&nbsp;: aiguille à gauche (rouge), défavorable&nbsp;; à droite
       (vert), favorable&nbsp;; au centre, neutre.
       <br />
-      <br />• Les quatre <b>disques</b> sont les quatre partis les plus présents. Sous
-      chacun, l&apos;enjeu dont on parle le plus à son sujet dans la dernière journée
-      publiée, tous médias confondus.
+      <br />• Les quatre <b>decks</b> sont les quatre partis les plus présents, dont le
+      sigle est écrit dessous. Chaque deck prend la couleur et le nom de l&apos;enjeu
+      dont on parle le plus à propos de ce parti dans la dernière journée publiée,
+      tous médias confondus.
       <br />
       <br />• Le curseur <b>Source</b> change de média&nbsp;: les colonnes et les cadrans
       se recalculent sur les Unes de ce média seul.
@@ -813,15 +815,33 @@ function jourEnLettres(iso: string): string {
     : d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", timeZone: "UTC" });
 }
 
+/** Les crans de la bague d'un jog de platine : 60 traits, un plus long tous
+ *  les 5. Calculés une fois, ils ne dépendent d'aucune donnée. */
+const CRANS = Array.from({ length: 60 }, (_, k) => {
+  const a = (k / 60) * 2 * Math.PI;
+  const r1 = k % 5 === 0 ? 43.2 : 44.6;
+  const r2 = 47.4;
+  return {
+    x1: (50 + r1 * Math.sin(a)).toFixed(2),
+    y1: (50 - r1 * Math.cos(a)).toFixed(2),
+    x2: (50 + r2 * Math.sin(a)).toFixed(2),
+    y2: (50 - r2 * Math.cos(a)).toFixed(2),
+  };
+});
+
 /**
- * Un deck — un vinyle qui « joue » l'enjeu dont on parle le plus à propos du
- * parti : le titre du morceau en cours, écrit sous le disque. C'est la seule
- * place du module où l'on lit DE QUOI on parle ; le vumètre dit COMBIEN.
+ * Un deck — le plateau d'une platine électronique, peint de la couleur de
+ * l'enjeu qui « joue » pour le parti, avec son symbole et son nom sur le
+ * plateau, et le sigle du parti dessous. C'est la seule place du module où
+ * l'on lit DE QUOI on parle ; le vumètre dit COMBIEN.
  *
- * Le disque tourne à vitesse fixe, la même pour tous : il est en lecture,
- * rien de plus. Sa vitesse suivait la part du parti, ce que la colonne disait
- * déjà (retiré le 2026-11-25). Sans enjeu identifié ce jour-là (seulement
- * « Autres enjeux », ou rien de publié), le titre est un tiret.
+ * IMMOBILE. Le disque tournait, d'abord à la vitesse de la part (ce que la
+ * colonne disait déjà), puis à vitesse fixe : dans les deux cas il attirait
+ * l'œil sans rien apprendre (retour de Jules, 2026-11-25). Ce qui fait
+ * « platine », ce sont la bague crantée, les sillons et le moyeu.
+ *
+ * Sans enjeu identifié ce jour-là (seulement « Autres enjeux », ou rien de
+ * publié), le plateau reste gris et porte un tiret.
  */
 function Deck({
   row,
@@ -831,7 +851,7 @@ function Deck({
   selection,
 }: {
   row: RowView | null;
-  /** La position du deck, de 1 à 4. Ne s'affiche plus : elle ne sert qu'à
+  /** La position du deck, de 1 à 4. Ne s'affiche pas : elle ne sert qu'à
    *  l'infobulle du deck vide. */
   rang: number;
   enjeu: EnjeuView | null;
@@ -849,9 +869,7 @@ function Deck({
         }
       >
         <div className="deck-carre deck-carre--inerte">
-          <span className="deck-jog deck-jog--vide" aria-hidden="true">
-            <span className="deck-jog-cap deck-jog-cap--vide" />
-          </span>
+          <Plateau />
         </div>
       </div>
     );
@@ -865,40 +883,51 @@ function Deck({
   return (
     <div
       className={`deck${selection && selection !== row.key ? " deck--attenue" : ""}`}
-      style={{ ["--party" as string]: row.color }}
+      style={{
+        ["--party" as string]: row.color,
+        ["--enjeu" as string]: enjeu ? couleurEnjeu(enjeu.label) : COULEUR_ENJEU_DEFAUT,
+      }}
     >
-      <div className="deck-carre deck-carre--inerte deck-carre--lecture" role="img" aria-label={annonce} title={annonce}>
-        <span className="deck-jog" aria-hidden="true">
-          <svg className="deck-jog-cap" viewBox="0 0 100 100" aria-hidden="true">
-            <clipPath id={`cap-${row.key}`}>
-              <circle cx="50" cy="50" r="50" />
-            </clipPath>
-            <g clipPath={`url(#cap-${row.key})`}>
-              <rect className="forme-parti" x="0" y="0" width="100" height="100" />
-            </g>
-            <circle className="cap-cercle" cx="50" cy="50" r="49.4" />
-            <circle className="cap-trou" cx="50" cy="50" r="6.5" />
-            <text className="cap-sigle" x="50" y="42" textAnchor="middle">
-              {row.label}
-            </text>
-          </svg>
-        </span>
+      <div
+        className={`deck-carre deck-carre--inerte${enjeu ? "" : " deck-carre--sans-enjeu"}`}
+        role="img"
+        aria-label={annonce}
+        title={annonce}
+      >
+        <Plateau enjeu={enjeu} />
       </div>
-      <p className={`deck-enjeu${enjeu ? "" : " deck-enjeu--aucun"}`} aria-hidden="true" title={annonce}>
-        {/* Le symbole et la couleur de l'enjeu sont ceux du reste du site
-            (fond neutre → le glyphe prend la couleur de l'enjeu), et le
-            libellé est la forme courte : « Santé », pas « Santé et
-            politiques sociales ». Le titre complet reste dans l'infobulle. */}
-        {enjeu ? (
-          <>
-            <SymboleEnjeu libelle={enjeu.label} style={{ color: couleurEnjeu(enjeu.label) }} />
-            {libelleEnjeuCourt(enjeu.label)}
-          </>
-        ) : (
-          "—"
-        )}
-      </p>
+      <span className="deck-parti" aria-hidden="true">
+        {row.label}
+      </span>
     </div>
+  );
+}
+
+/** Le dessin du plateau, de l'extérieur vers le centre : la bague crantée,
+ *  le plateau aux sillons concentriques, le moyeu qui porte le symbole, et le
+ *  nom de l'enjeu sous le moyeu. Les couleurs viennent de `--enjeu`, posée
+ *  sur `.deck` (voir `globals.css`). */
+function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
+  return (
+    <svg className="deck-plateau" viewBox="0 0 100 100" aria-hidden="true">
+      <circle className="deck-bague" cx="50" cy="50" r="49.2" />
+      {CRANS.map((c, k) => (
+        <line key={k} className="deck-cran" x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} />
+      ))}
+      <circle className="deck-disque" cx="50" cy="50" r="41.6" />
+      {[37, 32.5, 28].map((r) => (
+        <circle key={r} className="deck-sillon" cx="50" cy="50" r={r} />
+      ))}
+      <circle className="deck-moyeu" cx="50" cy="50" r="14" />
+      {enjeu && (
+        <SymboleEnjeu libelle={enjeu.label} className="deck-symbole" svg={{ x: 41, y: 41, taille: 18 }} />
+      )}
+      {enjeu !== undefined && (
+        <text className="deck-enjeu-nom" x="50" y="75.5" textAnchor="middle">
+          {enjeu ? libelleEnjeuCourt(enjeu.label) : "—"}
+        </text>
+      )}
+    </svg>
   );
 }
 

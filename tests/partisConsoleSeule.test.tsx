@@ -91,40 +91,43 @@ describe("ce qui a quitté le module", () => {
   });
 });
 
-describe("les vinyles", () => {
+describe("les decks", () => {
   // Leur vitesse redisait la part, déjà lue sur la hauteur de la colonne
   // (retour de Jules, 2026-11-25). Ils montrent désormais l'enjeu qui « joue »
-  // pour le parti : ce que le vumètre ne dit nulle part.
-  const enjeux = [...html.matchAll(/class="deck-enjeu[^"]*"[^>]*>([\s\S]*?)<\/p>/g)].map((m) => m[1].replace(/<[^>]+>/g, "").trim());
+  // pour le parti : ce que le vumètre ne dit nulle part. Immobiles, peints de
+  // la couleur de l'enjeu, son nom écrit sur le plateau, le parti dessous.
+  const decks = [...html.matchAll(/<div class="deck( [^"]*)?"[\s\S]*?class="deck-parti"[^>]*>([^<]*)</g)].map((m) => m[0]);
+  const enjeux = [...html.matchAll(/class="deck-enjeu-nom"[^>]*>([^<]*)</g)].map((m) => m[1].trim());
+  const partis = [...html.matchAll(/class="deck-parti"[^>]*>([^<]*)</g)].map((m) => m[1].trim());
 
-  it("quatre vinyles, chacun avec l'enjeu de son parti", () => {
-    expect(enjeux).toHaveLength(4);
+  it("quatre decks, l'enjeu écrit sur le plateau, le parti dessous", () => {
+    expect(decks).toHaveLength(4);
     // Le libellé court du site (« Santé », pas « Santé et politiques
-    // sociales ») : le disque n'a la place que pour un mot ou deux.
-    expect(enjeux).toContain("Santé");
-    expect(enjeux).toContain("Culture");
+    // sociales ») : le plateau n'a la place que pour un mot ou deux.
+    expect(enjeux).toEqual(expect.arrayContaining(["Santé", "Culture", "Économie", "—"]));
+    expect(partis).toEqual(["PLQ", "QS", "CAQ", "PQ"]);
   });
 
-  it("jamais « Autres enjeux » comme titre : sans enjeu identifié, un tiret", () => {
+  it("le plateau prend la couleur de l'enjeu", () => {
+    const sante = decks.find((d) => d.includes(">Santé<"))!;
+    expect(sante).toMatch(/--enjeu:\s*#852244/);
+  });
+
+  it("jamais « Autres enjeux » sur un plateau : sans enjeu identifié, un tiret", () => {
     expect(enjeux).not.toContain("Autres enjeux");
-    expect(enjeux).toContain("—");
   });
 
-  it("chaque enjeu porte son symbole et sa couleur, comme partout sur le site", () => {
-    const etiquettes = [...html.matchAll(/class="deck-enjeu"[^>]*>([\s\S]*?)<\/p>/g)].map((m) => m[1]);
-    expect(etiquettes).toHaveLength(3);
-    for (const e of etiquettes) expect(e).toMatch(/<svg[^>]*style="color:#[0-9A-Fa-f]{6}"/);
-  });
-
-  it("la vitesse ne code plus rien : plus de --tour par parti", () => {
+  it("les decks ne tournent pas", () => {
     expect(html).not.toContain("--tour");
+    expect(html).not.toContain("deck-carre--lecture");
+    expect(html).not.toContain("deck-jog");
   });
 
-  it("le mode d'emploi dit ce que montrent les disques, et plus leur vitesse", () => {
+  it("le mode d'emploi dit ce que montrent les decks, et plus leur vitesse", () => {
     const aide = renderToStaticMarkup(<ModeEmploi />);
-    expect(aide).toContain("<b>disques</b>");
+    expect(aide).toContain("<b>decks</b>");
     expect(aide).toMatch(/enjeu/);
-    expect(aide).not.toMatch(/vitesse/);
+    expect(aide).not.toMatch(/vitesse|tourne/);
   });
 });
 
