@@ -1,4 +1,4 @@
-import { loadPolimetre } from "@/lib/data/polimetre";
+import { loadPolimetre, loadPolimetrePq } from "@/lib/data/polimetre";
 import { loadPromessesNeuves } from "@/lib/data/promessesNeuves";
 import { PolimetrePlusClient } from "@/components/interactive/PolimetrePlusClient";
 import { RawMaquette } from "@/components/sections/RawMaquette";
@@ -16,10 +16,14 @@ import { RawMaquette } from "@/components/sections/RawMaquette";
 // avant. C'est aussi ce qui fait que le bloc « 2022 » ne dépend en rien du
 // nouveau raffineur : si celui-ci tombe, rien ne bouge ici.
 export async function PolimetrePlusSection({ asOfIso, editionKey }: { asOfIso?: string; editionKey?: string } = {}) {
-  const [data, neuves] = await Promise.all([
+  // `pq` : série des 535 promesses du gouvernement St-Pierre Plamondon, null tant
+  // que le raffineur ne l'a pas publiée (l'onglet « PQ 2026 » se replie alors sur
+  // les promesses de la campagne).
+  const [data, neuves, pq] = await Promise.all([
     loadPolimetre(asOfIso),
     loadPromessesNeuves(asOfIso),
+    loadPolimetrePq(asOfIso),
   ]);
   if (!data) return <RawMaquette chunk="polimeter_plus" />;
-  return <PolimetrePlusClient data={data} neuves={neuves} editionKey={editionKey} />;
+  return <PolimetrePlusClient data={data} neuves={neuves} pq={pq} editionKey={editionKey} />;
 }
