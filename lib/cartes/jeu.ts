@@ -118,7 +118,7 @@ export function construireJeu(
     // Édition imprimée : la législature entière. Les éditions de session, en
     // ligne, portent leur année.
     edition: periode === "legislature" ? EDITION_LEGISLATURE : `Édition ${annee}`,
-    mandat: ligneMandat(trouverMandat(mandats, c.deputy.name, c.slug)),
+    mandat: ligneMandat(trouverMandat(mandats, c.deputy.name, c.deputy.circonscription ?? c.slug)),
     chef: CHEFS[c.slug],
     depart: depart.get(c),
   }));

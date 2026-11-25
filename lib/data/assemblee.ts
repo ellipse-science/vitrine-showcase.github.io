@@ -164,8 +164,7 @@ export type DeputyRow = {
   toneLeftPct: number;
   signatureWord?: string;
   signatureWordContext?: string;
-  // Champs de carte. circonscription et portrait manquent quand l'appariement
-  // avec le référentiel de l'ANQ échoue (cf. PORTRAIT_ALIASES).
+  // Le nom de la circonscription peut être connu même sans portrait.
   circonscription?: string;
   portrait?: string;
   interventions: number;
@@ -622,6 +621,7 @@ const PORTRAIT_ALIASES: Record<string, string> = {
 type PortraitIndex = {
   byId: Map<string, DeputyPortrait>;
   byName: Map<string, DeputyPortrait[]>;
+  ridingNames: Map<string, string>;
 };
 
 function portraitBaseName(name: string): string {
@@ -631,17 +631,20 @@ function portraitBaseName(name: string): string {
 function buildPortraitIndex(portraits: DeputyPortrait[]): PortraitIndex {
   const byId = new Map<string, DeputyPortrait>();
   const byKey = new Map<string, DeputyPortrait[]>();
+  const ridingNames = new Map<string, string>();
   for (const p of portraits) {
     if (p.deputy_id !== undefined && p.deputy_id !== null) {
       byId.set(String(p.deputy_id), p);
     }
+    const ridingKey = tightKey(p.circonscription);
+    if (ridingKey) ridingNames.set(ridingKey, p.circonscription);
     const key = tightKey(portraitBaseName(p.nom));
     if (!key) continue;
     const list = byKey.get(key);
     if (list) list.push(p);
     else byKey.set(key, [p]);
   }
-  return { byId, byName: byKey };
+  return { byId, byName: byKey, ridingNames };
 }
 
 // « Éric Girard (Groulx) » -> nom nu + indice de circonscription.
@@ -839,7 +842,8 @@ function buildDeputyList(
       toneLeftPct: Number((((amplified + 1) / 2) * 100).toFixed(1)),
       signatureWord: cleanText(r.signature_word),
       signatureWordContext: citationExtrait(r.signature_word_context, r.signature_word),
-      circonscription: portrait?.circonscription,
+      // L'index courant connaît le siège même si un successeur occupe la fiche.
+      circonscription: portrait?.circonscription ?? portraits.ridingNames.get(tightKey(r.district_id ?? "")),
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
       portrait: portrait ? `/images/deputes/cartes/web/${portrait.asset_slug ?? portrait.circonscription_slug}.jpg` : undefined,
@@ -889,7 +893,7 @@ function buildPeriodView(
   allRows: AgoraRow[],
   period: PeriodKey,
   deputyRows: DeputyAgoraRow[] = [],
-  portraits: PortraitIndex = { byId: new Map(), byName: new Map() },
+  portraits: PortraitIndex = buildPortraitIndex([]),
   affiliations: AffiliationIndex = { byId: new Map(), byName: new Map() },
 ): PeriodView {
   const periodRows = allRows.filter((r) => r.period_type === period);
