@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1043,
+    "date": "2026-11-25T13:37:42Z",
+    "note": "On peut consulter les débats de la 43e législature dans le sélecteur du module Assemblée, même après l’arrivée des données de la 44e. 🤖 Assisté par Codex (GPT-6)",
+    "version": "2.58.0-beta.0"
+  },
+  {
     "pr": 1031,
     "date": "2026-11-25T02:45:43Z",
     "note": "Le diagramme des pipelines décrit une nouvelle vérification : chaque jour, la liste des député·es qu'utilise le site est comparée à celle de l'Assemblée nationale, pour savoir quand la mettre à jour.",
