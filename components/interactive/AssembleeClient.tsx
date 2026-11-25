@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { AssembleeData, DeputyRow, PeriodKey, PeriodView } from "@/lib/data/assemblee";
+import { periodeParDefaut } from "@/lib/data/assembleePeriode";
 import { slugCirco } from "@/lib/cartes/fonctions";
 import type { CartesSite } from "@/lib/cartes/site";
 import { PERIODES } from "@/lib/cartes/types";
@@ -81,7 +82,7 @@ export function AssembleeClient({ data, cartes, editionKey, archive43e }: {
   const numero = prochaine?.numero ?? data.legislatureCourante;
   const [voirArchive, setVoirArchive] = useState(false);
   const enAttente = !!prochaine && !voirArchive;
-  const [period, setPeriod] = useState<PeriodKey>("legislature");
+  const [period, setPeriod] = useState<PeriodKey>(() => periodeParDefaut(data));
   const selection = voirArchive && archive43e ? archive43e : { data, cartes };
   const view: PeriodView = selection.data.periods[period];
   const cartesActives = selection.cartes;

@@ -12,6 +12,7 @@ import { readDatasetText } from "@/lib/data/source";
 import { PARTY_KEYS, PARTY_LABELS, PARTY_COLORS, type PartyKey } from "@/lib/data/parties";
 import { lastUpdatedLabel } from "@/lib/dates";
 import { ISSUE_COLORS } from "@/lib/enjeux";
+import { RACINE_PORTRAITS, RACINE_PORTRAITS_ARCHIVE_43E } from "@/lib/cartes/portraits";
 
 // Le ton mesuré est resserré autour de zéro : sur la table réelle, les partis
 // s'étalent de -0,30 à +0,18. Avec un facteur 10, tout ce qui dépasse ±0,1
@@ -705,13 +706,15 @@ const PORTRAIT_ALIASES: Record<string, string> = {
 type PortraitIndex = {
   byId: Map<string, DeputyPortrait>;
   byName: Map<string, DeputyPortrait[]>;
+  /** Où vivent les images (lib/cartes/portraits.ts) ; à défaut, la racine courante. */
+  racine?: string;
 };
 
 function portraitBaseName(name: string): string {
   return name.replace(RIDING_HINT, "").trim();
 }
 
-function buildPortraitIndex(portraits: DeputyPortrait[]): PortraitIndex {
+function buildPortraitIndex(portraits: DeputyPortrait[], racine: string = RACINE_PORTRAITS): PortraitIndex {
   const byId = new Map<string, DeputyPortrait>();
   const byKey = new Map<string, DeputyPortrait[]>();
   for (const p of portraits) {
@@ -724,7 +727,7 @@ function buildPortraitIndex(portraits: DeputyPortrait[]): PortraitIndex {
     if (list) list.push(p);
     else byKey.set(key, [p]);
   }
-  return { byId, byName: byKey };
+  return { byId, byName: byKey, racine };
 }
 
 // « Éric Girard (Groulx) » -> nom nu + indice de circonscription.
@@ -925,7 +928,9 @@ function buildDeputyList(
       circonscription: portrait?.circonscription,
       // Tirage écran ; le tirage impression vit dans cartes/ (même nom de
       // fichier, sans le /web) et n'est chargé qu'au moment d'imprimer.
-      portrait: portrait ? `/images/deputes/cartes/web/${portrait.asset_slug ?? portrait.circonscription_slug}.jpg` : undefined,
+      portrait: portrait
+        ? `${portraits.racine ?? RACINE_PORTRAITS}/web/${portrait.asset_slug ?? portrait.circonscription_slug}.jpg`
+        : undefined,
       interventions: Number(r.n_interventions || 0),
       toneScore: Number(r.tone_score || 0),
       topIssueLabel: top?.label,
@@ -1165,8 +1170,9 @@ function construireVuesAssemblee(
   deputyRows: DeputyAgoraRow[],
   portraitsBruts: DeputyPortrait[],
   affiliationRows: AffiliationAgoraRow[],
+  racinePortraits: string = RACINE_PORTRAITS,
 ): AssembleeData {
-  const portraits = buildPortraitIndex(portraitsBruts);
+  const portraits = buildPortraitIndex(portraitsBruts, racinePortraits);
   const affiliations = buildAffiliationIndex(affiliationRows);
   return {
     periods: {
@@ -1188,7 +1194,12 @@ async function lireArchiveAssemblee43e(asOfIso?: string): Promise<AssembleeData 
   ]);
   const rows = asOfIso ? agora.filter((r) => r.period_end_date <= asOfIso) : agora;
   if (!rows.length) return null;
-  return { ...construireVuesAssemblee(rows, deputes, portraits.deputes, affiliations), archiveFigee: true };
+  // Index et images figés au 3 octobre 2026, avant l'élection de la 44e : les
+  // images courantes portent déjà le visage du nouvel élu de la circonscription.
+  return {
+    ...construireVuesAssemblee(rows, deputes, portraits.deputes, affiliations, RACINE_PORTRAITS_ARCHIVE_43E),
+    archiveFigee: true,
+  };
 }
 
 export async function loadArchiveAssemblee43e(): Promise<AssembleeData> {
@@ -1196,6 +1207,8 @@ export async function loadArchiveAssemblee43e(): Promise<AssembleeData> {
   if (!archive) throw new Error("L’archive de la 43e législature est vide");
   return archive;
 }
+
+export { periodeParDefaut } from "./assembleePeriode";
 
 export async function loadAssemblee(
   /** Une édition passée suit la date des débats, pas la cadence des éditions. */
