@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { AssembleeData, DeputyRow, PeriodKey, PeriodView } from "@/lib/data/assemblee";
+import { periodeParDefaut } from "@/lib/data/assembleePeriode";
 import { slugCirco } from "@/lib/cartes/fonctions";
 import type { CartesSite } from "@/lib/cartes/site";
 import { PERIODES } from "@/lib/cartes/types";
@@ -71,16 +72,24 @@ function Onglet({ actif, onChoisir, children, label }: { actif: boolean; onChois
   );
 }
 
-export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeData; cartes?: CartesSite; editionKey?: string }) {
-  // La nouvelle législature, tant qu'elle n'a pas siégé (#1035) : le module
-  // s'ouvre sur elle, et la législature passée reste à un clic. Sans elle, le
-  // module est celui des trois périodes.
+export function AssembleeClient({ data, cartes, editionKey, archive43e }: {
+  data: AssembleeData;
+  cartes?: CartesSite;
+  editionKey?: string;
+  archive43e?: { data: AssembleeData; cartes?: CartesSite };
+}) {
   const prochaine = data.prochaine;
-  const [voirProchaine, setVoirProchaine] = useState<boolean>(!!prochaine);
-  const enAttente = !!prochaine && voirProchaine;
-  const [period, setPeriod] = useState<PeriodKey>("legislature");
-  const view: PeriodView = data.periods[period];
-  const contexte = useMemo(() => (cartes ? contexteCartes(data, cartes, period) : null), [data, cartes, period]);
+  const numero = prochaine?.numero ?? data.legislatureCourante;
+  const [voirArchive, setVoirArchive] = useState(false);
+  const enAttente = !!prochaine && !voirArchive;
+  const [period, setPeriod] = useState<PeriodKey>(() => periodeParDefaut(data));
+  const selection = voirArchive && archive43e ? archive43e : { data, cartes };
+  const view: PeriodView = selection.data.periods[period];
+  const cartesActives = selection.cartes;
+  const contexte = useMemo(
+    () => cartesActives ? contexteCartes(selection.data, cartesActives, period) : null,
+    [selection.data, cartesActives, period],
+  );
 
   const visibleRows = view.rows.filter((r) => !r.inShadow);
   const shadowRows = view.rows.filter((r) => r.inShadow);
@@ -96,14 +105,14 @@ export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeD
           </div>
         </div>
         <div className="control-block">
-          {prochaine && (
+          {numero && (prochaine || archive43e) && (
             <div className="control-row">
               <div className="legend-toggle inline assemblee-legislatures" role="tablist" aria-label="Législature">
-                <Onglet actif={!enAttente} onChoisir={() => setVoirProchaine(false)} label={`${prochaine.numero - 1}e législature`}>
-                  {prochaine.numero - 1}e législature
+                <Onglet actif={voirArchive} onChoisir={() => setVoirArchive(true)} label={`${numero - 1}e législature`}>
+                  {numero - 1}e législature
                 </Onglet>
-                <Onglet actif={enAttente} onChoisir={() => setVoirProchaine(true)} label={`${prochaine.numero}e législature`}>
-                  {prochaine.numero}e législature
+                <Onglet actif={!voirArchive} onChoisir={() => setVoirArchive(false)} label={`${numero}e législature`}>
+                  {numero}e législature
                 </Onglet>
               </div>
             </div>
@@ -118,14 +127,14 @@ export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeD
                   aria-selected={p === period}
                   // Nom accessible explicite : sur téléphone, le libellé long est
                   // masqué et le court est aria-hidden (relecture d'Adrien, #924).
-                  aria-label={data.periods[p].tabLabel}
+                  aria-label={selection.data.periods[p].tabLabel}
                   className={p === period ? "active" : undefined}
                   onClick={() => setPeriod(p)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPeriod(p); } }}
                   style={{ cursor: "pointer" }}
                 >
                   {/* Libellé complet sur ordinateur, un mot sur téléphone. */}
-                  <span className="periode-long">{data.periods[p].tabLabel}</span>
+                  <span className="periode-long">{selection.data.periods[p].tabLabel}</span>
                   <span className="periode-court" aria-hidden="true">{LIBELLES_COURTS[p]}</span>
                 </span>
               ))}
@@ -139,7 +148,7 @@ export function AssembleeClient({ data, cartes, editionKey }: { data: AssembleeD
         {enAttente ? <AssembleeEnAttente vue={prochaine!} /> : (
           /* Les cinq casiers en tout temps (Jules, 3 oct.) : un parti sans parole
              dans la vue garde le sien, vide, au bout du banc. */
-          <AssembleeVestiaire key={period} rows={[...visibleRows, ...shadowRows]} shadowRows={[]} cartes={cartes?.parPeriode[period]?.cartes} contexte={contexte} />
+          <AssembleeVestiaire key={`${voirArchive}-${period}`} rows={[...visibleRows, ...shadowRows]} shadowRows={[]} cartes={cartesActives?.parPeriode[period]?.cartes} contexte={contexte} />
         )}
       </section>
       {!enAttente && <div className="module-last-updated">{view.lastUpdated}</div>}
