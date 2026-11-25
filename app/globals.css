@@ -10932,29 +10932,97 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 
 /* ─────────────────────────────────────────────────────────────────────────
    PARTIS — LA CONSOLE SEULE (2026-11-24).
-   Les decks rapetissent et ne montrent plus que leur VITESSE DE LECTURE,
-   réglée sur la part du parti (`--tour`, secondes par tour, calculée par
-   `dureeDuTour` dans PartisCouvertureClient). Le capuchon et l'aiguille
-   tournent ensemble : les sillons sont symétriques, seuls ces deux repères
-   rendent la rotation visible. Le fader écrit les noms complets.
+   Les decks sont des JOGS DE CONTRÔLEUR (2026-11-25, retours de Jules) :
+   plateau graphite uni, liseré discret, bague à 12 prises qui tourne LENTEMENT, et un
+   écran central, seul élément en couleur, à la couleur de l'enjeu qui joue
+   (`--enjeu`, posée sur `.deck`), adoucie. Le disque entier ne tourne plus
+   (distrayant) et n'est plus peint en entier (trop intense). Le fader écrit
+   les noms complets.
    ───────────────────────────────────────────────────────────────────────── */
 .regie {
-  --diametre-vinyle: 132px;
-  grid-template-columns: minmax(0, 144px) minmax(0, 1fr) minmax(0, 144px);
+  --diametre-vinyle: 164px;
+  grid-template-columns: minmax(0, 176px) minmax(0, 1fr) minmax(0, 176px);
 }
 .regie-flanc { margin-bottom: 0; justify-content: space-around; align-self: stretch; }
 .deck-carre { max-width: var(--diametre-vinyle); }
-.deck-carre--lecture .deck-jog-cap,
-.deck-carre--lecture .deck-jog::after {
-  animation: deck-lecture var(--tour, 1.8s) linear infinite;
+.deck-plateau { display: block; width: 100%; height: 100%; overflow: visible; }
+.deck-bague { fill: #34302B; }
+.deck-prise { fill: #3D3833; }
+/* Un tour en 40 s : assez lent pour se lire comme « en marche » sans tirer
+   l'œil hors du vumètre. */
+.deck-bague-tournante {
+  transform-box: view-box;
+  transform-origin: 50px 50px;
+  animation: deck-bague 40s linear infinite;
 }
-.deck-carre--lecture .deck-jog-cap { transform-origin: 50% 50%; }
-.deck-carre--arret .deck-jog-cap,
-.deck-carre--arret .deck-jog::after { animation: none; }
-@keyframes deck-lecture { to { transform: rotate(360deg); } }
+@keyframes deck-bague { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .deck-carre--lecture .deck-jog-cap,
-  .deck-carre--lecture .deck-jog::after { animation: none; }
+  .deck-bague-tournante { animation: none; }
+}
+.deck-gorge { fill: #1C1917; }
+.deck-disque { fill: #2A2622; stroke: rgba(243, 236, 221, 0.32); stroke-width: 0.6; }
+/* L'écran : la couleur de l'enjeu, adoucie vers le graphite du plateau pour
+   ne pas crier. Les couleurs d'enjeu sont toutes foncées, d'où le texte crème. */
+.deck-ecran {
+  fill: color-mix(in srgb, var(--enjeu, #4A443E) 72%, #2A2622);
+  stroke: #141210;
+  stroke-width: 1.2;
+}
+.deck-carre--sans-enjeu .deck-ecran,
+.deck--vide .deck-ecran { fill: #3A3631; }
+.deck-jauge-fond { fill: none; stroke: rgba(243, 236, 221, 0.18); stroke-width: 1.4; }
+.deck-jauge { fill: none; stroke: #F3ECDD; stroke-width: 1.4; stroke-linecap: round; }
+.deck-symbole { color: #F3ECDD; }
+.deck-enjeu-nom {
+  /* En serif, casse normale : un libellé qui se lit, pas un afficheur de
+     machine. Même famille que le texte courant du site. */
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 6.6px;
+  font-weight: 600;
+  fill: #F3ECDD;
+}
+.deck-enjeu-part {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 5.2px;
+  font-style: italic;
+  fill: rgba(243, 236, 221, 0.75);
+}
+.deck-carre--sans-enjeu .deck-enjeu-nom { fill: rgba(243, 236, 221, 0.6); }
+/* LE CHÂSSIS (2026-11-25, retour de Jules) : un filet de 1 px ne disait pas
+   « console de DJ ». Le cadre prend le graphite des decks, en bord épais à
+   coins vifs (arrondis, il rappelait trop le module des réseaux sociaux), avec un liseré clair à
+   l'intérieur, le même que celui des plateaux. Le dedans reste papier : le
+   châssis encadre, il n'assombrit pas le module. Ombre courte et basse, pour
+   poser l'appareil sur la page sans le faire flotter. Pas de vis aux coins :
+   essayées, elles faisaient décor et tombaient sur la marque d'aide.
+
+   Sur téléphone, bord + rembourrage latéral restent à 9 px, comme avant
+   (1 + 8) : un bord plus épais rognait la graduation « 100 % ». */
+.pupitre {
+  border: 7px solid #2A2622;
+  box-shadow:
+    inset 0 0 0 1px rgba(243, 236, 221, 0.9),
+    inset 0 0 0 2px rgba(28, 25, 23, 0.14),
+    0 14px 22px -18px rgba(28, 25, 23, 0.55);
+}
+@media (max-width: 640px) {
+  .pupitre { border-width: 3px; padding-left: 6px; padding-right: 6px; }
+}
+
+/* Le sigle du parti, sous le plateau : la même pastille que le ruban sous
+   chaque colonne du vumètre, pour qu'un parti se reconnaisse d'un coup d'œil
+   des deux côtés. */
+.deck-parti {
+  display: inline-block;
+  min-width: 64px;
+  padding: 3px 10px;
+  background: var(--party, var(--ink-soft));
+  color: #F3ECDD;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
 }
 
 .fader.fader--noms {
