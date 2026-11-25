@@ -272,4 +272,3 @@ export function texte(html: string): string {
     .replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ").trim();
 }
-
