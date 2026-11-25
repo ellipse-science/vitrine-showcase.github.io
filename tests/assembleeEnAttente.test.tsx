@@ -94,3 +94,31 @@ describe("AssembleeClient et la 44e en attente", () => {
     expect(sans).toContain("assemblee-periodes");
   });
 });
+
+// LES CASIERS DE LA 43e POUR LA 44e (Jules, 25 nov.) : la nouvelle Assemblée
+// garde le banc de casiers, avec les sièges sur les portes et les cartes des
+// élus dans le tiroir. Toujours aucune statistique de débat.
+describe("la 44e en attente, dans les casiers", () => {
+  const html = renderToStaticMarkup(<AssembleeClient data={donnees(true)} />);
+
+  it("montre le banc des cinq casiers, pas la grille de portraits", () => {
+    expect(html).toContain("vestiaire-banc");
+    expect(html.match(/class="casier[ "]/g)?.length).toBe(5);
+    expect(html).not.toContain("assemblee-attente-grille");
+  });
+
+  it("porte les sièges de chaque parti, et dit pourquoi un casier est vide", () => {
+    expect(html).toContain("PQ\u00a0: 2\u00a0sièges");
+    expect(html).toContain("CAQ\u00a0: aucune personne élue le 5 octobre 2026");
+  });
+
+  it("ouvre le plus grand casier sur les cartes de ses élus, sans statistique", () => {
+    expect(html).toContain("2 député·es élu·es le 5 octobre 2026");
+    expect(html).toContain("Paul St-Pierre Plamondon");
+    expect(html).toContain("Camille-Laurin");
+    expect(html).toMatch(/<img src="[^"]*\/images\/deputes\/cartes\/web\/camillelaurin\.jpg"/);
+    expect(html).not.toContain("Mots</i>");
+    expect(html).not.toContain("tiroir-faces");
+    expect(html).not.toMatch(/\bmots\b/);
+  });
+});
