@@ -945,7 +945,8 @@ function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
       )}
       {enjeu === null && (
         <text className="deck-enjeu-nom" x="50" y="52" textAnchor="middle">
-          –
+          {/* garde-redaction: ok (tiret affiché en l’absence d’enjeu) */}
+          —
         </text>
       )}
     </svg>
