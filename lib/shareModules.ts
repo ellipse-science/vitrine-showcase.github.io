@@ -109,7 +109,7 @@ const STATIC_CONTENT: Record<ShareModuleSlug, ShareModuleContent> = {
     stat: { value: "6", label: "mises à jour de la couverture partisane, chaque jour" },
   },
   "enjeux-saillants": {
-    title: "Les 12 enjeux de la campagne",
+    title: "Les 12 enjeux de l'actualité",
     description: "Les enjeux qui dominent l'actualité, jour après jour.",
     subtitle: "Les enjeux qui dominent",
     stat: { value: "24", label: "heures d'analyse média, en continu" },
@@ -271,10 +271,11 @@ export async function getShareModuleContent(
   if (slug === "enjeux-saillants") {
     const data = await loadTreemap(editionKey, asOfIso);
     // La carte annonce ce que le visiteur VERRA. Le module s'ouvre sur la vue
-    // Campagne depuis le 31-08 : l'édition courante prend donc l'enjeu de tête
-    // de la campagne, et son libellé le dit. Une édition d'archive rejoue un
-    // bloc précis : elle reste sur la vue du jour, au présent de ce jour-là.
-    const period = edition ? data?.day : (data?.month ?? data?.day);
+    // Semaine depuis la fin de la campagne (prototype 2026-11) : l'édition
+    // courante prend donc l'enjeu de tête des sept derniers jours, et son
+    // libellé le dit. Une édition d'archive rejoue un bloc précis : elle reste
+    // sur la vue du jour, au présent de ce jour-là.
+    const period = edition ? data?.day : (data?.week ?? data?.day);
     const top = period?.tiles?.[0];
     // `share` est calculé par le chargeur : la carte de partage et la tuile
     // doivent annoncer le même nombre, pas deux divisions parallèles. Une
@@ -295,7 +296,7 @@ export async function getShareModuleContent(
           value: sharePct,
           label: edition
             ? "de l'attention médiatique ce jour-là"
-            : "de l'attention médiatique depuis le début de la campagne",
+            : "de l'attention médiatique ces sept derniers jours",
           context: top.issueFr,
           color: top.color,
         },

@@ -47,27 +47,24 @@ describe("rankPointsForPeriod", () => {
     ]);
   });
 
-  it("garde uniquement le mois de l'observation la plus récente", () => {
+  it("garde les trente derniers jours : le dernier point et les 29 jours qui le précèdent", () => {
     const history = [
       point("2026-06-30", 5),
       point("2026-07-01", 4),
+      point("2026-07-02", 3),
       point("2026-07-15", 3),
       point("2026-07-31", 2),
     ];
 
     expect(rankPointsForPeriod(history, "month").map((entry) => entry.date)).toEqual([
-      "2026-07-01",
+      "2026-07-02",
       "2026-07-15",
       "2026-07-31",
     ]);
   });
 
-  it("utilise les trente dernières observations si le mois courant n'en a qu'une", () => {
-    const history = [
-      point("2026-06-29", 5),
-      point("2026-06-30", 4),
-      point("2026-07-01", 3),
-    ];
+  it("traverse un changement de mois sans repartir de zéro au premier du mois", () => {
+    const history = [point("2026-10-20", 5), point("2026-10-31", 4), point("2026-11-01", 3)];
 
     expect(rankPointsForPeriod(history, "month")).toEqual(history);
   });
@@ -157,27 +154,22 @@ describe("jourMoins", () => {
   });
 });
 
-describe("rankPointsForPeriod — campagne", () => {
-  const pt = (date: string) => ({ date, ranks: {}, tag: `${date} 15:36` });
-
-  it("ne garde que les points depuis le déclenchement du scrutin", () => {
-    const history = ["2026-08-24", "2026-08-26", "2026-08-27", "2026-08-29", "2026-08-30"].map(pt);
+describe("rankPointsForPeriod — 30 jours (hors campagne)", () => {
+  it("garde le premier jour de la fenêtre quand les points sont datés d'un jour seul", () => {
+    // La frise bâtie depuis les articles : un jour lu comme minuit UTC devenait
+    // la veille à Montréal et tombait hors de la fenêtre.
+    const history = ["2026-10-24", "2026-10-25", "2026-11-01", "2026-11-23"]
+      .map((d) => ({ date: d, ranks: {}, tag: d }));
     expect(rankPointsForPeriod(history, "month").map((p) => p.date)).toEqual([
-      "2026-08-27",
-      "2026-08-29",
-      "2026-08-30",
+      "2026-10-25",
+      "2026-11-01",
+      "2026-11-23",
     ]);
   });
 
-  it("garde le jour du déclenchement quand les points sont datés d'un jour seul", () => {
-    // La frise Campagne bâtie depuis les articles : le 27 août, lu comme minuit
-    // UTC, devenait le 26 à Montréal et tombait hors de la campagne.
-    const history = ["2026-08-24", "2026-08-26", "2026-08-27", "2026-08-29", "2026-08-30"]
-      .map((d) => ({ date: d, ranks: {}, tag: d }));
-    expect(rankPointsForPeriod(history, "month").map((p) => p.date)).toEqual([
-      "2026-08-27",
-      "2026-08-29",
-      "2026-08-30",
-    ]);
+  it("ne remonte plus au déclenchement du scrutin une fois la campagne finie", () => {
+    const history = ["2026-08-27", "2026-09-15", "2026-10-30", "2026-11-23"]
+      .map((d) => ({ date: d, ranks: {}, tag: `${d} 15:36` }));
+    expect(rankPointsForPeriod(history, "month").map((p) => p.date)).toEqual(["2026-10-30", "2026-11-23"]);
   });
 });
