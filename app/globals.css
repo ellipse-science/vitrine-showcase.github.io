@@ -5702,6 +5702,7 @@
     background: none;
     cursor: pointer;
   }
+  .console-vumetre:disabled { cursor: default; }
   .console-vumetre:focus-visible { outline: 2px solid var(--cordovan); outline-offset: 4px; }
   .console-vumetre .seg {
     flex: 1 1 0;
@@ -5943,7 +5944,17 @@
   }
 
   .console-vide {
-    padding: 30px 0;
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    width: fit-content;
+    height: fit-content;
+    margin: auto;
+    padding: 6px 10px;
+    background: var(--paper);
+    pointer-events: none;
     text-align: center;
     line-height: 1.45;
     font-family: 'Source Serif 4', Georgia, serif;
@@ -9267,7 +9278,6 @@
   .pupitre { position: relative; }
   .pupitre-aide { position: absolute; top: 6px; right: 8px; z-index: 2; }
   .regie { gap: 8px 10px; margin-top: 0; }
-  .regie-flanc { gap: 8px; }
 
   /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
      jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
@@ -9498,31 +9508,6 @@
 /* La console porte déjà `align-self: end` pour ne pas s'étirer dans la grille ;
    dans ce conteneur en colonne, c'est `margin-top: 0` qui la colle à la phrase. */
 .regie-centre .console { align-self: stretch; }
-/* ─────────────────────────────────────────────────────────────────────────
-   Les decks — quatre disques aux quatre coins de la régie.
-
-   Ils remplacent les deux platines : plus rien à charger ni à déposer, la
-   sourdine garantissant qu'il reste exactement quatre partis actifs. Le rang
-   fait la position, la colonne de gauche portant les rangs 1 et 3.
-   ───────────────────────────────────────────────────────────────────────── */
-
-.regie-flanc {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  min-width: 0;
-  /* Les decks DÉBORDENT la console, en haut et en bas. Ce sont eux les objets ;
-     la console est l'instrument qui les mesure, et elle doit paraître logée
-     entre eux plutôt que posée à côté. La marge négative est préférée à une
-     hauteur fixe : elle tient quelle que soit la taille du carré, qui suit la
-     largeur disponible et n'est donc jamais connue d'avance.
-
-     Le débordement doit rester DISCRET : la taille du carré est bornée pour que
-     la pile des deux decks dépasse le vumètre d'une trentaine de pixels de part
-     et d'autre, pas de deux cents. */
-  margin-bottom: -32px;
-}
-
 .deck {
     display: flex;
   flex-direction: column;
@@ -9677,44 +9662,11 @@
   .console-vumetre .seg.on.vu { animation: none; opacity: 1; }
 }
 
-/* ── Régie sous 1184 px : les quatre decks AU-DESSUS du vumètre, en 2×2 ──────
-   La grille à trois colonnes s'effondrait en une seule, ce qui déroulait
-   deck 1, deck 3, console, deck 2, deck 4 — le classement coupé en deux par
-   l'instrument. Les deux flancs sont replacés côte à côte sur la première
-   rangée, et la console passe dessous sur toute la largeur.
-
-   Placement EXPLICITE plutôt qu'`order` : le DOM intercale la console entre les
-   deux flancs, et le placement automatique l'aurait logée dans la cellule
-   voisine du premier. Les coordonnées de grille ne laissent pas ce doute.
-
-   Ce bloc vient APRÈS ceux de 1184 et de 768 : à spécificité égale, c'est
-   l'ordre source qui tranche, et il doit gagner sur les deux (piège de cascade
-   documenté dans le skill de vérification responsive). */
-@media (max-width: 1184px) {
-  .regie {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-    gap: 22px 20px;
-  }
-  .regie-flanc {
-    /* Plus de débordement au-dessus ni au-dessous : il n'y a plus de vumètre
-       à encadrer, les decks sont posés dessus. */
-    margin-bottom: 0;
-    gap: 18px;
-  }
-  .regie-flanc--gauche { grid-area: 1 / 1 / 2 / 2; }
-  .regie-flanc--droite { grid-area: 1 / 2 / 2 / 3; }
-  .regie-centre { grid-area: 2 / 1 / 3 / 3; }
-  .deck-carre { max-width: 168px; }
-}
-
 @media (max-width: 640px) {
   /* Marges rognées au minimum : c'est là qu'on prend la place, pas sur le
      contenu. */
   .pupitre { padding: 10px 8px 12px; }
   .regie { gap: 9px 10px; margin-top: 8px; }
-  .regie-flanc { gap: 9px; }
   /* Le vumètre se comprime en HAUTEUR seulement. Son échelle va toujours
      jusqu'à 100 % : c'est elle qui dit que les cinq partis se partagent un
      tout, la raccourcir changerait la lecture. */
@@ -11163,32 +11115,39 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 /* ─────────────────────────────────────────────────────────────────────────
    PARTIS — LA CONSOLE SEULE (2026-11-24).
    Les decks sont des JOGS DE CONTRÔLEUR (2026-11-25, retours de Jules) :
-   plateau graphite uni, liseré discret, bague à 12 prises qui tourne LENTEMENT, et un
-   écran central, seul élément en couleur, à la couleur de l'enjeu qui joue
-   (`--enjeu`, posée sur `.deck`), adoucie. Le disque entier ne tourne plus
-   (distrayant) et n'est plus peint en entier (trop intense). Le fader écrit
-   les noms complets.
+   plateau graphite uni, bague fixe et écran à la couleur de l’enjeu.
    ───────────────────────────────────────────────────────────────────────── */
 .regie {
   --diametre-vinyle: 164px;
   grid-template-columns: minmax(0, 176px) minmax(0, 1fr) minmax(0, 176px);
+  grid-template-rows: repeat(2, 1fr);
+  grid-template-areas: "rang1 console rang2" "rang3 console rang4";
+  align-items: center;
+  row-gap: 16px;
 }
-.regie-flanc { margin-bottom: 0; justify-content: space-around; align-self: stretch; }
-.deck-carre { max-width: var(--diametre-vinyle); }
-.deck-plateau { display: block; width: 100%; height: 100%; overflow: visible; }
+.regie > .deck:nth-child(1) { grid-area: rang1; }
+.regie > .deck:nth-child(2) { grid-area: rang2; }
+.regie > .deck:nth-child(3) { grid-area: rang3; }
+.regie > .deck:nth-child(4) { grid-area: rang4; }
+.regie-centre { grid-area: console; }
+.deck-carre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: var(--diametre-vinyle);
+  aspect-ratio: auto;
+  gap: 8px;
+}
+.deck-carre:focus-visible {
+  outline: 2px solid var(--cordovan);
+  outline-offset: 4px;
+}
+.deck-carre[data-parti]:is(:hover, [aria-expanded="true"]) .deck-disque {
+  stroke: #F3ECDD;
+}
+.deck-plateau { display: block; width: 100%; height: auto; aspect-ratio: 1; overflow: visible; }
 .deck-bague { fill: #34302B; }
 .deck-prise { fill: #3D3833; }
-/* Un tour en 40 s : assez lent pour se lire comme « en marche » sans tirer
-   l'œil hors du vumètre. */
-.deck-bague-tournante {
-  transform-box: view-box;
-  transform-origin: 50px 50px;
-  animation: deck-bague 40s linear infinite;
-}
-@keyframes deck-bague { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) {
-  .deck-bague-tournante { animation: none; }
-}
 .deck-gorge { fill: #1C1917; }
 .deck-disque { fill: #2A2622; stroke: rgba(243, 236, 221, 0.32); stroke-width: 0.6; }
 /* L'écran : la couleur de l'enjeu, adoucie vers le graphite du plateau pour
@@ -11242,6 +11201,23 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 /* Le sigle du parti, sous le plateau : la même pastille que le ruban sous
    chaque colonne du vumètre, pour qu'un parti se reconnaisse d'un coup d'œil
    des deux côtés. */
+.deck-identite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 29px;
+  width: 100%;
+}
+.deck-rang {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font: 500 12px/1 'IBM Plex Mono', monospace;
+}
 .deck-parti {
   display: inline-block;
   min-width: 64px;
@@ -11270,14 +11246,27 @@ a.social-infobulle-texte:hover, a.social-infobulle-texte:focus-visible { color: 
 }
 .fader--noms .fader-cran.tous b { letter-spacing: 0.04em; }
 
+/* Le filet n'apparaît que si les deux modules sont présents sur l'accueil. */
+#partis-et-couverture:has(.pupitre) + #candidats-reseaux:has(.social-appareil) {
+  margin-top: clamp(28px, 4vw, 56px);
+  padding-top: clamp(28px, 4vw, 56px);
+  border-top: 1px solid var(--rule);
+}
+
 @media (max-width: 1184px) {
-  .regie { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .regie-flanc { flex-direction: row; justify-content: center; gap: 24px; }
-  .regie-flanc .deck { flex: 0 1 var(--diametre-vinyle); }
+  .regie {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+    grid-template-areas: "rang1 rang2 rang3 rang4" "console console console console";
+    gap: 16px;
+  }
 }
 @media (max-width: 768px) {
-  .regie { display: block; }
-  .regie-flanc { display: none !important; }
+  .regie { gap: 12px 6px; }
+  .deck-carre { max-width: 100px; gap: 5px; }
+  .deck-identite { height: 24px; gap: 3px; }
+  .deck-rang { min-width: 16px; height: 19px; font-size: 10px; }
+  .deck-parti { min-width: 0; padding: 2px 4px; font-size: 11px; }
 }
 @media (max-width: 640px) {
   .deck-carre { max-width: 84px; }

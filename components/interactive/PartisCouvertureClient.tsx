@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent, Ref } from "react";
 import type { PartiesData, PartyKey, RangeKey, RangeView, RowView, Indisponibilite, EnjeuView } from "@/lib/data/parties";
 import { TOUS_MEDIAS, MEDIA_PANEL_QC, MEDIA_DE, MEDIA_DANS, MEDIA_LABELS } from "@/lib/medias";
 import { ShareButton } from "@/components/interactive/ShareButton";
@@ -145,9 +146,53 @@ export function PartisCouvertureClient({
   /** Le verso du vumètre : une tranche ouvre les pièces publiées qui permettent
    * de remonter de ce parti à ses articles représentatifs. */
   const [partiSources, setPartiSources] = useState<PartyKey | null>(null);
+  const sourcesId = useId();
+  const boutonRetour = useRef<HTMLButtonElement>(null);
+  const boutonSource = useRef<HTMLButtonElement>(null);
   const [showDoom, setShowDoom] = useState(false);
   const pcqTapRef = useRef({ count: 0, lastTime: 0 });
 
+  function choisirParti(parti: PartyKey, event: ReactMouseEvent<HTMLButtonElement>) {
+    boutonSource.current = event.currentTarget;
+    setPartiSources((actuel) => (actuel === parti ? null : parti));
+  }
+
+  function fermerSources() {
+    setPartiSources(null);
+  }
+
+  function choisirPeriode(periode: RangeKey) {
+    boutonSource.current = null;
+    setRange(periode);
+    fermerSources();
+  }
+
+  useEffect(() => {
+    if (!partiSources) {
+      boutonSource.current?.focus({ preventScroll: true });
+      boutonSource.current = null;
+      return;
+    }
+
+    boutonRetour.current?.focus({ preventScroll: true });
+    const fermerAuClic = (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest(
+        ".console-sources, .deck-carre[data-parti], .console-vumetre[data-parti]",
+      )) return;
+      boutonSource.current = null;
+      setPartiSources(null);
+    };
+    const fermerAuClavier = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented) setPartiSources(null);
+    };
+
+    document.addEventListener("click", fermerAuClic, true);
+    document.addEventListener("keydown", fermerAuClavier);
+    return () => {
+      document.removeEventListener("click", fermerAuClic, true);
+      document.removeEventListener("keydown", fermerAuClavier);
+    };
+  }, [partiSources]);
   const handlePcqTap = () => {
     if (isProd) return;
     const now = performance.now();
@@ -224,15 +269,11 @@ export function PartisCouvertureClient({
                   aria-selected={p === range}
                   className={p === range ? "active" : undefined}
                   title={PERIODE_INFOBULLE[p]}
-                  onClick={() => {
-                    setRange(p);
-                    setPartiSources(null);
-                  }}
+                  onClick={() => choisirPeriode(p)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      setRange(p);
-                      setPartiSources(null);
+                      choisirPeriode(p);
                     }
                   }}
                   style={{ cursor: "pointer" }}
@@ -277,14 +318,19 @@ export function PartisCouvertureClient({
           </InfoTip>
         </div>
 
-        {/* Quatre decks aux quatre coins, le vumètre entre eux. La colonne de
-            gauche porte les rangs 1 et 3, celle de droite les rangs 2 et 4. */}
-        <div className={`regie${partiSources ? " regie--sources-ouvertes" : ""}`}>
-          <div className="regie-flanc regie-flanc--gauche">
-            <Deck row={decks[0]} rang={1} enjeu={enjeuQuiJoue(decks[0])} indisponible={data.indisponible} selection={partiSources} />
-            <Deck row={decks[2]} rang={3} enjeu={enjeuQuiJoue(decks[2])} indisponible={data.indisponible} selection={partiSources} />
-          </div>
-
+        <div className="regie">
+          {decks.map((row, i) => (
+            <Deck
+              key={i + 1}
+              row={row}
+              rang={i + 1}
+              enjeu={enjeuQuiJoue(row)}
+              indisponible={data.indisponible}
+              selection={partiSources}
+              sourcesId={sourcesId}
+              onSelect={choisirParti}
+            />
+          ))}
           <div className="regie-centre">
             <Console
               rows={view.rows}
@@ -296,20 +342,26 @@ export function PartisCouvertureClient({
               depuis={view.depuisLabel}
               partiSources={partiSources}
               sources={sourcesParti}
-              onSelectParti={setPartiSources}
+              sourcesId={sourcesId}
+              boutonRetour={boutonRetour}
+              onSelectParti={choisirParti}
+              onCloseSources={fermerSources}
             />
-          </div>
-
-          <div className="regie-flanc regie-flanc--droite">
-            <Deck row={decks[1]} rang={2} enjeu={enjeuQuiJoue(decks[1])} indisponible={data.indisponible} selection={partiSources} />
-            <Deck row={decks[3]} rang={4} enjeu={enjeuQuiJoue(decks[3])} indisponible={data.indisponible} selection={partiSources} />
           </div>
         </div>
 
         {/* Le panel de médias est une CONSTANTE, connue indépendamment de toute
             donnée : sans ventilation publiée, le fader reste affiché, inerte. */}
         {data.medias.length > 0 ? (
-          <Fader medias={data.medias} valeur={media} onChange={setMedia} />
+          <Fader
+            medias={data.medias}
+            valeur={media}
+            onChange={(source) => {
+              boutonSource.current = null;
+              setMedia(source);
+              fermerSources();
+            }}
+          />
         ) : (
           <Fader
             medias={MEDIA_PANEL_QC.map((id) => ({ id, label: MEDIA_LABELS[id] ?? id }))}
@@ -342,10 +394,12 @@ export function ModeEmploi() {
       nomment le parti&nbsp;: aiguille à gauche (rouge), défavorable&nbsp;; à droite
       (vert), favorable&nbsp;; au centre, neutre.
       <br />
-      <br />• Les quatre <b>decks</b> sont les quatre partis les plus présents, dont le
-      sigle est écrit dessous. L&apos;écran au centre affiche l&apos;enjeu dont on parle
-      le plus à propos de ce parti dans la dernière journée publiée, tous médias
-      confondus, et son arc la part de la couverture du parti qu&apos;il occupe.
+      <br />• Les <b>decks</b> présentent jusqu’à quatre partis. Le rang et le sigle
+      figurent sous chaque deck occupé. Sélectionnez un deck ou une colonne pour
+      voir les articles qui servent de sources. L’écran affiche l’enjeu dont on
+      parle le plus à propos de ce parti dans la dernière journée publiée, tous
+      médias confondus. L’arc indique la part de la couverture du parti consacrée
+      à cet enjeu.
       <br />
       <br />• Le curseur <b>Source</b> change de média&nbsp;: les colonnes et les cadrans
       se recalculent sur les Unes de ce média seul.
@@ -484,7 +538,10 @@ function Console({
   depuis,
   partiSources,
   sources,
+  sourcesId,
+  boutonRetour,
   onSelectParti,
+  onCloseSources,
 }: {
   rows: RowView[];
   /** Les mêmes partis, tous médias confondus — le point de comparaison des
@@ -502,7 +559,10 @@ function Console({
   depuis: string;
   partiSources: PartyKey | null;
   sources: { title: string; url: string }[];
-  onSelectParti: (parti: PartyKey | null) => void;
+  sourcesId: string;
+  boutonRetour: Ref<HTMLButtonElement>;
+  onSelectParti: (parti: PartyKey, event: ReactMouseEvent<HTMLButtonElement>) => void;
+  onCloseSources: () => void;
 }) {
   // L'ORDRE DES TRANCHES SUIT L'AGRÉGAT, jamais le média affiché : bouger le
   // fader ne doit pas faire sauter les partis d'une position à l'autre. Un
@@ -545,9 +605,6 @@ function Console({
   // fonctionne. Quand il est en panne, le dire ainsi imputerait aux médias un
   // silence qui est le nôtre : c'est le bandeau au-dessus qui l'explique.
   const muet = Boolean(indisponible) || !tete || tete.sovPct <= 0;
-  if (!indisponible && muet) {
-    return <p className="console-vide">Aucun parti n&apos;a été détecté sur cette période.</p>;
-  }
 
   const partiChoisi = partiSources ? rows.find((row) => row.key === partiSources) : null;
 
@@ -561,8 +618,8 @@ function Console({
       style={{ ["--tempo" as string]: `${saillanceRang > 0 ? 2.0 - (saillanceRang - 1) * 0.26 : 1.35}s` }}
     >
       {partiChoisi && (
-        <div className="console-sources" aria-live="polite">
-          <button className="console-sources-retour" type="button" onClick={() => onSelectParti(null)}>
+        <div className="console-sources" id={sourcesId} aria-live="polite">
+          <button className="console-sources-retour" ref={boutonRetour} type="button" onClick={onCloseSources}>
             Retour au vumètre
           </button>
           <p className="console-sources-surtitle">Sources de la mesure</p>
@@ -582,6 +639,9 @@ function Console({
           )}
         </div>
       )}
+      {muet && !indisponible && (
+        <p className="console-vide">Aucun parti n&apos;a été détecté sur cette période.</p>
+      )}
       <div className={`console-face${partiChoisi ? " console-face--masquee" : ""}`} aria-hidden={partiChoisi ? true : undefined}>
       {/* Le titre vit DANS le cadre du vumètre, pas au-dessus : il nomme
           l'instrument, il ne l'introduit pas. */}
@@ -600,7 +660,7 @@ function Console({
               total={tranches.length}
               moyennePct={reference.find((r) => r.key === row.key)?.sovPct ?? 0}
               onPcqTap={row.key === "pcq" ? onPcqTap : undefined}
-              onSelect={() => onSelectParti(row.key)}
+              onSelect={(event) => onSelectParti(row.key, event)}
             />
           ))}
         </ol>
@@ -663,7 +723,7 @@ function Tranche({
   total: number;
   moyennePct: number;
   onPcqTap?: () => void;
-  onSelect: () => void;
+  onSelect: (event: ReactMouseEvent<HTMLButtonElement>) => void;
   /** Mesure suspendue : la piste garde sa place et son échelle, mais AUCUN
    *  segment ne s'allume et rien ne s'écrit dessous. */
   muet?: boolean;
@@ -709,7 +769,14 @@ function Tranche({
         ["--party" as string]: row.color,
       }}
     >
-      <button className="console-vumetre" type="button" onClick={onSelect} title={`${phrase} Voir les sources.`}>
+      <button
+        className="console-vumetre"
+        type="button"
+        data-parti={row.key}
+        disabled={muet}
+        onClick={onSelect}
+        title={muet ? undefined : `${phrase} Voir les sources.`}
+      >
         <span className="visually-hidden">{phrase}</span>
         {/* Du haut vers le bas : le segment 19 est en haut de l'échelle. */}
         {Array.from({ length: METER_SEGMENTS }, (_, k) => METER_SEGMENTS - 1 - k).map((idx) => (
@@ -839,8 +906,8 @@ function arc(r: number, part: number): string {
  * place du module où l'on lit DE QUOI on parle ; le vumètre dit COMBIEN.
  *
  * Retours de Jules du 2026-11-25 : la rotation du disque entier distrayait,
- * et un plateau entièrement peint était trop intense. Seule la bague tourne,
- * lentement ; la couleur se limite à l'écran, comme sur un vrai contrôleur.
+ * et un plateau entièrement peint était trop intense. La couleur se limite
+ * à l’écran et le deck reste immobile.
  *
  * Sans enjeu identifié ce jour-là (seulement « Autres enjeux », ou rien de
  * publié), le plateau reste gris et porte un tiret.
@@ -851,14 +918,16 @@ function Deck({
   enjeu,
   indisponible,
   selection,
+  sourcesId,
+  onSelect,
 }: {
   row: RowView | null;
-  /** La position du deck, de 1 à 4. Ne s'affiche pas : elle ne sert qu'à
-   *  l'infobulle du deck vide. */
   rang: number;
   enjeu: EnjeuView | null;
   indisponible: Indisponibilite | null;
-  selection?: PartyKey | null;
+  selection: PartyKey | null;
+  sourcesId: string;
+  onSelect: (parti: PartyKey, event: ReactMouseEvent<HTMLButtonElement>) => void;
 }) {
   if (indisponible || !row) {
     return (
@@ -872,6 +941,7 @@ function Deck({
       >
         <div className="deck-carre deck-carre--inerte">
           <Plateau />
+          <span className="deck-identite"><span className="deck-rang">{rang}</span></span>
         </div>
       </div>
     );
@@ -890,29 +960,34 @@ function Deck({
         ["--enjeu" as string]: enjeu ? couleurEnjeu(enjeu.label) : COULEUR_ENJEU_DEFAUT,
       }}
     >
-      <div
-        className={`deck-carre deck-carre--inerte${enjeu ? "" : " deck-carre--sans-enjeu"}`}
-        role="img"
-        aria-label={annonce}
+      <button
+        className={`deck-carre${enjeu ? "" : " deck-carre--sans-enjeu"}`}
+        type="button"
+        data-parti={row.key}
+        aria-expanded={selection === row.key}
+        aria-controls={selection ? sourcesId : undefined}
+        aria-label={`Rang ${rang}, ${row.fullLabel}. Voir les sources.`}
+        aria-describedby={`${sourcesId}-rang-${rang}`}
         title={annonce}
+        onClick={(event) => onSelect(row.key, event)}
       >
         <Plateau enjeu={enjeu} />
-      </div>
-      <span className="deck-parti" aria-hidden="true">
-        {row.label}
-      </span>
+        <span className="visually-hidden" id={`${sourcesId}-rang-${rang}`}>{annonce}</span>
+        <span className="deck-identite" aria-hidden="true">
+          <span className="deck-rang">{rang}</span>
+          <span className="deck-parti">{row.label}</span>
+        </span>
+      </button>
     </div>
   );
 }
 
-/** Le dessin du jog, de l'extérieur vers le centre : la bague à prises (qui
- *  tourne), la gorge, le plateau et son liseré, puis l'écran de l'enjeu. Pas de sillons :
- *  ils ajoutaient de la texture sans rien dire. Les
- *  couleurs viennent de `--enjeu`, posée sur `.deck` (voir `globals.css`). */
+/** Le dessin du jog, de l'extérieur vers le centre : la bague à prises, la
+ * gorge, le plateau puis l'écran de l'enjeu. */
 function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
   return (
     <svg className="deck-plateau" viewBox="0 0 100 100" aria-hidden="true">
-      <g className="deck-bague-tournante">
+      <g>
         <circle className="deck-bague" cx="50" cy="50" r="49.4" />
         {PRISES.map((angle) => (
           <rect
