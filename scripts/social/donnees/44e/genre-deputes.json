@@ -1,0 +1,641 @@
+{
+  "_note": "Genre grammatical des élu·es de la 44e législature, pour accorder « Élu » / « Élue ». Clé : assnat_id. Chaque entrée garde sa source ; rien n'est déduit d'un prénom.",
+  "deputes": {
+    "991": {
+      "nom": "Pascal Bérubé",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "1171": {
+      "nom": "Filomena Rotiroti",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "1253": {
+      "nom": "Nicolas Girard",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Repentigny »)"
+    },
+    "5845": {
+      "nom": "Elsie Lefebvre",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Berthier »)"
+    },
+    "7289": {
+      "nom": "Nicolas Marceau",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Marie-Victorin »)"
+    },
+    "11789": {
+      "nom": "Marc Tanguay",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "12189": {
+      "nom": "Alain Therrien",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Sanguinet »)"
+    },
+    "15367": {
+      "nom": "Caroline Simard",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Charlevoix–Côte-de-Beaupré »)"
+    },
+    "15383": {
+      "nom": "André Fortin",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17909": {
+      "nom": "Frantz Benjamin",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17911": {
+      "nom": "Jennifer Maccarone",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17923": {
+      "nom": "Monsef Derraji",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17933": {
+      "nom": "Ruba Ghazal",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17935": {
+      "nom": "Alexandre Leduc",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17943": {
+      "nom": "Enrico Ciccone",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17947": {
+      "nom": "Joël Arseneau",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17951": {
+      "nom": "Gregory Kelley",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17953": {
+      "nom": "Andrés Fontecilla",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "17955": {
+      "nom": "Sol Zanetti",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "18217": {
+      "nom": "Méganne Perry Mélançon",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Gaspé »)"
+    },
+    "19253": {
+      "nom": "André Albert Morin",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19261": {
+      "nom": "Madwa-Nika Cadet",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19267": {
+      "nom": "Etienne Grandmont",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19271": {
+      "nom": "Brigitte B. Garceau",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19275": {
+      "nom": "Maïté Blanchette Vézina",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19283": {
+      "nom": "Désirée McGraw",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19285": {
+      "nom": "Michelle Setlakwe",
+      "genre": "f",
+      "source": "fiche de l'Assemblée nationale : « Députée de Mont-Royal–Outremont »"
+    },
+    "19287": {
+      "nom": "Virginie Dufour",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19289": {
+      "nom": "Paul St-Pierre Plamondon",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19301": {
+      "nom": "Elisabeth Prass",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19307": {
+      "nom": "Frédéric Beauchemin",
+      "genre": "m",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "19313": {
+      "nom": "Linda Caron",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "20131": {
+      "nom": "Catherine Gentilcore",
+      "genre": "f",
+      "source": "pplmatch, members_historic_qc.csv (colonne gender)"
+    },
+    "20193": {
+      "nom": "Marie-Karlynn Laflamme",
+      "genre": "f",
+      "source": "fiche de l'Assemblée nationale : « Députée de Chicoutimi »"
+    },
+    "20319": {
+      "nom": "Stéphane Tremblay",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député d’Abitibi-Est »)"
+    },
+    "20321": {
+      "nom": "Louis Ialenti",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Vimont-Auteuil »)"
+    },
+    "20323": {
+      "nom": "Antoine Dionne Charest",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Verdun »)"
+    },
+    "20325": {
+      "nom": "Nicolas Plourde",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député d’Anjou–Louis-Riel »)"
+    },
+    "20327": {
+      "nom": "Pierre Nantel",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député d’Argenteuil »)"
+    },
+    "20329": {
+      "nom": "Guy Jr Lapointe",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Verchères »)"
+    },
+    "20331": {
+      "nom": "Tarek Henoud",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député d’Arthabaska-L’Érable »)"
+    },
+    "20333": {
+      "nom": "James Hughes",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Vaudreuil »)"
+    },
+    "20335": {
+      "nom": "Patricia Drouin",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Beauce-Nord »)"
+    },
+    "20337": {
+      "nom": "Sonia Caron",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée d’Ungava »)"
+    },
+    "20339": {
+      "nom": "Jonathan Poulin",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Beauce-Sud »)"
+    },
+    "20341": {
+      "nom": "Alexandre Daneau",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Beauharnois »)"
+    },
+    "20343": {
+      "nom": "Jean Pellerin",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Trois-Rivières »)"
+    },
+    "20345": {
+      "nom": "Éric Duhaime",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Bellechasse »)"
+    },
+    "20347": {
+      "nom": "Sandra Hernández",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Taillon »)"
+    },
+    "20349": {
+      "nom": "Audrey Bujold",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Bellefeuille »)"
+    },
+    "20351": {
+      "nom": "Sylvie Tanguay",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Saint-François »)"
+    },
+    "20353": {
+      "nom": "Alexandre Girard-Duchaine",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Bertrand »)"
+    },
+    "20355": {
+      "nom": "Simon-Pierre Savard-Tremblay",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Saint-Hyacinthe »)"
+    },
+    "20357": {
+      "nom": "Nadine Le Gal",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Blainville »)"
+    },
+    "20359": {
+      "nom": "Gaétan Bédard",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Saint-Jean »)"
+    },
+    "20361": {
+      "nom": "Cédric Gagnon-Ducharme",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Borduas »)"
+    },
+    "20363": {
+      "nom": "Pier-Luc Bujold",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Bonaventure »)"
+    },
+    "20365": {
+      "nom": "Sandrine Michon",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Saint-Jérôme »)"
+    },
+    "20367": {
+      "nom": "Julie Guyot",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Chambly »)"
+    },
+    "20369": {
+      "nom": "Michel Langevin",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Chapleau »)"
+    },
+    "20371": {
+      "nom": "Éloïse Coulombe",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Charlesbourg »)"
+    },
+    "20373": {
+      "nom": "Valérie Assouline",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Saint-Laurent »)"
+    },
+    "20375": {
+      "nom": "Félix Rhéaume",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Châteauguay »)"
+    },
+    "20377": {
+      "nom": "Olivier Bertin-Mahieux",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Soulanges »)"
+    },
+    "20379": {
+      "nom": "Karim Elayoubi",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Chauveau »)"
+    },
+    "20381": {
+      "nom": "Cécile Tremblay",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Sainte-Rose »)"
+    },
+    "20383": {
+      "nom": "Madeleine Féquière",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Chomedey »)"
+    },
+    "20385": {
+      "nom": "Roxane Milot",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Sainte-Marie–Saint-Jacques »)"
+    },
+    "20387": {
+      "nom": "Dominique Dumas",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député des Chutes-de-la-Chaudière »)"
+    },
+    "20389": {
+      "nom": "Frédéric Poulin",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de la Côte-du-Sud »)"
+    },
+    "20391": {
+      "nom": "Gisèle Pouhe Njall",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Rosemont »)"
+    },
+    "20393": {
+      "nom": "Nathalie Boisclair",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Daniel-Johnson »)"
+    },
+    "20395": {
+      "nom": "Mathieu Lebrun",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Rousseau »)"
+    },
+    "20397": {
+      "nom": "Linda Vaillant",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Deux-Montagnes »)"
+    },
+    "20399": {
+      "nom": "Diane Dallaire",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Rouyn-Noranda–Témiscamingue »)"
+    },
+    "20401": {
+      "nom": "Émile Simard",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Dubuc »)"
+    },
+    "20403": {
+      "nom": "Meggie Richard",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Duplessis »)"
+    },
+    "20405": {
+      "nom": "Marie Claude Fournier",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Fabre »)"
+    },
+    "20407": {
+      "nom": "Isabelle Thibeault",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Roberval »)"
+    },
+    "20409": {
+      "nom": "Ariane Boyer",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Rivière-du-Loup–Témiscouata–Les Basques »)"
+    },
+    "20411": {
+      "nom": "David Logue",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Gatineau »)"
+    },
+    "20413": {
+      "nom": "Alexandre Boulerice",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Gouin »)"
+    },
+    "20415": {
+      "nom": "Yohann St-Pierre",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Rimouski »)"
+    },
+    "20417": {
+      "nom": "Jean-François Arsenault",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Granby »)"
+    },
+    "20419": {
+      "nom": "Marie-Claude Sarrazin",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Groulx »)"
+    },
+    "20421": {
+      "nom": "Sacha Cannon",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Hull »)"
+    },
+    "20423": {
+      "nom": "Jocelyn Desjardins",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Richelieu »)"
+    },
+    "20425": {
+      "nom": "Frédéric Laplante",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Huntingdon »)"
+    },
+    "20427": {
+      "nom": "Odette Lavigne",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de René-Lévesque »)"
+    },
+    "20429": {
+      "nom": "Camille Pellerin-Forget",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée d’Iberville »)"
+    },
+    "20431": {
+      "nom": "Anne Nguyen",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Prévost »)"
+    },
+    "20433": {
+      "nom": "Julie White",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Jean-Talon »)"
+    },
+    "20435": {
+      "nom": "Véronique Venne",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Joliette »)"
+    },
+    "20437": {
+      "nom": "Marcel Bouchard",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Portneuf »)"
+    },
+    "20439": {
+      "nom": "Jimmy Bouchard",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Jonquière »)"
+    },
+    "20441": {
+      "nom": "Stéphane Paquet",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Pointe-aux-Trembles »)"
+    },
+    "20443": {
+      "nom": "David Bowles",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Pierre-Laporte »)"
+    },
+    "20445": {
+      "nom": "Maxime Laporte",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de L’Assomption »)"
+    },
+    "20447": {
+      "nom": "Sonia Ziadé",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de La Prairie »)"
+    },
+    "20449": {
+      "nom": "Charles Milliard",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député d’Orford »)"
+    },
+    "20451": {
+      "nom": "Catherine Drouin",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Labelle »)"
+    },
+    "20453": {
+      "nom": "William Fradette",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Lac-Saint-Jean »)"
+    },
+    "20455": {
+      "nom": "Caroline De Guire",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Laval-des-Rapides »)"
+    },
+    "20457": {
+      "nom": "Isabelle Millette",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Papineau »)"
+    },
+    "20459": {
+      "nom": "Élodie Murphy-Gauthier",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Laviolette–Saint-Maurice »)"
+    },
+    "20461": {
+      "nom": "Dieudonné Ella Oyono",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député des Plaines »)"
+    },
+    "20463": {
+      "nom": "Guillaume Langlois",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Nicolet–Bécancour »)"
+    },
+    "20465": {
+      "nom": "Karine Laflamme",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Lévis »)"
+    },
+    "20467": {
+      "nom": "Renaud Labrecque",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Lotbinière-Frontenac »)"
+    },
+    "20469": {
+      "nom": "Marie-Josée Hélie",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Montmorency »)"
+    },
+    "20471": {
+      "nom": "Marcos Archambault",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Louis-Hébert »)"
+    },
+    "20473": {
+      "nom": "Michel Leblanc",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Marguerite-Bourgeoys »)"
+    },
+    "20475": {
+      "nom": "Jimmy Gagnon",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Mégantic »)"
+    },
+    "20477": {
+      "nom": "Natalie Bisaillon",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Marie-Lacoste-Gérin-Lajoie »)"
+    },
+    "20479": {
+      "nom": "Isabelle Blais",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Maskinongé »)"
+    },
+    "20481": {
+      "nom": "Geneviève Couture",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Mirabel »)"
+    },
+    "20483": {
+      "nom": "Stéphane Handfield",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Masson »)"
+    },
+    "20497": {
+      "nom": "Sébastien D'Astous",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député d’Abitibi-Ouest »)"
+    },
+    "20513": {
+      "nom": "Adriana Szalontai",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Champlain »)"
+    },
+    "20515": {
+      "nom": "Nada Boumeftah",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Maurice-Richard »)"
+    },
+    "20517": {
+      "nom": "Mathieu Lavoie",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Montarville »)"
+    },
+    "20519": {
+      "nom": "Stéphanie Vachon",
+      "genre": "f",
+      "source": "fiche de l'Assemblée (« Députée de Sherbrooke »)"
+    },
+    "20521": {
+      "nom": "Benoit Clermont",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Saint-Henri–Sainte-Anne »)"
+    },
+    "20523": {
+      "nom": "Charles Page",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Drummond–Bois-Francs »)"
+    },
+    "20527": {
+      "nom": "Patrick Paquet",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Vanier-Les Rivières »)"
+    },
+    "20529": {
+      "nom": "Bernard Sévigny",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Richmond »)"
+    },
+    "20599": {
+      "nom": "Stephan Fogaing",
+      "genre": "m",
+      "source": "fiche de l'Assemblée (« Député de Vachon »)"
+    }
+  },
+  "extrait_le": "2026-11-25"
+}

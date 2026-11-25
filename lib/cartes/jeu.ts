@@ -8,11 +8,12 @@ import type { PeriodKey } from "@/lib/data/assemblee";
 import { PARTY_COLORS } from "@/lib/data/partis-constantes";
 import type { DonneesAssemblee, Sources } from "./donnees";
 import {
-  AXE_DEBUT, AXE_FIN, CHEFS, COULEUR_INDEPENDANT, EDITION_LEGISLATURE, LIBELLE_RARETE, PARTI_ACTUEL_PAR_SIEGE,
+  COULEUR_INDEPENDANT, LIBELLE_RARETE,
   PROPORTIONS_RARETE, accorderGenre, cleDistrict, codeFonction, dateFr, distance, finitIndependant, lendemain,
   libelleFonction, ligneCarriere, ligneMandat, nomImprime, positionAxe, rubanChefParlementaire, slugCirco,
   titreCourt, trame, trouverMandat,
 } from "./fonctions";
+import { PROFIL_43E, type ProfilLegislature } from "./legislatures";
 import type { Carte, FicheFonctions, Rarete, Serie } from "./types";
 
 export type JeuComplet = { cartes: Carte[]; serie: Serie };
@@ -24,8 +25,11 @@ export function construireJeu(
   data: DonneesAssemblee,
   periode: PeriodKey,
   sources: Sources,
-  options: { annee?: number } = {},
+  options: { annee?: number; profil?: ProfilLegislature } = {},
 ): JeuComplet {
+  const profil = options.profil ?? PROFIL_43E;
+  const AXE_DEBUT = profil.axe.debut;
+  const AXE_FIN = profil.axe.fin;
   const vue = data.periods[periode];
   if (!vue) throw new Error(`Période inconnue : ${periode} (legislature, session ou last_pdq).`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
 
@@ -51,7 +55,7 @@ export function construireJeu(
       slug: slugCirco(deputy), deputy, parti: "Indépendant", cle: "ind" as const, couleur: COULEUR_INDEPENDANT,
     })));
   const jeu: (typeof jeuBrut[number] & { partiElu?: string })[] = jeuBrut.filter((c) => {
-    const partiActuel = PARTI_ACTUEL_PAR_SIEGE[c.slug];
+    const partiActuel = profil.partiActuelParSiege[c.slug];
     return !partiActuel || c.cle === partiActuel;
   });
   jeu.sort((a, b) => a.slug.localeCompare(b.slug, "fr"));
@@ -117,9 +121,9 @@ export function construireJeu(
     total: sieges.length, salon: periode === "legislature" ? "Salon bleu" : vue.subtitle, annee,
     // Édition imprimée : la législature entière. Les éditions de session, en
     // ligne, portent leur année.
-    edition: periode === "legislature" ? EDITION_LEGISLATURE : `Édition ${annee}`,
-    mandat: ligneMandat(trouverMandat(mandats, c.deputy.name, c.slug)),
-    chef: CHEFS[c.slug],
+    edition: periode === "legislature" ? profil.edition : `Édition ${annee}`,
+    mandat: ligneMandat(trouverMandat(mandats, c.deputy.name, c.deputy.circonscription ?? c.slug)),
+    chef: profil.chefs[c.slug],
     depart: depart.get(c),
   }));
 
@@ -128,7 +132,7 @@ export function construireJeu(
   // lieu de « l-assomption » suffisait à escamoter le ruban du premier
   // ministre sans le moindre message.
   const slugsConnus = new Set(jeu.map((c) => c.slug));
-  const orphelins = Object.keys(CHEFS).filter((k) => !slugsConnus.has(k));
+  const orphelins = Object.keys(profil.chefs).filter((k) => !slugsConnus.has(k));
   if (orphelins.length) {
     console.warn(`  ⚠️ ${orphelins.length} titre(s) de CHEFS sans élu correspondant : ${orphelins.join(", ")}`); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
     console.warn("     La clé est le slug de la circonscription (« l-assomption », « camille-laurin »)."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
@@ -229,12 +233,12 @@ export function construireJeu(
     const legende = [...niveaux].sort((a, b) => b[0] - a[0])
       .map(([pct, n]) => ({ titre: libelle(pct, n.titres), annees: annees(n.debut, n.fin), o: trame(pct) }));
     const horsMandat = [
-      debutM > AXE_DEBUT ? { g: 0, w: positionAxe(debutM) } : null,
-      finM < AXE_FIN ? { g: positionAxe(lendemain(finM)), w: 100 - positionAxe(lendemain(finM)) } : null,
+      debutM > AXE_DEBUT ? { g: 0, w: positionAxe(debutM, profil.axe) } : null,
+      finM < AXE_FIN ? { g: positionAxe(lendemain(finM), profil.axe), w: 100 - positionAxe(lendemain(finM), profil.axe) } : null,
     ].filter((x): x is { g: number; w: number } => x !== null);
     c.parcours = {
       segments: runs.filter((r) => r.pct > 0).map((r) => ({
-        g: positionAxe(r.debut), w: positionAxe(lendemain(r.fin)) - positionAxe(r.debut), o: trame(r.pct),
+        g: positionAxe(r.debut, profil.axe), w: positionAxe(lendemain(r.fin), profil.axe) - positionAxe(r.debut, profil.axe), o: trame(r.pct),
       })),
       horsMandat,
       // TOUS les niveaux (cinq au plus, 12 élus sur 129 en ont quatre ou cinq) :
@@ -272,7 +276,11 @@ export function construireJeu(
     classes.push({ c, mots: c.deputy.wordsRaw ?? 0 });
   }
   classes.sort((a, b) => b.mots - a.mots || a.c.numero - b.c.numero);
-  {
+  // SANS PAROLE, PAS DE CLASSEMENT : avant la première séance d'une
+  // législature, tout le monde est à zéro mot. Tirer les rares dans l'ordre
+  // des numéros serait arbitraire ; toutes les cartes restent communes.
+  if (classes.every((x) => x.mots === 0)) for (const x of classes) x.c.rarete = "commune";
+  else {
     let i = 0;
     for (const [rarete, part] of PROPORTIONS_RARETE) {
       const n = Math.round(part * classes.length);
@@ -284,7 +292,7 @@ export function construireJeu(
     const f = ficheParCarte.get(c);
     c.codeFonction = codeFonction(f?.fonctions_legislature ?? [], (f?.porte_parole_legislature?.length ?? 0) > 0);
     c.libelleFonction = libelleFonction(c.codeFonction, genres.get(f?.assnat_id ?? ""));
-    const ruban = rubanChefParlementaire(f?.fonctions_legislature ?? []);
+    const ruban = rubanChefParlementaire(f?.fonctions_legislature ?? [], AXE_FIN);
     if (ruban && !c.chef && !c.depart) c.chef = { titre: ruban };
   }
   const decompte = new Map<Rarete, number>();

@@ -3,8 +3,18 @@
   "source_url": "https://www.assnat.qc.ca/fr/deputes/",
   "licence": "Reproduction autorisée pour usage non commercial avec mention de la source.",
   "licence_url": "https://www.assnat.qc.ca/fr/propos-site/droits-propriete-intellectuelle.html",
-  "recupere_le": "2026-11-23",
+  "recupere_le": "2026-11-25",
   "deputes": [
+    {
+      "deputy_id": "17823",
+      "circonscription": "Abitibi-Est",
+      "circonscription_slug": "abitibi-est",
+      "asset_slug": "historique/17823",
+      "nom": "Pierre Dufour",
+      "parti": "Indépendant",
+      "fichier": "/images/deputes/historique/17823.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/dufour-pierre-17823/index.html"
+    },
     {
       "deputy_id": "20319",
       "circonscription": "Abitibi-Est",
@@ -14,6 +24,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/abitibi-est.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/tremblay-stephane-20319/index.html"
+    },
+    {
+      "deputy_id": "17825",
+      "circonscription": "Abitibi-Ouest",
+      "circonscription_slug": "abitibi-ouest",
+      "asset_slug": "historique/17825",
+      "nom": "Suzanne Blais",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17825.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/blais-suzanne-17825/index.html"
     },
     {
       "deputy_id": "20497",
@@ -36,6 +56,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/morin-andre-albert-19253/index.html"
     },
     {
+      "deputy_id": "19255",
+      "circonscription": "Anjou–Louis-Riel",
+      "circonscription_slug": "anjou-louis-riel",
+      "asset_slug": "historique/19255",
+      "nom": "Karine Boivin Roy",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19255.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/boivin-roy-karine-19255/index.html"
+    },
+    {
       "deputy_id": "20325",
       "circonscription": "Anjou–Louis-Riel",
       "circonscription_slug": "anjou-louis-riel",
@@ -44,6 +74,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/anjou-louis-riel.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/plourde-nicolas-20325/index.html"
+    },
+    {
+      "deputy_id": "17827",
+      "circonscription": "Argenteuil",
+      "circonscription_slug": "argenteuil",
+      "asset_slug": "historique/17827",
+      "nom": "Agnès Grondin",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17827.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/grondin-agnes-17827/index.html"
     },
     {
       "deputy_id": "20327",
@@ -66,6 +106,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/lefebvre-eric-16777/index.html"
     },
     {
+      "deputy_id": "20141",
+      "circonscription": "Arthabaska",
+      "circonscription_slug": "arthabaska",
+      "asset_slug": "historique/20141",
+      "nom": "Alex Boissonneault",
+      "parti": "Parti québécois",
+      "fichier": "/images/deputes/historique/20141.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/boissonneault-alex-20141/index.html"
+    },
+    {
       "deputy_id": "20331",
       "circonscription": "Arthabaska-L’Érable",
       "circonscription_slug": "arthabaska-l-erable",
@@ -74,6 +124,16 @@
       "parti": "Parti conservateur du Québec",
       "fichier": "/images/deputes/arthabaska-l-erable.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/henoud-tarek-20331/index.html"
+    },
+    {
+      "deputy_id": "17829",
+      "circonscription": "Beauce-Nord",
+      "circonscription_slug": "beauce-nord",
+      "asset_slug": "historique/17829",
+      "nom": "Luc Provençal",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17829.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/provencal-luc-17829/index.html"
     },
     {
       "deputy_id": "20335",
@@ -86,6 +146,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/drouin-patricia-20335/index.html"
     },
     {
+      "deputy_id": "17831",
+      "circonscription": "Beauce-Sud",
+      "circonscription_slug": "beauce-sud",
+      "asset_slug": "historique/17831",
+      "nom": "Samuel Poulin",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17831.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/poulin-samuel-17831/index.html"
+    },
+    {
       "deputy_id": "20339",
       "circonscription": "Beauce-Sud",
       "circonscription_slug": "beauce-sud",
@@ -96,6 +166,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/poulin-jonathan-20339/index.html"
     },
     {
+      "deputy_id": "17833",
+      "circonscription": "Beauharnois",
+      "circonscription_slug": "beauharnois",
+      "asset_slug": "historique/17833",
+      "nom": "Claude Reid",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17833.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/reid-claude-17833/index.html"
+    },
+    {
       "deputy_id": "20341",
       "circonscription": "Beauharnois",
       "circonscription_slug": "beauharnois",
@@ -104,6 +184,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/beauharnois.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/daneau-alexandre-20341/index.html"
+    },
+    {
+      "deputy_id": "17835",
+      "circonscription": "Bellechasse",
+      "circonscription_slug": "bellechasse",
+      "asset_slug": "historique/17835",
+      "nom": "Stéphanie Lachance",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17835.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lachance-stephanie-17835/index.html"
     },
     {
       "deputy_id": "20345",
@@ -126,6 +216,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/bujold-audrey-20349/index.html"
     },
     {
+      "deputy_id": "17837",
+      "circonscription": "Berthier",
+      "circonscription_slug": "berthier",
+      "asset_slug": "historique/17837",
+      "nom": "Caroline Proulx",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17837.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/proulx-caroline-17837/index.html"
+    },
+    {
       "deputy_id": "5845",
       "circonscription": "Berthier",
       "circonscription_slug": "berthier",
@@ -134,6 +234,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/berthier.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/lefebvre-elsie-5845/index.html"
+    },
+    {
+      "deputy_id": "19257",
+      "circonscription": "Bertrand",
+      "circonscription_slug": "bertrand",
+      "asset_slug": "historique/19257",
+      "nom": "France-Élaine Duranceau",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19257.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/duranceau-france-elaine-19257/index.html"
     },
     {
       "deputy_id": "20353",
@@ -146,6 +256,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/girard-duchaine-alexandre-20353/index.html"
     },
     {
+      "deputy_id": "15357",
+      "circonscription": "Blainville",
+      "circonscription_slug": "blainville",
+      "asset_slug": "historique/15357",
+      "nom": "Mario Laframboise",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/15357.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/laframboise-mario-15357/index.html"
+    },
+    {
       "deputy_id": "20357",
       "circonscription": "Blainville",
       "circonscription_slug": "blainville",
@@ -156,6 +276,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/le-gal-nadine-20357/index.html"
     },
     {
+      "deputy_id": "19251",
+      "circonscription": "Bonaventure",
+      "circonscription_slug": "bonaventure",
+      "asset_slug": "historique/19251",
+      "nom": "Catherine Blouin",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19251.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/blouin-catherine-19251/index.html"
+    },
+    {
       "deputy_id": "20363",
       "circonscription": "Bonaventure",
       "circonscription_slug": "bonaventure",
@@ -164,6 +294,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/bonaventure.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/bujold-pier-luc-20363/index.html"
+    },
+    {
+      "deputy_id": "15359",
+      "circonscription": "Borduas",
+      "circonscription_slug": "borduas",
+      "asset_slug": "historique/15359",
+      "nom": "Simon Jolin-Barette",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/15359.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/jolin-barrette-simon-15359/index.html"
     },
     {
       "deputy_id": "20361",
@@ -186,6 +326,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/cadet-madwa-nika-19261/index.html"
     },
     {
+      "deputy_id": "17845",
+      "circonscription": "Brome-Missisquoi",
+      "circonscription_slug": "brome-missisquoi",
+      "asset_slug": "historique/17845",
+      "nom": "Isabelle Charest",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17845.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/charest-isabelle-17845/index.html"
+    },
+    {
       "deputy_id": "19307",
       "circonscription": "Brome-Missisquoi",
       "circonscription_slug": "brome-missisquoi",
@@ -206,6 +356,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/st-pierre-plamondon-paul-19289/index.html"
     },
     {
+      "deputy_id": "15361",
+      "circonscription": "Chambly",
+      "circonscription_slug": "chambly",
+      "asset_slug": "historique/15361",
+      "nom": "Jean-François Roberge",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/15361.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/roberge-jean-francois-15361/index.html"
+    },
+    {
       "deputy_id": "20367",
       "circonscription": "Chambly",
       "circonscription_slug": "chambly",
@@ -214,6 +374,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/chambly.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/guyot-julie-20367/index.html"
+    },
+    {
+      "deputy_id": "17847",
+      "circonscription": "Champlain",
+      "circonscription_slug": "champlain",
+      "asset_slug": "historique/17847",
+      "nom": "Sonia LeBel",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17847.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lebel-sonia-17847/index.html"
     },
     {
       "deputy_id": "20513",
@@ -226,6 +396,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/szalontai-adriana-20513/index.html"
     },
     {
+      "deputy_id": "17851",
+      "circonscription": "Chapleau",
+      "circonscription_slug": "chapleau",
+      "asset_slug": "historique/17851",
+      "nom": "Mathieu Lévesque",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17851.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/levesque-mathieu-17851/index.html"
+    },
+    {
       "deputy_id": "20369",
       "circonscription": "Chapleau",
       "circonscription_slug": "chapleau",
@@ -234,6 +414,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/chapleau.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/langevin-michel-20369/index.html"
+    },
+    {
+      "deputy_id": "17855",
+      "circonscription": "Charlesbourg",
+      "circonscription_slug": "charlesbourg",
+      "asset_slug": "historique/17855",
+      "nom": "Jonatan Julien",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17855.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/julien-jonatan-17855/index.html"
     },
     {
       "deputy_id": "20371",
@@ -254,6 +444,26 @@
       "parti": "Parti conservateur du Québec",
       "fichier": "/images/deputes/charlevoix-cote-de-beaupre.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/simard-caroline-15367/index.html"
+    },
+    {
+      "deputy_id": "19291",
+      "circonscription": "Charlevoix–Côte-de-Beaupré",
+      "circonscription_slug": "charlevoix-cote-de-beaupre",
+      "asset_slug": "historique/19291",
+      "nom": "Kariane Bourassa",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19291.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/bourassa-kariane-19291/index.html"
+    },
+    {
+      "deputy_id": "12213",
+      "circonscription": "Chauveau",
+      "circonscription_slug": "chauveau",
+      "asset_slug": "historique/12213",
+      "nom": "Sylvain Lévesque",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/12213.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/levesque-sylvain-12213/index.html"
     },
     {
       "deputy_id": "20379",
@@ -286,6 +496,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/laflamme-marie-karlynn-20193/index.html"
     },
     {
+      "deputy_id": "19295",
+      "circonscription": "Chomedey",
+      "circonscription_slug": "chomedey",
+      "asset_slug": "historique/19295",
+      "nom": "Sona Lakhoyan Olivier",
+      "parti": "Indépendante",
+      "fichier": "/images/deputes/historique/19295.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lakhoyan-olivier-sona-19295/index.html"
+    },
+    {
       "deputy_id": "20383",
       "circonscription": "Chomedey",
       "circonscription_slug": "chomedey",
@@ -294,6 +514,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/chomedey.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/fequiere-madeleine-20383/index.html"
+    },
+    {
+      "deputy_id": "19297",
+      "circonscription": "Chutes-de-la-Chaudière",
+      "circonscription_slug": "chutes-de-la-chaudiere",
+      "asset_slug": "historique/19297",
+      "nom": "Martine Biron",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19297.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/biron-martine-19297/index.html"
     },
     {
       "deputy_id": "20387",
@@ -306,6 +536,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/dumas-dominique-20387/index.html"
     },
     {
+      "deputy_id": "19293",
+      "circonscription": "Châteauguay",
+      "circonscription_slug": "chateauguay",
+      "asset_slug": "historique/19293",
+      "nom": "Marie-Belle Gendron",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19293.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/gendron-marie-belle-19293/index.html"
+    },
+    {
       "deputy_id": "20375",
       "circonscription": "Châteauguay",
       "circonscription_slug": "chateauguay",
@@ -314,6 +554,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/chateauguay.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/rheaume-felix-20375/index.html"
+    },
+    {
+      "deputy_id": "19299",
+      "circonscription": "Côte-du-Sud",
+      "circonscription_slug": "cote-du-sud",
+      "asset_slug": "historique/19299",
+      "nom": "Mathieu Rivest",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19299.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/rivest-mathieu-19299/index.html"
     },
     {
       "deputy_id": "20389",
@@ -346,6 +596,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/boisclair-nathalie-20393/index.html"
     },
     {
+      "deputy_id": "195",
+      "circonscription": "Deux-Montagnes",
+      "circonscription_slug": "deux-montagnes",
+      "asset_slug": "historique/195",
+      "nom": "Benoît Charette",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/195.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/charette-benoit-195/index.html"
+    },
+    {
       "deputy_id": "20397",
       "circonscription": "Deux-Montagnes",
       "circonscription_slug": "deux-montagnes",
@@ -366,6 +626,26 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/page-charles-20523/index.html"
     },
     {
+      "deputy_id": "5909",
+      "circonscription": "Drummond–Bois-Francs",
+      "circonscription_slug": "drummond-bois-francs",
+      "asset_slug": "historique/5909",
+      "nom": "Sébastien Schneeberger",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/5909.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/schneeberger-sebastien-5909/index.html"
+    },
+    {
+      "deputy_id": "17917",
+      "circonscription": "Dubuc",
+      "circonscription_slug": "dubuc",
+      "asset_slug": "historique/17917",
+      "nom": "François Tremblay",
+      "parti": "Indépendant",
+      "fichier": "/images/deputes/historique/17917.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/tremblay-francois-17917/index.html"
+    },
+    {
       "deputy_id": "20401",
       "circonscription": "Dubuc",
       "circonscription_slug": "dubuc",
@@ -376,6 +656,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/simard-emile-20401/index.html"
     },
     {
+      "deputy_id": "19303",
+      "circonscription": "Duplessis",
+      "circonscription_slug": "duplessis",
+      "asset_slug": "historique/19303",
+      "nom": "Kateri Champagne Jourdain",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19303.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/champagne-jourdain-kateri-19303/index.html"
+    },
+    {
       "deputy_id": "20403",
       "circonscription": "Duplessis",
       "circonscription_slug": "duplessis",
@@ -384,6 +674,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/duplessis.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/richard-meggie-20403/index.html"
+    },
+    {
+      "deputy_id": "19315",
+      "circonscription": "Fabre",
+      "circonscription_slug": "fabre",
+      "asset_slug": "historique/19315",
+      "nom": "Alice Abou-Khalil",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19315.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/abou-khalil-alice-19315/index.html"
     },
     {
       "deputy_id": "20405",
@@ -406,6 +706,26 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/perry-melancon-meganne-18217/index.html"
     },
     {
+      "deputy_id": "19319",
+      "circonscription": "Gaspé",
+      "circonscription_slug": "gaspe",
+      "asset_slug": "historique/19319",
+      "nom": "Stéphane Sainte-Croix",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19319.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/sainte-croix-stephane-19319/index.html"
+    },
+    {
+      "deputy_id": "17921",
+      "circonscription": "Gatineau",
+      "circonscription_slug": "gatineau",
+      "asset_slug": "historique/17921",
+      "nom": "Robert Bussière",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17921.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/bussiere-robert-17921/index.html"
+    },
+    {
       "deputy_id": "20411",
       "circonscription": "Gatineau",
       "circonscription_slug": "gatineau",
@@ -416,6 +736,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/logue-david-20411/index.html"
     },
     {
+      "deputy_id": "16827",
+      "circonscription": "Gouin",
+      "circonscription_slug": "gouin",
+      "asset_slug": "historique/16827",
+      "nom": "Gabriel Nadeau-Dubois",
+      "parti": "Québec solidaire",
+      "fichier": "/images/deputes/historique/16827.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/nadeau-dubois-gabriel-16827/index.html"
+    },
+    {
       "deputy_id": "20413",
       "circonscription": "Gouin",
       "circonscription_slug": "gouin",
@@ -424,6 +754,16 @@
       "parti": "Québec solidaire",
       "fichier": "/images/deputes/gouin.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/boulerice-alexandre-20413/index.html"
+    },
+    {
+      "deputy_id": "11",
+      "circonscription": "Granby",
+      "circonscription_slug": "granby",
+      "asset_slug": "historique/11",
+      "nom": "François Bonnardel",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/11.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/bonnardel-francois-11/index.html"
     },
     {
       "deputy_id": "20417",
@@ -456,6 +796,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/leduc-alexandre-17935/index.html"
     },
     {
+      "deputy_id": "19323",
+      "circonscription": "Hull",
+      "circonscription_slug": "hull",
+      "asset_slug": "historique/19323",
+      "nom": "Suzanne Tremblay",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19323.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/tremblay-suzanne-19323/index.html"
+    },
+    {
       "deputy_id": "20421",
       "circonscription": "Hull",
       "circonscription_slug": "hull",
@@ -466,6 +816,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/cannon-sacha-20421/index.html"
     },
     {
+      "deputy_id": "19351",
+      "circonscription": "Huntingdon",
+      "circonscription_slug": "huntingdon",
+      "asset_slug": "historique/19351",
+      "nom": "Carole Mallette",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19351.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/mallette-carole-19351/index.html"
+    },
+    {
       "deputy_id": "20425",
       "circonscription": "Huntingdon",
       "circonscription_slug": "huntingdon",
@@ -474,6 +834,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/huntingdon.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/laplante-frederic-20425/index.html"
+    },
+    {
+      "deputy_id": "19325",
+      "circonscription": "Iberville",
+      "circonscription_slug": "iberville",
+      "asset_slug": "historique/19325",
+      "nom": "Audrey Bogemans",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19325.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/bogemans-audrey-19325/index.html"
     },
     {
       "deputy_id": "20429",
@@ -516,6 +886,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/boutin-joelle-18561/index.html"
     },
     {
+      "deputy_id": "19999",
+      "circonscription": "Jean-Talon",
+      "circonscription_slug": "jean-talon",
+      "asset_slug": "historique/19999",
+      "nom": "Pascal Paradis",
+      "parti": "Parti québécois",
+      "fichier": "/images/deputes/historique/19999.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/paradis-pascal-19999/index.html"
+    },
+    {
       "deputy_id": "20433",
       "circonscription": "Jean-Talon",
       "circonscription_slug": "jean-talon",
@@ -536,6 +916,26 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/rotiroti-filomena-1171/index.html"
     },
     {
+      "deputy_id": "15401",
+      "circonscription": "Johnson",
+      "circonscription_slug": "johnson",
+      "asset_slug": "historique/15401",
+      "nom": "André Lamontagne",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/15401.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lamontagne-andre-15401/index.html"
+    },
+    {
+      "deputy_id": "19321",
+      "circonscription": "Joliette",
+      "circonscription_slug": "joliette",
+      "asset_slug": "historique/19321",
+      "nom": "François St-Louis",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19321.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/st-louis-francois-19321/index.html"
+    },
+    {
       "deputy_id": "20435",
       "circonscription": "Joliette",
       "circonscription_slug": "joliette",
@@ -544,6 +944,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/joliette.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/venne-veronique-20435/index.html"
+    },
+    {
+      "deputy_id": "19317",
+      "circonscription": "Jonquière",
+      "circonscription_slug": "jonquiere",
+      "asset_slug": "historique/19317",
+      "nom": "Yannick Gagnon",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19317.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/gagnon-yannick-19317/index.html"
     },
     {
       "deputy_id": "20439",
@@ -566,6 +976,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/laporte-maxime-20445/index.html"
     },
     {
+      "deputy_id": "4131",
+      "circonscription": "L'Assomption",
+      "circonscription_slug": "l-assomption",
+      "asset_slug": "historique/4131",
+      "nom": "François Legault",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/4131.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/legault-francois-4131/index.html"
+    },
+    {
       "deputy_id": "19275",
       "circonscription": "La Peltrie",
       "circonscription_slug": "la-peltrie",
@@ -576,6 +996,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/blanchette-vezina-maite-19275/index.html"
     },
     {
+      "deputy_id": "485",
+      "circonscription": "La Peltrie",
+      "circonscription_slug": "la-peltrie",
+      "asset_slug": "historique/485",
+      "nom": "Éric Caire",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/485.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/caire-eric-485/index.html"
+    },
+    {
       "deputy_id": "19313",
       "circonscription": "La Pinière",
       "circonscription_slug": "la-piniere",
@@ -584,6 +1014,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/la-piniere.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/caron-linda-19313/index.html"
+    },
+    {
+      "deputy_id": "12223",
+      "circonscription": "La Prairie",
+      "circonscription_slug": "la-prairie",
+      "asset_slug": "historique/12223",
+      "nom": "Christian Dubé",
+      "parti": "Indépendant",
+      "fichier": "/images/deputes/historique/12223.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/dube-christian-12223/index.html"
     },
     {
       "deputy_id": "20447",
@@ -606,6 +1046,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/tanguay-marc-11789/index.html"
     },
     {
+      "deputy_id": "17959",
+      "circonscription": "Labelle",
+      "circonscription_slug": "labelle",
+      "asset_slug": "historique/17959",
+      "nom": "Chantale Jeannotte",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17959.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/jeannotte-chantale-17959/index.html"
+    },
+    {
       "deputy_id": "20451",
       "circonscription": "Labelle",
       "circonscription_slug": "labelle",
@@ -626,6 +1076,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/fradette-william-20453/index.html"
     },
     {
+      "deputy_id": "19311",
+      "circonscription": "Laporte",
+      "circonscription_slug": "laporte",
+      "asset_slug": "historique/19311",
+      "nom": "Isabelle Poulet",
+      "parti": "Indépendante",
+      "fichier": "/images/deputes/historique/19311.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/poulet-isabelle-19311/index.html"
+    },
+    {
       "deputy_id": "17953",
       "circonscription": "Laurier-Dorion",
       "circonscription_slug": "laurier-dorion",
@@ -634,6 +1094,16 @@
       "parti": "Québec solidaire",
       "fichier": "/images/deputes/laurier-dorion.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/fontecilla-andres-17953/index.html"
+    },
+    {
+      "deputy_id": "19309",
+      "circonscription": "Laval-des-Rapides",
+      "circonscription_slug": "laval-des-rapides",
+      "asset_slug": "historique/19309",
+      "nom": "Céline Haytayan",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19309.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/haytayan-celine-19309/index.html"
     },
     {
       "deputy_id": "20455",
@@ -646,6 +1116,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/de-guire-caroline-20455/index.html"
     },
     {
+      "deputy_id": "18071",
+      "circonscription": "Laviolette–Saint-Maurice",
+      "circonscription_slug": "laviolette-saint-maurice",
+      "asset_slug": "historique/18071",
+      "nom": "Marie-Louise Tardif",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/18071.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/tardif-marie-louise-18071/index.html"
+    },
+    {
       "deputy_id": "20459",
       "circonscription": "Laviolette–Saint-Maurice",
       "circonscription_slug": "laviolette-saint-maurice",
@@ -654,6 +1134,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/laviolette-saint-maurice.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/murphy-gauthier-elodie-20459/index.html"
+    },
+    {
+      "deputy_id": "17949",
+      "circonscription": "Les Plaines",
+      "circonscription_slug": "les-plaines",
+      "asset_slug": "historique/17949",
+      "nom": "Lucie Lecours",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17949.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lecours-lucie-17949/index.html"
     },
     {
       "deputy_id": "20461",
@@ -666,6 +1156,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/ella-oyono-dieudonne-20461/index.html"
     },
     {
+      "deputy_id": "17945",
+      "circonscription": "Lotbinière-Frontenac",
+      "circonscription_slug": "lotbiniere-frontenac",
+      "asset_slug": "historique/17945",
+      "nom": "Isabelle Lecours",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17945.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lecours-isabelle-17945/index.html"
+    },
+    {
       "deputy_id": "20467",
       "circonscription": "Lotbinière-Frontenac",
       "circonscription_slug": "lotbiniere-frontenac",
@@ -674,6 +1174,16 @@
       "parti": "Parti conservateur du Québec",
       "fichier": "/images/deputes/lotbiniere-frontenac.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/labrecque-renaud-20467/index.html"
+    },
+    {
+      "deputy_id": "16885",
+      "circonscription": "Louis-Hébert",
+      "circonscription_slug": "louis-hebert",
+      "asset_slug": "historique/16885",
+      "nom": "Geneviève Guilbault",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/16885.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/guilbault-genevieve-16885/index.html"
     },
     {
       "deputy_id": "20471",
@@ -696,6 +1206,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/laflamme-karine-20465/index.html"
     },
     {
+      "deputy_id": "209",
+      "circonscription": "Lévis",
+      "circonscription_slug": "levis",
+      "asset_slug": "historique/209",
+      "nom": "Bernard Drainville",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/209.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/drainville-bernard-209/index.html"
+    },
+    {
       "deputy_id": "20473",
       "circonscription": "Marguerite-Bourgeoys",
       "circonscription_slug": "marguerite-bourgeoys",
@@ -714,6 +1234,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/marie-lacoste-gerin-lajoie.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/bisaillon-natalie-20477/index.html"
+    },
+    {
+      "deputy_id": "19063",
+      "circonscription": "Marie-Victorin",
+      "circonscription_slug": "marie-victorin",
+      "asset_slug": "historique/19063",
+      "nom": "Shirley Dorismond",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19063.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/dorismond-shirley-19063/index.html"
     },
     {
       "deputy_id": "7289",
@@ -736,6 +1266,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/ciccone-enrico-17943/index.html"
     },
     {
+      "deputy_id": "17941",
+      "circonscription": "Maskinongé",
+      "circonscription_slug": "maskinonge",
+      "asset_slug": "historique/17941",
+      "nom": "Simon Allaire",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17941.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/allaire-simon-17941/index.html"
+    },
+    {
       "deputy_id": "20479",
       "circonscription": "Maskinongé",
       "circonscription_slug": "maskinonge",
@@ -744,6 +1284,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/maskinonge.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/blais-isabelle-20479/index.html"
+    },
+    {
+      "deputy_id": "15403",
+      "circonscription": "Masson",
+      "circonscription_slug": "masson",
+      "asset_slug": "historique/15403",
+      "nom": "Mathieu Lemay",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/15403.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lemay-mathieu-15403/index.html"
     },
     {
       "deputy_id": "20483",
@@ -764,6 +1314,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/matane-matapedia-mitis.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/berube-pascal-991/index.html"
+    },
+    {
+      "deputy_id": "19305",
+      "circonscription": "Maurice-Richard",
+      "circonscription_slug": "maurice-richard",
+      "asset_slug": "historique/19305",
+      "nom": "Haroun Bouazzi",
+      "parti": "Québec solidaire",
+      "fichier": "/images/deputes/historique/19305.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/bouazzi-haroun-19305/index.html"
     },
     {
       "deputy_id": "20515",
@@ -796,6 +1356,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/dufour-virginie-19287/index.html"
     },
     {
+      "deputy_id": "15399",
+      "circonscription": "Mirabel",
+      "circonscription_slug": "mirabel",
+      "asset_slug": "historique/15399",
+      "nom": "Sylvie D'Amours",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/15399.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/d-amours-sylvie-15399/index.html"
+    },
+    {
       "deputy_id": "20481",
       "circonscription": "Mirabel",
       "circonscription_slug": "mirabel",
@@ -814,6 +1384,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/mont-royal-outremont.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/setlakwe-michelle-19285/index.html"
+    },
+    {
+      "deputy_id": "12187",
+      "circonscription": "Montarville",
+      "circonscription_slug": "montarville",
+      "asset_slug": "historique/12187",
+      "nom": "Nathalie Roy",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/12187.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/roy-nathalie-12187/index.html"
     },
     {
       "deputy_id": "20517",
@@ -836,6 +1416,26 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/helie-marie-josee-20469/index.html"
     },
     {
+      "deputy_id": "5369",
+      "circonscription": "Montmorency",
+      "circonscription_slug": "montmorency",
+      "asset_slug": "historique/5369",
+      "nom": "Jean-François Simard",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/5369.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/simard-jean-francois-5369/index.html"
+    },
+    {
+      "deputy_id": "17937",
+      "circonscription": "Mégantic",
+      "circonscription_slug": "megantic",
+      "asset_slug": "historique/17937",
+      "nom": "François Jacques",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17937.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/jacques-francois-17937/index.html"
+    },
+    {
       "deputy_id": "20475",
       "circonscription": "Mégantic",
       "circonscription_slug": "megantic",
@@ -854,6 +1454,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/nelligan.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/derraji-monsef-17923/index.html"
+    },
+    {
+      "deputy_id": "12165",
+      "circonscription": "Nicolet-Bécancour",
+      "circonscription_slug": "nicolet-becancour",
+      "asset_slug": "historique/12165",
+      "nom": "Donald Martel",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/12165.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/martel-donald-12165/index.html"
     },
     {
       "deputy_id": "20463",
@@ -876,6 +1486,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/mcgraw-desiree-19283/index.html"
     },
     {
+      "deputy_id": "17925",
+      "circonscription": "Orford",
+      "circonscription_slug": "orford",
+      "asset_slug": "historique/17925",
+      "nom": "Gilles Bélanger",
+      "parti": "Indépendant",
+      "fichier": "/images/deputes/historique/17925.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/belanger-gilles-17925/index.html"
+    },
+    {
       "deputy_id": "20449",
       "circonscription": "Orford",
       "circonscription_slug": "orford",
@@ -884,6 +1504,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/orford.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/milliard-charles-20449/index.html"
+    },
+    {
+      "deputy_id": "17927",
+      "circonscription": "Papineau",
+      "circonscription_slug": "papineau",
+      "asset_slug": "historique/17927",
+      "nom": "Mathieu Lacombe",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17927.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lacombe-mathieu-17927/index.html"
     },
     {
       "deputy_id": "20457",
@@ -906,6 +1536,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/bowles-david-20443/index.html"
     },
     {
+      "deputy_id": "17931",
+      "circonscription": "Pointe-aux-Trembles",
+      "circonscription_slug": "pointe-aux-trembles",
+      "asset_slug": "historique/17931",
+      "nom": "Chantal Rouleau",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17931.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/rouleau-chantal-17931/index.html"
+    },
+    {
       "deputy_id": "20441",
       "circonscription": "Pointe-aux-Trembles",
       "circonscription_slug": "pointe-aux-trembles",
@@ -926,6 +1566,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/fortin-andre-15383/index.html"
     },
     {
+      "deputy_id": "17849",
+      "circonscription": "Portneuf",
+      "circonscription_slug": "portneuf",
+      "asset_slug": "historique/17849",
+      "nom": "Vincent Caron",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17849.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/caron-vincent-17849/index.html"
+    },
+    {
       "deputy_id": "20437",
       "circonscription": "Portneuf",
       "circonscription_slug": "portneuf",
@@ -936,6 +1586,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/bouchard-marcel-20437/index.html"
     },
     {
+      "deputy_id": "19281",
+      "circonscription": "Prévost",
+      "circonscription_slug": "prevost",
+      "asset_slug": "historique/19281",
+      "nom": "Sonia Bélanger",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19281.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/belanger-sonia-19281/index.html"
+    },
+    {
       "deputy_id": "20431",
       "circonscription": "Prévost",
       "circonscription_slug": "prevost",
@@ -944,6 +1604,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/prevost.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/nguyen-anne-20431/index.html"
+    },
+    {
+      "deputy_id": "19279",
+      "circonscription": "René-Lévesque",
+      "circonscription_slug": "rene-levesque",
+      "asset_slug": "historique/19279",
+      "nom": "Yves Montigny",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19279.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/montigny-yves-19279/index.html"
     },
     {
       "deputy_id": "20427",
@@ -966,6 +1636,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/girard-nicolas-1253/index.html"
     },
     {
+      "deputy_id": "19277",
+      "circonscription": "Repentigny",
+      "circonscription_slug": "repentigny",
+      "asset_slug": "historique/19277",
+      "nom": "Pascale Déry",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19277.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/dery-pascale-19277/index.html"
+    },
+    {
       "deputy_id": "20423",
       "circonscription": "Richelieu",
       "circonscription_slug": "richelieu",
@@ -974,6 +1654,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/richelieu.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/desjardins-jocelyn-20423/index.html"
+    },
+    {
+      "deputy_id": "17859",
+      "circonscription": "Richmond",
+      "circonscription_slug": "richmond",
+      "asset_slug": "historique/17859",
+      "nom": "André Bachand",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17859.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/bachand-andre-17859/index.html"
     },
     {
       "deputy_id": "20529",
@@ -996,6 +1686,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/st-pierre-yohann-20415/index.html"
     },
     {
+      "deputy_id": "19273",
+      "circonscription": "Rivière-du-Loup–Témiscouata",
+      "circonscription_slug": "riviere-du-loup-temiscouata",
+      "asset_slug": "historique/19273",
+      "nom": "Amélie Dionne",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19273.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/dionne-amelie-19273/index.html"
+    },
+    {
       "deputy_id": "20409",
       "circonscription": "Rivière-du-Loup–Témiscouata–Les Basques",
       "circonscription_slug": "riviere-du-loup-temiscouata-les-basques",
@@ -1016,6 +1716,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/garceau-brigitte-b-19271/index.html"
     },
     {
+      "deputy_id": "18247",
+      "circonscription": "Roberval",
+      "circonscription_slug": "roberval",
+      "asset_slug": "historique/18247",
+      "nom": "Nancy Guillemette",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/18247.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/guillemette-nancy-18247/index.html"
+    },
+    {
       "deputy_id": "20407",
       "circonscription": "Roberval",
       "circonscription_slug": "roberval",
@@ -1024,6 +1734,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/roberval.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/thibeault-isabelle-20407/index.html"
+    },
+    {
+      "deputy_id": "17867",
+      "circonscription": "Rosemont",
+      "circonscription_slug": "rosemont",
+      "asset_slug": "historique/17867",
+      "nom": "Vincent Marissal",
+      "parti": "Indépendant",
+      "fichier": "/images/deputes/historique/17867.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/marissal-vincent-17867/index.html"
     },
     {
       "deputy_id": "20391",
@@ -1036,6 +1756,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/pouhe-njall-gisele-20391/index.html"
     },
     {
+      "deputy_id": "18073",
+      "circonscription": "Rousseau",
+      "circonscription_slug": "rousseau",
+      "asset_slug": "historique/18073",
+      "nom": "Louis-Charles Thouin",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/18073.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/thouin-louis-charles-18073/index.html"
+    },
+    {
       "deputy_id": "20395",
       "circonscription": "Rousseau",
       "circonscription_slug": "rousseau",
@@ -1044,6 +1774,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/rousseau.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/lebrun-mathieu-20395/index.html"
+    },
+    {
+      "deputy_id": "13",
+      "circonscription": "Rouyn-Noranda–Témiscamingue",
+      "circonscription_slug": "rouyn-noranda-temiscamingue",
+      "asset_slug": "historique/13",
+      "nom": "Daniel Bernard",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/13.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/bernard-daniel-13/index.html"
     },
     {
       "deputy_id": "20399",
@@ -1056,6 +1796,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/dallaire-diane-20399/index.html"
     },
     {
+      "deputy_id": "17877",
+      "circonscription": "Saint-François",
+      "circonscription_slug": "saint-francois",
+      "asset_slug": "historique/17877",
+      "nom": "Geneviève Hébert",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17877.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/hebert-genevieve-17877/index.html"
+    },
+    {
       "deputy_id": "20351",
       "circonscription": "Saint-François",
       "circonscription_slug": "saint-francois",
@@ -1064,6 +1814,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/saint-francois.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/tanguay-sylvie-20351/index.html"
+    },
+    {
+      "deputy_id": "19593",
+      "circonscription": "Saint-Henri–Sainte-Anne",
+      "circonscription_slug": "saint-henri-sainte-anne",
+      "asset_slug": "historique/19593",
+      "nom": "Guillaume Cliche-Rivard",
+      "parti": "Québec solidaire",
+      "fichier": "/images/deputes/historique/19593.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/cliche-rivard-guillaume-19593/index.html"
     },
     {
       "deputy_id": "20521",
@@ -1076,6 +1836,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/clermont-benoit-20521/index.html"
     },
     {
+      "deputy_id": "15417",
+      "circonscription": "Saint-Hyacinthe",
+      "circonscription_slug": "saint-hyacinthe",
+      "asset_slug": "historique/15417",
+      "nom": "Chantal Soucy",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/15417.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/soucy-chantal-15417/index.html"
+    },
+    {
       "deputy_id": "20355",
       "circonscription": "Saint-Hyacinthe",
       "circonscription_slug": "saint-hyacinthe",
@@ -1084,6 +1854,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/saint-hyacinthe.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/savard-tremblay-simon-pierre-20355/index.html"
+    },
+    {
+      "deputy_id": "17879",
+      "circonscription": "Saint-Jean",
+      "circonscription_slug": "saint-jean",
+      "asset_slug": "historique/17879",
+      "nom": "Louis Lemieux",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17879.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lemieux-louis-17879/index.html"
     },
     {
       "deputy_id": "20359",
@@ -1096,6 +1876,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/bedard-gaetan-20359/index.html"
     },
     {
+      "deputy_id": "17881",
+      "circonscription": "Saint-Jérôme",
+      "circonscription_slug": "saint-jerome",
+      "asset_slug": "historique/17881",
+      "nom": "Youri Chassin",
+      "parti": "Indépendant",
+      "fichier": "/images/deputes/historique/17881.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/chassin-youri-17881/index.html"
+    },
+    {
       "deputy_id": "20365",
       "circonscription": "Saint-Jérôme",
       "circonscription_slug": "saint-jerome",
@@ -1104,6 +1894,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/saint-jerome.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/michon-sandrine-20365/index.html"
+    },
+    {
+      "deputy_id": "17883",
+      "circonscription": "Saint-Laurent",
+      "circonscription_slug": "saint-laurent",
+      "asset_slug": "historique/17883",
+      "nom": "Marwah Rizqy",
+      "parti": "Indépendante",
+      "fichier": "/images/deputes/historique/17883.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/rizqy-marwah-17883/index.html"
     },
     {
       "deputy_id": "20373",
@@ -1116,6 +1916,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/assouline-valerie-20373/index.html"
     },
     {
+      "deputy_id": "15421",
+      "circonscription": "Sainte-Marie–Saint-Jacques",
+      "circonscription_slug": "sainte-marie-saint-jacques",
+      "asset_slug": "historique/15421",
+      "nom": "Manon Massé",
+      "parti": "Québec solidaire",
+      "fichier": "/images/deputes/historique/15421.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/masse-manon-15421/index.html"
+    },
+    {
       "deputy_id": "20385",
       "circonscription": "Sainte-Marie–Saint-Jacques",
       "circonscription_slug": "sainte-marie-saint-jacques",
@@ -1124,6 +1934,16 @@
       "parti": "Québec solidaire",
       "fichier": "/images/deputes/sainte-marie-saint-jacques.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/milot-roxane-20385/index.html"
+    },
+    {
+      "deputy_id": "17873",
+      "circonscription": "Sainte-Rose",
+      "circonscription_slug": "sainte-rose",
+      "asset_slug": "historique/17873",
+      "nom": "Christopher Skeete",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17873.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/skeete-christopher-17873/index.html"
     },
     {
       "deputy_id": "20381",
@@ -1146,6 +1966,26 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/therrien-alain-12189/index.html"
     },
     {
+      "deputy_id": "19269",
+      "circonscription": "Sanguinet",
+      "circonscription_slug": "sanguinet",
+      "asset_slug": "historique/19269",
+      "nom": "Christine Fréchette",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19269.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/frechette-christine-19269/index.html"
+    },
+    {
+      "deputy_id": "17889",
+      "circonscription": "Sherbrooke",
+      "circonscription_slug": "sherbrooke",
+      "asset_slug": "historique/17889",
+      "nom": "Christine Labrie",
+      "parti": "Québec solidaire",
+      "fichier": "/images/deputes/historique/17889.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/labrie-christine-17889/index.html"
+    },
+    {
       "deputy_id": "20519",
       "circonscription": "Sherbrooke",
       "circonscription_slug": "sherbrooke",
@@ -1156,6 +1996,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/vachon-stephanie-20519/index.html"
     },
     {
+      "deputy_id": "17891",
+      "circonscription": "Soulanges",
+      "circonscription_slug": "soulanges",
+      "asset_slug": "historique/17891",
+      "nom": "Marilyne Picard",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17891.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/picard-marilyne-17891/index.html"
+    },
+    {
       "deputy_id": "20377",
       "circonscription": "Soulanges",
       "circonscription_slug": "soulanges",
@@ -1164,6 +2014,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/soulanges.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/bertin-mahieux-olivier-20377/index.html"
+    },
+    {
+      "deputy_id": "17893",
+      "circonscription": "Taillon",
+      "circonscription_slug": "taillon",
+      "asset_slug": "historique/17893",
+      "nom": "Lionel Carmant",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17893.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/carmant-lionel-17893/index.html"
     },
     {
       "deputy_id": "20347",
@@ -1206,6 +2066,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/gentilcore-catherine-20131/index.html"
     },
     {
+      "deputy_id": "17899",
+      "circonscription": "Trois-Rivières",
+      "circonscription_slug": "trois-rivieres",
+      "asset_slug": "historique/17899",
+      "nom": "Jean Boulet",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17899.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/boulet-jean-17899/index.html"
+    },
+    {
       "deputy_id": "20343",
       "circonscription": "Trois-Rivières",
       "circonscription_slug": "trois-rivieres",
@@ -1214,6 +2084,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/trois-rivieres.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/pellerin-jean-20343/index.html"
+    },
+    {
+      "deputy_id": "17901",
+      "circonscription": "Ungava",
+      "circonscription_slug": "ungava",
+      "asset_slug": "historique/17901",
+      "nom": "Denis Lamothe",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17901.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lamothe-denis-17901/index.html"
     },
     {
       "deputy_id": "20337",
@@ -1226,6 +2106,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/caron-sonia-20337/index.html"
     },
     {
+      "deputy_id": "17903",
+      "circonscription": "Vachon",
+      "circonscription_slug": "vachon",
+      "asset_slug": "historique/17903",
+      "nom": "Ian Lafrenière",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17903.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/lafreniere-ian-17903/index.html"
+    },
+    {
       "deputy_id": "20599",
       "circonscription": "Vachon",
       "circonscription_slug": "vachon",
@@ -1234,6 +2124,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/vachon.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/fogaing-stephan-20599/index.html"
+    },
+    {
+      "deputy_id": "17905",
+      "circonscription": "Vanier-Les Rivières",
+      "circonscription_slug": "vanier-les-rivieres",
+      "asset_slug": "historique/17905",
+      "nom": "Mario Asselin",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17905.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/asselin-mario-17905/index.html"
     },
     {
       "deputy_id": "20527",
@@ -1246,6 +2146,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/paquet-patrick-20527/index.html"
     },
     {
+      "deputy_id": "15439",
+      "circonscription": "Vaudreuil",
+      "circonscription_slug": "vaudreuil",
+      "asset_slug": "historique/15439",
+      "nom": "Marie-Claude Nichols",
+      "parti": "Parti libéral du Québec",
+      "fichier": "/images/deputes/historique/15439.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/nichols-marie-claude-15439/index.html"
+    },
+    {
       "deputy_id": "20333",
       "circonscription": "Vaudreuil",
       "circonscription_slug": "vaudreuil",
@@ -1256,6 +2166,16 @@
       "profil": "https://www.assnat.qc.ca/fr/deputes/hughes-james-20333/index.html"
     },
     {
+      "deputy_id": "19265",
+      "circonscription": "Verchères",
+      "circonscription_slug": "vercheres",
+      "asset_slug": "historique/19265",
+      "nom": "Suzanne Roy",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19265.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/roy-suzanne-19265/index.html"
+    },
+    {
       "deputy_id": "20329",
       "circonscription": "Verchères",
       "circonscription_slug": "vercheres",
@@ -1264,6 +2184,16 @@
       "parti": "Parti québécois",
       "fichier": "/images/deputes/vercheres.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/lapointe-guy-jr-20329/index.html"
+    },
+    {
+      "deputy_id": "19263",
+      "circonscription": "Verdun",
+      "circonscription_slug": "verdun",
+      "asset_slug": "historique/19263",
+      "nom": "Alejandra Zaga Mendez",
+      "parti": "Québec solidaire",
+      "fichier": "/images/deputes/historique/19263.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/zaga-mendez-alejandra-19263/index.html"
     },
     {
       "deputy_id": "20323",
@@ -1284,6 +2214,16 @@
       "parti": "Parti libéral du Québec",
       "fichier": "/images/deputes/viau.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/benjamin-frantz-17909/index.html"
+    },
+    {
+      "deputy_id": "19259",
+      "circonscription": "Vimont",
+      "circonscription_slug": "vimont",
+      "asset_slug": "historique/19259",
+      "nom": "Valérie Schmaltz",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/19259.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/schmaltz-valerie-19259/index.html"
     },
     {
       "deputy_id": "20321",

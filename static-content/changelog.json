@@ -1,5 +1,53 @@
 [
   {
+    "pr": 1056,
+    "date": "2026-11-25T15:34:09Z",
+    "note": "Le bandeau de la 44e législature présente la date de la première séance sans icône.",
+    "version": "2.59.0-beta.2"
+  },
+  {
+    "pr": 1055,
+    "date": "2026-11-25T15:25:38Z",
+    "note": "Le module sur la couverture médiatique des partis affiche maintenant leur rang près du sigle et garde les platines à la même place. Sélectionner une platine ou une colonne donne accès aux mêmes articles sources.",
+    "version": "2.59.0-beta.1"
+  },
+  {
+    "pr": 1053,
+    "date": "2026-11-25T15:12:37Z",
+    "note": "Avant sa première séance, chaque élu·e de la nouvelle Assemblée a sa carte de collection : sa fonction, sa circonscription et son numéro. Les statistiques arriveront avec les premiers débats.",
+    "version": "2.59.0-beta.0"
+  },
+  {
+    "pr": 1052,
+    "date": "2026-11-25T15:07:33Z",
+    "note": "La ponctuation de quelques libellés du module Partis et de sa méthodologie a été corrigée.",
+    "version": null
+  },
+  {
+    "pr": 1043,
+    "date": "2026-11-25T13:37:42Z",
+    "note": "On peut consulter les débats de la 43e législature dans le sélecteur du module Assemblée, même après l’arrivée des données de la 44e. 🤖 Assisté par Codex (GPT-6)",
+    "version": "2.58.0-beta.0"
+  },
+  {
+    "pr": 1031,
+    "date": "2026-11-25T02:45:43Z",
+    "note": "Le diagramme des pipelines décrit une nouvelle vérification : chaque jour, la liste des député·es qu'utilise le site est comparée à celle de l'Assemblée nationale, pour savoir quand la mettre à jour.",
+    "version": null
+  },
+  {
+    "pr": 1037,
+    "date": "2026-11-25T02:37:47Z",
+    "note": "Le module de l'Assemblée nationale présente la nouvelle Assemblée élue le 5 octobre : ses 127 député·es, en attendant la première séance du 1er décembre. La législature précédente reste accessible d'un clic.",
+    "version": "2.57.0-beta.0"
+  },
+  {
+    "pr": 1045,
+    "date": "2026-11-25T02:34:40Z",
+    "note": "Les cartes de député distinguent les élus qui portent le même nom, même quand leur portrait manque.",
+    "version": "2.56.0-beta.2"
+  },
+  {
     "pr": 1034,
     "date": "2026-11-25T00:12:32Z",
     "note": "L'onglet « CAQ 2022 » du Polimètre+ n'est plus mis à jour : il présente le classement des promesses de la CAQ au 5 octobre 2026, jour des élections générales. Les onglets indiquent si le mandat est en cours ou terminé, on peut filtrer les promesses par enjeu, et un bouton mène au site du Polimètre.",
