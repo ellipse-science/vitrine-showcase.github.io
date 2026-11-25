@@ -664,7 +664,7 @@ function Frise({
           <span
             className="social-frise-campagne"
             style={{ left: `${pct(campagne)}%`, width: `${pct(election + 1) - pct(campagne)}%` }}
-            title="Campagne électorale : du 27 août au 5 octobre 2026"
+            title={"Campagne électorale : du 27 août au 5 octobre 2026"}
           >
             <span className="social-frise-campagne-libelle">Campagne</span>
           </span>
