@@ -260,7 +260,8 @@ export function ligneParti(c: Carte): string {
 export function slugCirco(deputy: DeputyRow): string {
   const source = deputy.portrait?.match(/\/([^/]+)\.jpg$/)?.[1];
   if (source) return source;
-  return (deputy.circonscription ?? deputy.name)
+  // Sans portrait, l'identifiant distingue les homonymes et les occupants successifs d'un siège.
+  return `${deputy.circonscription ?? deputy.name}-${deputy.id}`
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }

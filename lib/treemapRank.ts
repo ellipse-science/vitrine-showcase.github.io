@@ -1,6 +1,5 @@
 import type { TreemapHistoryPoint } from "@/lib/data/headlineEvents";
 import { momentMontreal } from "@/lib/dates";
-import { ELECTION_CALL_DATE } from "@/lib/election";
 
 export type RankPeriod = "day" | "week" | "month";
 
@@ -30,17 +29,27 @@ export function rankPointsForPeriod(
     return points.filter((point) => jourMontreal(point) >= debut);
   }
 
-  // CAMPAGNE : depuis le déclenchement du scrutin, jamais depuis le début du
-  // suivi. Tant que la date n'est pas connue (`null` hors période électorale),
-  // on retombe sur le mois courant, le comportement d'avant.
-  const bref = ELECTION_CALL_DATE;
-  if (bref) {
-    const depuisLeBref = points.filter((point) => jourMontreal(point) >= bref);
-    if (depuisLeBref.length > 1) return depuisLeBref;
-  }
-  const latestMonth = points.at(-1) ? jourMontreal(points.at(-1)!).slice(0, 7) : "";
-  const inMonth = points.filter((point) => jourMontreal(point).slice(0, 7) === latestMonth);
-  return inMonth.length > 1 ? inMonth : points.slice(-30);
+  // 30 JOURS (hors campagne, 2026-11) : les trente derniers jours, comptés
+  // depuis le dernier point, comme la semaine. La vue « Campagne » partait du
+  // déclenchement du scrutin (27 août) ; une fois l'élection passée, elle ne
+  // montrait plus que les 45 jours d'articles que garde fetch_data.R, tout en
+  // se disant « depuis le début de la campagne ».
+  const debut = debutDeLaFenetre(points, JOURS_DU_MOIS);
+  if (!debut) return points.slice(-JOURS_DU_MOIS);
+  return points.filter((point) => jourMontreal(point) >= debut);
+}
+
+/** La fenêtre longue : les TRENTE derniers jours, le jour de l'édition compris.
+ *  Remplace la fenêtre « Campagne » depuis la fin de la période électorale. */
+export const JOURS_DU_MOIS = 30;
+
+/** Le premier jour d'une fenêtre glissante de `n` jours finissant au dernier point. */
+export function debutDeLaFenetre(points: TreemapHistoryPoint[], n: number): string | null {
+  const dernier = points.at(-1);
+  if (!dernier) return null;
+  const m = momentMontreal(dernier.tag);
+  if (!m) return null;
+  return jourMoins(m.date, n - 1);
 }
 
 /** Le JOUR d'une observation, en heure de Montréal, tiré du `tag` de la passe.

@@ -62,24 +62,24 @@ const PERIODES_SITE: PeriodKey[] = ["legislature", "session", "last_pdq"];
  *  chaque appel : il modifie `data`, que les casiers affichent. */
 const parDonnees = new Map<string, Promise<CartesSite>>();
 
-export async function preparerCartesSite(data: DonneesAssemblee): Promise<CartesSite> {
-  const empreinte = createHash("sha1").update(JSON.stringify(data)).digest("hex");
+export async function preparerCartesSite(data: DonneesAssemblee, dossier?: string): Promise<CartesSite> {
+  const empreinte = createHash("sha1").update(JSON.stringify([dossier, data])).digest("hex");
   await retirerExpressions(data);
   let cartes = parDonnees.get(empreinte);
   if (!cartes) {
-    cartes = construireCartesSite(data);
+    cartes = construireCartesSite(data, dossier);
     parDonnees.set(empreinte, cartes);
   }
   return cartes;
 }
 
-async function construireCartesSite(data: DonneesAssemblee): Promise<CartesSite> {
-  const sources = await chargerSources();
+async function construireCartesSite(data: DonneesAssemblee, dossier?: string): Promise<CartesSite> {
+  const sources = await chargerSources(dossier);
   // La série se construit sur une COPIE où les lignes d'une même personne
   // sont réunies, exactement comme dans le générateur : numéros, raretés et
   // fiches sont alors ceux du carton. Les casiers, eux, gardent `data`.
   const reunies: DonneesAssemblee = structuredClone(data);
-  await fusionnerLignesParParti(reunies, false);
+  await fusionnerLignesParParti(reunies, false, dossier);
   const maxAbs = {} as Record<PeriodKey, number>;
   const personnes: CartesSite["personnes"] = {};
   for (const periode of PERIODES) {
@@ -115,5 +115,5 @@ async function construireCartesSite(data: DonneesAssemblee): Promise<CartesSite>
   }
   const signatures = (await fs.readdir(path.resolve(process.cwd(), "public/images/cartes")).catch(() => [] as string[]))
     .map((f) => f.match(/^signature-(.+)\.png$/)?.[1]).filter((x): x is string => !!x);
-  return { parPeriode, libelles: await etiquettesPeriodes(), signatures, personnes, maxAbs };
+  return { parPeriode, libelles: await etiquettesPeriodes(dossier), signatures, personnes, maxAbs };
 }

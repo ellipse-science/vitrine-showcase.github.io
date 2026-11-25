@@ -41,6 +41,12 @@ export type {
 /** Chemin tel qu'il figure dans scripts/tables.json : c'est la clé qui permet
  *  à lib/data/source.ts de servir ce jeu depuis l'API plutôt que du disque. */
 const POLIMETRE_DATASET = "public/data/refined/week/polimetre_plus.json";
+/** Série du mandat St-Pierre Plamondon (même raffineur, même schéma, table
+ *  `polimetre_plus_stpierreplamondon`). Absente tant que le raffineur ne l'a pas
+ *  publiée : l'onglet « PQ 2026 » reprend alors les promesses de la campagne. */
+const POLIMETRE_PQ_DATASET = "public/data/refined/week/polimetre_plus_stpierreplamondon.json";
+/** Pages des promesses sur le site du Polimètre, par mandat ; null = pas de page. */
+const URL_PROMESSES_LEGAULT = "https://polimeter.org/fr/legault-frechette";
 
 const POLIMETRE_JSON_PATH = path.resolve(
   process.cwd(),
@@ -314,7 +320,12 @@ function rankMap(agg: Map<string, Agg>): Map<string, number> {
   return ranks;
 }
 
-function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): PromiseView[] {
+function buildView(
+  rows: Row[],
+  currentWeeks: string[],
+  prevWeeks: string[],
+  urlBase: string | null = URL_PROMESSES_LEGAULT,
+): PromiseView[] {
   const current = aggregateWeeks(rows, new Set(currentWeeks));
   const currentRanks = rankMap(current);
   const prevRanks = rankMap(aggregateWeeks(rows, new Set(prevWeeks)));
@@ -345,7 +356,7 @@ function buildView(rows: Row[], currentWeeks: string[], prevWeeks: string[]): Pr
         verdictLabel: r.verdict ?? "",
         category: category || null,
         salienceIndex: a.salience,
-        url: `https://polimeter.org/fr/legault-frechette/${num}`,
+        url: urlBase ? `${urlBase}/${num}` : undefined,
         trend,
         articles: pickArticlesByMedia(r),
       };
@@ -412,14 +423,14 @@ function snapshotWindow(
 // Exported for unit testing only — not part of the public API.
 export const __test__ = { realText, shortenPledge, buildView, snapshotWindow };
 
-export async function loadPolimetre(
-  /** Édition passée (#434) : jour de publication de l'édition affichée. Le
-   *  Polimètre+ publie un instantané par SEMAINE — même remarque de cadence. */
+async function chargerSerie(
+  dataset: string,
+  urlBase: string | null,
   asOfIso?: string,
 ): Promise<PolimetreData | null> {
   let raw: string;
   try {
-    raw = await readDatasetText(POLIMETRE_DATASET);
+    raw = await readDatasetText(dataset);
   } catch {
     return null; // refiner has not published yet
   }
@@ -440,15 +451,30 @@ export async function loadPolimetre(
   const monthCurrent = snapshotWindow(weeks, latestWeek, MONTH_WEEKS);
 
   const ranges: Record<RangeKey, PromiseView[]> = {
-    week: buildView(rows, weekCurrent, snapshotWindow(weeks, latestWeek, 1, 1, weekCurrent.at(-1) ?? null)),
+    week: buildView(rows, weekCurrent, snapshotWindow(weeks, latestWeek, 1, 1, weekCurrent.at(-1) ?? null), urlBase),
     month: buildView(
       rows,
       monthCurrent,
       snapshotWindow(weeks, latestWeek, MONTH_WEEKS, MONTH_WEEKS, monthCurrent.at(-1) ?? null),
+      urlBase,
     ),
   };
 
   if (ranges.week.length === 0 && ranges.month.length === 0) return null;
 
   return { weekEndDate: latestWeek, lastUpdated: lastUpdatedLabel(latestWeek), ranges };
+}
+
+/** Série CAQ 2022 (figée au 5 octobre 2026, cf. freeze_at de tables.json). */
+export async function loadPolimetre(
+  /** Édition passée (#434) : jour de publication de l'édition affichée. Le
+   *  Polimètre+ publie un instantané par SEMAINE — même remarque de cadence. */
+  asOfIso?: string,
+): Promise<PolimetreData | null> {
+  return chargerSerie(POLIMETRE_DATASET, URL_PROMESSES_LEGAULT, asOfIso);
+}
+
+/** Série PQ 2026 : null tant que le raffineur n'a rien publié. */
+export async function loadPolimetrePq(asOfIso?: string): Promise<PolimetreData | null> {
+  return chargerSerie(POLIMETRE_PQ_DATASET, null, asOfIso);
 }

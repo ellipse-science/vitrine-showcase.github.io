@@ -15,8 +15,7 @@ import { editionLabel, editionSlot } from "@/lib/editions";
 // des partis (qui ne peut pas importer ce fichier : il tire node:fs).
 import { COULEUR_ENJEU_DEFAUT, ISSUE_COLORS, ISSUE_LABELS_SHORT } from "@/lib/enjeux";
 import { heurePublicationMontreal, momentMontreal } from "@/lib/dates";
-import { ELECTION_CALL_DATE } from "@/lib/election";
-import { JOURS_DE_LA_SEMAINE, debutDeLaSemaine, jourMoins } from "@/lib/treemapRank";
+import { JOURS_DE_LA_SEMAINE, JOURS_DU_MOIS, debutDeLaSemaine, jourMoins } from "@/lib/treemapRank";
 import {
   formatDateFr,
   lastUpdatedLabel,
@@ -2812,8 +2811,13 @@ export async function loadTreemap(
   // au jour, n'ont pas.
   const week = buildPeriodeDepuisArticles(articlesEnjeuxBornes, debutSemaine, day, debutSemaineVeille)
     ?? buildPeriodData(weekRows, debutSemaine) ?? day;
-  const month = buildPeriodeDepuisArticles(articlesEnjeuxBornes, ELECTION_CALL_DATE, day)
-    ?? buildPeriodData(monthRows, ELECTION_CALL_DATE) ?? day;
+  // 30 JOURS : même ancrage que la semaine (le dernier jour d'articles), même
+  // glissement d'un jour pour la comparaison avec la veille. Remplace la vue
+  // « Campagne » (depuis le 27 août) depuis la fin de la période électorale.
+  const debutMois = dernierJourArticles ? jourMoins(dernierJourArticles, JOURS_DU_MOIS - 1) : null;
+  const debutMoisVeille = debutMois ? jourMoins(debutMois, 1) : null;
+  const month = buildPeriodeDepuisArticles(articlesEnjeuxBornes, debutMois, day, debutMoisVeille)
+    ?? buildPeriodData(monthRows, debutMois) ?? day;
   return { day, week, month };
 }
 
