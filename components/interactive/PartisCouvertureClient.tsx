@@ -935,7 +935,7 @@ function Deck({
         className={`deck deck--vide${indisponible ? " deck--suspendu" : ""}`}
         title={
           indisponible
-            ? "La mesure est suspendue : voir l'avis en tête du module."
+            ? "La mesure est suspendue\u00a0: voir l'avis en tête du module."
             : `Aucun parti au ${rang}${rang === 1 ? "er" : "e"} rang sur cette période.`
         }
       >
@@ -949,8 +949,8 @@ function Deck({
 
   const quand = enjeu?.dateSource ? `le ${jourEnLettres(enjeu.dateSource)}` : "dans la dernière journée publiée";
   const annonce = enjeu
-    ? `${row.fullLabel} : on en parle surtout sous l'angle « ${enjeu.label} » (${enjeu.pct} % de sa couverture ${quand}, tous médias confondus).`
-    : `${row.fullLabel} : aucun enjeu dominant identifié ${quand}.`;
+    ? `${row.fullLabel}\u00a0: on en parle surtout sous l'angle «\u00a0${enjeu.label}\u00a0» (${enjeu.pct}\u00a0% de sa couverture ${quand}, tous médias confondus).`
+    : `${row.fullLabel}\u00a0: aucun enjeu dominant identifié ${quand}.`;
 
   return (
     <div
@@ -1020,7 +1020,7 @@ function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
       )}
       {enjeu === null && (
         <text className="deck-enjeu-nom" x="50" y="52" textAnchor="middle">
-          —
+          –
         </text>
       )}
     </svg>
