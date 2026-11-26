@@ -1,5 +1,11 @@
 [
   {
+    "pr": 1051,
+    "date": "2026-11-26T14:14:04Z",
+    "note": "Rien ne change sur le site de la Vitrine. Le site partenaire poltext.org se met désormais à jour automatiquement chaque fois que la Vitrine publie de nouvelles données.",
+    "version": null
+  },
+  {
     "pr": 1047,
     "date": "2026-11-25T19:19:41Z",
     "note": "Le module des réseaux sociaux suit maintenant les 30 derniers jours et marque la campagne électorale, du 27 août au 5 octobre, sur sa frise.",
