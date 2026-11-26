@@ -1,5 +1,5 @@
-import { loadAssemblee, type AssembleeData } from "@/lib/data/assemblee";
-import { preparerCartesSite } from "@/lib/cartes/site";
+import { DOSSIER_ARCHIVE_ASSEMBLEE_43E, loadArchiveAssemblee43e, loadAssemblee, type AssembleeData } from "@/lib/data/assemblee";
+import { preparerCartesAttente, preparerCartesSite } from "@/lib/cartes/site";
 import { AssembleeClient } from "@/components/interactive/AssembleeClient";
 
 /** Ce que la page envoie au navigateur. `issueShares` (parts brutes des
@@ -27,6 +27,18 @@ export async function AssembleeSection({ asOfIso, editionKey }: { asOfIso?: stri
   if (!data) return null;
   // Les fiches des cartes de député (numéro, rareté, fonctions, parcours…),
   // AU BUILD, par la même fabrique que les cartes imprimées (lib/cartes).
-  const cartes = await preparerCartesSite(data);
-  return <AssembleeClient data={pourLeNavigateur(data)} cartes={cartes} editionKey={editionKey} />;
+  const cartes = data.legislatureCourante ? undefined
+    : await preparerCartesSite(data, data.archiveFigee ? DOSSIER_ARCHIVE_ASSEMBLEE_43E : undefined);
+  const archive = !editionKey && data.legislatureCourante ? await loadArchiveAssemblee43e() : null;
+  const archive43e = archive ? {
+    cartes: await preparerCartesSite(archive, DOSSIER_ARCHIVE_ASSEMBLEE_43E),
+    data: pourLeNavigateur(archive),
+  } : undefined;
+  // La nouvelle Assemblée en attente de sa première séance : ses cartes, par
+  // la même fabrique, avec les sources de sa législature.
+  const cartesProchaine = data.prochaine ? await preparerCartesAttente(data.prochaine) : undefined;
+  return (
+    <AssembleeClient data={pourLeNavigateur(data)} cartes={cartes} editionKey={editionKey} archive43e={archive43e}
+      cartesProchaine={cartesProchaine} />
+  );
 }

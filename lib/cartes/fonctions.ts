@@ -81,8 +81,8 @@ export function libelleFonction(code: string, genre: "f" | "m" | undefined): str
  *  (Tanguay, Rizqy, Nadeau-Dubois) garde le sigle CO au recto, fonction la
  *  mieux payée de sa législature, mais ne porte pas de ruban : un titre
  *  qu'il n'a plus serait la faute la plus facile à relever. */
-export function rubanChefParlementaire(tenues: { titre: string; fin: string }[]): string | null {
-  const actuelle = tenues.find((t) => /^Chef(?:fe)? d/.test(t.titre) && t.fin >= AXE_FIN);
+export function rubanChefParlementaire(tenues: { titre: string; fin: string }[], finAxe: string = AXE_FIN): string | null {
+  const actuelle = tenues.find((t) => /^Chef(?:fe)? d/.test(t.titre) && t.fin >= finAxe);
   return actuelle ? titreCourt(actuelle.titre) : null;
 }
 
@@ -152,9 +152,9 @@ export function lendemain(jour: string): string {
 }
 
 /** Position d'une date sur la frise, en % de la largeur. */
-export function positionAxe(jour: string): number {
-  const a = Date.parse(AXE_DEBUT);
-  const b = Date.parse(lendemain(AXE_FIN));
+export function positionAxe(jour: string, axe: { debut: string; fin: string } = { debut: AXE_DEBUT, fin: AXE_FIN }): number {
+  const a = Date.parse(axe.debut);
+  const b = Date.parse(lendemain(axe.fin));
   return Math.max(0, Math.min(100, ((Date.parse(jour) - a) / (b - a)) * 100));
 }
 
@@ -260,7 +260,8 @@ export function ligneParti(c: Carte): string {
 export function slugCirco(deputy: DeputyRow): string {
   const source = deputy.portrait?.match(/\/([^/]+)\.jpg$/)?.[1];
   if (source) return source;
-  return (deputy.circonscription ?? deputy.name)
+  // Sans portrait, l'identifiant distingue les homonymes et les occupants successifs d'un siège.
+  return `${deputy.circonscription ?? deputy.name}-${deputy.id}`
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }

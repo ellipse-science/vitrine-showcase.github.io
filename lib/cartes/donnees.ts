@@ -7,12 +7,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { PeriodKey, loadAssemblee } from "@/lib/data/assemblee";
 import { MONTANT, cleDistrict, plageFr, slugCirco } from "./fonctions";
+import { PROFIL_43E, type ProfilLegislature } from "./legislatures";
 import type { Etiquette, FicheFonctions, Genre, Mandat, Mandats, Scrutin } from "./types";
 
 export type DonneesAssemblee = NonNullable<Awaited<ReturnType<typeof loadAssemblee>>>;
 
-export async function chargerScrutins(): Promise<Scrutin[]> {
-  const fichier = path.resolve(process.cwd(), "scripts/social/donnees/resultats-elections.json");
+export async function chargerScrutins(donnees = "scripts/social/donnees"): Promise<Scrutin[]> {
+  const fichier = path.resolve(process.cwd(), donnees, "resultats-elections.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
     console.warn("  ⚠️ resultats-elections.json absent : pas de résultat électoral. Lancez scripts/social/resultats-elections.ts."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
@@ -21,8 +22,8 @@ export async function chargerScrutins(): Promise<Scrutin[]> {
   return (JSON.parse(brut) as { resultats: Scrutin[] }).resultats;
 }
 
-export async function chargerFonctions(): Promise<FicheFonctions[]> {
-  const fichier = path.resolve(process.cwd(), "scripts/social/donnees/fonctions-deputes.json");
+export async function chargerFonctions(donnees = "scripts/social/donnees"): Promise<FicheFonctions[]> {
+  const fichier = path.resolve(process.cwd(), donnees, "fonctions-deputes.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
     console.warn("  ⚠️ fonctions-deputes.json absent : ni salaire ni vis-à-vis. Lancez scripts/social/fonctions-deputes.ts."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
@@ -34,8 +35,8 @@ export async function chargerFonctions(): Promise<FicheFonctions[]> {
 /** Genre grammatical des élus, clé assnat_id : donnees/genre-deputes.json,
  *  chaque entrée avec sa source (pplmatch, ou la fiche de l'Assemblée :
  *  « Députée de … »). Rien n'est déduit d'un prénom. */
-export async function chargerGenres(): Promise<Map<string, Genre>> {
-  const fichier = path.resolve(process.cwd(), "scripts/social/donnees/genre-deputes.json");
+export async function chargerGenres(donnees = "scripts/social/donnees"): Promise<Map<string, Genre>> {
+  const fichier = path.resolve(process.cwd(), donnees, "genre-deputes.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   if (!brut) {
     console.warn("  ⚠️ genre-deputes.json absent : « Élu.e » reste neutre sur toutes les cartes."); // garde-redaction: ok (diagnostic de console au build, jamais affiché)
@@ -45,16 +46,16 @@ export async function chargerGenres(): Promise<Map<string, Genre>> {
   return new Map(Object.entries(d.deputes).map(([id, e]) => [id, e.genre]));
 }
 
-export async function chargerJsonDeputes<T>(fichier: string): Promise<Map<string, T>> {
-  const brut = await fs.readFile(path.resolve(process.cwd(), "scripts/social/donnees", fichier), "utf8").catch(() => null);
+export async function chargerJsonDeputes<T>(fichier: string, donnees = "scripts/social/donnees"): Promise<Map<string, T>> {
+  const brut = await fs.readFile(path.resolve(process.cwd(), donnees, fichier), "utf8").catch(() => null);
   if (!brut) { console.warn(`  ⚠️ ${fichier} absent.`); return new Map(); }
   return new Map(Object.entries((JSON.parse(brut) as { deputes: Record<string, T> }).deputes));
 }
 
 /** Bornes de chaque période, lues dans le fichier agrégé par parti : toutes
  *  ses lignes d'une même période portent les mêmes dates. */
-export async function etiquettesPeriodes(): Promise<Record<PeriodKey, Etiquette>> {
-  const brut = await fs.readFile(path.resolve(process.cwd(), "public/data/agora/agora_decideurs_qc.json"), "utf8");
+export async function etiquettesPeriodes(dossier = "public/data/agora", annees = "2022-2026"): Promise<Record<PeriodKey, Etiquette>> {
+  const brut = await fs.readFile(path.resolve(process.cwd(), dossier, "agora_decideurs_qc.json"), "utf8");
   const lignes = JSON.parse(brut) as { period_type: PeriodKey; period_start_date: string; period_end_date: string }[];
   const bornes = (cle: PeriodKey) => lignes.find((l) => l.period_type === cle);
   const TYPES: Record<PeriodKey, string> = { legislature: "Législature", session: "Session", last_pdq: "Dernière séance" };
@@ -63,13 +64,13 @@ export async function etiquettesPeriodes(): Promise<Record<PeriodKey, Etiquette>
     const b = bornes(cle);
     // La législature se lit par ses années d'élection et de dissolution, pas
     // par la première et la dernière séance couvertes.
-    out[cle] = { type: TYPES[cle], date: cle === "legislature" ? "2022-2026" : b ? plageFr(b.period_start_date, b.period_end_date) : "" };
+    out[cle] = { type: TYPES[cle], date: cle === "legislature" ? annees : b ? plageFr(b.period_start_date, b.period_end_date) : "" };
   }
   return out;
 }
 
-export async function chargerMandats(): Promise<Mandats> {
-  const fichier = path.resolve(process.cwd(), "public/data/agora/agora_decideurs_qc_affiliations.json");
+export async function chargerMandats(dossier = "public/data/agora"): Promise<Mandats> {
+  const fichier = path.resolve(process.cwd(), dossier, "agora_decideurs_qc_affiliations.json");
   const brut = await fs.readFile(fichier, "utf8").catch(() => null);
   const vide: Mandats = { parNomEtDistrict: new Map(), parDistrict: new Map(), parNom: new Map() };
   if (!brut) return vide;
@@ -107,10 +108,11 @@ export async function chargerMandats(): Promise<Mandats> {
 }
 
 /** Tout ce que construireJeu() attend des sources, chargé d'un coup. */
-export async function chargerSources() {
+export async function chargerSources(dossier?: string, profil: ProfilLegislature = PROFIL_43E) {
+  const d = profil.donnees;
   const [mandats, fonctions, genres, carrieres, scrutins] = await Promise.all([
-    chargerMandats(), chargerFonctions(), chargerGenres(),
-    chargerJsonDeputes<import("./types").Carriere>("carriere-deputes.json"), chargerScrutins(),
+    chargerMandats(dossier), chargerFonctions(d), chargerGenres(d),
+    chargerJsonDeputes<import("./types").Carriere>("carriere-deputes.json", d), chargerScrutins(d),
   ]);
   return { mandats, fonctions, genres, carrieres, scrutins };
 }
@@ -163,10 +165,10 @@ export async function retirerExpressions(data: NonNullable<Awaited<ReturnType<ty
  *    MATTR ne se moyenne pas, et le niveau est relatif aux autres élus.
  *  Chaque ligne agora est retrouvée par ses mots et interventions, que le
  *  loader recopie tels quels. */
-export async function fusionnerLignesParParti(data: DonneesAssemblee, journal = true): Promise<void> {
+export async function fusionnerLignesParParti(data: DonneesAssemblee, journal = true, dossier = "public/data/agora"): Promise<void> {
   type Brute = { period_type: PeriodKey; deputy_id: string | number; n_interventions: number; word_count: number;
                  tone_score: number } & Record<string, unknown>;
-  const brutes = JSON.parse(await fs.readFile(path.resolve(process.cwd(), "public/data/agora/agora_decideurs_qc_deputes.json"), "utf8")) as Brute[];
+  const brutes = JSON.parse(await fs.readFile(path.resolve(process.cwd(), dossier, "agora_decideurs_qc_deputes.json"), "utf8")) as Brute[];
   const groupes = new Map<string, Brute[]>();
   for (const r of brutes) {
     const cle = `${r.period_type}|${r.deputy_id}`;

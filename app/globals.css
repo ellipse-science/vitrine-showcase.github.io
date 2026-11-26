@@ -1109,6 +1109,55 @@
   }
   .section-label .legend-toggle.inline { margin-left: auto; }
 
+  /* LA 44e EN ATTENTE DE SA PREMIÈRE SÉANCE (#1035). Le sélecteur de
+     législature reprend celui des périodes, capsule comprise sur téléphone. */
+  .assemblee-legislatures.legend-toggle.inline { margin-bottom: 8px; }
+  @media (max-width: 767px) {
+    .assemblee-legislatures.legend-toggle.inline {
+      display: grid; grid-template-columns: repeat(2, 1fr); flex: 1;
+      padding: 3px; gap: 3px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper-deep);
+    }
+    .assemblee-legislatures.legend-toggle.inline > span {
+      display: flex; align-items: center; justify-content: center; padding: 8px 4px;
+      border: none; border-radius: 999px; font-family: 'Oswald', 'Arial Narrow', sans-serif;
+      font-weight: 500; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase;
+      line-height: 1; white-space: nowrap; color: var(--ink-soft);
+    }
+    .assemblee-legislatures.legend-toggle.inline > span.active { background: var(--ink); color: var(--paper); }
+  }
+  .assemblee-attente { display: flex; flex-direction: column; gap: 24px; }
+  .assemblee-attente-bandeau {
+    margin: 0; padding: 14px 16px;
+    border: 1px solid var(--rule); border-left: 4px solid var(--ink); background: var(--paper-deep);
+    font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; line-height: 1.45; color: var(--ink);
+  }
+  .assemblee-attente-compte {
+    display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; padding: 0; list-style: none;
+    font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--ink-soft);
+  }
+  .assemblee-attente-compte .sigle { font-weight: 700; color: var(--parti); }
+  .assemblee-attente-parti-titre {
+    margin: 0 0 10px; padding-bottom: 6px; border-bottom: 3px solid var(--parti);
+    font-family: 'Oswald', 'Arial Narrow', sans-serif; font-weight: 500; font-size: 18px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink);
+  }
+  .assemblee-attente-parti-titre span { color: var(--ink-softer); font-weight: 400; }
+  .assemblee-attente-grille {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 14px 12px;
+    margin: 0; padding: 0; list-style: none;
+  }
+  .assemblee-attente-elu { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .assemblee-attente-elu img {
+    width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border: 1px solid var(--rule); background: var(--paper-deep);
+  }
+  .assemblee-attente-elu .nom { font-family: 'Source Serif 4', Georgia, serif; font-size: 14px; line-height: 1.25; color: var(--ink); overflow-wrap: anywhere; }
+  .assemblee-attente-elu .circo { font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.3; color: var(--ink-softer); overflow-wrap: anywhere; }
+  .assemblee-attente-hors { margin: 0; font-size: 14px; color: var(--ink-soft); }
+  @media (max-width: 767px) {
+    .assemblee-attente-grille { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; }
+    .assemblee-attente-bandeau { font-size: 15px; }
+  }
+
   /* Hero principal — une pleine largeur (Figma: "hero") */
   .hero-main {
     border-top: 2px solid var(--rule-faint);
