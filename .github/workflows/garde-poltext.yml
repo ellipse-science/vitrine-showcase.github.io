@@ -1,0 +1,78 @@
+name: Garde poltext (Agora+)
+
+# poltext.org publie la page Agora+ à partir des données de ce dépôt (médias
+# sociaux, parole, élu·es de la 44e). Son build est natif Cloudflare Pages,
+# déclenché par refresh-data.yml (Deploy Hook). Cette garde compare, toutes les
+# 4 heures, le relevé des médias sociaux servi par www.poltext.org au relevé
+# publié ici : au-delà de 8 h d'écart, le chemin vers poltext est en panne, et
+# une issue s'ouvre. Elle se ferme d'elle-même quand poltext a rattrapé.
+#
+# Elle vit ICI (dépôt public, minutes gratuites) et pas dans poltext (dépôt
+# privé) : une garde payée sur des minutes qui peuvent être gelées s'éteint
+# précisément quand la facturation casse (incident du 2026-08-19).
+
+on:
+  schedule:
+    # :37 — loin de l'heure pile, la tranche la plus encombrée du cron GitHub.
+    - cron: '37 */4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: garde-poltext
+  cancel-in-progress: true
+
+env:
+  SITE: https://www.poltext.org/agora/sources.json
+  TOLERANCE_HEURES: '8'
+  TITRE: "poltext : Agora+ n'est plus à jour"
+
+jobs:
+  sonde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: public/data/agora/agora_social_comptes.json
+          sparse-checkout-cone-mode: false
+
+      - name: Mesurer l'écart
+        id: mesure
+        run: |
+          releve_poltext=$(curl -fsS --retry 3 "$SITE?v=$GITHUB_RUN_ID" | jq -r '.releve_medias_sociaux // empty' || true)
+          releve_vitrine=$(jq -r '[.[].releve | select(type == "string" and test("^[0-9]{4}-"))] | max | .[0:10]' public/data/agora/agora_social_comptes.json)
+          echo "poltext : ${releve_poltext:-inconnu} · Vitrine : $releve_vitrine"
+          retard=0
+          if [ -z "$releve_poltext" ]; then
+            retard=9999
+          elif [[ "$releve_vitrine" > "$releve_poltext" ]]; then
+            retard=$(( ( $(date -u +%s) - $(date -u -d "$releve_vitrine" +%s) ) / 3600 ))
+          fi
+          echo "retard=$retard" >> "$GITHUB_OUTPUT"
+          echo "detail=poltext.org : relevé ${releve_poltext:-inconnu} · Vitrine (main) : relevé $releve_vitrine" >> "$GITHUB_OUTPUT"
+
+      - name: Ouvrir ou fermer l'issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RETARD: ${{ steps.mesure.outputs.retard }}
+          DETAIL: ${{ steps.mesure.outputs.detail }}
+        run: |
+          numero=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$TITRE\" in:title" --json number --jq '.[0].number // empty')
+          if [ "$RETARD" -gt "$TOLERANCE_HEURES" ]; then
+            if [ -z "$numero" ]; then
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITRE" --body "La page Agora+ de poltext.org a plus de $TOLERANCE_HEURES h de retard sur les médias sociaux publiés ici.
+
+          $DETAIL
+
+          Vérifier l'étape « Déclencher le build de poltext » de refresh-data.yml, puis les builds du projet Cloudflare Pages \`poltext\`."
+            fi
+            echo "::error::$DETAIL"
+            exit 1
+          elif [ -n "$numero" ]; then
+            gh issue close "$numero" --repo "$GITHUB_REPOSITORY" --comment "À jour : $DETAIL"
+          fi

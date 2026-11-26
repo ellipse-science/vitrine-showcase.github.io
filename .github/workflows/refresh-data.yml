@@ -464,6 +464,26 @@ jobs:
             && echo "build prod demandé" \
             || echo "::warning::le build prod n'a pas pu être déclenché — lancer deploy-prod.yml à la main"
 
+      # poltext.org (Agora+, ellipse-science/poltext) lit les médias sociaux, la parole et
+      # les élu·es de la 44e sur `main` de ce dépôt. Son build est natif Cloudflare Pages ;
+      # on l'appelle par son Deploy Hook dès que ces données sont sur `main`. Jamais
+      # bloquant : une panne de poltext ne doit pas faire échouer la Vitrine. Quand les
+      # médias sociaux quitteront ce workflow pour un raffineur (émancipation, item 5),
+      # cet appel déménage avec eux. Surveillé par garde-poltext.yml.
+      - name: Déclencher le build de poltext (si les données ont bougé)
+        if: env.prod_sync == '1'
+        continue-on-error: true
+        env:
+          POLTEXT_DEPLOY_HOOK: ${{ secrets.POLTEXT_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$POLTEXT_DEPLOY_HOOK" ]; then
+            echo "::notice::POLTEXT_DEPLOY_HOOK absent — poltext non déclenché"
+            exit 0
+          fi
+          curl -fsS --retry 3 -X POST "$POLTEXT_DEPLOY_HOOK" -o /dev/null \
+            && echo "build poltext demandé" \
+            || echo "::warning::le build de poltext n'a pas pu être déclenché"
+
 
       # Le rafraîchissement a échoué = le site ne s'est pas mis à jour. C'est une
       # alerte de sonar vitrine, pas du bruit cosmétique.
