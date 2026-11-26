@@ -192,16 +192,16 @@ describe("infobulle de la carte : filtres ou absence de compte", () => {
     const t = rendu(avecComptes, ["tiktok"]);
     expect(t).toContain("Aucun compte ne correspond aux filtres (TikTok)");
     expect(t).toContain("Retirer les filtres");
-    expect(t).not.toContain("Aucun compte de candidat suivi");
+    expect(t).not.toContain("Aucun compte suivi");
     expect(resumeFiltres(data, ["tiktok"], ["qs", "pq"])).toBe("TikTok · QS, PQ");
     expect(resumeFiltres(data, ["facebook", "instagram", "tiktok"], data.partis)).toBe("");
   });
-  it("aucun compte, tous filtres confondus : « Aucun compte de candidat suivi »", () => {
+  it("aucun compte, tous filtres confondus : « Aucun compte suivi »", () => {
     const vide = data.carte!.circos.find((c) => c.comptes.length === 0)!;
     const t = rendu(vide, ["tiktok"]);
-    expect(t).toContain("Aucun compte de candidat suivi");
+    expect(t).toContain("Aucun compte suivi");
     expect(t).not.toContain("ne correspond aux filtres");
-    expect(rendu(vide, ["facebook", "instagram", "tiktok"])).toContain("Aucun compte de candidat suivi");
+    expect(rendu(vide, ["facebook", "instagram", "tiktok"])).toContain("Aucun compte suivi");
   });
 });
 

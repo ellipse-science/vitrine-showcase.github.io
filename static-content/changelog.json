@@ -1,5 +1,35 @@
 [
   {
+    "pr": 1047,
+    "date": "2026-11-25T19:19:41Z",
+    "note": "Le module des réseaux sociaux suit maintenant les 30 derniers jours et marque la campagne électorale, du 27 août au 5 octobre, sur sa frise.",
+    "version": "2.59.0-beta.3"
+  },
+  {
+    "pr": 1056,
+    "date": "2026-11-25T15:34:09Z",
+    "note": "Le bandeau de la 44e législature présente la date de la première séance sans icône.",
+    "version": "2.59.0-beta.2"
+  },
+  {
+    "pr": 1055,
+    "date": "2026-11-25T15:25:38Z",
+    "note": "Le module sur la couverture médiatique des partis affiche maintenant leur rang près du sigle et garde les platines à la même place. Sélectionner une platine ou une colonne donne accès aux mêmes articles sources.",
+    "version": "2.59.0-beta.1"
+  },
+  {
+    "pr": 1053,
+    "date": "2026-11-25T15:12:37Z",
+    "note": "Avant sa première séance, chaque élu·e de la nouvelle Assemblée a sa carte de collection : sa fonction, sa circonscription et son numéro. Les statistiques arriveront avec les premiers débats.",
+    "version": "2.59.0-beta.0"
+  },
+  {
+    "pr": 1052,
+    "date": "2026-11-25T15:07:33Z",
+    "note": "La ponctuation de quelques libellés du module Partis et de sa méthodologie a été corrigée.",
+    "version": null
+  },
+  {
     "pr": 1043,
     "date": "2026-11-25T13:37:42Z",
     "note": "On peut consulter les débats de la 43e législature dans le sélecteur du module Assemblée, même après l’arrivée des données de la 44e. 🤖 Assisté par Codex (GPT-6)",

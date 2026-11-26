@@ -3,7 +3,7 @@
   "source_url": "https://www.assnat.qc.ca/fr/deputes/",
   "licence": "Reproduction autorisée pour usage non commercial avec mention de la source.",
   "licence_url": "https://www.assnat.qc.ca/fr/propos-site/droits-propriete-intellectuelle.html",
-  "recupere_le": "2026-11-25",
+  "recupere_le": "2026-11-26",
   "deputes": [
     {
       "deputy_id": "17823",
@@ -1644,6 +1644,16 @@
       "parti": "Coalition avenir Québec",
       "fichier": "/images/deputes/historique/19277.jpg",
       "profil": "https://www.assnat.qc.ca/fr/deputes/dery-pascale-19277/index.html"
+    },
+    {
+      "deputy_id": "17857",
+      "circonscription": "Richelieu",
+      "circonscription_slug": "richelieu",
+      "asset_slug": "historique/17857",
+      "nom": "Jean-Bernard Émond",
+      "parti": "Coalition avenir Québec",
+      "fichier": "/images/deputes/historique/17857.jpg",
+      "profil": "https://www.assnat.qc.ca/fr/deputes/emond-jean-bernard-17857/index.html"
     },
     {
       "deputy_id": "20423",
