@@ -60,13 +60,15 @@ export function clesEnSourdine(parts: [PartyKey, number][]): Set<PartyKey> {
 const SPARK_W = 100;
 const SPARK_H = 30;
 
-/** `overall` a remplacé l'ancien `month` : ce n'est plus une granularité de
- *  plus, c'est la vue dont l'axe court jusqu'au scrutin. */
-export type RangeKey = "today" | "week" | "overall";
+/** `overall` court du déclenchement au scrutin ; il n'est plus affiché par le
+ *  module (2026-11-24) mais reste calculé pour les scripts sociaux. `month` est
+ *  revenu le même jour : les 30 derniers jours publiés, en fenêtre glissante. */
+export type RangeKey = "today" | "week" | "month" | "overall";
 
 const SPARK_HEAD_LABELS: Record<RangeKey, string> = {
   today: "Jour par jour",
   week: "Semaine par semaine",
+  month: "Jour par jour, sur 30 jours",
   overall: "Depuis le début du suivi, jusqu'au scrutin",
 };
 
@@ -82,6 +84,7 @@ const RANGE_CONFIG: Record<
   // toutes les journées de la fenêtre.
   today:   { barKey: "today", refKey: "week",  toneKey: "today", refLabel: "moyenne du jour" },
   week:    { barKey: "week",  refKey: "month", toneKey: "week",  refLabel: "moyenne de la semaine" },
+  month:   { barKey: "month", refKey: "month", toneKey: "month", refLabel: "moyenne du mois" },
   overall: { barKey: "year",  refKey: "year",  toneKey: "today", refLabel: "moyenne de la période" },
 };
 
@@ -91,6 +94,7 @@ const RANGE_CONFIG: Record<
 const TAB_LABELS: Record<RangeKey, string> = {
   today: "Jour",
   week: "Semaine",
+  month: "Mois",
   overall: "Campagne",
 };
 
@@ -488,13 +492,7 @@ export type Indisponibilite = {
   joursDeRetard: number;
 };
 
-/** Le dernier bloc de 4 h publié pour la journée la plus récente.
- *
- *  Sert au CONTRAT D'ILLUSTRATION (`data/partis-selection.json`) : le raffineur
- *  des pochettes a besoin de savoir quelle édition il illustre, pour ranger
- *  l'image sous le bon jour et pour savoir quand la journée est close. `null`
- *  quand la table intra-journée n'est pas publiée — le contrat le dit alors,
- *  plutôt que d'inventer un bloc. */
+/** Dernier bloc de 4 h publié pour la journée la plus récente. */
 export type BlocCourant = {
   /** Jour de Montréal du bloc, « 2026-08-30 ». */
   date: string;
@@ -769,6 +767,9 @@ function buildLookup(rows: ShadowRow[]): Lookup {
  * sommer N lignes de `_day` cumule la perte. À reprendre sur `parties_articles_4h`
  * (aws-refiners#472) quand sa rétention couvrira la campagne.
  */
+/** La fenêtre de l'onglet Mois, en jours publiés. */
+const JOURS_DU_MOIS = 30;
+
 function computeStats(dayRows: ShadowRow[]): { stats: Stat[]; dates: SeriesDates } | null {
   const dayLookup = buildLookup(dayRows);
   const allDayDates = Object.keys(dayLookup).sort();
@@ -811,9 +812,9 @@ function computeStats(dayRows: ShadowRow[]): { stats: Stat[]; dates: SeriesDates
     ? allDayDates.filter((d) => d >= debutCampagne)
     : allDayDates;
 
-  // La RÉFÉRENCE de l'onglet Semaine (« moyenne de la semaine ») : la part
-  // habituelle du parti, sur les 28 derniers jours.
-  const jours28 = allDayDates.slice(-28);
+  // L'onglet Mois, et la RÉFÉRENCE de l'onglet Semaine : les 30 derniers jours
+  // publiés (28 avant le retour de l'onglet Mois, 2026-11-24).
+  const jours30 = allDayDates.slice(-JOURS_DU_MOIS);
   const last7DayDates = allDayDates.slice(-7);
   const joursDe = (sam: string) => parSemaine.get(sam) ?? [];
 
@@ -822,19 +823,19 @@ function computeStats(dayRows: ShadowRow[]): { stats: Stat[]; dates: SeriesDates
     minutes: {
       today: dayLookup[latestDay]?.[pKey]?.minutes || 0,
       week: minutesSur(semaineCourante, pKey),
-      month: minutesSur(jours28, pKey),
+      month: minutesSur(jours30, pKey),
       year: minutesSur(joursCampagne, pKey),
     },
     sov: {
       today: dayLookup[latestDay]?.[pKey]?.mentions || 0,
       week: partSur(semaineCourante, pKey),
-      month: partSur(jours28, pKey),
+      month: partSur(jours30, pKey),
       year: partSur(joursCampagne, pKey),
     },
     tone: {
       today: dayLookup[latestDay]?.[pKey]?.tone || 0,
       week: tonPondere(semaineCourante, pKey),
-      month: tonPondere(jours28, pKey),
+      month: tonPondere(jours30, pKey),
       year: tonPondere(joursCampagne, pKey),
     },
     history: {
@@ -1095,7 +1096,7 @@ function depart(range: RangeKey, premiere: string, arriveeT: number): number {
  *  jour, pris à 20 h. Tracer une tendance intra-journée demanderait qu'il
  *  conserve ses six blocs de 4 h au lieu de les écraser.
  *  `week` : 7 jours, soit exactement samedi à vendredi. */
-const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, overall: Infinity };
+const FENETRE: Record<RangeKey, number> = { today: 7, week: 7, month: JOURS_DU_MOIS, overall: Infinity };
 
 /**
  * La course — épurée : des lignes, leurs étiquettes de bout, deux dates, une
@@ -1426,6 +1427,8 @@ function statsAvecBlocCourant(
   // Pré-passe : minutes de la fenêtre APRÈS repli, tous partis — pour
   // renormaliser la part de voix.
   const totWeek = stats.reduce((t, s) => t + s.minutes.week + deltaMin(s), 0);
+  // Le mois glissant contient TOUJOURS le jour du bloc (le plus récent).
+  const totMonth = stats.reduce((t, s) => t + s.minutes.month + deltaMin(s), 0);
   const totYear = stats.reduce(
     (t, s) => t + s.minutes.year + (dansCampagne ? deltaMin(s) : 0),
     0,
@@ -1446,6 +1449,9 @@ function statsAvecBlocCourant(
       return den > 0 ? num / den : toneWin;
     };
     const minWeek = s.minutes.week + dm;
+    const minMonth = s.minutes.month + dm;
+    const sovMonth = totMonth > 0 ? minMonth / totMonth : 0;
+    const tonMonth = reponderer(s.tone.month, s.minutes.month);
     const minYear = s.minutes.year + (dansCampagne ? dm : 0);
     const sovWeek = totWeek > 0 ? minWeek / totWeek : 0;
     const sovYear = totYear > 0 ? minYear / totYear : 0;
@@ -1458,9 +1464,9 @@ function statsAvecBlocCourant(
 
     return {
       ...s,
-      sov: { ...s.sov, today: b.mentions, week: sovWeek, year: sovYear },
-      tone: { ...s.tone, today: b.tone, week: tonWeek, year: tonYear },
-      minutes: { ...s.minutes, today: b.minutes, week: minWeek, year: minYear },
+      sov: { ...s.sov, today: b.mentions, week: sovWeek, month: sovMonth, year: sovYear },
+      tone: { ...s.tone, today: b.tone, week: tonWeek, month: tonMonth, year: tonYear },
+      minutes: { ...s.minutes, today: b.minutes, week: minWeek, month: minMonth, year: minYear },
       history: {
         ...s.history,
         daily: patchDaily(s.history.daily, b.mentions),
@@ -1758,6 +1764,7 @@ function fenetreDeLOnglet(range: RangeKey, joursIso: string[]): number[] {
   // ce qui les garde exacts sans dépendre du titre de l'onglet.
   if (range === "today") return tous.slice(-7);
   if (range === "overall") return tous;
+  if (range === "month") return tous.slice(-JOURS_DU_MOIS);
 
   const lundis = joursIso.filter(
     (j) => j <= dernier && new Date(`${j}T12:00:00Z`).getUTCDay() === 1,
@@ -2222,6 +2229,7 @@ function buildRangeView(stats: Stat[], range: RangeKey, dates: SeriesDates, char
 function libelleDepuis(range: RangeKey, joursIso: string[]): string {
   if (range === "today") return "depuis minuit";
   if (range === "week") return "depuis lundi";
+  if (range === "month") return "sur 30 jours";
   const jours = joursIso.filter(Boolean);
   const premier = jours[0];
   return premier ? `depuis le ${formatDateFr(premier).toLowerCase()}` : "depuis le début du suivi";
@@ -2243,7 +2251,12 @@ function libellePeriode(range: RangeKey, joursIso: string[]): string {
   const lundis = jours.filter(
     (j) => j <= dernier && new Date(`${j}T12:00:00Z`).getUTCDay() === 1,
   );
-  const premier = range === "week" ? (lundis[lundis.length - 1] ?? jours[0]) : jours[0];
+  const premier =
+    range === "week"
+      ? (lundis[lundis.length - 1] ?? jours[0])
+      : range === "month"
+        ? (jours.slice(-JOURS_DU_MOIS)[0] ?? jours[0])
+        : jours[0];
 
   if (premier === dernier) return `le ${formatDateFr(dernier).toLowerCase()}`;
   return `du ${formatDateFr(premier).toLowerCase()} au ${formatDateFr(dernier).toLowerCase()}`;
@@ -2478,6 +2491,7 @@ export async function loadParties(
           ranges: {
             today: avecUrl(buildRangeView(c.stats, "today", c.dates), dernieresUrlsParParti(parMedia(mDay))),
             week: avecUrl(buildRangeView(c.stats, "week", c.dates), dernieresUrlsParParti(parMedia(mWeek))),
+            month: avecUrl(buildRangeView(c.stats, "month", c.dates), dernieresUrlsParParti(parMedia(mMonth))),
             overall: avecUrl(buildRangeView(c.stats, "overall", c.dates), dernieresUrlsParParti(parMedia(mMonth))),
           },
         };
@@ -2556,6 +2570,7 @@ export async function loadParties(
       ranges: {
         today: buildRangeView(statsJour, "today", dates, chartJour, enjeuxParParti),
         week:  buildRangeView(statsJour, "week", dates, null, enjeuxParParti),
+        month: buildRangeView(statsJour, "month", dates, null, enjeuxParParti),
         overall: buildRangeView(statsJour, "overall", dates, null, enjeuxParParti),
       },
     };
