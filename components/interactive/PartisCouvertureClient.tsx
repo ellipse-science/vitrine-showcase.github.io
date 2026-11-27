@@ -977,6 +977,18 @@ function Deck({
           <span className="deck-rang">{rang}</span>
           <span className="deck-parti">{row.label}</span>
         </span>
+        {/* Sur mobile seulement (CSS) : le deck y fait ~80 px et le texte du
+            plateau tomberait sous 6 px. L'enjeu et sa part passent ici. */}
+        <span className="deck-legende" aria-hidden="true">
+          {enjeu ? (
+            <>
+              <span className="deck-legende-nom">{libelleEnjeuCourt(enjeu.label)}</span>{" "}
+              <span className="deck-legende-part">{`${enjeu.pct} %`}</span>
+            </>
+          ) : (
+            "—" // garde-redaction: ok (tiret affiché en l’absence d’enjeu)
+          )}
+        </span>
       </button>
     </div>
   );
@@ -1010,6 +1022,9 @@ function Plateau({ enjeu }: { enjeu?: EnjeuView | null }) {
           <circle className="deck-jauge-fond" cx="50" cy="50" r="22" />
           <path className="deck-jauge" d={arc(22, enjeu.pct / 100)} />
           <SymboleEnjeu libelle={enjeu.label} className="deck-symbole" svg={{ x: 44, y: 32, taille: 12 }} />
+          {/* Variante mobile : le symbole seul, centré et agrandi ; le nom et
+              la part sont alors sous le deck (.deck-legende). */}
+          <SymboleEnjeu libelle={enjeu.label} className="deck-symbole deck-symbole--seul" svg={{ x: 39, y: 39, taille: 22 }} />
           <text className="deck-enjeu-nom" x="50" y="55" textAnchor="middle">
             {libelleEnjeuCourt(enjeu.label)}
           </text>
