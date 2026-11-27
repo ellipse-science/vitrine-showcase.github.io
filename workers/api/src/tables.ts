@@ -7,6 +7,9 @@ export interface TableSpec {
   athena: string
   cols: string[]
   filter: string | null
+  /** Gel d'une série (AAAA-MM-JJ) : les lignes dont week_end_date est postérieure
+   *  sont écartées AVANT le filtre. Même clé que scripts/tables.json. */
+  freeze_at?: string
 }
 
 export const TABLES: TableSpec[] = [
@@ -351,6 +354,7 @@ export const TABLES: TableSpec[] = [
       "coverage_summary_week",
       "coverage_summary_month"
     ],
-    "filter": "polimetre_plus_recent"
+    "filter": "polimetre_plus_recent",
+    "freeze_at": "2026-10-05"
   }
 ]

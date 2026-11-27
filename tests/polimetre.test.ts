@@ -243,3 +243,14 @@ describe("snapshotWindow — fenêtres disjointes quelle que soit la cadence", (
     expect(current.filter((w) => previous.includes(w))).toEqual([]);
   });
 });
+
+describe("buildView — adresse des promesses par mandat", () => {
+  it("CAQ : lien vers la page Legault-Fréchette ; PQ (urlBase null) : pas de lien", () => {
+    const WEEK_X = ["2026-07-17"];
+    const r = { country_id: "QC", week_end_date: "2026-07-17", pledge_number: "1.10.104", pledge_text_fr: "x", verdict: "En suspens", category: "Santé et politiques sociales", salience_index: 3, previous_salience_index: 0, delta_index: 3, titles: "", urls: "", articles: "", pledge_short_fr: "Créer 10 000 places en CPE", coverage_summary_week: "NA", coverage_summary_month: "NA" };
+    const [caq] = buildView([r as never], WEEK_X, []);
+    expect(caq.url).toBe("https://polimeter.org/fr/legault-frechette/1.10.104");
+    const [pq] = buildView([r as never], WEEK_X, [], null);
+    expect(pq.url).toBeUndefined();
+  });
+});

@@ -13,6 +13,7 @@ import {
   keepHeadlineRow,
   normalizeValue,
   polimetreCutoff,
+  rowsUpTo,
 } from "@/workers/api/src/transforms";
 import { TABLES } from "@/workers/api/src/tables";
 // triggerDeployHooks vit dans son propre module, sans dépendance lourde :
@@ -53,6 +54,21 @@ describe("sync-athena — transformations pures", () => {
 
   it("fenêtre polimetre : aucune date valide = pas de coupe", () => {
     expect(polimetreCutoff([null, "n/a"])).toBeNull();
+  });
+
+  it("gel d'une série : garde les lignes jusqu'à la date incluse, heure ignorée", () => {
+    const rows = [["2026-10-04"], ["2026-10-05"], ["2026-10-05 12:39"], ["2026-10-06"], [null]];
+    expect(rowsUpTo(rows, 0, "2026-10-05")).toEqual([["2026-10-04"], ["2026-10-05"], ["2026-10-05 12:39"]]);
+  });
+
+  it("gel de polimetre_plus : même date dans le Worker et dans scripts/tables.json", async () => {
+    const { readFileSync } = await import("node:fs");
+    const filet = JSON.parse(readFileSync("scripts/tables.json", "utf-8"));
+    const liste = Array.isArray(filet) ? filet : filet.tables;
+    const r = liste.find((t: { name: string }) => t.name === "polimetre_plus");
+    const w = TABLES.find((t) => t.name === "polimetre_plus");
+    expect(r.freeze_at).toBe("2026-10-05");
+    expect(w?.freeze_at).toBe(r.freeze_at);
   });
 
   // Le compte est assené volontairement : c'est lui qui a révélé l'oubli de
