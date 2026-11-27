@@ -124,6 +124,23 @@ describe("les decks", () => {
     expect(sante).toMatch(/class="deck-enjeu-part"[^>]*>41\s%</);
   });
 
+  // À 375 px, le deck fait ~79 px : le texte du plateau (viewBox 100) tombait
+  // à 5 et 4 px (revue d'Adrien sur #1057, 2026-11-26). Sur mobile, l'enjeu
+  // et sa part passent sous le deck en texte HTML, et l'écran ne garde que le
+  // symbole, centré. Le CSS choisit la variante ; les deux sont dans le HTML.
+  it("sous chaque deck, une légende HTML de l'enjeu et de sa part, pour le mobile", () => {
+    const legendes = [...html.matchAll(/<span class="deck-legende"[^>]*>([\s\S]*?)<\/span><\/button>/g)]
+      .map((m) => m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim());
+    expect(legendes).toHaveLength(4);
+    expect(legendes).toEqual(expect.arrayContaining(["Santé 41 %", "Culture 55 %", "Économie 30 %", "—"]));
+    expect(legendes).not.toContain("Autres enjeux");
+  });
+
+  it("l'écran porte aussi un symbole centré, seul affiché sur mobile", () => {
+    const sante = html.split('data-parti="caq"')[1]?.split("</button>")[0] ?? "";
+    expect(sante).toMatch(/class="[^"]*\bdeck-symbole deck-symbole--seul"/);
+  });
+
   it("les decks restent immobiles et les quatre partis ouvrent les sources", () => {
     expect(html).not.toContain("--tour");
     expect(html).not.toContain("deck-jog");
