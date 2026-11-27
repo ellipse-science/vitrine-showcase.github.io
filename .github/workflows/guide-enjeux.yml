@@ -51,7 +51,7 @@ jobs:
           quarto render guide_categories_enjeux_fr.qmd --to pdf
           quarto render guide_categories_enjeux_en.qmd --to pdf
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: guide-enjeux
           path: docs/enjeux/*.pdf
@@ -69,7 +69,7 @@ jobs:
           ssh-key: ${{ secrets.REFRESH_DATA_DEPLOY_KEY }}
           sparse-checkout: public/data/guide-enjeux
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: guide-enjeux
           path: public/data/guide-enjeux
