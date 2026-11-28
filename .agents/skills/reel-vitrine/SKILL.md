@@ -1,7 +1,7 @@
 ---
 name: reel-vitrine
 description: >
-  Shim Vibe — produire les reels et les textes sociaux de la Vitrine
+  Shim Agent Skills — produire les reels et les textes sociaux de la Vitrine
   (scripts/social), ou en créer un pour un module qui n'en a pas encore. Couvre
   la production d'une édition (données du moment, aperçu, contrôle du cadre ET
   des zones Instagram, MP4, les cinq textes de réseau), l'adaptation du gabarit
@@ -13,7 +13,7 @@ description: >
   en attribut, playwright absent du worktree.
 ---
 
-# reel-vitrine (shim Vibe)
+# reel-vitrine (shim Agent Skills)
 
 La procédure canonique vit dans la skill Claude Code de ce repo. Ne pas la
 reproduire ici — toute duplication diverge.

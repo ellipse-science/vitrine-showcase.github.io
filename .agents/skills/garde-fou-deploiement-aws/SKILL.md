@@ -1,7 +1,7 @@
 ---
 name: garde-fou-deploiement-aws
 description: >
-  Shim Vibe — garde-fou : refuse d'ajouter un chemin de déploiement AWS (S3,
+  Shim Agent Skills — garde-fou : refuse d'ajouter un chemin de déploiement AWS (S3,
   CloudFront, configure-aws-credentials) au repo vitrine-showcase. À utiliser
   dès qu'on demande de déployer ou héberger le site sur AWS, d'ajouter un bucket
   S3, une distribution CloudFront, ou des credentials AWS de déploiement —
@@ -10,7 +10,7 @@ description: >
   « configure-aws-credentials », « héberger sur AWS », « deploy AWS ».
 ---
 
-# garde-fou-deploiement-aws (shim Vibe)
+# garde-fou-deploiement-aws (shim Agent Skills)
 
 La procédure canonique vit dans la skill Claude Code de ce repo. Ne pas la
 reproduire ici — toute duplication diverge.

@@ -1,7 +1,7 @@
 ---
 name: ajout-section-data-bound
 description: >
-  Shim Vibe — ajoute une nouvelle section data-bound au site Vitrine (afficher
+  Shim Agent Skills — ajoute une nouvelle section data-bound au site Vitrine (afficher
   une table Athena sur la page). À utiliser quand on demande d'ajouter ou
   d'afficher une section, un module ou un bloc alimenté par des données (scores
   de partis, enjeux, etc.), de brancher une nouvelle table, ou d'activer une
@@ -10,7 +10,7 @@ description: >
   table X », « nouveau module data », « branche les données ».
 ---
 
-# ajout-section-data-bound (shim Vibe)
+# ajout-section-data-bound (shim Agent Skills)
 
 La procédure canonique vit dans la skill Claude Code de ce repo. Ne pas la
 reproduire ici — toute duplication diverge.

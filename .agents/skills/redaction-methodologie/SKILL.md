@@ -1,7 +1,7 @@
 ---
 name: redaction-methodologie
 description: >
-  Shim Vibe — rédiger ou réviser la page Méthodologie PUBLIQUE
+  Shim Agent Skills — rédiger ou réviser la page Méthodologie PUBLIQUE
   (public/methodologie/index.html) au bon registre : pour le grand public,
   transparente et scientifique, mais SANS jargon interne (noms de raffineurs,
   de tables, de colonnes) ni détails qui exposeraient la propriété
@@ -14,7 +14,7 @@ description: >
   technique », « vulgarise cette section », « la métho parle aux devs ».
 ---
 
-# redaction-methodologie (shim Vibe)
+# redaction-methodologie (shim Agent Skills)
 
 La procédure canonique vit dans la skill Claude Code de ce repo. Ne pas la
 reproduire ici — toute duplication diverge.

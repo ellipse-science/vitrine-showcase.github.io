@@ -1,7 +1,7 @@
 ---
 name: diagnostic-donnees-perimees
 description: >
-  Shim Vibe — diagnostique pourquoi une section du site Vitrine (treemap des
+  Shim Agent Skills — diagnostique pourquoi une section du site Vitrine (treemap des
   enjeux, partis, etc.) affiche des données périmées ou erronées, en distinguant
   un bug de transformation frontend d'un problème de raffineur/backend. À
   utiliser quand on signale des données « périmées », « pas à jour », « figées »
@@ -11,7 +11,7 @@ description: >
   vieux », « trouve pourquoi ».
 ---
 
-# diagnostic-donnees-perimees (shim Vibe)
+# diagnostic-donnees-perimees (shim Agent Skills)
 
 La procédure canonique vit dans la skill Claude Code de ce repo. Ne pas la
 reproduire ici — toute duplication diverge.

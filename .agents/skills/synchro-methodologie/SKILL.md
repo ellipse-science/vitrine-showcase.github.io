@@ -1,14 +1,14 @@
 ---
 name: synchro-methodologie
 description: >
-  Shim Vibe — garde la page Méthodologie et les docs vivantes (horaire, swimlanes)
+  Shim Agent Skills — garde la page Méthodologie et les docs vivantes (horaire, swimlanes)
   synchronisées avec le comportement réel du pipeline. Charger pour toute PR qui
   touche un calcul, un seuil, un horaire, la collecte, une représentation
   graphique ou un raffineur. Délègue intégralement à la skill Claude Code canonique
   du même nom.
 ---
 
-# synchro-methodologie (shim Vibe)
+# synchro-methodologie (shim Agent Skills)
 
 La procédure canonique vit dans la skill Claude Code de ce repo. Ne pas la
 reproduire ici — toute duplication diverge.

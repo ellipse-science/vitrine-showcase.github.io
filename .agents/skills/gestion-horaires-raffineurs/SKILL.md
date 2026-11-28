@@ -1,7 +1,7 @@
 ---
 name: gestion-horaires-raffineurs
 description: >
-  Shim Vibe — change l'horaire (cron / fréquence) d'un raffineur du pipeline
+  Shim Agent Skills — change l'horaire (cron / fréquence) d'un raffineur du pipeline
   radar. À utiliser quand on demande de modifier QUAND ou à quelle FRÉQUENCE un
   raffineur tourne (ex. « fais tourner radar-issues-score à 8h »). Le
   changement se fait dans le repo aws-infra, PAS dans vitrine-showcase. Délègue
@@ -10,7 +10,7 @@ description: >
   rafraîchissement », « modifie le cron », « planifie le raffineur ».
 ---
 
-# gestion-horaires-raffineurs (shim Vibe)
+# gestion-horaires-raffineurs (shim Agent Skills)
 
 La procédure canonique vit dans la skill Claude Code de ce repo. Ne pas la
 reproduire ici — toute duplication diverge.
